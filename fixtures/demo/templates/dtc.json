@@ -1,0 +1,21 @@
+{
+  "id": "dtc-camping-v1",
+  "version": "1.0.0",
+  "name": "独立站户外露营示例",
+  "channel": "DTC",
+  "description": "面向独立站流量、获客和履约的演示标准；不要求 ASIN/FBA。",
+  "fields": [
+    {"key": "scenario", "label": "使用场景", "required": false, "group": "商品定位"},
+    {"key": "moq", "label": "最小起订量", "required": true, "group": "供应"},
+    {"key": "procurement_cost", "label": "采购成本", "required": true, "group": "成本"},
+    {"key": "payment_fee", "label": "支付手续费", "required": false, "group": "成本"},
+    {"key": "customer_acquisition_cost", "label": "获客成本假设", "required": false, "group": "敏感性"},
+    {"key": "fulfillment_cost", "label": "履约成本", "required": false, "group": "成本"}
+  ],
+  "rules": [
+    {"field": "moq", "operator": "lte", "threshold": "120", "unit": "unit", "currency": null, "is_demo": true},
+    {"field": "procurement_cost", "operator": "lte", "threshold": "35.00", "unit": "item", "currency": "USD", "is_demo": true}
+  ],
+  "required_evidence": ["moq", "procurement_cost"],
+  "is_demo": true
+}

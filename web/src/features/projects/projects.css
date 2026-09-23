@@ -1,0 +1,50 @@
+.projects-page .page-heading { align-items: center; }
+.project-create { max-width: 920px; }
+.panel-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+.panel-heading p { margin: 2px 0 0; }
+.create-steps { display: grid; grid-template-columns: 1fr 1fr; list-style: none; padding: 0; margin: 0 0 20px; border-bottom: 1px solid #d7dcd7; }
+.create-steps li { padding: 10px 12px; color: #5a646e; border-bottom: 2px solid transparent; }
+.create-steps li.active { color: #147d73; border-bottom-color: #147d73; font-weight: 600; }
+.create-steps li.complete { color: #355c4d; }
+.materials-preview { border-top: 1px solid #d7dcd7; padding-top: 18px; margin-top: 18px; }
+.materials-preview ul, .material-list { margin: 8px 0 0; padding-left: 20px; columns: 2; }
+.project-list table { min-width: 760px; }
+.project-list td:first-child { width: 42%; }
+.project-list p { margin: 4px 0 0; }
+.project-list .secondary, .project-detail .primary, .project-detail .secondary, .candidate-intake-action > a { display: inline-flex; align-items: center; justify-content: center; padding: 7px 13px; border: 1px solid #b9c2bd; border-radius: 5px; text-decoration: none; white-space: nowrap; }
+.project-detail .primary, .candidate-intake-action > a.primary { color: white; border-color: #147d73; background: #147d73; }
+.project-summary { padding-bottom: 14px; }
+.project-summary p { margin: 6px 0; }
+.project-nav { display: flex; gap: 3px; margin: 8px 0 22px; border-bottom: 1px solid #cbd4ca; overflow-x: auto; }
+.project-nav a { padding: 10px 14px; border-bottom: 2px solid transparent; color: #5a646e; text-decoration: none; white-space: nowrap; }
+.project-nav a.active { color: #126c63; border-bottom-color: #147d73; font-weight: 600; }
+.criteria-panel--pending { border-color: #d6ae83; }
+.criteria-preview { max-width: 760px; }
+.criteria-form { border-top: 1px solid #d7dcd7; padding-top: 18px; margin-top: 18px; }
+.criteria-form fieldset + fieldset { margin-top: 16px; }
+.choice-line { display: flex; align-items: center; gap: 3px; margin-bottom: 16px; }
+.evidence-checklist { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px; }
+.evidence-checklist label { display: flex; align-items: flex-start; gap: 3px; padding: 8px 0; border-bottom: 1px solid #e4e8e1; }
+.evidence-checklist span { display: grid; }
+.evidence-checklist small { color: #5a646e; font-weight: 400; }
+.criteria-summary h3 { margin-top: 18px; }
+.candidate-list table { min-width: 850px; }
+.candidate-list td:first-child { width: 25%; }
+.candidate-list td:nth-child(3) { width: 34%; }
+.candidate-list td p { margin: 3px 0 0; }
+.candidate-intake-action { margin: 0 0 22px; }
+.project-detail .intake-panel .eyebrow { display: none; }
+.history-view > h3 { margin-top: 24px; }
+.history-view table { min-width: 760px; }
+.candidate-picks { display: grid; gap: 8px; }
+.candidate-pick { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid #d7dcd7; }
+.candidate-pick span { display: grid; gap: 4px; }
+.intake-body { display: grid; gap: 16px; }
+.intake-footnote { font-size: 12px; color: #5a646e; }
+.preview-stats { display: flex; gap: 16px; margin: 14px 0; }
+@media (max-width: 800px) {
+  .projects-page .page-heading { align-items: flex-start; }
+  .materials-preview ul, .material-list { columns: 1; }
+  .evidence-checklist { grid-template-columns: 1fr; }
+  .project-detail .page-heading .primary { width: 100%; }
+}

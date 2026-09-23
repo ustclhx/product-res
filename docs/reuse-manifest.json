@@ -1,0 +1,113 @@
+{
+  "source_repository": "/Users/lihaixin03/workspace/tool/d2market",
+  "source_head": "13ce666b187048efc5a0e0a9a57595de77be6c30",
+  "basis": "selected working-tree files, not necessarily clean HEAD",
+  "date": "2026-09-20",
+  "files": [
+    {
+      "source": "web/package.json",
+      "destination": "web/package.json",
+      "source_sha256": "625120d99a380dfe43c03d3ba8ce814a20ecd01ab4ec671d312b9b787771a495",
+      "destination_sha256": "5e779c52d3a66a091e7f28d76a03e4d2419227971082176e1cc7090dbd871f2c",
+      "mode": "adapted"
+    },
+    {
+      "source": "web/package-lock.json",
+      "destination": "web/package-lock.json",
+      "source_sha256": "645d00147acea5fc481cb6ded40b782669447734b8447211a7b6f92b983e2d34",
+      "destination_sha256": "134b5dacf6b55a5164f7ac935baa25ec004fd60e38605d563fff15ff6cbda320",
+      "mode": "adapted"
+    },
+    {
+      "source": "web/tsconfig.json",
+      "destination": "web/tsconfig.json",
+      "source_sha256": "770b4140bbb581e2dfd9ea9946ffc9c75a1d86ba7d2db5f77c83e37cbdf9d808",
+      "destination_sha256": "770b4140bbb581e2dfd9ea9946ffc9c75a1d86ba7d2db5f77c83e37cbdf9d808",
+      "mode": "copied"
+    },
+    {
+      "source": "web/tsconfig.app.json",
+      "destination": "web/tsconfig.app.json",
+      "source_sha256": "9d4329e2b4efe701545726991527c78828e7f2b254a47977591f3cb6dd3e0236",
+      "destination_sha256": "9d4329e2b4efe701545726991527c78828e7f2b254a47977591f3cb6dd3e0236",
+      "mode": "copied"
+    },
+    {
+      "source": "web/tsconfig.node.json",
+      "destination": "web/tsconfig.node.json",
+      "source_sha256": "df5eec7ab0d6ddfd9fb3807b9da3356e346f57648648e5b4722c79bb4396fa23",
+      "destination_sha256": "df5eec7ab0d6ddfd9fb3807b9da3356e346f57648648e5b4722c79bb4396fa23",
+      "mode": "copied"
+    },
+    {
+      "source": "web/eslint.config.js",
+      "destination": "web/eslint.config.js",
+      "source_sha256": "b6dd739f03080086ccb96b8d4378494cc1c483b7ce238bf2f3261626355130cd",
+      "destination_sha256": "cbfefea18ee94343bb6f77020ea58a2544e06f8c894896e3b1c610a849f59bc5",
+      "mode": "adapted"
+    },
+    {
+      "source": "web/vite.config.ts",
+      "destination": "web/vite.config.ts",
+      "source_sha256": "15db07601df493f6661a5fbba85d50fcf4966b111e32f9c91804ff576b5cfca1",
+      "destination_sha256": "576b4d620cd830f374e6621bb49cea8df5fb511d0c64536d1546831ff80cf625",
+      "mode": "adapted"
+    },
+    {
+      "source": "web/src/app/AppProviders.tsx",
+      "destination": "web/src/app/AppProviders.tsx",
+      "source_sha256": "5ff4b08bda0d3ecc6a0981d76c8dfe5525689f4081f69372c32a2cb27e3e9687",
+      "destination_sha256": "5ff4b08bda0d3ecc6a0981d76c8dfe5525689f4081f69372c32a2cb27e3e9687",
+      "mode": "copied"
+    },
+    {
+      "source": "web/src/app/idempotencyKey.ts",
+      "destination": "web/src/app/idempotencyKey.ts",
+      "source_sha256": "46572652fd5112e54aa672ff10306d1a039c9c27f530b53386da57d4c1130151",
+      "destination_sha256": "46572652fd5112e54aa672ff10306d1a039c9c27f530b53386da57d4c1130151",
+      "mode": "copied"
+    },
+    {
+      "source": "web/src/app/idempotencyKey.test.ts",
+      "destination": "web/src/app/idempotencyKey.test.ts",
+      "source_sha256": "7c4d730319e4ea79086bdca114d97576b71a27c22ae4a846b048f57da5b1c4a5",
+      "destination_sha256": "7c4d730319e4ea79086bdca114d97576b71a27c22ae4a846b048f57da5b1c4a5",
+      "mode": "copied"
+    },
+    {
+      "source": "web/src/styles/tokens.css",
+      "destination": "web/src/styles/tokens.css",
+      "source_sha256": "34373625b0663dee68510bc8bed367255b8b03f92f4b1b8fcacaf0655adf3c65",
+      "destination_sha256": "34373625b0663dee68510bc8bed367255b8b03f92f4b1b8fcacaf0655adf3c65",
+      "mode": "copied"
+    },
+    {
+      "source": "app/api/contracts.py",
+      "destination": "app/api/contracts.py",
+      "source_sha256": "08555a7c7db49192181b80f2bca0e1d7dd3436828b00d8c99580be3fa381056a",
+      "destination_sha256": "a730680ba44cb6d1b795477837cc6931534bc948d4e93b8bf0a2b706333a8545",
+      "mode": "adapted"
+    },
+    {
+      "source": "app/runtime/state.py",
+      "destination": "app/runtime/state.py",
+      "source_sha256": "42736a6d7f06638fd6dbbaff07e418ed3f66b14a46aafe93555a5fb4bc8bcd8d",
+      "destination_sha256": "b8ec77bdeae1e3e3870d8333cc51f727ea9e08e093f1db8550d692e13a5b2972",
+      "mode": "adapted"
+    },
+    {
+      "source": "app/runtime/errors.py",
+      "destination": "app/runtime/errors.py",
+      "source_sha256": "b099025c7c31889c44aca1f7533ad9418dab986bab5b8dc52aa1e580b03cf142",
+      "destination_sha256": "a7ec3c8fe6052c912710e411faade9c740a8719c1ed2f164eac3413f22c3c901",
+      "mode": "adapted"
+    },
+    {
+      "source": "pyproject.toml",
+      "destination": "pyproject.toml",
+      "source_sha256": "720f45c19ef9bf09a923ce8d09c96e626b07309323202c3c6f773fa36b21bd97",
+      "destination_sha256": "f554c2de04c546a9385f798c2269a30265a307b5aa2b98b7d829377bcbb037c1",
+      "mode": "adapted"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "amazon-camping-v1",
+  "version": "1.0.0",
+  "name": "Amazon 户外露营示例",
+  "channel": "AMAZON",
+  "description": "面向 Amazon 站点的演示标准；阈值仅用于流程验证。",
+  "fields": [
+    {"key": "asin", "label": "ASIN", "required": false, "group": "商品身份"},
+    {"key": "moq", "label": "最小起订量", "required": true, "group": "供应"},
+    {"key": "procurement_cost", "label": "采购成本", "required": true, "group": "成本"},
+    {"key": "amazon_fulfillment_cost", "label": "FBA/自发货成本", "required": false, "group": "成本"},
+    {"key": "amazon_platform_fee", "label": "Amazon 平台费", "required": false, "group": "成本"}
+  ],
+  "rules": [
+    {"field": "moq", "operator": "lte", "threshold": "200", "unit": "unit", "currency": null, "is_demo": true},
+    {"field": "procurement_cost", "operator": "lte", "threshold": "28.00", "unit": "item", "currency": "USD", "is_demo": true}
+  ],
+  "required_evidence": ["moq", "procurement_cost"],
+  "is_demo": true
+}

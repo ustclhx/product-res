@@ -1,0 +1,44 @@
+{
+  "date": "2026-09-21",
+  "original": {
+    "job_id": "55a9a786-72ce-4395-b123-1dd35bfbe075",
+    "max_output_tokens": 1800,
+    "prompt_tokens": 4062,
+    "completion_tokens": 1800,
+    "state": "FAILED",
+    "error_code": "NEWAPI.OUTPUT_TRUNCATED",
+    "newapi_log_id": 9432,
+    "channel_id": 1
+  },
+  "comparison": {
+    "job_id": "0c8b98ea-9bd9-468b-85df-ef1aa2f8565d",
+    "max_output_tokens": 4000,
+    "state": "SUCCEEDED",
+    "usage": {
+      "completion_tokens": 1898,
+      "known_cost": null,
+      "prompt_tokens": 4062,
+      "total_tokens": 5960
+    },
+    "node_id": "dd3d53f3-af00-4c22-b309-f8591223da15",
+    "model": "deepseek-v4-flash",
+    "prompt_version": "newapi-prompt-v2-deepseek-nonthinking",
+    "schema_version": "assistant-output-v2",
+    "adoption_status": "PENDING_REVIEW"
+  },
+  "input_hashes": [
+    {
+      "job_id": "55a9a786-72ce-4395-b123-1dd35bfbe075",
+      "input_hash": "2071724b34683f7000ea5db2ba55c5c2a710354bbadaf8709aba2f06b045af92"
+    },
+    {
+      "job_id": "0c8b98ea-9bd9-468b-85df-ef1aa2f8565d",
+      "input_hash": "2071724b34683f7000ea5db2ba55c5c2a710354bbadaf8709aba2f06b045af92"
+    }
+  ],
+  "same_input": true,
+  "production_max_output_tokens_restored": 1800,
+  "thinking_mode": "disabled",
+  "channel_param_override": null,
+  "diagnostic_requests": 1
+}

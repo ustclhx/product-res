@@ -1,0 +1,1 @@
+"""Product-res application package."""

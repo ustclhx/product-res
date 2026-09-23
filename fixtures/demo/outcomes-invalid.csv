@@ -1,0 +1,2 @@
+candidate_id,approval_id,sku,status,window_start,window_end,currency,units,revenue_basis,revenue,refunds,procurement,platform,fulfillment,advertising,other,source_locator,reason,is_demo
+,,UNKNOWN-SKU,RECORDED,2026-08-01T00:00:00Z,2026-09-01T00:00:00Z,USD,10,GROSS,1000,50,400,100,80,,20,demo:outcomes-invalid.csv:2,,true

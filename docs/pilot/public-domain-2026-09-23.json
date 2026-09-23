@@ -1,0 +1,46 @@
+{
+  "public_url": "https://product.ezarouter.cc",
+  "health": {
+    "status": "ok",
+    "service": "product-res",
+    "mode": "pilot"
+  },
+  "javascript_asset": "/assets/index-1m9-51sa.js",
+  "javascript_http_status": 200,
+  "workspace_checks": [
+    {
+      "workspace": "partner-team",
+      "login": true,
+      "secure_httponly_cookie": true,
+      "session": true,
+      "projects": 1,
+      "candidates_readable": 2,
+      "work_items": 13,
+      "csrf_logout": true
+    },
+    {
+      "workspace": "internal-dtc",
+      "login": true,
+      "secure_httponly_cookie": true,
+      "session": true,
+      "projects": 1,
+      "candidates_readable": 1,
+      "work_items": 5,
+      "csrf_logout": true
+    }
+  ],
+  "previous_public_url": "http://127.0.0.1:18081",
+  "config_backup": "/opt/product-res-pilot/backups/public-url-20260923T093551Z",
+  "connector": "product-res-cloudflared",
+  "connector_network": "host",
+  "origin_service": "http://127.0.0.1:18081",
+  "public_url_applied_to": [
+    "api",
+    "worker"
+  ],
+  "gateway_restarted": true,
+  "browser_login_page": "verified",
+  "business_materials_modified": false,
+  "new_paid_provider_calls": 0,
+  "client_note": "Default Python urllib User-Agent returned 403; explicit product-res-deployment-check/1.0 passed. Browser and curl succeeded. Security policies unchanged."
+}

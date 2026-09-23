@@ -1,0 +1,30 @@
+.tasks-page { display: grid; gap: 0; }
+.tasks-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 16px; }
+.tasks-toolbar .field { min-width: 180px; flex: 1 1 180px; }
+.tasks-toolbar .check-field { display: flex; align-items: center; gap: 7px; min-height: 38px; }
+.tasks-section-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid #e0e5de; }
+.tasks-section-heading h2, .tasks-section-heading p { margin: 0; }
+.tasks-page .data-table { min-width: 780px; }
+.tasks-page td small { display: block; margin-top: 4px; }
+.tasks-badge--done { color: #126c63; border-color: #8fbbb3; }
+.tasks-badge--blocked, .tasks-badge--cancelled, .tasks-attention { color: #87410f; }
+.tasks-editor { border-left-color: #d7dcd7; }
+.tasks-field-wide { grid-column: 1 / -1; }
+.tasks-actions, .tasks-links { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.tasks-actions { justify-content: flex-end; margin-top: 16px; }
+.tasks-evidence { padding: 14px 16px; border: 1px solid #d7dcd7; }
+.tasks-evidence legend { padding: 0 6px; font-weight: 600; }
+.tasks-check-list { display: grid; gap: 8px; margin-bottom: 10px; }
+.tasks-check-list label { display: flex; align-items: flex-start; gap: 10px; padding: 9px 10px; border: 1px solid #e0e5de; border-radius: 4px; cursor: pointer; }
+.tasks-check-list label:has(input:checked) { border-color: #147d73; background: #f2f7f1; }
+.tasks-check-list label:has(input:disabled) { cursor: not-allowed; opacity: .62; }
+.tasks-check-list input { margin-top: 3px; }
+.tasks-check-list span, .tasks-check-list small { display: block; }
+.tasks-conclusion { display: grid; grid-template-columns: minmax(0, 1fr) minmax(190px, 260px); gap: 24px; align-items: start; }
+.tasks-conclusion h2 { margin: 2px 0 8px; }
+.tasks-conclusion__action { display: grid; gap: 8px; }
+.tasks-page button:disabled, .tasks-page select:disabled, .tasks-page input:disabled { cursor: not-allowed; opacity: .6; }
+@media (max-width: 800px) {
+  .tasks-section-heading, .tasks-conclusion { grid-template-columns: 1fr; display: grid; }
+  .tasks-toolbar .field { min-width: min(100%, 220px); }
+}

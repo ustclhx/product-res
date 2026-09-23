@@ -1,0 +1,20 @@
+{
+  "id": "ebay-camping-v1",
+  "version": "1.0.0",
+  "name": "eBay 户外露营示例",
+  "channel": "EBAY",
+  "description": "面向 eBay 刊登和跨境履约的演示标准；阈值仅用于流程验证。",
+  "fields": [
+    {"key": "ebay_item_id", "label": "eBay Item ID", "required": false, "group": "商品身份"},
+    {"key": "moq", "label": "最小起订量", "required": true, "group": "供应"},
+    {"key": "procurement_cost", "label": "采购成本", "required": true, "group": "成本"},
+    {"key": "ebay_platform_fee", "label": "eBay 平台费", "required": false, "group": "成本"},
+    {"key": "cross_border_shipping", "label": "跨境物流成本", "required": false, "group": "成本"}
+  ],
+  "rules": [
+    {"field": "moq", "operator": "lte", "threshold": "160", "unit": "unit", "currency": null, "is_demo": true},
+    {"field": "procurement_cost", "operator": "lte", "threshold": "32.00", "unit": "item", "currency": "USD", "is_demo": true}
+  ],
+  "required_evidence": ["moq", "procurement_cost"],
+  "is_demo": true
+}

@@ -1,0 +1,21 @@
+{
+  "version": "camping-2026-09-20-v1",
+  "directions": ["户外露营", "露营", "camping", "outdoor camping"],
+  "channels": {
+    "AMAZON": [
+      {"title": "TrailNest 轻量双人露营帐篷", "external_id": "B0CAMP1001", "source_url": "https://example.invalid/amazon/B0CAMP1001", "source_ref": "amazon-demo-1"},
+      {"title": "CampGlow USB-C 可充电营灯", "external_id": "B0CAMP1002", "source_url": "https://example.invalid/amazon/B0CAMP1002", "source_ref": "amazon-demo-2"},
+      {"title": "RidgeRest 折叠露营桌", "external_id": "B0CAMP1003", "source_url": "https://example.invalid/amazon/B0CAMP1003", "source_ref": "amazon-demo-3"}
+    ],
+    "EBAY": [
+      {"title": "NorthPine 防风便携露营炉", "external_id": "EB-CAMP-2101", "source_url": "https://example.invalid/ebay/EB-CAMP-2101", "source_ref": "ebay-demo-1"},
+      {"title": "SummitFold 铝合金月亮椅", "external_id": "EB-CAMP-2102", "source_url": "https://example.invalid/ebay/EB-CAMP-2102", "source_ref": "ebay-demo-2"},
+      {"title": "DryTrail 20L 防水收纳袋", "external_id": "EB-CAMP-2103", "source_url": "https://example.invalid/ebay/EB-CAMP-2103", "source_ref": "ebay-demo-3"}
+    ],
+    "DTC": [
+      {"title": "WildHaven 模块化露营炊具套装", "external_id": "DTC-CAMP-3101", "source_url": "https://example.invalid/dtc/wildhaven-cookset", "source_ref": "dtc-demo-1"},
+      {"title": "Moss & Ember 营地氛围灯串", "external_id": "DTC-CAMP-3102", "source_url": "https://example.invalid/dtc/moss-ember-lights", "source_ref": "dtc-demo-2"},
+      {"title": "FieldKit 周末露营整理箱", "external_id": "DTC-CAMP-3103", "source_url": "https://example.invalid/dtc/fieldkit-crate", "source_ref": "dtc-demo-3"}
+    ]
+  }
+}

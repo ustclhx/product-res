@@ -1,0 +1,81 @@
+{
+  "candidate_id": "96d1f1a5-c746-430a-9d96-3292fccb1a07",
+  "job_id": "aba30835-22e1-4d51-86ae-46d09f79fc3a",
+  "state": "SUCCEEDED",
+  "error_code": null,
+  "stale": false,
+  "attempt_receipts": [
+    {
+      "id": "4a5ca554-c794-49cf-a852-5e9332800b1e",
+      "attempt_id": "8953f09e-9285-49f6-8fe5-d6e8028cbf81",
+      "job_id": "aba30835-22e1-4d51-86ae-46d09f79fc3a",
+      "candidate_id": "96d1f1a5-c746-430a-9d96-3292fccb1a07",
+      "project_id": "73806ec8-f4d6-49f8-a7e9-5c4757bcfed4",
+      "node_kind": "EVALUATION_ORGANIZER",
+      "model": "deepseek-v4-flash",
+      "input_bytes": 13044,
+      "input_tokens": 4218,
+      "output_tokens": 2511,
+      "total_tokens": 6729,
+      "elapsed_ms": 11910,
+      "max_output_tokens": 18000,
+      "max_total_tokens": 200000,
+      "finish_reason": "stop",
+      "request_id": null,
+      "cost": null,
+      "currency": null,
+      "outcome_status": "success",
+      "error_code": null,
+      "recorded_at": "2026-09-22T07:16:24.480559+00:00"
+    }
+  ],
+  "before_summary": {
+    "receipt_count": 0,
+    "unrecorded_attempt_count": 3,
+    "usage_known_count": 0,
+    "usage_partial_count": 0,
+    "usage_unknown_count": 0,
+    "input_tokens_known_sum": 0,
+    "output_tokens_known_sum": 0,
+    "total_tokens_known_sum": 0,
+    "cost_by_currency": []
+  },
+  "after_summary": {
+    "receipt_count": 1,
+    "unrecorded_attempt_count": 3,
+    "usage_known_count": 1,
+    "usage_partial_count": 0,
+    "usage_unknown_count": 0,
+    "input_tokens_known_sum": 4218,
+    "output_tokens_known_sum": 2511,
+    "total_tokens_known_sum": 6729,
+    "cost_by_currency": []
+  },
+  "runs": [
+    {
+      "id": "dd3d53f3-af00-4c22-b309-f8591223da15",
+      "kind": "EVIDENCE_CHECKLIST",
+      "is_stale": false,
+      "stale_reasons": []
+    },
+    {
+      "id": "c16f5845-0563-46a4-b084-0bb7418dadb8",
+      "kind": "EVIDENCE_CHECKLIST",
+      "is_stale": false,
+      "stale_reasons": []
+    },
+    {
+      "id": "626f51bc-888a-426b-87d6-36e799aa9110",
+      "kind": "EVALUATION_ORGANIZER",
+      "is_stale": false,
+      "stale_reasons": []
+    }
+  ],
+  "business_counts_unchanged": {
+    "evidence": 8,
+    "decisions": 0,
+    "evaluations": 0,
+    "tasks": 5
+  },
+  "criteria_unchanged": true
+}

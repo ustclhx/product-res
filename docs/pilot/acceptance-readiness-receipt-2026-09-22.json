@@ -1,0 +1,106 @@
+{
+  "deployed": true,
+  "health": {
+    "status": "ok",
+    "service": "product-res",
+    "mode": "pilot"
+  },
+  "backup": "/opt/product-res-pilot/backups/pre-readiness-20260922",
+  "api_image": "sha256:2fc5ac5cc42de25a12c7eb58ed059de3ee25b43c6efb97af7fd6636fa0314679",
+  "gateway_image": "sha256:77082ee7a8245ace95ac63a372d5abcb8a1599b1f004f96a9cb324bc6b808f96",
+  "workspace_checks": [
+    {
+      "workspace": "partner-team",
+      "business_records_unchanged": true,
+      "projects": 1,
+      "candidates": 2,
+      "source_quotas": [
+        {
+          "id": "dataforseo",
+          "request_limit": 10,
+          "requests_reserved": 1,
+          "requests_remaining": 9
+        },
+        {
+          "id": "serpapi",
+          "request_limit": 10,
+          "requests_reserved": 0,
+          "requests_remaining": 10
+        },
+        {
+          "id": "newapi",
+          "request_limit": 50,
+          "requests_reserved": 6,
+          "requests_remaining": 44
+        }
+      ],
+      "commercial_complete": 0,
+      "research_complete": 0,
+      "provenance": [
+        {
+          "candidate_id": "bd2fbb0a-9d1f-47dd-a09a-525db2a387e5",
+          "traceable": true
+        },
+        {
+          "candidate_id": "96d1f1a5-c746-430a-9d96-3292fccb1a07",
+          "traceable": true
+        }
+      ]
+    },
+    {
+      "workspace": "internal-dtc",
+      "business_records_unchanged": true,
+      "projects": 1,
+      "candidates": 1,
+      "source_quotas": [
+        {
+          "id": "dataforseo",
+          "request_limit": 10,
+          "requests_reserved": 0,
+          "requests_remaining": 10
+        },
+        {
+          "id": "serpapi",
+          "request_limit": 10,
+          "requests_reserved": 1,
+          "requests_remaining": 9
+        },
+        {
+          "id": "newapi",
+          "request_limit": 50,
+          "requests_reserved": 2,
+          "requests_remaining": 48
+        }
+      ],
+      "commercial_complete": 0,
+      "research_complete": 0,
+      "provenance": [
+        {
+          "candidate_id": "99f201bd-3795-4747-9fb4-457fb72fc010",
+          "traceable": true
+        }
+      ]
+    }
+  ],
+  "new_paid_queries": 0,
+  "tests": {
+    "backend": 195,
+    "frontend_unit": 5,
+    "pilot_browser": 7,
+    "demo_browser": 2
+  },
+  "tunnel_health": true,
+  "authenticated_route_smoke": {
+    "research": "ok",
+    "sourcing": "ok",
+    "history": "ok"
+  },
+  "tunnel_lifecycle": {
+    "temporary_port": 18082,
+    "start": true,
+    "status": true,
+    "restart": true,
+    "stop": true,
+    "temporary_tunnel_removed": true
+  }
+}

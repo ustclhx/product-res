@@ -1,0 +1,142 @@
+{
+  "date": "2026-09-21",
+  "workspace": "internal-dtc",
+  "project_id": "ab0ef942-3b67-4cfc-99ae-357670f7627b",
+  "criteria_id": "7fe09fe6-c341-446c-afe8-22a95aff5772",
+  "rules": [],
+  "required_evidence": [
+    "price",
+    "currency",
+    "procurement_cost",
+    "moq",
+    "vehicle_fitment"
+  ],
+  "candidate": {
+    "id": "99f201bd-3795-4747-9fb4-457fb72fc010",
+    "title": "Brightroom Large Seat Back Organizer Black No Edge Binding",
+    "business_status": "PREPARING",
+    "screening_status": "NEEDS_EVIDENCE",
+    "approval_id": null,
+    "current_evaluation_id": null
+  },
+  "nodes": [
+    {
+      "id": "7526c568-bf3c-4082-9ac5-a0173b9c2522",
+      "node_kind": "EVIDENCE_CHECKLIST",
+      "run_state": "SUCCEEDED",
+      "is_simulated": false,
+      "model": "deepseek-v4-flash",
+      "usage": {
+        "completion_tokens": 1644,
+        "known_cost": null,
+        "prompt_tokens": 3210,
+        "total_tokens": 4854
+      },
+      "adoption_status": "PENDING_REVIEW"
+    },
+    {
+      "id": "b5a17ba4-1f24-4c00-a675-ecb9108f9af3",
+      "node_kind": "EVALUATION_ORGANIZER",
+      "run_state": "SUCCEEDED",
+      "is_simulated": false,
+      "model": "deepseek-v4-flash",
+      "usage": {
+        "completion_tokens": 1426,
+        "known_cost": null,
+        "prompt_tokens": 3366,
+        "total_tokens": 4792
+      },
+      "adoption_status": "PENDING_REVIEW"
+    }
+  ],
+  "jobs": [
+    {
+      "id": "1748d8b0-40d7-462b-9356-412650bc9854",
+      "state": "SUCCEEDED",
+      "stale": false,
+      "adoptable": true,
+      "attempts": [
+        {
+          "state": "SUCCEEDED",
+          "started_at": "2026-09-21T07:57:17.451229+00:00",
+          "finished_at": "2026-09-21T07:57:25.949879+00:00"
+        }
+      ]
+    },
+    {
+      "id": "95d6dc44-0f6f-446f-b7c7-a5efc8127133",
+      "state": "SUCCEEDED",
+      "stale": false,
+      "adoptable": true,
+      "attempts": [
+        {
+          "state": "SUCCEEDED",
+          "started_at": "2026-09-21T07:57:46.085559+00:00",
+          "finished_at": "2026-09-21T07:57:53.037742+00:00"
+        }
+      ]
+    }
+  ],
+  "progress": {
+    "items": [
+      {
+        "candidate_id": "99f201bd-3795-4747-9fb4-457fb72fc010",
+        "title": "Brightroom Large Seat Back Organizer Black No Edge Binding",
+        "stages": {
+          "market_source": true,
+          "verified_evidence": false,
+          "model_draft": false,
+          "approval": false,
+          "validation": false,
+          "real_outcome": false,
+          "confirmed_feedback": false,
+          "next_project": false
+        },
+        "complete": false,
+        "outcome_ids": [],
+        "feedback_ids": []
+      }
+    ],
+    "completed_count": 0,
+    "effort_threshold": null,
+    "scope": "current_workspace",
+    "message": "测试数据不计入真实闭环；工时按实记录，不预设提升比例"
+  },
+  "provider_states": {
+    "items": [
+      {
+        "id": "dataforseo",
+        "label": "Amazon 美国站",
+        "status": "AUTHORIZATION_REQUIRED",
+        "channel": "AMAZON",
+        "market": "US",
+        "request_limit": 1,
+        "requests_reserved": 0,
+        "result_limit": 10,
+        "is_demo": false
+      },
+      {
+        "id": "serpapi",
+        "label": "Google Shopping 美国市场",
+        "status": "QUOTA_EXHAUSTED",
+        "channel": "DTC",
+        "market": "US",
+        "request_limit": 1,
+        "requests_reserved": 1,
+        "result_limit": 10,
+        "is_demo": false
+      },
+      {
+        "id": "newapi",
+        "label": "业务整理模型",
+        "status": "READY",
+        "channel": null,
+        "market": "US",
+        "request_limit": 5,
+        "requests_reserved": 2,
+        "result_limit": null,
+        "is_demo": false
+      }
+    ]
+  }
+}

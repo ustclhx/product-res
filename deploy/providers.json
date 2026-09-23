@@ -1,0 +1,32 @@
+{
+  "workspaces": {
+    "replace-with-workspace-uuid": {
+      "dataforseo": {
+        "secret_file": "/run/secrets/dataforseo",
+        "licensed": false,
+        "request_limit": 20,
+        "retention_days": 7
+      },
+      "serpapi": {
+        "secret_file": "/run/secrets/serpapi",
+        "licensed": false,
+        "request_limit": 20,
+        "retention_days": 7
+      },
+      "newapi": {
+        "secret_file": "/run/secrets/newapi",
+        "base_url": "http://host.docker.internal:3000/v1",
+        "trusted_hosts": [
+          "host.docker.internal"
+        ],
+        "model": "deepseek-v4-flash",
+        "request_limit": 50,
+        "timeout_seconds": 120,
+        "max_output_tokens": 18000,
+        "max_total_tokens": 200000,
+        "thinking_mode": "disabled",
+        "prompt_version": "newapi-prompt-v2-deepseek-nonthinking"
+      }
+    }
+  }
+}

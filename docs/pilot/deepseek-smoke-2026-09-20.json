@@ -1,0 +1,81 @@
+{
+  "test_type": "synthetic_three_node_live_smoke",
+  "stored_as_business_data": false,
+  "provider_channel_id": 1,
+  "configured_model": "deepseek-v4-flash",
+  "thinking_mode": "disabled",
+  "model_visible": true,
+  "nodes": [
+    {
+      "node": "EVIDENCE_CHECKLIST",
+      "status": "passed",
+      "usage": {
+        "prompt_tokens": 619,
+        "completion_tokens": 195,
+        "total_tokens": 814,
+        "known_cost": null
+      },
+      "provenance": {
+        "provider": "newapi",
+        "model": "deepseek-v4-flash",
+        "request_id": null,
+        "elapsed_ms": 2655,
+        "prompt_version": "newapi-prompt-v2-deepseek-nonthinking",
+        "schema_version": "assistant-output-v2",
+        "is_simulated": false
+      },
+      "fact_count": 0,
+      "citations_count": 0
+    },
+    {
+      "node": "EVALUATION_ORGANIZER",
+      "status": "passed",
+      "usage": {
+        "prompt_tokens": 775,
+        "completion_tokens": 431,
+        "total_tokens": 1206,
+        "known_cost": null
+      },
+      "provenance": {
+        "provider": "newapi",
+        "model": "deepseek-v4-flash",
+        "request_id": null,
+        "elapsed_ms": 2892,
+        "prompt_version": "newapi-prompt-v2-deepseek-nonthinking",
+        "schema_version": "assistant-output-v2",
+        "is_simulated": false
+      },
+      "fact_count": 0,
+      "citations_count": 0
+    },
+    {
+      "node": "OUTCOME_REVIEW",
+      "status": "passed",
+      "usage": {
+        "prompt_tokens": 698,
+        "completion_tokens": 232,
+        "total_tokens": 930,
+        "known_cost": null
+      },
+      "provenance": {
+        "provider": "newapi",
+        "model": "deepseek-v4-flash",
+        "request_id": null,
+        "elapsed_ms": 2688,
+        "prompt_version": "newapi-prompt-v2-deepseek-nonthinking",
+        "schema_version": "assistant-output-v2",
+        "is_simulated": false
+      },
+      "fact_count": 0,
+      "citations_count": 0
+    }
+  ],
+  "automatic_retry": false,
+  "passed": true,
+  "date": "2026-09-20",
+  "real_market_evidence_verified": false,
+  "real_business_loop_completed": false,
+  "gateway_log_verified_channel_id": 1,
+  "pilot_entry_enabled": true,
+  "post_deploy_four_accounts_model_status": "READY"
+}
