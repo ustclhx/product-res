@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const FRONTEND = "http://127.0.0.1:5175";
 const ADMIN_PASSWORD = "pilot-e2e-admin-password";
+const ADMIN_TEMP_PASSWORD = "pilot-e2e-admin-password-temporary";
 const WORKSPACES = ["Partner E2E Workspace", "Internal E2E Workspace"] as const;
 
 type WorkspaceChoice = { id: string; name: string };
@@ -141,5 +142,36 @@ test.describe.serial("pilot account administration", () => {
     await expect(page.getByRole("link", { name: "账号管理" })).toHaveCount(0);
     await expect(page.getByRole("combobox", { name: "工作区", exact: true }).locator("option")).toHaveCount(2);
     await logout(page);
+
+    // Exercise the administrator self-service flow last, then restore the
+    // shared pilot fixture password so later specs remain independent.
+    await login(page, "admin", ADMIN_PASSWORD, WORKSPACES[0]);
+    await expect(page.getByRole("link", { name: "修改密码" })).toBeVisible();
+    await page.goto("/admin/password");
+    await page.getByLabel("当前密码", { exact: true }).fill(ADMIN_PASSWORD);
+    await page.getByLabel("新密码", { exact: true }).fill(ADMIN_TEMP_PASSWORD);
+    await page.getByLabel("确认新密码", { exact: true }).fill(`${ADMIN_TEMP_PASSWORD}x`);
+    await page.getByRole("button", { name: "修改密码" }).click();
+    await expect(page.getByRole("alert")).toContainText("两次输入的新密码不一致");
+    await page.getByLabel("确认新密码", { exact: true }).fill(ADMIN_TEMP_PASSWORD);
+    await page.getByLabel("当前密码", { exact: true }).fill("wrong-administrator-password");
+    await page.getByRole("button", { name: "修改密码" }).click();
+    await expect(page.getByRole("alert")).toContainText(/当前密码错误/);
+    await page.getByLabel("当前密码", { exact: true }).fill(ADMIN_PASSWORD);
+    const changeResponse = page.waitForResponse(response => response.url().endsWith("/api/v1/admin/change-password") && response.request().method() === "POST");
+    await page.getByRole("button", { name: "修改密码" }).click();
+    expect((await changeResponse).status()).toBe(200);
+    await expect(page.getByRole("heading", { name: "登录选品工作台" })).toBeVisible();
+    await expect(page.getByRole("status")).toContainText("密码已修改，请使用新密码重新登录");
+    expect(await attemptLogin(page, "admin", ADMIN_PASSWORD)).toBe(401);
+    await login(page, "admin", ADMIN_TEMP_PASSWORD, WORKSPACES[0]);
+    await page.goto("/admin/password");
+    await page.getByLabel("当前密码", { exact: true }).fill(ADMIN_TEMP_PASSWORD);
+    await page.getByLabel("新密码", { exact: true }).fill(ADMIN_PASSWORD);
+    await page.getByLabel("确认新密码", { exact: true }).fill(ADMIN_PASSWORD);
+    const restoreResponse = page.waitForResponse(response => response.url().endsWith("/api/v1/admin/change-password") && response.request().method() === "POST");
+    await page.getByRole("button", { name: "修改密码" }).click();
+    expect((await restoreResponse).status()).toBe(200);
+    await expect(page.getByRole("heading", { name: "登录选品工作台" })).toBeVisible();
   });
 });

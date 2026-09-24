@@ -46,7 +46,9 @@ class WorkspaceRecord:
 
 
 class LoginCommand(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    # Passwords are opaque credentials. Username normalization happens at the
+    # authentication boundary; stripping every string here would mutate passwords.
+    model_config = ConfigDict(extra="forbid")
     username: str = Field(min_length=3, max_length=100)
     password: str = Field(min_length=1, max_length=1024)
     workspace_id: str | None = Field(default=None, min_length=1, max_length=100)
@@ -418,6 +420,7 @@ class AuthManager:
                 (str(uuid4()), normalized, remote_ip, now.isoformat(), int(valid)),
             )
             user_id = str(user["id"]) if user is not None else ""
+            user_version = int(user["version"]) if user is not None else 0
 
         if not valid:
             raise DomainError("INVALID_CREDENTIALS", "用户名或口令错误", 401)
@@ -437,7 +440,9 @@ class AuthManager:
         selected = next((item for item in workspaces if item["id"] == workspace_id), None)
         if selected is None:
             raise DomainError("WORKSPACE_ACCESS_DENIED", "无权访问该工作区", 403)
-        identity, token, csrf = self._create_session(user_id, workspace_id)
+        identity, token, csrf = self._create_session(
+            user_id, workspace_id, expected_user_version=user_version
+        )
         return identity, token, csrf, workspaces
 
     def authenticate(self, token: str | None) -> RequestIdentity:
@@ -494,11 +499,19 @@ class AuthManager:
         workspaces = self.control.list_user_workspaces(identity.user_id)
         if not any(item["id"] == workspace_id for item in workspaces):
             raise DomainError("WORKSPACE_ACCESS_DENIED", "无权访问该工作区", 403)
-        self.logout(identity.session_id)
-        new_identity, token, csrf = self._create_session(identity.user_id, workspace_id)
+        new_identity, token, csrf = self._create_session(
+            identity.user_id, workspace_id, source_session_id=identity.session_id
+        )
         return new_identity, token, csrf, workspaces
 
-    def _create_session(self, user_id: str, workspace_id: str) -> tuple[RequestIdentity, str, str]:
+    def _create_session(
+        self,
+        user_id: str,
+        workspace_id: str,
+        *,
+        expected_user_version: int | None = None,
+        source_session_id: str | None = None,
+    ) -> tuple[RequestIdentity, str, str]:
         now = self.clock()
         expires_at = now + timedelta(seconds=self.settings.session_ttl_seconds)
         session_id = str(uuid4())
@@ -508,7 +521,7 @@ class AuthManager:
             row = connection.execute(
                 """
                 SELECT u.id AS user_id,u.username,u.display_name,
-                       u.is_admin,
+                       u.is_admin,u.version,
                        w.id AS workspace_id,w.name AS workspace_name,w.slug AS workspace_slug,
                        m.role
                 FROM users u JOIN memberships m ON m.user_id=u.id
@@ -519,6 +532,22 @@ class AuthManager:
             ).fetchone()
             if row is None:
                 raise DomainError("WORKSPACE_ACCESS_DENIED", "无权访问该工作区", 403)
+            if expected_user_version is not None and int(row["version"]) != expected_user_version:
+                raise DomainError("INVALID_CREDENTIALS", "账号已更新，请重新登录", 401)
+            if source_session_id is not None:
+                source = connection.execute(
+                    """
+                    SELECT id FROM sessions WHERE id=? AND user_id=?
+                      AND revoked_at IS NULL AND expires_at>?
+                    """,
+                    (source_session_id, user_id, now.isoformat()),
+                ).fetchone()
+                if source is None:
+                    raise DomainError("SESSION_EXPIRED", "会话已失效，请重新登录", 401)
+                connection.execute(
+                    "UPDATE sessions SET revoked_at=? WHERE id=?",
+                    (now.isoformat(), source_session_id),
+                )
             connection.execute(
                 "INSERT INTO sessions VALUES (?,?,?,?,?,?,?,NULL)",
                 (

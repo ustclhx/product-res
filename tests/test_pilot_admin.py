@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import sqlite3
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
+import pytest
 from app.main import create_app
 from app.pilot.admin import bootstrap_admin
 from app.pilot.auth import ControlStore, verify_password
 from app.pilot.config import Settings
+from app.pilot.context import RequestIdentity
 from fastapi.testclient import TestClient
 
 ORIGIN = "http://localhost"
@@ -311,3 +314,246 @@ def test_admin_rejects_duplicates_invalid_memberships_and_self_lockout(tmp_path:
     )
     assert duplicate.status_code == 409
     assert duplicate.json()["error_code"] == "USERNAME_CONFLICT"
+
+
+def test_admin_changes_own_password_and_revokes_only_own_sessions(tmp_path: Path) -> None:
+    app = create_app(settings=_settings(tmp_path))
+    control: ControlStore = app.state.auth.control
+    workspace = control.init_workspace("primary", "Primary")
+    bootstrap = bootstrap_admin(control, "admin.user", "Admin")
+    client, csrf, _ = _login(app, "admin.user", bootstrap["password"], workspace.id)
+    second_admin_client, _second_csrf, _ = _login(
+        app, "admin.user", bootstrap["password"], workspace.id
+    )
+    member = control.create_user("member.user", "Member", "member-password")
+    control.add_member(workspace.id, "member.user", "analyst")
+    member_client, _member_csrf, _ = _login(
+        app, "member.user", "member-password", workspace.id
+    )
+
+    new_password = "  newer secret  "
+    changed = client.post(
+        "/api/v1/admin/change-password",
+        headers=_headers(csrf),
+        json={"current_password": bootstrap["password"], "new_password": new_password},
+    )
+    assert changed.status_code == 200, changed.text
+    assert changed.json() == {"password_changed": True}
+    assert new_password not in changed.text and "scrypt" not in changed.text
+    assert second_admin_client.get("/api/v1/auth/session").status_code == 401
+    assert member_client.get("/api/v1/auth/session").status_code == 200
+
+    old_login = TestClient(app).post(
+        "/api/v1/auth/login",
+        headers={"Origin": ORIGIN},
+        json={
+            "username": " admin.user ",
+            "password": bootstrap["password"],
+            "workspace_id": workspace.id,
+        },
+    )
+    assert old_login.status_code == 401
+    _login(app, " admin.user ", new_password, workspace.id)
+
+    with sqlite3.connect(control.path) as connection:
+        version, stored_hash = connection.execute(
+            "SELECT version,password_hash FROM users WHERE id=?", (bootstrap["account"]["id"],)
+        ).fetchone()
+        actions = connection.execute(
+            "SELECT action FROM control_audit WHERE target_user_id=? ORDER BY created_at,id",
+            (bootstrap["account"]["id"],),
+        ).fetchall()
+    assert version == 2
+    assert verify_password(new_password, stored_hash)
+    assert ("ACCOUNT_PASSWORD_CHANGED",) in actions
+    assert member["id"]
+
+
+def test_change_password_rejects_bad_credentials_permissions_and_invalid_payloads(
+    tmp_path: Path,
+) -> None:
+    app = create_app(settings=_settings(tmp_path))
+    control: ControlStore = app.state.auth.control
+    workspace = control.init_workspace("primary", "Primary")
+    bootstrap = bootstrap_admin(control, "admin.user", "Admin")
+    client, csrf, _ = _login(app, "admin.user", bootstrap["password"], workspace.id)
+
+    bad_current = client.post(
+        "/api/v1/admin/change-password",
+        headers=_headers(csrf),
+        json={"current_password": "wrong-password", "new_password": "new-password-123"},
+    )
+    assert bad_current.status_code == 400
+    assert bad_current.json() == {
+        "error_code": "CURRENT_PASSWORD_INVALID",
+        "message": "当前密码错误",
+        "details": {},
+    }
+    assert "wrong-password" not in bad_current.text
+
+    unchanged = client.post(
+        "/api/v1/admin/change-password",
+        headers=_headers(csrf),
+        json={
+            "current_password": bootstrap["password"],
+            "new_password": bootstrap["password"],
+        },
+    )
+    assert unchanged.status_code == 422
+    assert unchanged.json()["error_code"] == "PASSWORD_UNCHANGED"
+
+    for body in (
+        {"current_password": bootstrap["password"], "new_password": "short"},
+        {
+            "current_password": bootstrap["password"],
+            "new_password": "valid-password-123",
+            "user_id": bootstrap["account"]["id"],
+        },
+    ):
+        invalid = client.post(
+            "/api/v1/admin/change-password", headers=_headers(csrf), json=body
+        )
+        assert invalid.status_code == 422
+
+    missing_csrf = client.post(
+        "/api/v1/admin/change-password",
+        headers={"Origin": ORIGIN},
+        json={
+            "current_password": bootstrap["password"],
+            "new_password": "valid-password-123",
+        },
+    )
+    assert missing_csrf.status_code == 403
+    assert missing_csrf.json()["error_code"] == "CSRF_REJECTED"
+
+    member = control.create_user("member.user", "Member", "member-password")
+    control.add_member(workspace.id, "member.user", "analyst")
+    member_client, member_csrf, _ = _login(
+        app, "member.user", "member-password", workspace.id
+    )
+    forbidden = member_client.post(
+        "/api/v1/admin/change-password",
+        headers=_headers(member_csrf),
+        json={"current_password": "member-password", "new_password": "new-password-123"},
+    )
+    assert forbidden.status_code == 403
+    assert forbidden.json()["error_code"] == "ADMIN_REQUIRED"
+
+    with sqlite3.connect(control.path) as connection:
+        stored_hash, version = connection.execute(
+            "SELECT password_hash,version FROM users WHERE id=?",
+            (bootstrap["account"]["id"],),
+        ).fetchone()
+        rejected = connection.execute(
+            "SELECT COUNT(*) FROM control_audit WHERE action='ACCOUNT_PASSWORD_CHANGE_REJECTED'"
+        ).fetchone()[0]
+    assert verify_password(bootstrap["password"], stored_hash)
+    assert version == 1
+    assert rejected == 1
+    assert member["id"]
+
+
+def test_change_password_throttles_failures_and_rejects_revoked_session(tmp_path: Path) -> None:
+    settings = replace(_settings(tmp_path), login_max_failures=2)
+    app = create_app(settings=settings)
+    control: ControlStore = app.state.auth.control
+    workspace = control.init_workspace("primary", "Primary")
+    bootstrap = bootstrap_admin(control, "admin.user", "Admin")
+    client, csrf, _ = _login(app, "admin.user", bootstrap["password"], workspace.id)
+
+    statuses = []
+    for _ in range(2):
+        response = client.post(
+            "/api/v1/admin/change-password",
+            headers=_headers(csrf),
+            json={"current_password": "wrong-password", "new_password": "new-password-123"},
+        )
+        statuses.append((response.status_code, response.json()["error_code"]))
+    assert statuses == [(400, "CURRENT_PASSWORD_INVALID"), (429, "PASSWORD_CHANGE_THROTTLED")]
+    throttled = client.post(
+        "/api/v1/admin/change-password",
+        headers=_headers(csrf),
+        json={
+            "current_password": bootstrap["password"],
+            "new_password": "new-password-123",
+        },
+    )
+    assert throttled.status_code == 429
+    assert throttled.json()["error_code"] == "PASSWORD_CHANGE_THROTTLED"
+
+    authenticate = app.state.auth.authenticate
+
+    def authenticate_then_revoke(token: str | None):
+        identity = authenticate(token)
+        with control.transaction() as connection:
+            connection.execute(
+                "UPDATE sessions SET revoked_at=? WHERE id=?",
+                ("2026-01-01T00:00:00+00:00", identity.session_id),
+            )
+        return identity
+
+    app.state.auth.authenticate = authenticate_then_revoke
+    rejected = client.post(
+        "/api/v1/admin/change-password",
+        headers=_headers(csrf),
+        json={
+            "current_password": bootstrap["password"],
+            "new_password": "another-password-123",
+        },
+    )
+    assert rejected.status_code == 403
+    assert rejected.json()["error_code"] == "ADMIN_REQUIRED"
+
+
+@pytest.mark.parametrize("operation", ["login", "switch-workspace"])
+def test_password_change_blocks_in_flight_session_creation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, operation: str,
+) -> None:
+    app = create_app(settings=_settings(tmp_path))
+    manager = app.state.auth
+    control: ControlStore = manager.control
+    first = control.init_workspace("first", "First")
+    second = control.init_workspace("second", "Second")
+    bootstrap = bootstrap_admin(control, "admin.user", "Admin")
+    client, csrf, _ = _login(app, "admin.user", bootstrap["password"], first.id)
+    changer, changer_csrf, _ = _login(app, "admin.user", bootstrap["password"], first.id)
+    original_create = manager._create_session
+    changed = False
+
+    def change_before_create(
+        user_id: str, workspace_id: str, *, expected_user_version: int | None = None,
+        source_session_id: str | None = None,
+    ) -> tuple[RequestIdentity, str, str]:
+        nonlocal changed
+        if not changed:
+            changed = True
+            response = changer.post(
+                "/api/v1/admin/change-password", headers=_headers(changer_csrf),
+                json={"current_password": bootstrap["password"],
+                      "new_password": "new-concurrent-password"},
+            )
+            assert response.status_code == 200
+        return original_create(
+            user_id, workspace_id, expected_user_version=expected_user_version,
+            source_session_id=source_session_id,
+        )
+
+    monkeypatch.setattr(manager, "_create_session", change_before_create)
+    if operation == "login":
+        response = TestClient(app).post(
+            "/api/v1/auth/login", headers={"Origin": ORIGIN},
+            json={"username": "admin.user", "password": bootstrap["password"],
+                  "workspace_id": first.id},
+        )
+    else:
+        response = client.post(
+            "/api/v1/auth/switch-workspace", headers=_headers(csrf),
+            json={"workspace_id": second.id},
+        )
+    assert response.status_code == 401
+    with sqlite3.connect(control.path) as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM sessions WHERE user_id=? AND revoked_at IS NULL",
+            (bootstrap["account"]["id"],),
+        ).fetchone()[0] == 0
+    _login(app, "admin.user", "new-concurrent-password", second.id)

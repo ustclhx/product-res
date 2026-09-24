@@ -17,5 +17,7 @@
 .admin-credentials code { font-size: 15px; color: #174e48; background: white; padding: 8px 10px; border: 1px solid #c8ddd5; }
 .admin-credentials .form-actions { margin: 0; }
 .admin-self-note { margin-top: -8px; }
+.admin-password-page { max-width: 720px; }
+.admin-password-panel form { max-width: 520px; }
 @media(max-width:900px) { .admin-layout { grid-template-columns: 1fr; } }
 @media(max-width:560px) { .workspace-membership { grid-template-columns: 1fr; gap: 5px; } .workspace-membership select { width: 100%; } .admin-credentials { align-items: flex-start; flex-direction: column; } }

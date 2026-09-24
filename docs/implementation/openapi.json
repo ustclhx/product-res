@@ -441,6 +441,29 @@
         "title": "CSVPreviewCommand",
         "type": "object"
       },
+      "ChangePasswordCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "current_password": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Current Password",
+            "type": "string"
+          },
+          "new_password": {
+            "maxLength": 1024,
+            "minLength": 12,
+            "title": "New Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "current_password",
+          "new_password"
+        ],
+        "title": "ChangePasswordCommand",
+        "type": "object"
+      },
       "Command": {
         "additionalProperties": false,
         "properties": {
@@ -3787,6 +3810,51 @@
           }
         },
         "summary": "Reset Password",
+        "tags": [
+          "pilot-admin"
+        ]
+      }
+    },
+    "/api/v1/admin/change-password": {
+      "post": {
+        "operationId": "change_password_api_v1_admin_change_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response Change Password Api V1 Admin Change Password Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Password",
         "tags": [
           "pilot-admin"
         ]

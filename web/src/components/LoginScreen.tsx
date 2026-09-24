@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ApiError } from '../app/client';
 import { useWorkspace } from '../app/workspace';
 import type { PilotWorkspace } from '../app/workspaceContext';
@@ -10,6 +11,9 @@ function workspaceChoices(error: ApiError): PilotWorkspace[] {
 
 export function LoginScreen() {
   const { login } = useWorkspace();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const passwordChanged = (location.state as { passwordChanged?: boolean } | null)?.passwordChanged === true;
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [choices, setChoices] = useState<PilotWorkspace[]>([]);
@@ -19,7 +23,10 @@ export function LoginScreen() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy(true); setError('');
-    try { await login(username.trim(), password, workspaceId || undefined); }
+    try {
+      await login(username.trim(), password, workspaceId || undefined);
+      if (passwordChanged) void navigate('/', { replace: true, state: null });
+    }
     catch (reason) {
       if (reason instanceof ApiError && reason.code === 'WORKSPACE_SELECTION_REQUIRED') {
         const next = workspaceChoices(reason); setChoices(next); setWorkspaceId(next[0]?.id ?? '');
@@ -31,6 +38,7 @@ export function LoginScreen() {
   return <main className="login-page">
     <section className="login-panel" aria-labelledby="login-title">
       <div><p className="eyebrow">团队试点</p><h1 id="login-title">登录选品工作台</h1><p className="muted">登录后只会看到你所属工作区的项目、候选和任务。</p></div>
+      {passwordChanged && <div className="notice" role="status">密码已修改，请使用新密码重新登录。</div>}
       {error && <div className={choices.length ? 'notice' : 'error'} role="alert">{error}</div>}
       <form className="stack" onSubmit={(event) => void submit(event)}>
         <label className="field">账号<input autoComplete="username" value={username} onChange={event => { setUsername(event.target.value); setChoices([]); setWorkspaceId(''); }} required autoFocus /></label>

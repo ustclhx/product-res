@@ -4,14 +4,22 @@ from __future__ import annotations
 
 import secrets
 import sqlite3
+from datetime import timedelta
 from typing import Any, Literal
 from uuid import uuid4
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.core import DomainError
-from app.pilot.auth import ControlStore, _normalize_username, _utc_now, hash_password
+from app.pilot.auth import (
+    SESSION_COOKIE,
+    ControlStore,
+    _normalize_username,
+    _utc_now,
+    hash_password,
+    verify_password,
+)
 from app.pilot.context import RequestIdentity, current_identity
 
 router = APIRouter(prefix="/admin", tags=["pilot-admin"])
@@ -41,6 +49,12 @@ class UpdateAccountCommand(BaseModel):
 class ResetPasswordCommand(BaseModel):
     model_config = ConfigDict(extra="forbid")
     expected_version: int = Field(ge=1, strict=True)
+
+
+class ChangePasswordCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    current_password: str = Field(min_length=1, max_length=1024)
+    new_password: str = Field(min_length=12, max_length=1024)
 
 
 def bootstrap_admin(control: ControlStore, username: str, display_name: str) -> dict[str, Any]:
@@ -198,6 +212,75 @@ def reset_password(
     return {"account": account, "password": password}
 
 
+@router.post("/change-password")
+def change_password(
+    request: Request, response: Response, command: ChangePasswordCommand
+) -> dict[str, bool]:
+    actor = _required_admin()
+    manager = request.app.state.auth
+    now = manager.clock()
+    now_text = now.isoformat()
+    error: DomainError | None = None
+    with manager.control.transaction() as connection:
+        _require_current_admin_session(connection, actor, now_text)
+        current = connection.execute(
+            "SELECT password_hash,version FROM users WHERE id=?", (actor.user_id,)
+        ).fetchone()
+        assert current is not None
+        cutoff = (now - timedelta(seconds=manager.settings.login_window_seconds)).isoformat()
+        prior_failures = int(
+            connection.execute(
+                """
+                SELECT COUNT(*) FROM control_audit
+                WHERE target_user_id=? AND action='ACCOUNT_PASSWORD_CHANGE_REJECTED'
+                  AND created_at>=?
+                """,
+                (actor.user_id, cutoff),
+            ).fetchone()[0]
+        )
+        if prior_failures >= manager.settings.login_max_failures:
+            error = DomainError(
+                "PASSWORD_CHANGE_THROTTLED", "密码修改尝试过多，请稍后再试", 429
+            )
+        elif not verify_password(command.current_password, str(current["password_hash"])):
+            _audit(
+                connection,
+                actor.user_id,
+                "ACCOUNT_PASSWORD_CHANGE_REJECTED",
+                actor.user_id,
+                now_text,
+            )
+            if prior_failures + 1 >= manager.settings.login_max_failures:
+                error = DomainError(
+                    "PASSWORD_CHANGE_THROTTLED", "密码修改尝试过多，请稍后再试", 429
+                )
+            else:
+                error = DomainError("CURRENT_PASSWORD_INVALID", "当前密码错误", 400)
+        elif command.new_password == command.current_password:
+            error = DomainError("PASSWORD_UNCHANGED", "新密码不能与当前密码相同", 422)
+        else:
+            password_hash = hash_password(command.new_password)
+            connection.execute(
+                "UPDATE users SET password_hash=?,version=version+1 WHERE id=? AND version=?",
+                (password_hash, actor.user_id, int(current["version"])),
+            )
+            _revoke_sessions(connection, actor.user_id, now_text)
+            _audit(
+                connection,
+                actor.user_id,
+                "ACCOUNT_PASSWORD_CHANGED",
+                actor.user_id,
+                now_text,
+            )
+
+    if error is not None:
+        raise error
+    response.delete_cookie(
+        SESSION_COOKIE, path="/", secure=manager.settings.secure_cookie
+    )
+    return {"password_changed": True}
+
+
 def _required_admin() -> RequestIdentity:
     identity = current_identity()
     if identity is None:
@@ -208,15 +291,18 @@ def _required_admin() -> RequestIdentity:
 
 
 def _require_current_admin_session(
-    connection: sqlite3.Connection, identity: RequestIdentity
+    connection: sqlite3.Connection,
+    identity: RequestIdentity,
+    now: str | None = None,
 ) -> None:
+    now = now or _utc_now().isoformat()
     current = connection.execute(
         """
         SELECT 1 FROM users u JOIN sessions s ON s.user_id=u.id
         WHERE u.id=? AND u.active=1 AND u.is_admin=1
-          AND s.id=? AND s.revoked_at IS NULL
+          AND s.id=? AND s.revoked_at IS NULL AND s.expires_at>?
         """,
-        (identity.user_id, identity.session_id),
+        (identity.user_id, identity.session_id, now),
     ).fetchone()
     if current is None:
         raise DomainError("ADMIN_REQUIRED", "管理员会话已失效，请重新登录", 403)
