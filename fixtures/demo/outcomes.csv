@@ -1,3 +1,0 @@
-candidate_id,approval_id,sku,status,window_start,window_end,currency,units,revenue_basis,revenue,refunds,procurement,platform,fulfillment,advertising,other,source_locator,reason,is_demo
-candidate-amazon-approved,approval-amazon-v1,AMZ-CAMP-001,RECORDED,2026-08-01T00:00:00Z,2026-09-01T00:00:00Z,USD,120,GROSS,7200,360,3000,1080,720,600,180,demo:outcomes.csv:2,,true
-candidate-ebay-stopped,approval-ebay-v1,EBAY-CAMP-002,NOT_LAUNCHED,,,,,,,,,,,,,demo:outcomes.csv:3,Supplier sample failed the agreed durability test,true

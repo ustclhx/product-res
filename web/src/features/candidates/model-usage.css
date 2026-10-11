@@ -1,7 +1,0 @@
-.model-usage { padding: 10px 16px; }
-.model-usage__summary { display:flex; flex-wrap:wrap; gap:8px 18px; color:#43534b; font-size:13px; }
-.model-usage .table-scroll { margin-top:8px; }
-.model-usage table { min-width:850px; font-size:12px; }
-.model-usage th, .model-usage td { padding:9px 10px; }
-.model-usage > .muted { margin:8px 0 2px; font-size:12px; }
-@media(max-width:800px) { .model-usage__summary { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); } }
