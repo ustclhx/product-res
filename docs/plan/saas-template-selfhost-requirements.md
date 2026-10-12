@@ -1,6 +1,6 @@
 # saas-template 自托管部署模板需求（Docker Compose）
 
-更新：2026-10-13。提出方：product-res（eBay 跟卖选品平台）。实施方：saas-template。本文只描述需求和验收标准，具体技术选型由 saas-template 决定。
+更新：2026-10-12。提出方：product-res（eBay 跟卖选品平台）。实施方：saas-template。本文只描述需求和验收标准，具体技术选型由 saas-template 决定。
 
 ## 1. 目标
 
