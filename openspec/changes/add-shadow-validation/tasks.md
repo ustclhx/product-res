@@ -4,7 +4,7 @@
 
 ## 1. 纯函数
 
-- [ ] 1.1 `packages/selection` 增加：命中判定（含数据不足、季节高峰误差）、Wilson 下界、准备度等级、样本加权、L2 逻辑回归与 5 折交叉验证（design D2、D3、D5）。验证：spec 场景用例；回归在可分数据上收敛的测试。
+- [x] 1.1 `packages/selection` 增加：命中判定（含数据不足、季节高峰误差）、Wilson 下界、准备度等级、样本加权、L2 逻辑回归与 5 折交叉验证（design D2、D3、D5）。验证：spec 场景用例；回归在可分数据上收敛的测试。 证据：新增 `src/labels.ts`、`src/readiness.ts`、`src/fit.ts`，置信度接入“历史命中率”项；`test/labels.test.ts`（命中 45 件/跌 8%、10/30 天数据不足、季节误差、到期判断）、`test/readiness.test.ts`（Wilson 已知值、19 → 20 样本进入观察期并显示等级且置信度上限为中、无样本历史命中率为空）、`test/fit.test.ts`（可分数据收敛且交叉验证 AUC > 0.9、有效样本 < 50 拒绝拟合）；`pnpm --filter @product-res/selection test` 82 passed，`pnpm typecheck`、`pnpm check`、`pnpm check:deps` 通过。
 
 ## 2. 数据表与流水线
 
