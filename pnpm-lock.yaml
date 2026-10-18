@@ -308,6 +308,9 @@ importers:
       '@product-res/connectors':
         specifier: workspace:*
         version: link:../../packages/connectors
+      '@product-res/costing':
+        specifier: workspace:*
+        version: link:../../packages/costing
       '@product-res/credits':
         specifier: workspace:*
         version: link:../../packages/credits

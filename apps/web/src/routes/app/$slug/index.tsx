@@ -1,13 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { PagePlaceholder } from '../../../features/workbench/placeholder.tsx'
+import { getWorkbenchHome } from '../../../features/costing/decisions.functions.ts'
+import { WorkbenchHome } from '../../../features/costing/home-page.tsx'
 
 export const Route = createFileRoute('/app/$slug/')({
   head: () => ({ meta: [{ title: '工作台' }] }),
-  component: () => (
-    <PagePlaceholder
-      title="工作台"
-      milestone="M3"
-      description="待决定队列、节点倒计时、数据同步与额度状态、最近动态。"
-    />
-  ),
+  loader: ({ params }) => getWorkbenchHome({ data: { slug: params.slug } }),
+  staleTime: 0,
+  component: HomeRoute,
 })
+
+function HomeRoute() {
+  const { slug } = Route.useParams()
+  return <WorkbenchHome slug={slug} initial={Route.useLoaderData()} />
+}
