@@ -1,5 +1,5 @@
 import { Button, Input, Tag } from '@product-res/ui'
-import { useNavigate, useRouter } from '@tanstack/react-router'
+import { Link, useNavigate, useRouter } from '@tanstack/react-router'
 import { type FormEvent, Fragment, type ReactNode, useEffect, useState } from 'react'
 import { formatTime, Section, SimpleTable } from '../data-center/shared.tsx'
 import { marketplaceLabel } from '../follow/marketplaces.ts'
@@ -111,9 +111,32 @@ export function ArchivePage({
         )}
       </Section>
       <Section title="品类研究报告">
-        <EmptyState title="暂无品类研究报告">
-          品牌选品（品类洞察）上线后，研究报告会归档在这里。
-        </EmptyState>
+        {data.studies.length === 0 ? (
+          <EmptyState title="暂无品类研究报告">
+            在“品类洞察”中归档的研究报告会出现在这里。
+          </EmptyState>
+        ) : (
+          <SimpleTable head={['研究名称', '站点', '最近快照', '报告']}>
+            {data.studies.map((study) => (
+              <tr key={study.id} data-testid="archived-study-row">
+                <td className="px-3 py-2 font-medium">{study.name}</td>
+                <td className="px-3 py-2">{marketplaceLabel(study.marketplace)}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground">
+                  {study.latestSnapshotAt ? formatTime(study.latestSnapshotAt) : '暂无快照'}
+                </td>
+                <td className="px-3 py-2">
+                  <Link
+                    to="/app/$slug/category/$studyId"
+                    params={{ slug, studyId: study.id }}
+                    className="text-primary hover:underline"
+                  >
+                    查看报告
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </SimpleTable>
+        )}
       </Section>
     </div>
   )

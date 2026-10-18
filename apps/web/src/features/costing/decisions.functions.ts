@@ -43,10 +43,15 @@ export type ArchiveSearch = z.infer<typeof archiveFilters>
 export const getArchivePage = createServerFn({ method: 'GET' })
   .middleware([withWorkspace])
   .inputValidator(slug.extend({ filters: archiveFilters }))
-  .handler(async ({ context, data }) => ({
-    ...(await (await archive()).archivePage(actorOf(context), data.filters)),
-    canWrite: canWriteWorkbench(context),
-  }))
+  .handler(async ({ context, data }) => {
+    const actor = actorOf(context)
+    const [page, studies] = await Promise.all([
+      archive().then((m) => m.archivePage(actor, data.filters)),
+      // 品类研究归档（add-category-insight）：与决定档案同页展示
+      import('../category/category.server.ts').then((m) => m.listArchivedStudies(actor)),
+    ])
+    return { ...page, studies, canWrite: canWriteWorkbench(context) }
+  })
 
 export const getDecisionDetail = createServerFn({ method: 'GET' })
   .middleware([withWorkspace])

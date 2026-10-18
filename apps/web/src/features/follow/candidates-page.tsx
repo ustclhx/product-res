@@ -199,26 +199,21 @@ function columnsFor(slug: string, platform: Platform): DataTableColumn<Candidate
     sources: {
       id: 'sources',
       header: '来源',
+      className: 'whitespace-nowrap',
       cell: (item) =>
         item.sources.length === 0 ? (
           <span className="text-xs text-muted-foreground">—</span>
         ) : (
-          // 列表只显示前两个来源，其余折叠为 +n（悬浮看全部；详情页有完整来源对比）
+          // 列表只显示获取方式徽标（官方/估算/推算/导入，同方式去重），来源名称收进悬浮提示；详情页有完整来源对比
           <div
-            className="grid justify-items-start gap-1"
+            className="flex flex-wrap gap-1"
             title={item.sources.map((s) => s.label).join('、')}
+            data-testid="candidate-sources"
           >
-            {item.sources.slice(0, 2).map((s) => (
-              <SourceBadge
-                key={s.sourceId}
-                method={s.method}
-                source={s.label}
-                className="max-w-[112px] overflow-hidden"
-              />
+            {[...new Set(item.sources.map((s) => s.method))].map((method) => (
+              <SourceBadge key={method} method={method} />
             ))}
-            {item.sources.length > 2 ? (
-              <span className="text-xs text-muted-foreground">+{item.sources.length - 2}</span>
-            ) : null}
+            <span className="text-xs text-muted-foreground">{item.sources.length}</span>
           </div>
         ),
     },
