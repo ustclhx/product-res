@@ -2,6 +2,20 @@
 
 长任务开发过程中遇到的、需要你处理或拍板的事项集中记录在这里。每项写明：现状、需要你做什么、我先采用的默认做法（如有）。处理完可以直接删掉对应条目。
 
+## 进度总览（2026-10-19）
+
+| change | 状态 | 剩余（均需外部条件） |
+|---|---|---|
+| bootstrap-selection-workbench（M0） | 7/10 | 1.3 套餐与模型授权、3.1 团队账号、3.2 部署 —— 依赖 A 节 |
+| add-data-source-hub（M1a） | 完成 | — |
+| add-source-connectors（M1b） | 4/19 | 各数据源凭据核验与真实接入 —— 依赖 C 节 |
+| add-follow-selection（M2） | 11/12 | 5.2 真实数据跑一次 —— 依赖凭据 |
+| add-costing-decisions（M3） | 完成 | — |
+| add-category-insight（M4） | 7/8 | 4.2 评论数据来源 —— 依赖数据源核验 |
+| add-shadow-validation（M5） | 8/9 | 5.2 真实 Keepa 回放 —— 依赖凭据 |
+
+各验收记录见 `docs/receipts/m{2,3,4,5}-acceptance-2026-10-19.md`；截图在同名目录。全部提交在本地 main，**尚未推送**（推送会触发 CI；是否推送由你决定）。
+
 ## A. 部署（product.ezarouter.cc / 43.106.17.72）
 
 1. **DNS 写权限**：wrangler 的 OAuth 没有任何 DNS 写 scope，cloudflared 本机也没有登录凭据，所以 CLI 改不了 DNS。二选一：
