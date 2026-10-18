@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useState } from 'react'
 import { templateConfig } from '../../server/template-config.ts'
 import { authClient } from '../auth/auth-client.ts'
 import { NotificationCenter } from '../notifications/center.tsx'
+import { ThemeToggle } from '../theme/theme-toggle.tsx'
 import { type WorkspacePage, WorkspaceSwitcher } from '../workspace/components.tsx'
 import { activeNavKey, WORKBENCH_NAV } from './nav.ts'
 
@@ -99,6 +100,7 @@ function AccountMenu({ page }: { page: WorkspacePage }) {
           账号设置
         </a>
         <WorkspaceSwitcher page={page} />
+        <ThemeToggle className="px-1 py-1" />
         <SignOutButton />
       </div>
     </details>

@@ -202,6 +202,9 @@ importers:
       '@product-res/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@product-res/datasources':
+        specifier: workspace:*
+        version: link:../../packages/datasources
       '@product-res/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -211,6 +214,9 @@ importers:
       '@product-res/entitlements':
         specifier: workspace:*
         version: link:../../packages/entitlements
+      '@product-res/marketdata':
+        specifier: workspace:*
+        version: link:../../packages/marketdata
       '@product-res/platform':
         specifier: workspace:*
         version: link:../../packages/platform
@@ -296,6 +302,9 @@ importers:
       '@product-res/credits':
         specifier: workspace:*
         version: link:../../packages/credits
+      '@product-res/datasources':
+        specifier: workspace:*
+        version: link:../../packages/datasources
       '@product-res/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -305,6 +314,9 @@ importers:
       '@product-res/entitlements':
         specifier: workspace:*
         version: link:../../packages/entitlements
+      '@product-res/marketdata':
+        specifier: workspace:*
+        version: link:../../packages/marketdata
       '@product-res/platform':
         specifier: workspace:*
         version: link:../../packages/platform
@@ -585,6 +597,16 @@ importers:
         specifier: ^4.1.11
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@22.20.5)(happy-dom@20.14.5)(vite@8.3.2(@types/node@22.20.5)(esbuild@0.28.2))
 
+  packages/datasources:
+    dependencies:
+      '@product-res/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      vitest:
+        specifier: ^4.1.11
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@22.20.5)(happy-dom@20.14.5)(vite@8.3.2(@types/node@22.20.5)(esbuild@0.28.2))
+
   packages/db:
     dependencies:
       '@product-res/shared':
@@ -668,6 +690,31 @@ importers:
         specifier: ^0.45.3
         version: 0.45.3(@cloudflare/workers-types@5.20261002.1)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.29.6)(pg@8.20.0)(postgres@3.4.9)
     devDependencies:
+      vitest:
+        specifier: ^4.1.11
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@22.20.5)(happy-dom@20.14.5)(vite@8.3.2(@types/node@22.20.5)(esbuild@0.28.2))
+
+  packages/marketdata:
+    dependencies:
+      '@product-res/datasources':
+        specifier: workspace:*
+        version: link:../datasources
+      '@product-res/db':
+        specifier: workspace:*
+        version: link:../db
+      '@product-res/shared':
+        specifier: workspace:*
+        version: link:../shared
+      drizzle-orm:
+        specifier: ^0.45.3
+        version: 0.45.3(@cloudflare/workers-types@5.20261002.1)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.29.6)(pg@8.20.0)(postgres@3.4.9)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.5
+        version: 22.20.5
+      postgres:
+        specifier: ^3.4.9
+        version: 3.4.9
       vitest:
         specifier: ^4.1.11
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@22.20.5)(happy-dom@20.14.5)(vite@8.3.2(@types/node@22.20.5)(esbuild@0.28.2))

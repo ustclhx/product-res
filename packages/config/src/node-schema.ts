@@ -83,6 +83,8 @@ const nodeEnvBaseSchema = z.object({
     .optional(),
   BOOTSTRAP_ADMIN_EMAILS: z.string().optional(),
   SIGNUP_ALLOWED_EMAILS: z.string().optional(),
+  // 只在开发与验收时注册模拟数据源；生产不设置
+  DATASOURCE_MOCK: z.enum(['true', 'false']).optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: secret.optional(),
   GITHUB_CLIENT_ID: z.string().optional(),

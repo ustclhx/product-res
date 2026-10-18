@@ -111,3 +111,33 @@ export function loadNodeEnv(options: NodeEnvOptions = {}): NodeEnv {
     options.templateConfig ? nodeEnvSchemaFor(options.templateConfig) : nodeEnvSchema,
   )
 }
+
+/** 数据源凭据名前缀；只读取这些前缀的 NAME 或 NAME_FILE，未知名称不会触发文件读取 */
+const DATA_SOURCE_SECRET =
+  /^(EBAY|KEEPA|JUNGLESCOUT|SELLERSPRITE|HELIUM10|DATAFORSEO|SPAPI|FX)_[A-Z0-9_]+$/
+
+/**
+ * 读取数据源凭据（add-data-source-hub design D2）：优先 NAME，其次 NAME_FILE（去掉一个末尾换行）。
+ * 结果按名称缓存；未配置、文件不可读或为空都返回 undefined，由连接器核验报告“未配置”。
+ */
+export function createDataSourceSecrets(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+) {
+  const cache = new Map<string, string | undefined>()
+  return (name: string): string | undefined => {
+    if (!DATA_SOURCE_SECRET.test(name)) return undefined
+    if (cache.has(name)) return cache.get(name)
+    let value = env[name]
+    const file = env[`${name}_FILE`]
+    if (value === undefined && file) {
+      try {
+        value = readFileSync(file, 'utf8').replace(/\r?\n$/, '')
+      } catch {
+        value = undefined
+      }
+    }
+    const result = value ? value : undefined
+    cache.set(name, result)
+    return result
+  }
+}

@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { EnvValidationError } from './env.ts'
 import {
+  createDataSourceSecrets,
   loadNodeEnv,
   nodeEmailTransportConfig,
   nodeSecretNames,
@@ -477,5 +478,24 @@ describe('Node runtime config', () => {
     expect(result.stderr).toContain('DATABASE_URL')
     expect(result.stderr).not.toContain('private-invalid-input')
     expect(result.stdout).not.toContain('LISTENED')
+  })
+})
+
+describe('createDataSourceSecrets', () => {
+  it('只读取数据源前缀的凭据，支持 _FILE', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ds-secret-'))
+    const file = join(dir, 'keepa')
+    writeFileSync(file, 'keepa-key\n')
+    const secret = createDataSourceSecrets({
+      EBAY_CLIENT_ID: 'ebay-id',
+      KEEPA_API_KEY_FILE: file,
+      BETTER_AUTH_SECRET: 'not-a-datasource',
+      EBAY_EMPTY: '',
+    })
+    expect(secret('EBAY_CLIENT_ID')).toBe('ebay-id')
+    expect(secret('KEEPA_API_KEY')).toBe('keepa-key')
+    expect(secret('BETTER_AUTH_SECRET')).toBeUndefined()
+    expect(secret('EBAY_EMPTY')).toBeUndefined()
+    expect(secret('SPAPI_MISSING')).toBeUndefined()
   })
 })

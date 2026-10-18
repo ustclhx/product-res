@@ -29,6 +29,8 @@ vi.mock('@product-res/db', () => ({
   createDb: fixture.createDb,
   pingDatabase: fixture.pingDb,
 }))
+// 数据层装配有独立测试；这里只验证启动与停机顺序
+vi.mock('../src/datasources/node.ts', () => ({ registerNodeDataSources: vi.fn(async () => {}) }))
 vi.mock('../src/node/registration.ts', () => ({
   getNodeJobFeatures: () => ({ billing: false }),
   registerNodeJobsSchedules: (_scheduler: unknown, context: unknown) => {

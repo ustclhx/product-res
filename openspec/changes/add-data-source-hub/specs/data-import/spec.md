@@ -7,7 +7,7 @@
 ## ADDED Requirements
 
 ### Requirement: 文件上传与解析
-系统 SHALL 支持上传 CSV 和 Excel 文件，并让用户选择数据源和导入模板；Excel 有多个工作表时 SHALL 让用户选择工作表。上传的原文件 SHALL 被保存，作为导入数据的原始引用。
+系统 SHALL 支持上传 CSV 文件（以及 Excel 文件，Excel 有多个工作表时 SHALL 让用户选择工作表），并让用户选择数据源和导入模板。上传的原文件 SHALL 被保存，作为导入数据的原始引用。
 
 #### Scenario: 导入 Helium 10 导出
 - **WHEN** 上传一份 Helium 10 Black Box 导出的 CSV 并选择对应模板

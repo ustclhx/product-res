@@ -113,6 +113,13 @@
       "when": 1791826067918,
       "tag": "0015_node_job_scheduling",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792326376711,
+      "tag": "0016_marketdata",
+      "breakpoints": true
     }
   ]
 }

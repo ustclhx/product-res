@@ -50,11 +50,11 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   const { impersonation, announcement } = Route.useLoaderData()
-  // 后台侧栏与认证页脚自带控件，避免浮动控件遮挡正文。
+  // 后台侧栏、认证页脚与工作台账号菜单自带控件，避免浮动控件遮挡正文。
   const hasInlineControls = useRouterState({
     select: (state) =>
       state.matches.some((match) => match.routeId.startsWith('/(auth)/')) ||
-      /^\/admin(\/|$)/.test(state.location.pathname),
+      /^\/(admin|app\/[^/]+)(\/|$)/.test(state.location.pathname),
   })
   return (
     <RootDocument floatingControls={!hasInlineControls}>

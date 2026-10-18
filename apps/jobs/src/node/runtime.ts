@@ -18,6 +18,7 @@ import {
 import { log, newRequestId, withLogContext } from '@product-res/shared/log'
 import { createNodeStorage } from '@product-res/storage/node'
 import templateConfig from '../../../../template.config.ts'
+import { registerNodeDataSources } from '../datasources/node.ts'
 import { consumeJobsBatch, type JobsContext } from '../handlers.ts'
 import { type JobObserver, logJobObserver } from '../observer.ts'
 import { createNodeMediaHandler } from './media.ts'
@@ -150,6 +151,13 @@ export async function startNodeJobs(config: NodeEnv, options: NodeJobsOptions) {
         }
         scheduler = createNodeScheduler({ engine })
         dispose = registerNodeJobsSchedules(scheduler, context, template)
+        // 数据层（add-data-source-hub）：同步队列与每日维护
+        await registerNodeDataSources({
+          db,
+          queues,
+          scheduler,
+          mock: config.DATASOURCE_MOCK === 'true',
+        })
         await queues.prepare()
         await scheduler.prepare()
       },

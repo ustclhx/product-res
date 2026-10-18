@@ -1,0 +1,122 @@
+import { ConnectorError, classifyStatus } from './errors.ts'
+
+/** URL 中常见的凭据参数；请求摘要与日志中替换为 [REDACTED] */
+const SECRET_PARAMS =
+  /^(key|api_?key|access_?token|token|secret|client_?secret|password|sig|signature|auth)$/i
+
+/** 去掉 URL 中的凭据：用户信息与敏感查询参数 */
+export function redactUrl(raw: string): string {
+  let url: URL
+  try {
+    url = new URL(raw)
+  } catch {
+    return '[invalid-url]'
+  }
+  url.username = ''
+  url.password = ''
+  for (const name of [...url.searchParams.keys()])
+    if (SECRET_PARAMS.test(name)) url.searchParams.set(name, '[REDACTED]')
+  return url.toString()
+}
+
+export interface HttpRequest {
+  readonly method?: 'GET' | 'POST'
+  readonly url: string
+  readonly headers?: Readonly<Record<string, string>>
+  readonly body?: string
+  /** 默认 20 秒 */
+  readonly timeoutMs?: number
+  /** 响应体上限，默认 8 MiB；超过视为无效响应 */
+  readonly maxBytes?: number
+}
+
+export interface HttpResponse {
+  readonly status: number
+  readonly headers: Headers
+  readonly body: string
+  /** 已去掉凭据的请求摘要 */
+  readonly request: { readonly method: string; readonly url: string }
+}
+
+/**
+ * 外部 HTTP 请求的统一入口：超时、响应体上限、状态分类、凭据脱敏。
+ * 非 2xx 抛出 ConnectorError；调用方可传 classify 覆盖默认分类（例如把特定 429 判为额度耗尽）。
+ */
+export async function httpRequest(
+  fetchImpl: typeof fetch,
+  req: HttpRequest,
+  classify?: (status: number, body: string) => ConnectorError | null,
+): Promise<HttpResponse> {
+  const method = req.method ?? 'GET'
+  const summary = { method, url: redactUrl(req.url) }
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), req.timeoutMs ?? 20_000)
+  let response: Response
+  try {
+    response = await fetchImpl(req.url, {
+      method,
+      ...(req.headers ? { headers: req.headers } : {}),
+      ...(req.body === undefined ? {} : { body: req.body }),
+      signal: controller.signal,
+    })
+  } catch (error) {
+    clearTimeout(timer)
+    const aborted = error instanceof Error && error.name === 'AbortError'
+    throw new ConnectorError('retryable', aborted ? 'HTTP_TIMEOUT' : 'HTTP_NETWORK_ERROR', {
+      cause: error,
+    })
+  }
+  let body: string
+  try {
+    body = await readLimited(response, req.maxBytes ?? 8 * 1024 * 1024)
+  } finally {
+    clearTimeout(timer)
+  }
+  const custom = classify?.(response.status, body)
+  if (custom) throw custom
+  const kind = classifyStatus(response.status)
+  if (kind) throw new ConnectorError(kind, `HTTP_${response.status}`, { status: response.status })
+  return { status: response.status, headers: response.headers, body, request: summary }
+}
+
+async function readLimited(response: Response, maxBytes: number) {
+  const declared = Number(response.headers.get('content-length') ?? Number.NaN)
+  if (Number.isFinite(declared) && declared > maxBytes)
+    throw new ConnectorError('invalid-response', 'RESPONSE_TOO_LARGE', { status: response.status })
+  if (!response.body) return ''
+  const reader = response.body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    total += value.byteLength
+    if (total > maxBytes) {
+      await reader.cancel()
+      throw new ConnectorError('invalid-response', 'RESPONSE_TOO_LARGE', {
+        status: response.status,
+      })
+    }
+    chunks.push(value)
+  }
+  return new TextDecoder().decode(concat(chunks, total))
+}
+
+function concat(chunks: Uint8Array[], total: number) {
+  const out = new Uint8Array(total)
+  let offset = 0
+  for (const chunk of chunks) {
+    out.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return out
+}
+
+/** 解析 JSON 响应；失败时抛出 invalid-response，不把正文放进错误 */
+export function parseJson<T = unknown>(body: string): T {
+  try {
+    return JSON.parse(body) as T
+  } catch (error) {
+    throw new ConnectorError('invalid-response', 'INVALID_JSON', { cause: error })
+  }
+}
