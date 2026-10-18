@@ -21,6 +21,7 @@ import templateConfig from '../../../../template.config.ts'
 import { registerNodeDataSources } from '../datasources/node.ts'
 import { consumeJobsBatch, type JobsContext } from '../handlers.ts'
 import { type JobObserver, logJobObserver } from '../observer.ts'
+import { registerSelectionReview } from '../review/selection-review.ts'
 import { createNodeMediaHandler } from './media.ts'
 import { createNodeMediaWorkflowHttpHandler } from './media-http.ts'
 import { getNodeJobFeatures, registerNodeJobsSchedules } from './registration.ts'
@@ -158,6 +159,7 @@ export async function startNodeJobs(config: NodeEnv, options: NodeJobsOptions) {
           scheduler,
           mock: config.DATASOURCE_MOCK === 'true',
         })
+        registerSelectionReview(scheduler, db)
         await queues.prepare()
         await scheduler.prepare()
       },

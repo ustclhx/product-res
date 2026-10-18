@@ -1,5 +1,11 @@
 import { Button, cn, Input, Tag } from '@product-res/ui'
 import { type FormEvent, useState } from 'react'
+import {
+  type CostingSettingsData,
+  CostParamsTab,
+  LogisticsTab,
+  useCostingSettings,
+} from '../costing/settings-tabs.tsx'
 import { Section, SimpleTable } from '../data-center/shared.tsx'
 import {
   DIRECTION_MARKETPLACES,
@@ -41,21 +47,31 @@ const TABS = [
   ['nodes', '节点日历'],
   ['brands', '品牌库'],
   ['rules', '风险规则'],
-  ['logistics', '物流与成本'],
+  ['logistics', '物流方案'],
+  ['costs', '成本参数'],
 ] as const
 type Tab = (typeof TABS)[number][0]
 
-/** 设置页（docs/plan/selection-workbench.md §4）：节点日历、品牌库与风险规则；物流方案与成本参数在 M3 */
-export function ConfigPage({ slug, initial }: { slug: string; initial: ConfigData }) {
+/** 设置页（docs/plan/selection-workbench.md §4）：节点日历、品牌库、风险规则、物流方案与成本参数 */
+export function ConfigPage({
+  slug,
+  initial,
+  costing: costingInitial,
+}: {
+  slug: string
+  initial: ConfigData
+  costing: CostingSettingsData
+}) {
   const [tab, setTab] = useState<Tab>('nodes')
   const [data, setData] = useState(initial)
+  const costing = useCostingSettings(slug, costingInitial)
   const reload = async () => setData(await getConfigPage({ data: { slug } }))
   return (
     <div className="grid gap-4">
       <div className="grid gap-1">
         <h1 className="text-lg font-semibold">设置</h1>
         <p className="text-[13px] text-muted-foreground">
-          节点日历、品牌库与风险规则由团队维护，次日流水线起生效。
+          节点日历、品牌库、风险规则、物流方案与成本参数由团队维护，次日流水线起生效。
         </p>
       </div>
       <ReadOnlyNotice show={!data.canWrite} />
@@ -88,13 +104,10 @@ export function ConfigPage({ slug, initial }: { slug: string; initial: ConfigDat
         <RulesTab slug={slug} rows={data.rules} canWrite={data.canWrite} onChanged={reload} />
       ) : null}
       {tab === 'logistics' ? (
-        <Section title="物流方案与成本参数">
-          <p className="text-[13px] text-muted-foreground">
-            后续开放：物流方案（eBay 直发 / 海外仓、Amazon FBA 头程 / FBM
-            直发）与佣金、汇率、退货预留等成本参数随 M3
-            核算一起提供。在此之前，最晚决定日使用默认提前期，利润空间维度不计算。
-          </p>
-        </Section>
+        <LogisticsTab slug={slug} data={costing.data} onChanged={costing.reload} />
+      ) : null}
+      {tab === 'costs' ? (
+        <CostParamsTab slug={slug} data={costing.data} onChanged={costing.reload} />
       ) : null}
     </div>
   )

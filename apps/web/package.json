@@ -28,6 +28,7 @@
     "@product-res/billing": "workspace:*",
     "@product-res/config": "workspace:*",
     "@product-res/connectors": "workspace:*",
+    "@product-res/costing": "workspace:*",
     "@product-res/credits": "workspace:*",
     "@product-res/datasources": "workspace:*",
     "@product-res/db": "workspace:*",
