@@ -120,6 +120,13 @@
       "when": 1792326376711,
       "tag": "0016_marketdata",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792347032058,
+      "tag": "0017_selection",
+      "breakpoints": true
     }
   ]
 }

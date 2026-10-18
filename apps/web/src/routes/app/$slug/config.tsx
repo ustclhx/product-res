@@ -1,13 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { PagePlaceholder } from '../../../features/workbench/placeholder.tsx'
+import { getConfigPage } from '../../../features/config/config.functions.ts'
+import { ConfigPage } from '../../../features/config/config-page.tsx'
 
 export const Route = createFileRoute('/app/$slug/config')({
   head: () => ({ meta: [{ title: '设置' }] }),
-  component: () => (
-    <PagePlaceholder
-      title="设置"
-      milestone="M2"
-      description="物流方案、成本参数、节点日历、品牌库与风险规则。"
-    />
-  ),
+  loader: ({ params }) => getConfigPage({ data: { slug: params.slug } }),
+  staleTime: 0,
+  component: ConfigRoute,
 })
+
+function ConfigRoute() {
+  const { slug } = Route.useParams()
+  return <ConfigPage slug={slug} initial={Route.useLoaderData()} />
+}

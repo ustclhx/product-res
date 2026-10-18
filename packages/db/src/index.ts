@@ -29,6 +29,11 @@ export {
   workspaceColumnOf,
 } from './scoped.ts'
 export {
+  DEFAULT_SCORING_SETTING,
+  DEFAULT_US_NODES,
+  ensureSelectionDefaults,
+} from './selection-defaults.ts'
+export {
   dbSettingStore,
   getSetting,
   SETTING_CACHE_TTL_SECONDS,

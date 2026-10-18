@@ -10,9 +10,9 @@
 
 ## 2. 数据表与配置页面
 
-- [ ] 2.1 `packages/db/src/schema/selection.ts`：design D2 的全部表与迁移，预置美国节点与默认评分设置（种子迁移）。验证：迁移由 migrator 执行；`scoped()` 跨空间隔离测试。
-- [ ] 2.2 选品方向与店铺池页面（`/app/$slug/follow/directions`）与 server functions：增删改、停用、店铺推荐接受/拒绝。验证：写入权限（owner/admin、可写空间）测试；e2e 或组件测试。
-- [ ] 2.3 设置页（`/app/$slug/config`）：节点日历、品牌库、风险规则标签页。验证：增删改测试。
+- [x] 2.1 `packages/db/src/schema/selection.ts`：design D2 的全部表与迁移，预置美国节点与默认评分设置（种子迁移）。验证：迁移由 migrator 执行；`scoped()` 跨空间隔离测试。 证据：迁移 `packages/db/migrations/0017_selection.sql` 由 migrator（`db:migrate` 与集成测试 global-setup）执行；12 张表均带 `workspace_id` 并登记到 `no-unscoped-workspace-query.grit`；预置数据改为空间级 `ensureSelectionDefaults`（`src/selection-defaults.ts`，首次打开方向页 / 设置页时写入，不进迁移）；`packages/db/test/selection.test.ts`「select 只返回本空间的行」「用其他空间的 id 读写与不存在的记录一样返回 404」「批量更新与删除不影响其他空间」「插入时带入其他空间的 id 被拒绝」「首次写入美国节点与评分设置版本 1；并发和重复调用不重复写入」；db 测试 63/63 通过。
+- [x] 2.2 选品方向与店铺池页面（`/app/$slug/follow/directions`）与 server functions：增删改、停用、店铺推荐接受/拒绝。验证：写入权限（owner/admin、可写空间）测试；e2e 或组件测试。 证据：`apps/web/src/features/follow/directions.{functions,server}.ts`、`directions-page.tsx`，跟卖选品页加入口；`apps/web/test/follow-selection-config.test.ts`「增改停用删除；节点只接受本空间的 id；同名冲突」「已有商品簇的方向只能停用」「member 与只读空间不能写入」「种子添加、推荐接受 / 拒绝、拒绝后重新添加为种子」；`src/features/workbench/access.test.ts`；e2e `apps/web/e2e/follow-directions.spec.ts` 本地通过。
+- [x] 2.3 设置页（`/app/$slug/config`）：节点日历、品牌库、风险规则标签页。验证：增删改测试。 证据：`apps/web/src/features/config/`（物流与成本标签只有“后续开放”说明）；`apps/web/test/follow-selection-config.test.ts`「节点增删改；删除节点时从方向中移除关联；非法日期被拒绝」「品牌库增删改，同类型同平台不区分大小写去重」「风险规则增删改，需要类目或商品属性」（规则结构与 packages/risk 的 `RiskRule.match` 一致）；e2e 覆盖标签切换与品牌新增；web 测试 409 通过 / 32 跳过。
 
 ## 3. 流水线与持久化
 
