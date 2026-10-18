@@ -40,6 +40,52 @@ export {
   nextOccurrence,
   slackDays,
 } from './deadline.ts'
+export {
+  DEFAULT_FIT_OPTIONS,
+  type FitOptions,
+  type FitResult,
+  type FitSample,
+  fitWeights,
+  type RankingMetrics,
+  type WeightSuggestion,
+  weightedAuc,
+} from './fit.ts'
+export {
+  DEFAULT_HIT_CRITERIA,
+  dueWindows,
+  type HitCriteria,
+  LABEL_OUTCOME_LABELS,
+  LABEL_WINDOWS,
+  type LabelInput,
+  type LabelObservation,
+  type LabelOutcome,
+  type LabelResult,
+  type LabelWindow,
+  labelDueOn,
+  labelRecommendation,
+  type SeasonPeak,
+} from './labels.ts'
+export {
+  DEFAULT_READINESS_THRESHOLDS,
+  DEFAULT_SAMPLE_WEIGHTS,
+  evaluateReadiness,
+  type HistoryHitRate,
+  historyHitRateValue,
+  type LabeledSample,
+  type MonthlyHitRate,
+  READINESS_LABELS,
+  type ReadinessEvaluation,
+  type ReadinessLevelInput,
+  type ReadinessOptions,
+  type ReadinessStats,
+  type ReadinessThresholds,
+  readinessLevel,
+  readinessStats,
+  SAMPLE_KIND_LABELS,
+  type SampleKind,
+  type SampleWeights,
+  wilsonLowerBound,
+} from './readiness.ts'
 export * from './scales.ts'
 export {
   type CompositeResult,

@@ -1,11 +1,13 @@
 import { hoursBetween } from './dates.ts'
+import { type HistoryHitRate, historyHitRateValue } from './readiness.ts'
 import { clamp, coefficientOfVariation, mean } from './scales.ts'
 import { INTERNAL_SOURCES } from './signals.ts'
 import type { DimensionId, DimensionResult, Readiness } from './types.ts'
 
 /**
  * 单条线索的置信度（design D6，docs/plan/selection-workbench.md 第 11.1 节）。
- * M2 可算 8 项；成本确定性（M3）与历史命中率（M5）之后加入。每项 0–1，不可算时为 null 且不计入平均。
+ * M2 可算 8 项；历史命中率（M5）在调用方传入准备度统计时加入，成本确定性（M3）之后加入。
+ * 每项 0–1，不可算时为 null 且不计入平均。
  */
 
 export const CONFIDENCE_ITEMS = [
@@ -17,6 +19,7 @@ export const CONFIDENCE_ITEMS = [
   'season-stability',
   'time-slack',
   'competition-stability',
+  'history-hit-rate',
 ] as const
 export type ConfidenceItemId = (typeof CONFIDENCE_ITEMS)[number]
 
@@ -29,6 +32,7 @@ export const CONFIDENCE_LABELS: Readonly<Record<ConfidenceItemId, string>> = {
   'season-stability': '季节规律稳定性',
   'time-slack': '时间余量',
   'competition-stability': '竞争稳定性',
+  'history-hit-rate': '历史命中率',
 }
 
 /** 置信度常数 */
@@ -46,6 +50,8 @@ export const CONFIDENCE_SCALES = {
   /** 竞争稳定性：价格变异系数与卖家数增速的上限 */
   priceCvMax: 0.3,
   sellerGrowthMax: 0.5,
+  /** 历史命中率为空（无样本或样本不足）时总置信度乘以此系数：为空不按 0 计，但要降低总置信度 */
+  missingHistoryFactor: 0.9,
   /** 总置信度分档 */
   levels: { high: 0.7, medium: 0.4 },
   /** 高分低置信的综合分线 */
@@ -82,6 +88,8 @@ export interface ConfidenceInput {
   /** 最近一次成功同步时刻；省略时取维度输入中最新的 fetchedAt */
   readonly lastSyncedAt?: string | undefined
   readonly readiness?: Readiness | undefined
+  /** 同平台 × 方向 × 信号类型的已打标签样本统计；省略时不计算历史命中率项（M2 行为） */
+  readonly historyHitRate?: HistoryHitRate | undefined
 }
 
 export interface ConfidenceResult {
@@ -236,7 +244,17 @@ export function computeConfidence(input: ConfidenceInput): ConfidenceResult {
     note: compStability === null ? '没有价格或卖家数历史' : '按价格波动率与卖家数增速',
   })
 
-  const value = round(mean(items.map((i) => i.value).filter((v): v is number => v !== null)) ?? 0)
+  // ⑩ 历史命中率（Wilson 下界）
+  let factor = 1
+  if (input.historyHitRate !== undefined) {
+    const history = historyHitRateValue(input.historyHitRate)
+    items.push({ id: 'history-hit-rate', ...history })
+    if (history.value === null) factor = s.missingHistoryFactor
+  }
+
+  const value = round(
+    (mean(items.map((i) => i.value).filter((v): v is number => v !== null)) ?? 0) * factor,
+  )
   let level = confidenceLevel(value)
   // 观察期置信度上限为“中”（第 11.2 节）
   if (input.readiness === 'observation' && level === 'high') level = 'medium'
