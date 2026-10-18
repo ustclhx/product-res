@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据中心 — 高保真 UI</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue-1: #e6f4ff; --blue-2: #bae0ff; --blue-3: #91caff;
+    --blue-4: #69b1ff; --blue-5: #4096ff; --blue-6: #1677ff;
+    --blue-7: #0958d9; --blue-8: #003eb3;
+    --green-1: #f6ffed; --green-2: #d9f7be; --green-3: #b7eb8f;
+    --green-5: #73d13d; --green-6: #52c41a; --green-7: #389e0d;
+    --gold-1: #fffbe6; --gold-2: #fff1b8; --gold-3: #ffe58f;
+    --gold-5: #ffc53d; --gold-6: #faad14; --gold-7: #d48806;
+    --red-1: #fff2f0; --red-2: #ffccc7; --red-3: #ffa39e;
+    --red-5: #ff7a45; --red-6: #ff4d4f; --red-7: #cf1322;
+    --purple-1: #f9f0ff; --purple-5: #9254de; --purple-6: #722ed1;
+    --cyan-1: #e6fffb; --cyan-5: #36cfc9; --cyan-6: #13c2c2;
+
+    --gray-1: #ffffff; --gray-2: #fafafa; --gray-3: #f5f5f5;
+    --gray-4: #f0f0f0; --gray-5: #d9d9d9; --gray-6: #bfbfbf;
+    --gray-7: #8c8c8c; --gray-8: #595959; --gray-9: #434343;
+    --gray-10: #262626; --gray-11: #1f1f1f; --gray-12: #141414;
+    --gray-13: #000000;
+
+    --font-sans: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Menlo', monospace;
+
+    --shadow-xs: 0 1px 2px rgba(0,0,0,0.03);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+    --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.04);
+
+    --radius-sm: 6px; --radius: 8px; --radius-md: 10px;
+    --radius-lg: 12px; --radius-xl: 16px; --radius-2xl: 20px;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: var(--font-sans);
+    background: var(--gray-3);
+    color: var(--gray-10);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  /* ══════════════════════════════════════
+     APP SHELL
+     ══════════════════════════════════════ */
+  .app {
+    display: flex;
+    height: 100vh;
+  }
+
+  /* ─── Sidebar ─── */
+  .sidebar {
+    width: 220px;
+    background: linear-gradient(180deg, #001529 0%, #001a2e 100%);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    border-right: 1px solid rgba(255,255,255,0.06);
+  }
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 18px 16px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #1677ff 0%, #69b1ff 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(22,119,255,0.4);
+  }
+  .logo-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: -0.01em;
+  }
+  .logo-text span { color: rgba(255,255,255,0.4); font-weight: 400; font-size: 11px; display: block; margin-top: -2px; }
+
+  .sidebar-nav { flex: 1; padding: 4px 0; overflow-y: auto; }
+  .nav-section-label {
+    padding: 20px 18px 6px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.25);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 18px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    margin: 1px 8px;
+    border-radius: var(--radius-sm);
+  }
+  .nav-item:hover { color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.04); }
+  .nav-item.active {
+    color: #fff;
+    background: linear-gradient(90deg, var(--blue-6), var(--blue-5));
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(22,119,255,0.3);
+  }
+  .nav-item .nav-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--red-6);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 10px;
+    line-height: 1.5;
+  }
+
+  .sidebar-footer {
+    padding: 12px 18px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .user-avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #faad14, #fa8c16);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 12px; color: #fff; font-weight: 500; }
+  .user-role { font-size: 10px; color: rgba(255,255,255,0.35); }
+
+  /* ─── Main Area ─── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--gray-3);
+  }
+
+  /* Top Bar */
+  .topbar {
+    height: 52px;
+    background: #fff;
+    border-bottom: 1px solid var(--gray-4);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-xs);
+    z-index: 10;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--gray-7);
+  }
+  .breadcrumb a { color: var(--gray-7); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--blue-6); }
+  .breadcrumb .sep { color: var(--gray-5); }
+  .breadcrumb .current { color: var(--gray-10); font-weight: 500; }
+  .topbar-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .sync-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--gray-7);
+    padding: 4px 10px;
+    background: var(--green-1);
+    border-radius: 20px;
+    border: 1px solid var(--green-2);
+  }
+  .sync-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green-6);
+    animation: blink 2s infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .topbar-icon {
+    width: 32px; height: 32px;
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: var(--gray-7);
+    transition: all 0.15s;
+    position: relative;
+    font-size: 16px;
+  }
+  .topbar-icon:hover { background: var(--gray-3); color: var(--gray-10); }
+  .notif-dot {
+    position: absolute; top: 4px; right: 4px;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--red-6);
+    border: 1.5px solid #fff;
+  }
+
+  /* ─── Page Content ─── */
+  .page {
+    flex: 1;
+    padding: 20px 24px;
+    overflow-y: auto;
+  }
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gray-10);
+    letter-spacing: -0.02em;
+  }
+  .page-subtitle {
+    font-size: 13px;
+    color: var(--gray-7);
+    margin-top: 2px;
+  }
+  .page-actions { display: flex; gap: 8px; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--gray-5);
+    background: #fff;
+    color: var(--gray-8);
+    transition: all 0.15s;
+    font-family: var(--font-sans);
+    white-space: nowrap;
+    line-height: 1.4;
+  }
+  .btn:hover { border-color: var(--blue-5); color: var(--blue-6); }
+  .btn-primary {
+    background: var(--blue-6);
+    color: #fff;
+    border-color: var(--blue-6);
+    box-shadow: 0 2px 4px rgba(22,119,255,0.25);
+  }
+  .btn-primary:hover { background: var(--blue-5); border-color: var(--blue-5); color: #fff; }
+  .btn-sm { padding: 3px 10px; font-size: 12px; }
+  .btn-xs { padding: 2px 8px; font-size: 11px; border-radius: 4px; }
+  .btn-ghost { border-color: transparent; background: transparent; }
+  .btn-ghost:hover { background: var(--gray-3); }
+  .btn-success { background: var(--green-6); color: #fff; border-color: var(--green-6); }
+  .btn-success:hover { background: var(--green-5); border-color: var(--green-5); color: #fff; }
+
+  /* ══════════════════════════════════════
+     DATA CENTER LAYOUT
+     ══════════════════════════════════════ */
+  .dc-grid {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 16px;
+    height: calc(100vh - 140px);
+  }
+  .dc-main-col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .dc-main-col::-webkit-scrollbar { width: 4px; }
+  .dc-main-col::-webkit-scrollbar-thumb { background: var(--gray-5); border-radius: 4px; }
+
+  /* ─── Stat Cards ─── */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .stat-card {
+    background: #fff;
+    border-radius: var(--radius-md);
+    padding: 16px;
+    border: 1px solid var(--gray-4);
+    box-shadow: var(--shadow-xs);
+    transition: all 0.2s;
+  }
+  .stat-card:hover { box-shadow: var(--shadow-sm); border-color: var(--gray-5); }
+  .stat-label {
+    font-size: 12px;
+    color: var(--gray-7);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .stat-value {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--gray-10);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+  .stat-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .stat-trend.up { color: var(--green-7); }
+  .stat-trend.down { color: var(--red-7); }
+  .stat-trend.flat { color: var(--gray-7); }
+  .stat-sparkline { margin-top: 8px; }
+
+  /* ─── Data Sources ─── */
+  .sources-panel {
+    background: #fff;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-4);
+    box-shadow: var(--shadow-xs);
+    overflow: hidden;
+  }
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--gray-4);
+  }
+  .panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-10);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .source-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--gray-4);
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .source-item:last-child { border-bottom: none; }
+  .source-item:hover { background: var(--gray-2); }
+  .source-item.selected { background: var(--blue-1); }
+  .source-item.selected::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--blue-6);
+    border-radius: 0 3px 3px 0;
+  }
+
+  .source-icon {
+    width: 42px; height: 42px;
+    border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+    flex-shrink: 0;
+    letter-spacing: -0.02em;
+  }
+  .source-body { flex: 1; min-width: 0; }
+  .source-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 3px;
+  }
+  .source-name { font-size: 14px; font-weight: 600; color: var(--gray-10); }
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 1px 8px;
+    border-radius: 10px;
+  }
+  .status-badge.online { background: var(--green-1); color: var(--green-7); }
+  .status-badge.syncing { background: var(--blue-1); color: var(--blue-7); }
+  .status-badge.offline { background: var(--red-1); color: var(--red-7); }
+  .status-badge::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .source-desc {
+    font-size: 12px;
+    color: var(--gray-7);
+    margin-bottom: 6px;
+  }
+  .source-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  .field-chip {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 1px 7px;
+    background: var(--gray-3);
+    color: var(--gray-8);
+    border-radius: 4px;
+    border: 1px solid var(--gray-4);
+    line-height: 1.6;
+  }
+  .source-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 11px;
+    color: var(--gray-7);
+  }
+  .source-meta strong { color: var(--gray-9); font-weight: 600; }
+  .source-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .source-time {
+    font-size: 11px;
+    color: var(--gray-6);
+    white-space: nowrap;
+  }
+  .source-progress {
+    width: 48px; height: 48px;
+    position: relative;
+  }
+  .progress-ring {
+    transform: rotate(-90deg);
+  }
+  .progress-ring-bg { fill: none; stroke: var(--gray-4); stroke-width: 3; }
+  .progress-ring-fill { fill: none; stroke-width: 3; stroke-linecap: round; }
+  .progress-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--gray-9);
+  }
+
+  /* ─── Data Preview ─── */
+  .data-preview-panel {
+    background: #fff;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-4);
+    box-shadow: var(--shadow-xs);
+    overflow: hidden;
+  }
+  .preview-tabs {
+    display: flex;
+    gap: 0;
+    padding: 0 18px;
+    border-bottom: 1px solid var(--gray-4);
+  }
+  .preview-tab {
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--gray-7);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    font-weight: 500;
+  }
+  .preview-tab:hover { color: var(--gray-9); }
+  .preview-tab.active { color: var(--blue-6); border-bottom-color: var(--blue-6); }
+
+  .code-block {
+    background: #0d1117;
+    padding: 16px 18px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.65;
+    color: #e6edf3;
+    overflow-x: auto;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .code-block::-webkit-scrollbar { width: 4px; height: 4px; }
+  .code-block::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+  .ck { color: #8b949e; } /* comment */
+  .cs { color: #79c0ff; } /* string key */
+  .cv { color: #a5d6ff; } /* string value */
+  .cn { color: #f0883e; } /* number */
+  .cb { color: #d2a8ff; } /* boolean */
+  .cp { color: #e6edf3; } /* punctuation */
+  .cnull { color: #484f58; } /* null */
+
+  /* ─── Dimension Manager ─── */
+  .dim-panel {
+    background: #fff;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-4);
+    box-shadow: var(--shadow-xs);
+    overflow: hidden;
+  }
+  .dim-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--gray-4);
+    transition: background 0.15s;
+  }
+  .dim-item:last-child { border-bottom: none; }
+  .dim-item:hover { background: var(--gray-2); }
+  .dim-item.disabled { opacity: 0.45; }
+
+  .toggle {
+    width: 32px; height: 18px;
+    border-radius: 9px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--blue-6); }
+  .toggle.off { background: var(--gray-5); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    top: 2px;
+    transition: left 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle.on::after { left: 16px; }
+  .toggle.off::after { left: 2px; }
+
+  .dim-info { flex: 1; min-width: 0; }
+  .dim-name { font-size: 13px; font-weight: 500; color: var(--gray-10); }
+  .dim-name .tag {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 0 5px;
+    border-radius: 3px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .dim-name .tag-inverse { background: var(--gold-1); color: var(--gold-7); border: 1px solid var(--gold-3); }
+  .dim-name .tag-veto { background: var(--red-1); color: var(--red-7); border: 1px solid var(--red-2); }
+  .dim-source { font-size: 11px; color: var(--gray-6); margin-top: 1px; }
+
+  .dim-slider-wrap {
+    width: 100px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .dim-slider {
+    flex: 1;
+    height: 4px;
+    background: var(--gray-4);
+    border-radius: 2px;
+    position: relative;
+  }
+  .dim-slider-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--blue-6);
+  }
+  .dim-slider-thumb {
+    position: absolute;
+    top: 50%;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--blue-6);
+    transform: translate(-50%, -50%);
+    box-shadow: var(--shadow-sm);
+    cursor: grab;
+  }
+  .dim-pct {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-9);
+    min-width: 32px;
+    text-align: right;
+  }
+
+  .dim-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+    background: var(--gray-2);
+    border-top: 1px solid var(--gray-4);
+    font-size: 12px;
+    color: var(--gray-7);
+  }
+  .dim-footer strong { color: var(--gray-10); }
+
+  /* ══════════════════════════════════════
+     AI CHAT PANEL (RIGHT)
+     ══════════════════════════════════════ */
+  .chat-panel {
+    background: #fff;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-4);
+    box-shadow: var(--shadow-xs);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .chat-head {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--gray-4);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .chat-ai-avatar {
+    width: 32px; height: 32px;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, #1677ff, #69b1ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 15px;
+    box-shadow: 0 2px 8px rgba(22,119,255,0.25);
+  }
+  .chat-head-info { flex: 1; }
+  .chat-head-title { font-size: 14px; font-weight: 600; color: var(--gray-10); }
+  .chat-head-sub { font-size: 11px; color: var(--gray-6); display: flex; align-items: center; gap: 4px; }
+  .chat-head-sub .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green-6); }
+
+  .chat-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .chat-body::-webkit-scrollbar { width: 4px; }
+  .chat-body::-webkit-scrollbar-thumb { background: var(--gray-5); border-radius: 4px; }
+
+  .msg {
+    max-width: 92%;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .msg-user {
+    align-self: flex-end;
+    background: var(--blue-6);
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: var(--radius-lg) var(--radius-lg) 4px var(--radius-lg);
+    box-shadow: 0 2px 6px rgba(22,119,255,0.2);
+  }
+  .msg-ai {
+    align-self: flex-start;
+  }
+  .msg-ai-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .msg-ai-avatar {
+    width: 20px; height: 20px;
+    border-radius: 4px;
+    background: linear-gradient(135deg, #1677ff, #69b1ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 9px;
+  }
+  .msg-ai-name { font-size: 11px; color: var(--gray-6); font-weight: 500; }
+  .msg-ai-time { font-size: 10px; color: var(--gray-6); }
+  .msg-ai-content {
+    background: var(--gray-3);
+    padding: 10px 14px;
+    border-radius: 4px var(--radius-lg) var(--radius-lg) var(--radius-lg);
+    color: var(--gray-9);
+  }
+
+  /* Chart in chat */
+  .chat-chart {
+    background: #fff;
+    border: 1px solid var(--gray-4);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-top: 8px;
+    box-shadow: var(--shadow-xs);
+  }
+  .chat-chart-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-10);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .chat-chart-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .chat-insight {
+    font-size: 12px;
+    color: var(--gray-8);
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: var(--blue-1);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--blue-6);
+    line-height: 1.5;
+  }
+
+  /* Quick prompts */
+  .quick-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 0 16px 8px;
+  }
+  .quick-chip {
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 16px;
+    background: var(--gray-2);
+    color: var(--gray-8);
+    border: 1px solid var(--gray-4);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .quick-chip:hover {
+    border-color: var(--blue-5);
+    color: var(--blue-6);
+    background: var(--blue-1);
+  }
+
+  /* Chat input */
+  .chat-input-bar {
+    padding: 12px 16px;
+    border-top: 1px solid var(--gray-4);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+  }
+  .chat-input-wrap {
+    flex: 1;
+    position: relative;
+  }
+  .chat-input {
+    width: 100%;
+    border: 1.5px solid var(--gray-5);
+    border-radius: 22px;
+    padding: 8px 42px 8px 16px;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    outline: none;
+    color: var(--gray-10);
+    transition: border-color 0.15s;
+    background: var(--gray-2);
+  }
+  .chat-input::placeholder { color: var(--gray-6); }
+  .chat-input:focus { border-color: var(--blue-5); background: #fff; box-shadow: 0 0 0 3px rgba(22,119,255,0.08); }
+  .chat-send {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: var(--blue-6);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    box-shadow: 0 2px 4px rgba(22,119,255,0.3);
+  }
+  .chat-send:hover { background: var(--blue-5); transform: translateY(-50%) scale(1.05); }
+  .chat-attach {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--gray-5);
+    background: #fff;
+    color: var(--gray-7);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .chat-attach:hover { border-color: var(--blue-5); color: var(--blue-6); }
+
+  /* ─── Bubble chart (scatter) ─── */
+  .bubble-chart { position: relative; }
+  .bubble-tooltip {
+    position: absolute;
+    background: var(--gray-11);
+    color: #fff;
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 10;
+    box-shadow: var(--shadow-md);
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ═══ SIDEBAR ═══ -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">选</div>
+      <div class="logo-text">选品工作台<span>Selection Workbench</span></div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section-label">主导航</div>
+      <div class="nav-item"><span class="nav-icon">📊</span>工作台</div>
+      <div class="nav-item"><span class="nav-icon">📈</span>跟卖选品</div>
+      <div class="nav-item"><span class="nav-icon">💡</span>品牌选品</div>
+      <div class="nav-item"><span class="nav-icon">📋</span>评审中心<span class="nav-badge">3</span></div>
+      <div class="nav-item"><span class="nav-icon">📁</span>选品档案库</div>
+      <div class="nav-item active"><span class="nav-icon">🗄️</span>数据中心</div>
+
+      <div class="nav-section-label">系统</div>
+      <div class="nav-item"><span class="nav-icon">⚙️</span>设置</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-avatar">陈</div>
+      <div class="user-info">
+        <div class="user-name">陈琳</div>
+        <div class="user-role">选品专员</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main">
+    <!-- Top Bar -->
+    <div class="topbar">
+      <div class="breadcrumb">
+        <a href="#">数据中心</a>
+        <span class="sep">/</span>
+        <span class="current">数据接入与 AI 分析</span>
+      </div>
+      <div class="topbar-right">
+        <div class="sync-indicator">
+          <span class="sync-dot"></span>
+          数据延迟 &lt;2h · 正常
+        </div>
+        <div class="topbar-icon">🔔<span class="notif-dot"></span></div>
+      </div>
+    </div>
+
+    <!-- Page -->
+    <div class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">数据中心</div>
+          <div class="page-subtitle">管理外部数据源接入、预览数据格式、AI 智能分析与选品维度配置</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn"><span>📥</span> 导入数据</button>
+          <button class="btn btn-primary"><span>＋</span> 接入新数据源</button>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stat-row" style="margin-bottom:16px">
+        <div class="stat-card">
+          <div class="stat-label"><span>📦</span> 已接入数据源</div>
+          <div class="stat-value">3</div>
+          <div class="stat-trend flat">全部在线</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><span>📊</span> 数据总量</div>
+          <div class="stat-value">26,950</div>
+          <div class="stat-trend up">↑ 1,280 本周新增</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><span>🔄</span> 今日同步</div>
+          <div class="stat-value">142</div>
+          <div class="stat-trend flat">次</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><span>🤖</span> AI 分析调用</div>
+          <div class="stat-value">38</div>
+          <div class="stat-trend up">↑ 今日</div>
+        </div>
+      </div>
+
+      <!-- Main Grid -->
+      <div class="dc-grid">
+        <!-- ═══ LEFT COLUMN ═══ -->
+        <div class="dc-main-col">
+
+          <!-- Data Sources -->
+          <div class="sources-panel">
+            <div class="panel-header">
+              <div class="panel-title"><span>🔗</span> 已接入数据源</div>
+              <button class="btn btn-xs">管理连接</button>
+            </div>
+
+            <!-- Jungle Scout (selected) -->
+            <div class="source-item selected">
+              <div class="source-icon" style="background:linear-gradient(135deg,#2e7d32,#66bb6a);color:#fff">JS</div>
+              <div class="source-body">
+                <div class="source-head">
+                  <span class="source-name">Jungle Scout</span>
+                  <span class="status-badge online">已连接</span>
+                </div>
+                <div class="source-desc">Amazon 选品数据库 · 销量估算 · 关键词研究 · 竞品追踪 · Niche Hunter</div>
+                <div class="source-fields">
+                  <span class="field-chip">asin</span>
+                  <span class="field-chip">title</span>
+                  <span class="field-chip">price</span>
+                  <span class="field-chip">monthly_sales</span>
+                  <span class="field-chip">bsr_rank</span>
+                  <span class="field-chip">review_count</span>
+                  <span class="field-chip">rating</span>
+                  <span class="field-chip">revenue_estimate</span>
+                  <span class="field-chip">category</span>
+                  <span class="field-chip">listing_quality</span>
+                  <span class="field-chip" style="color:var(--blue-6);border-color:var(--blue-3)">+ 8</span>
+                </div>
+                <div class="source-meta">
+                  <span>📦 <strong>12,480</strong> 条</span>
+                  <span>🔄 每 6 小时</span>
+                  <span>📊 23 个品类</span>
+                </div>
+              </div>
+              <div class="source-right">
+                <span class="source-time">15 分钟前</span>
+                <div class="source-progress">
+                  <svg width="48" height="48" viewBox="0 0 48 48" class="progress-ring">
+                    <circle cx="24" cy="24" r="20" class="progress-ring-bg"/>
+                    <circle cx="24" cy="24" r="20" class="progress-ring-fill" stroke="var(--green-6)"
+                      stroke-dasharray="125.6" stroke-dashoffset="12.56"/>
+                  </svg>
+                  <div class="progress-label">90%</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Helium 10 -->
+            <div class="source-item">
+              <div class="source-icon" style="background:linear-gradient(135deg,#1565c0,#42a5f5);color:#fff">H10</div>
+              <div class="source-body">
+                <div class="source-head">
+                  <span class="source-name">Helium 10</span>
+                  <span class="status-badge online">已连接</span>
+                </div>
+                <div class="source-desc">Cerebro 关键词反查 · Magnet 扩展 · 市场趋势 · Listing Analyzer</div>
+                <div class="source-fields">
+                  <span class="field-chip">keyword</span>
+                  <span class="field-chip">search_volume</span>
+                  <span class="field-chip">clicks</span>
+                  <span class="field-chip">competitor_asin</span>
+                  <span class="field-chip">keyword_rank</span>
+                  <span class="field-chip">cpc_bid</span>
+                  <span class="field-chip">trend_12m</span>
+                  <span class="field-chip">seasonality</span>
+                  <span class="field-chip" style="color:var(--blue-6);border-color:var(--blue-3)">+ 6</span>
+                </div>
+                <div class="source-meta">
+                  <span>📦 <strong>8,350</strong> 条</span>
+                  <span>🔄 每 12 小时</span>
+                  <span>🔑 45k+ 关键词</span>
+                </div>
+              </div>
+              <div class="source-right">
+                <span class="source-time">1 小时前</span>
+                <div class="source-progress">
+                  <svg width="48" height="48" viewBox="0 0 48 48" class="progress-ring">
+                    <circle cx="24" cy="24" r="20" class="progress-ring-bg"/>
+                    <circle cx="24" cy="24" r="20" class="progress-ring-fill" stroke="var(--blue-6)"
+                      stroke-dasharray="125.6" stroke-dashoffset="37.68"/>
+                  </svg>
+                  <div class="progress-label">70%</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SellerSprite -->
+            <div class="source-item">
+              <div class="source-icon" style="background:linear-gradient(135deg,#e65100,#ff9800);color:#fff">SS</div>
+              <div class="source-body">
+                <div class="source-head">
+                  <span class="source-name">卖家精灵 SellerSprite</span>
+                  <span class="status-badge syncing">同步中</span>
+                </div>
+                <div class="source-desc">中国卖家友好 · 关键词挖掘 · 竞品监控 · 市场选品报告 · 供应链</div>
+                <div class="source-fields">
+                  <span class="field-chip">asin</span>
+                  <span class="field-chip">product_name</span>
+                  <span class="field-chip">price_cny</span>
+                  <span class="field-chip">sales_rank</span>
+                  <span class="field-chip">new_sellers_30d</span>
+                  <span class="field-chip">avg_price</span>
+                  <span class="field-chip">profit_margin</span>
+                  <span class="field-chip">supplier_count</span>
+                  <span class="field-chip" style="color:var(--blue-6);border-color:var(--blue-3)">+ 5</span>
+                </div>
+                <div class="source-meta">
+                  <span>📦 <strong>6,120</strong> 条</span>
+                  <span>🔄 每 6 小时</span>
+                  <span>🏭 含供应链</span>
+                </div>
+              </div>
+              <div class="source-right">
+                <span class="source-time" style="color:var(--blue-6)">同步中...</span>
+                <div class="source-progress">
+                  <svg width="48" height="48" viewBox="0 0 48 48" class="progress-ring">
+                    <circle cx="24" cy="24" r="20" class="progress-ring-bg"/>
+                    <circle cx="24" cy="24" r="20" class="progress-ring-fill" stroke="var(--gold-6)"
+                      stroke-dasharray="125.6" stroke-dashoffset="50.24"/>
+                  </svg>
+                  <div class="progress-label">60%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Data Preview -->
+          <div class="data-preview-panel">
+            <div class="panel-header" style="border-bottom:none;padding-bottom:0">
+              <div class="panel-title"><span>📄</span> 数据格式预览<span style="font-size:11px;color:var(--gray-6);font-weight:400;margin-left:8px">Jungle Scout — ASIN B0CX4KQ892</span></div>
+              <div style="display:flex;gap:4px">
+                <button class="btn btn-xs">📋 复制</button>
+                <button class="btn btn-xs">📥 下载</button>
+              </div>
+            </div>
+            <div class="preview-tabs">
+              <div class="preview-tab active">JSON</div>
+              <div class="preview-tab">Table</div>
+              <div class="preview-tab">Schema</div>
+              <div class="preview-tab">Raw Response</div>
+            </div>
+            <div class="code-block"><pre><span class="cp">{</span>
+  <span class="cs">"source"</span><span class="cp">:</span>         <span class="cv">"jungle_scout"</span><span class="cp">,</span>
+  <span class="cs">"asin"</span><span class="cp">:</span>           <span class="cv">"B0CX4KQ892"</span><span class="cp">,</span>
+  <span class="cs">"title"</span><span class="cp">:</span>          <span class="cv">"Slow Feeder Dog Bowl, Anti-Gulping Pet Dish"</span><span class="cp">,</span>
+  <span class="cs">"price"</span><span class="cp">:</span>          <span class="cn">18.99</span><span class="cp">,</span>            <span class="ck">// USD</span>
+  <span class="cs">"monthly_sales"</span><span class="cp">:</span>  <span class="cn">3240</span><span class="cp">,</span>             <span class="ck">// 估算月销量</span>
+  <span class="cs">"bsr_rank"</span><span class="cp">:</span>       <span class="cn">12</span><span class="cp">,</span>               <span class="ck">// Best Seller Rank</span>
+  <span class="cs">"bsr_category"</span><span class="cp">:</span>   <span class="cv">"Pet Supplies"</span><span class="cp">,</span>
+  <span class="cs">"review_count"</span><span class="cp">:</span>   <span class="cn">1847</span><span class="cp">,</span>
+  <span class="cs">"rating"</span><span class="cp">:</span>         <span class="cn">4.6</span><span class="cp">,</span>
+  <span class="cs">"revenue_estimate"</span><span class="cp">:</span> <span class="cn">61527.60</span><span class="cp">,</span>      <span class="ck">// 估算月收入</span>
+  <span class="cs">"seller_type"</span><span class="cp">:</span>    <span class="cv">"FBA"</span><span class="cp">,</span>
+  <span class="cs">"listing_quality_score"</span><span class="cp">:</span> <span class="cn">78</span><span class="cp">,</span>     <span class="ck">// LQS 0-100</span>
+  <span class="cs">"new_sellers_30d"</span><span class="cp">:</span> <span class="cn">12</span><span class="cp">,</span>             <span class="ck">// 近30天新入场卖家</span>
+  <span class="cs">"sales_trend_6m"</span><span class="cp">:</span> <span class="cv">"upward"</span><span class="cp">,</span>
+  <span class="cs">"competition_level"</span><span class="cp">:</span> <span class="cv">"low"</span><span class="cp">,</span>
+  <span class="cs">"images_count"</span><span class="cp">:</span>   <span class="cn">7</span><span class="cp">,</span>
+  <span class="cs">"bullet_points"</span><span class="cp">:</span>  <span class="cn">5</span><span class="cp">,</span>
+  <span class="cs">"is_amazon_choice"</span><span class="cp">:</span> <span class="cb">true</span><span class="cp">,</span>
+  <span class="cs">"last_synced"</span><span class="cp">:</span>   <span class="cv">"2026-10-13T08:00:00Z"</span>
+<span class="cp">}</span>
+<span class="ck">// 共 19 个字段 · API: Product Database v3 · 下次同步 14:00 CST</span></pre></div>
+          </div>
+
+          <!-- Dimension Manager -->
+          <div class="dim-panel">
+            <div class="panel-header">
+              <div class="panel-title"><span>🎯</span> 选品评分维度管理<span style="font-size:11px;color:var(--gray-6);font-weight:400;margin-left:8px">配置评分卡维度与权重</span></div>
+              <button class="btn btn-sm btn-primary">＋ 添加维度</button>
+            </div>
+            <div style="padding:8px 18px;font-size:12px;color:var(--gray-6);border-bottom:1px solid var(--gray-4);background:var(--gray-2)">
+              调整后将影响所有新的选品评估，已有评估记录不受影响。维度来源与第三方数据源自动关联。
+            </div>
+
+            <div class="dim-item">
+              <div class="toggle on"></div>
+              <div class="dim-info">
+                <div class="dim-name">市场容量</div>
+                <div class="dim-source">数据来源：Jungle Scout + Helium 10</div>
+              </div>
+              <div class="dim-slider-wrap">
+                <div class="dim-slider">
+                  <div class="dim-slider-fill" style="width:80%"></div>
+                  <div class="dim-slider-thumb" style="left:80%"></div>
+                </div>
+                <span class="dim-pct">20%</span>
+              </div>
+            </div>
+
+            <div class="dim-item">
+              <div class="toggle on"></div>
+              <div class="dim-info">
+                <div class="dim-name">利润空间</div>
+                <div class="dim-source">数据来源：SellerSprite 供应链数据</div>
+              </div>
+              <div class="dim-slider-wrap">
+                <div class="dim-slider">
+                  <div class="dim-slider-fill" style="width:80%"></div>
+                  <div class="dim-slider-thumb" style="left:80%"></div>
+                </div>
+                <span class="dim-pct">20%</span>
+              </div>
+            </div>
+
+            <div class="dim-item">
+              <div class="toggle on"></div>
+              <div class="dim-info">
+                <div class="dim-name">竞争强度<span class="tag tag-inverse">反向</span></div>
+                <div class="dim-source">数据来源：Jungle Scout · 竞争度越低评分越高</div>
+              </div>
+              <div class="dim-slider-wrap">
+                <div class="dim-slider">
+                  <div class="dim-slider-fill" style="width:60%;background:var(--gold-6)"></div>
+                  <div class="dim-slider-thumb" style="left:60%;border-color:var(--gold-6)"></div>
+                </div>
+                <span class="dim-pct">15%</span>
+              </div>
+            </div>
+
+            <div class="dim-item">
+              <div class="toggle on"></div>
+              <div class="dim-info">
+                <div class="dim-name">增长趋势</div>
+                <div class="dim-source">数据来源：Helium 10 关键词趋势</div>
+              </div>
+              <div class="dim-slider-wrap">
+                <div class="dim-slider">
+                  <div class="dim-slider-fill" style="width:60%"></div>
+                  <div class="dim-slider-thumb" style="left:60%"></div>
+                </div>
+                <span class="dim-pct">15%</span>
+              </div>
+            </div>
+
+            <div class="dim-item">
+              <div class="toggle on"></div>
+              <div class="dim-info">
+                <div class="dim-name">供应链难度<span class="tag tag-inverse">反向</span></div>
+                <div class="dim-source">数据来源：SellerSprite · 1688 供应商数量</div>
+              </div>
+              <div class="dim-slider-wrap">
+                <div class="dim-slider">
+                  <div class="dim-slider-fill" style="width:60%;background:var(--gold-6)"></div>
+                  <div class="dim-slider-thumb" style="left:60%;border-color:var(--gold-6)"></div>
+                </div>
+                <span class="dim-pct">15%</span>
+              </div>
+            </div>
+
+            <div class="dim-item">
+              <div class="toggle on"></div>
+              <div class="dim-info">
+                <div class="dim-name">合规风险<span class="tag tag-veto">一票否决</span></div>
+                <div class="dim-source">数据来源：Jungle Scout + 人工审核 · 低于阈值直接否决</div>
+              </div>
+              <div class="dim-slider-wrap">
+                <div class="dim-slider">
+                  <div class="dim-slider-fill" style="width:60%;background:var(--red-6)"></div>
+                  <div class="dim-slider-thumb" style="left:60%;border-color:var(--red-6)"></div>
+                </div>
+                <span class="dim-pct">15%</span>
+              </div>
+            </div>
+
+            <div class="dim-item disabled">
+              <div class="toggle off"></div>
+              <div class="dim-info">
+                <div class="dim-name" style="text-decoration:line-through;color:var(--gray-6)">品牌壁垒</div>
+                <div class="dim-source">待接入 · 需专利/商标数据库支持</div>
+              </div>
+              <div class="dim-slider-wrap">
+                <div class="dim-slider">
+                  <div class="dim-slider-fill" style="width:0%"></div>
+                </div>
+                <span class="dim-pct" style="color:var(--gray-6)">0%</span>
+              </div>
+            </div>
+
+            <div class="dim-footer">
+              <span>启用 <strong>6</strong>/7 维度 · 权重合计 <strong style="color:var(--green-7)">100%</strong> · 一票否决阈值：<strong>合规 &lt; 30 分</strong></span>
+              <button class="btn btn-sm btn-primary">保存配置</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ RIGHT COLUMN: AI CHAT ═══ -->
+        <div class="chat-panel">
+          <div class="chat-head">
+            <div class="chat-ai-avatar">🤖</div>
+            <div class="chat-head-info">
+              <div class="chat-head-title">AI 数据分析助手</div>
+              <div class="chat-head-sub"><span class="dot"></span> 基于 3 个已接入数据源 · 支持自然语言查询</div>
+            </div>
+            <button class="btn btn-xs btn-ghost">🗑️</button>
+          </div>
+
+          <div class="chat-body">
+            <!-- User msg 1 -->
+            <div class="msg msg-user">帮我看一下宠物用品品类近 6 个月的销量趋势，按月份对比</div>
+
+            <!-- AI reply 1 -->
+            <div class="msg msg-ai">
+              <div class="msg-ai-head">
+                <div class="msg-ai-avatar">🤖</div>
+                <span class="msg-ai-name">AI 分析</span>
+                <span class="msg-ai-time">10:32</span>
+              </div>
+              <div class="msg-ai-content">
+                已查询 <strong>Jungle Scout</strong> + <strong>SellerSprite</strong> 的宠物用品品类数据，共匹配 <strong>2,340</strong> 个 ASIN。以下是近 6 个月销量趋势：
+                <div class="chat-chart">
+                  <div class="chat-chart-title">📈 宠物用品品类月销量趋势（Apr — Oct 2026）</div>
+                  <svg width="100%" height="120" viewBox="0 0 350 120">
+                    <defs>
+                      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#1677ff" stop-opacity="0.18"/>
+                        <stop offset="100%" stop-color="#1677ff" stop-opacity="0.01"/>
+                      </linearGradient>
+                    </defs>
+                    <!-- Grid lines -->
+                    <line x1="40" y1="100" x2="340" y2="100" stroke="#f0f0f0" stroke-width="0.5"/>
+                    <line x1="40" y1="70" x2="340" y2="70" stroke="#f0f0f0" stroke-width="0.5" stroke-dasharray="4"/>
+                    <line x1="40" y1="40" x2="340" y2="40" stroke="#f0f0f0" stroke-width="0.5" stroke-dasharray="4"/>
+                    <line x1="40" y1="10" x2="340" y2="10" stroke="#f0f0f0" stroke-width="0.5" stroke-dasharray="4"/>
+                    <!-- Y axis labels -->
+                    <text x="36" y="103" text-anchor="end" font-size="9" fill="#8c8c8c">0</text>
+                    <text x="36" y="73" text-anchor="end" font-size="9" fill="#8c8c8c">40k</text>
+                    <text x="36" y="43" text-anchor="end" font-size="9" fill="#8c8c8c">80k</text>
+                    <text x="36" y="13" text-anchor="end" font-size="9" fill="#8c8c8c">120k</text>
+                    <!-- Area fill -->
+                    <path d="M40,82 L90,75 L140,66 L190,56 L240,44 L290,34 L340,26 L340,100 L40,100 Z" fill="url(#areaGrad)"/>
+                    <!-- Line -->
+                    <polyline points="40,82 90,75 140,66 190,56 240,44 290,34 340,26" fill="none" stroke="#1677ff" stroke-width="2.5" stroke-linejoin="round"/>
+                    <!-- Data points -->
+                    <circle cx="40" cy="82" r="4" fill="#fff" stroke="#1677ff" stroke-width="2"/>
+                    <circle cx="90" cy="75" r="4" fill="#fff" stroke="#1677ff" stroke-width="2"/>
+                    <circle cx="140" cy="66" r="4" fill="#fff" stroke="#1677ff" stroke-width="2"/>
+                    <circle cx="190" cy="56" r="4" fill="#fff" stroke="#1677ff" stroke-width="2"/>
+                    <circle cx="240" cy="44" r="4" fill="#fff" stroke="#1677ff" stroke-width="2"/>
+                    <circle cx="290" cy="34" r="4" fill="#fff" stroke="#1677ff" stroke-width="2"/>
+                    <circle cx="340" cy="26" r="5" fill="#1677ff" stroke="#fff" stroke-width="2"/>
+                    <!-- Value labels on last 2 points -->
+                    <text x="290" y="28" text-anchor="middle" font-size="9" fill="#1677ff" font-weight="600">91.2k</text>
+                    <text x="340" y="20" text-anchor="middle" font-size="9" fill="#1677ff" font-weight="600">98.4k</text>
+                    <!-- X axis labels -->
+                    <text x="40" y="115" text-anchor="middle" font-size="9" fill="#8c8c8c">Apr</text>
+                    <text x="90" y="115" text-anchor="middle" font-size="9" fill="#8c8c8c">May</text>
+                    <text x="140" y="115" text-anchor="middle" font-size="9" fill="#8c8c8c">Jun</text>
+                    <text x="190" y="115" text-anchor="middle" font-size="9" fill="#8c8c8c">Jul</text>
+                    <text x="240" y="115" text-anchor="middle" font-size="9" fill="#8c8c8c">Aug</text>
+                    <text x="290" y="115" text-anchor="middle" font-size="9" fill="#8c8c8c">Sep</text>
+                    <text x="340" y="115" text-anchor="middle" font-size="9" fill="#8c8c8c">Oct</text>
+                  </svg>
+                  <div class="chat-insight">
+                    <strong>洞察：</strong>近 6 个月持续增长，月均增幅 <strong>+14.2%</strong>。9-10 月增速加快，预计受 Q4 节日季驱动。建议当前入场窗口良好，优先关注 $15-25 价格带。
+                  </div>
+                  <div class="chat-chart-actions">
+                    <button class="btn btn-xs">📊 导出 PNG</button>
+                    <button class="btn btn-xs">📋 复制数据</button>
+                    <button class="btn btn-xs btn-primary">➕ 加入评估</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- User msg 2 -->
+            <div class="msg msg-user">对比 Top 5 竞品的价格和销量，用气泡图</div>
+
+            <!-- AI reply 2 -->
+            <div class="msg msg-ai">
+              <div class="msg-ai-head">
+                <div class="msg-ai-avatar">🤖</div>
+                <span class="msg-ai-name">AI 分析</span>
+                <span class="msg-ai-time">10:33</span>
+              </div>
+              <div class="msg-ai-content">
+                已从 Jungle Scout 提取宠物用品 Top 5 竞品数据。气泡大小反映评论数量：
+                <div class="chat-chart">
+                  <div class="chat-chart-title">🫧 Top 5 竞品价格-销量分布（气泡 = 评论数）</div>
+                  <svg width="100%" height="140" viewBox="0 0 350 140" class="bubble-chart">
+                    <!-- Axes -->
+                    <line x1="45" y1="120" x2="340" y2="120" stroke="#e8e8e8" stroke-width="1"/>
+                    <line x1="45" y1="10" x2="45" y2="120" stroke="#e8e8e8" stroke-width="1"/>
+                    <!-- Axis labels -->
+                    <text x="190" y="137" text-anchor="middle" font-size="10" fill="#8c8c8c">售价 (USD)</text>
+                    <text x="12" y="65" text-anchor="middle" font-size="10" fill="#8c8c8c" transform="rotate(-90,12,65)">月销量</text>
+                    <!-- Ticks -->
+                    <text x="70" y="132" text-anchor="middle" font-size="8" fill="#bfbfbf">$8</text>
+                    <text x="140" y="132" text-anchor="middle" font-size="8" fill="#bfbfbf">$14</text>
+                    <text x="210" y="132" text-anchor="middle" font-size="8" fill="#bfbfbf">$20</text>
+                    <text x="280" y="132" text-anchor="middle" font-size="8" fill="#bfbfbf">$28</text>
+                    <text x="330" y="132" text-anchor="middle" font-size="8" fill="#bfbfbf">$35</text>
+
+                    <!-- Bubbles -->
+                    <!-- Outward Hound: $15, 8200 sales, 2400 reviews -->
+                    <circle cx="155" cy="28" r="22" fill="#1677ff" opacity="0.2" stroke="#1677ff" stroke-width="1.5"/>
+                    <circle cx="155" cy="28" r="4" fill="#1677ff"/>
+                    <text x="155" y="18" text-anchor="middle" font-size="9" fill="#1677ff" font-weight="600">Outward Hound</text>
+                    <text x="155" y="58" text-anchor="middle" font-size="8" fill="#8c8c8c">$15 · 8.2k/月</text>
+
+                    <!-- JASGOOD: $11, 5600 sales, 1200 reviews -->
+                    <circle cx="105" cy="48" r="16" fill="#52c41a" opacity="0.2" stroke="#52c41a" stroke-width="1.5"/>
+                    <circle cx="105" cy="48" r="3.5" fill="#52c41a"/>
+                    <text x="105" y="40" text-anchor="middle" font-size="9" fill="#389e0d" font-weight="600">JASGOOD</text>
+                    <text x="105" y="72" text-anchor="middle" font-size="8" fill="#8c8c8c">$11 · 5.6k/月</text>
+
+                    <!-- Hyper Pet: $13, 4100 sales, 890 reviews -->
+                    <circle cx="130" cy="60" r="13" fill="#faad14" opacity="0.2" stroke="#faad14" stroke-width="1.5"/>
+                    <circle cx="130" cy="60" r="3" fill="#faad14"/>
+                    <text x="150" y="78" text-anchor="start" font-size="9" fill="#d48806" font-weight="600">Hyper Pet</text>
+                    <text x="150" y="89" text-anchor="start" font-size="8" fill="#8c8c8c">$13 · 4.1k/月</text>
+
+                    <!-- PETKIT: $24, 2100 sales, 560 reviews -->
+                    <circle cx="245" cy="80" r="10" fill="#ff4d4f" opacity="0.2" stroke="#ff4d4f" stroke-width="1.5"/>
+                    <circle cx="245" cy="80" r="2.5" fill="#ff4d4f"/>
+                    <text x="260" y="76" text-anchor="start" font-size="9" fill="#cf1322" font-weight="600">PETKIT</text>
+                    <text x="260" y="87" text-anchor="start" font-size="8" fill="#8c8c8c">$24 · 2.1k/月</text>
+
+                    <!-- PetSafe: $32, 1200 sales, 340 reviews -->
+                    <circle cx="310" cy="95" r="8" fill="#722ed1" opacity="0.2" stroke="#722ed1" stroke-width="1.5"/>
+                    <circle cx="310" cy="95" r="2" fill="#722ed1"/>
+                    <text x="296" y="108" text-anchor="end" font-size="9" fill="#722ed1" font-weight="600">PetSafe</text>
+                    <text x="296" y="118" text-anchor="end" font-size="8" fill="#8c8c8c">$32 · 1.2k/月</text>
+
+                    <!-- Highlight zone -->
+                    <rect x="80" y="15" width="90" height="75" rx="4" fill="none" stroke="#1677ff" stroke-width="1" stroke-dasharray="4" opacity="0.4"/>
+                    <text x="125" y="12" text-anchor="middle" font-size="8" fill="#1677ff" font-weight="500" opacity="0.7">竞争激烈区</text>
+                  </svg>
+                  <div class="chat-insight">
+                    <strong>洞察：</strong>$11-15 价格带竞争最激烈但销量最大。<strong>$20+ 区间</strong>卖家少但需求存在（PETKIT/PetSafe 仍有 2k+ 月销），建议以<strong>陶瓷材质 + 可洗碗机</strong>作为差异化切入点，定价 $18-22。
+                  </div>
+                  <div class="chat-chart-actions">
+                    <button class="btn btn-xs">📊 导出 PNG</button>
+                    <button class="btn btn-xs">📋 复制数据</button>
+                    <button class="btn btn-xs">🔍 深入分析</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick prompts -->
+          <div class="quick-row">
+            <span class="quick-chip">差评痛点分析</span>
+            <span class="quick-chip">预估 FBA 费用</span>
+            <span class="quick-chip">加入评分卡</span>
+            <span class="quick-chip">导出报告</span>
+            <span class="quick-chip">创新方向建议</span>
+          </div>
+
+          <!-- Input -->
+          <div class="chat-input-bar">
+            <button class="chat-attach">📎</button>
+            <div class="chat-input-wrap">
+              <input class="chat-input" type="text" placeholder="输入问题，AI 将从已接入数据源中查询并生成图表...">
+              <button class="chat-send">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /dc-grid -->
+    </div><!-- /page -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+</body>
+</html>

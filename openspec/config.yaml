@@ -1,0 +1,42 @@
+schema: spec-driven
+
+context: |
+  所有 OpenSpec 产物用中文书写。
+  本项目由 ../saas-template 的 create-project 生成到本仓库 main（--target selfhost，部署在新加坡 ECS）；
+  生成器不复制 openspec/changes，模板的 openspec/specs 在生成时一并带入，本目录的 changes 合并时必须保留。
+  Cloudflare 目标不在本项目范围内；后台任务使用模板的 Node 队列、调度和多步任务接口，不直接依赖 DBOS。
+  团队共用一个账号，平台不做分工、指派和审批。
+  eBay Browse 调用每天硬上限 5000、安全线 4500；任何外部数据源都必须先在事务中预扣额度再调用。
+  缺失数据保持为空，不补零；每个数值都要能追溯到来源、获取时间和获取方式。
+  完整方案见 docs/plan/selection-workbench.md，UI 稿见 docs/design/。
+
+# Project context (optional)
+# Add only constraints that should guide OpenSpec artifacts and workflows.
+# Include constraints an agent cannot infer by reading the code.
+# Keep general project documentation and discoverable codebase facts out.
+# Example:
+#   context: |
+#     Designs and tasks must cover Windows, macOS, and Linux
+#     Write all artifacts in Spanish
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing

@@ -1,0 +1,2030 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>跨境电商选品工作台 — 产品展示</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --primary: #1677ff;
+    --primary-light: #e6f4ff;
+    --success: #52c41a;
+    --success-light: #f6ffed;
+    --warning: #faad14;
+    --warning-light: #fffbe6;
+    --error: #ff4d4f;
+    --error-light: #fff2f0;
+    --text: #262626;
+    --text-secondary: #595959;
+    --text-muted: #8c8c8c;
+    --border: #f0f0f0;
+    --bg: #f5f5f5;
+    --card: #ffffff;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    --shadow-lg: 0 6px 24px rgba(0,0,0,0.08);
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+
+  body {
+    font-family: 'Inter', 'Noto Sans SC', -apple-system, sans-serif;
+    background: #f0f2f5;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* ═══════ Showcase Shell ═══════ */
+  .showcase {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 32px 80px;
+  }
+
+  .showcase-header {
+    text-align: center;
+    margin-bottom: 56px;
+  }
+  .showcase-header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .showcase-header p {
+    font-size: 16px;
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .showcase-header .tag-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 16px;
+  }
+  .showcase-header .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .tag-blue { background: var(--primary-light); color: var(--primary); }
+  .tag-green { background: var(--success-light); color: var(--success); }
+  .tag-orange { background: var(--warning-light); color: #d48806; }
+
+  .section-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 24px;
+    padding-left: 12px;
+    border-left: 4px solid var(--primary);
+  }
+
+  .screen-section {
+    margin-bottom: 56px;
+  }
+  .screen-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .screen-label .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .screen-label h3 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .screen-label .desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-left: 8px;
+  }
+
+  /* ═══════ Mockup Frame ═══════ */
+  .mockup-frame {
+    background: var(--card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .mockup-titlebar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #fafafa;
+    border-bottom: 1px solid var(--border);
+  }
+  .mockup-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .mockup-dot.red { background: #ff5f57; }
+  .mockup-dot.yellow { background: #febc2e; }
+  .mockup-dot.green { background: #28c840; }
+  .mockup-url {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .mockup-body {
+    padding: 0;
+    min-height: 400px;
+  }
+
+  /* ═══════ App Shell (sidebar + content) ═══════ */
+  .app-shell {
+    display: flex;
+    min-height: 480px;
+  }
+  .app-sidebar {
+    width: 200px;
+    background: #001529;
+    color: #fff;
+    flex-shrink: 0;
+    padding: 0;
+  }
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .sidebar-logo .icon {
+    width: 28px; height: 28px;
+    background: var(--primary);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+  .sidebar-menu {
+    padding: 8px 0;
+    list-style: none;
+  }
+  .sidebar-menu li {
+    padding: 10px 16px 10px 20px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255,255,255,0.65);
+    transition: all 0.2s;
+  }
+  .sidebar-menu li:hover { color: #fff; background: rgba(255,255,255,0.04); }
+  .sidebar-menu li.active {
+    color: #fff;
+    background: var(--primary);
+    border-radius: 0;
+    font-weight: 500;
+  }
+  .sidebar-menu li .menu-icon {
+    width: 16px;
+    text-align: center;
+    font-size: 14px;
+  }
+  .sidebar-menu .menu-badge {
+    margin-left: auto;
+    background: var(--error);
+    color: #fff;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-weight: 500;
+  }
+  .sidebar-sub {
+    padding: 4px 0;
+    list-style: none;
+  }
+  .sidebar-sub li {
+    padding: 8px 16px 8px 46px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.45);
+    cursor: pointer;
+  }
+  .sidebar-sub li:hover { color: rgba(255,255,255,0.8); }
+  .sidebar-sub li.active { color: #fff; }
+  .menu-group-title {
+    padding: 16px 16px 4px 20px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .app-content {
+    flex: 1;
+    background: #f5f5f5;
+    overflow: hidden;
+  }
+  .app-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-breadcrumb {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .topbar-breadcrumb span { color: var(--text); font-weight: 500; }
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .topbar-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .app-page {
+    padding: 20px;
+  }
+
+  /* ═══════ Common Components ═══════ */
+  .ant-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 15px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid #d9d9d9;
+    background: #fff;
+    color: var(--text);
+    transition: all 0.2s;
+  }
+  .ant-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .ant-btn-primary {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+  .ant-btn-primary:hover { background: #4096ff; border-color: #4096ff; color: #fff; }
+  .ant-btn-success {
+    background: var(--success);
+    color: #fff;
+    border-color: var(--success);
+  }
+  .ant-btn-danger {
+    background: #fff;
+    color: var(--error);
+    border-color: var(--error);
+  }
+  .ant-btn-sm { padding: 3px 10px; font-size: 12px; }
+
+  .ant-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid;
+  }
+  .ant-tag-blue { background: var(--primary-light); color: var(--primary); border-color: #91caff; }
+  .ant-tag-green { background: var(--success-light); color: #389e0d; border-color: #b7eb8f; }
+  .ant-tag-orange { background: var(--warning-light); color: #d48806; border-color: #ffe58f; }
+  .ant-tag-red { background: var(--error-light); color: var(--error); border-color: #ffccc7; }
+  .ant-tag-gray { background: #fafafa; color: var(--text-muted); border-color: #d9d9d9; }
+
+  .ant-card {
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .ant-card-head {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ant-card-body { padding: 16px; }
+
+  .ant-stat {
+    text-align: center;
+  }
+  .ant-stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .ant-stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .ant-stat-trend {
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 2px;
+  }
+  .ant-stat-trend.up { color: var(--success); }
+  .ant-stat-trend.down { color: var(--error); }
+
+  .ant-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .ant-table th {
+    background: #fafafa;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .ant-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .ant-table tr:hover td { background: #fafafa; }
+
+  .ant-input {
+    padding: 5px 11px;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+    color: var(--text);
+  }
+  .ant-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,0.1); }
+
+  .ant-select {
+    padding: 5px 28px 5px 11px;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    font-size: 13px;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238c8c8c'/%3E%3C/svg%3E") no-repeat right 10px center;
+    appearance: none;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .ant-progress {
+    height: 6px;
+    background: #f0f0f0;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .ant-progress-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+
+  /* ═══════ Dashboard Specific ═══════ */
+  .dash-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .dash-stat-card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 16px;
+    border: 1px solid var(--border);
+  }
+
+  .dash-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 12px;
+  }
+
+  .todo-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .todo-item:last-child { border-bottom: none; }
+  .todo-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .todo-dot.urgent { background: var(--error); }
+  .todo-dot.normal { background: var(--warning); }
+  .todo-dot.info { background: var(--primary); }
+
+  /* ═══════ Product List ═══════ */
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .filter-bar label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .product-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .product-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+  .product-info h4 {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 2px;
+    line-height: 1.3;
+  }
+  .product-info .meta {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .mini-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 24px;
+  }
+  .mini-bar {
+    width: 4px;
+    border-radius: 1px;
+    background: var(--primary);
+    opacity: 0.6;
+  }
+
+  /* ═══════ Score Detail ═══════ */
+  .score-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .radar-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .score-dimensions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 8px 0;
+  }
+  .dim-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+  }
+  .dim-label {
+    flex: 1;
+    color: var(--text-secondary);
+  }
+  .dim-score {
+    font-weight: 600;
+    font-size: 13px;
+    min-width: 28px;
+    text-align: right;
+  }
+  .dim-bar {
+    width: 60px;
+    height: 4px;
+    background: #f0f0f0;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .dim-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+  }
+
+  .overall-score {
+    text-align: center;
+    padding: 16px 0 8px;
+  }
+  .overall-num {
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .overall-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* Waterfall */
+  .waterfall {
+    padding: 16px;
+  }
+  .waterfall-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 13px;
+    position: relative;
+  }
+  .waterfall-label {
+    width: 80px;
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+  .waterfall-bar-container {
+    flex: 1;
+    height: 20px;
+    position: relative;
+  }
+  .waterfall-bar {
+    height: 100%;
+    border-radius: 3px;
+    position: absolute;
+  }
+  .waterfall-value {
+    width: 64px;
+    text-align: right;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .waterfall-value.negative { color: var(--error); }
+  .waterfall-value.positive { color: var(--success); }
+
+  /* ═══════ Review Workbench ═══════ */
+  .review-summary-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .review-stat {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 20px;
+    text-align: center;
+    min-width: 100px;
+  }
+  .review-stat .num {
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .review-stat .label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .approval-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 0;
+  }
+
+  /* ═══════ Brand Insights ═══════ */
+  .insight-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .trend-chart-mock {
+    height: 120px;
+    position: relative;
+    padding: 8px;
+  }
+
+  .wordcloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px;
+    align-items: center;
+    justify-content: center;
+  }
+  .wc-word {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+
+  /* ═══════ Flow Diagram ═══════ */
+  .flow-diagram {
+    padding: 32px;
+    background: #fff;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .flow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 24px;
+  }
+  .flow-node {
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 18px;
+    text-align: center;
+    min-width: 140px;
+    position: relative;
+    transition: all 0.2s;
+  }
+  .flow-node.primary { border-color: var(--primary); background: var(--primary-light); }
+  .flow-node.success { border-color: var(--success); background: var(--success-light); }
+  .flow-node.warning { border-color: var(--warning); background: var(--warning-light); }
+  .flow-node .flow-node-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .flow-node .flow-node-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    color: var(--text-muted);
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .flow-arrow svg { width: 32px; height: 16px; }
+
+  .flow-branch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .flow-branch-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: #f5f5f5;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  .flow-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .flow-title .ft-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  /* ═══════ Component Showcase ═══════ */
+  .comp-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .comp-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .comp-card h4 {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+  .comp-card .demo {
+    padding: 12px 0;
+  }
+
+  .score-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .score-badge.high { background: var(--success-light); color: #389e0d; }
+  .score-badge.medium { background: var(--warning-light); color: #d48806; }
+  .score-badge.low { background: var(--error-light); color: var(--error); }
+
+  /* ═══════ Print / Export ═══════ */
+  @media print {
+    body { background: #fff; }
+    .showcase { padding: 20px; }
+    .mockup-frame { box-shadow: none; border: 1px solid #ddd; page-break-inside: avoid; }
+    .screen-section { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="showcase">
+
+  <!-- ═══════ Header ═══════ -->
+  <div class="showcase-header">
+    <h1>跨境电商选品工作台</h1>
+    <p>选品质量引擎 — 6 维度评分卡 + 跨平台数据聚合 + 自动化成本核算 + 选品档案</p>
+    <div class="tag-row">
+      <span class="tag tag-blue">React + Ant Design</span>
+      <span class="tag tag-green">Amazon + eBay</span>
+      <span class="tag tag-orange">2026 Q4 上线</span>
+    </div>
+  </div>
+
+  <!-- ═══════ Screen 1: Dashboard ═══════ -->
+  <div class="screen-section">
+    <div class="screen-label">
+      <span class="num">1</span>
+      <h3>工作台首页</h3>
+      <span class="desc">— 选品专员视角，个性化待办 + 数据概览</span>
+    </div>
+    <div class="mockup-frame">
+      <div class="mockup-titlebar">
+        <span class="mockup-dot red"></span>
+        <span class="mockup-dot yellow"></span>
+        <span class="mockup-dot green"></span>
+        <span class="mockup-url">app.selectionworkbench.com/</span>
+      </div>
+      <div class="mockup-body">
+        <div class="app-shell">
+          <div class="app-sidebar">
+            <div class="sidebar-logo">
+              <span class="icon">选</span>
+              <span>选品工作台</span>
+            </div>
+            <ul class="sidebar-menu">
+              <li class="active"><span class="menu-icon">📊</span> 工作台</li>
+              <li><span class="menu-icon">📈</span> 跟卖选品</li>
+              <li><span class="menu-icon">💡</span> 品牌选品</li>
+              <li><span class="menu-icon">📋</span> 评审中心 <span class="menu-badge">3</span></li>
+              <li><span class="menu-icon">📁</span> 选品档案库</li>
+            </ul>
+            <div class="menu-group-title">系统</div>
+            <ul class="sidebar-menu">
+              <li><span class="menu-icon">⚙️</span> 设置</li>
+            </ul>
+          </div>
+          <div class="app-content">
+            <div class="app-topbar">
+              <div class="topbar-breadcrumb">工作台 / <span>首页</span></div>
+              <div class="topbar-actions">
+                <span style="font-size:13px;color:var(--text-muted)">🔔 2</span>
+                <div class="topbar-avatar">陈</div>
+              </div>
+            </div>
+            <div class="app-page">
+              <div class="dash-stats">
+                <div class="dash-stat-card">
+                  <div class="ant-stat">
+                    <div class="ant-stat-value">12</div>
+                    <div class="ant-stat-label">本周评估候选品</div>
+                    <div class="ant-stat-trend up">↑ 33%</div>
+                  </div>
+                </div>
+                <div class="dash-stat-card">
+                  <div class="ant-stat">
+                    <div class="ant-stat-value" style="color:var(--success)">8</div>
+                    <div class="ant-stat-label">已通过评审</div>
+                    <div class="ant-stat-trend up">通过率 67%</div>
+                  </div>
+                </div>
+                <div class="dash-stat-card">
+                  <div class="ant-stat">
+                    <div class="ant-stat-value" style="color:var(--warning)">3</div>
+                    <div class="ant-stat-label">待评审</div>
+                    <div class="ant-stat-trend" style="color:var(--text-muted)">张总待审批</div>
+                  </div>
+                </div>
+                <div class="dash-stat-card">
+                  <div class="ant-stat">
+                    <div class="ant-stat-value">5.2<span style="font-size:14px;color:var(--text-muted)">天</span></div>
+                    <div class="ant-stat-label">平均选品周期</div>
+                    <div class="ant-stat-trend up">↓ 1.3天</div>
+                  </div>
+                </div>
+              </div>
+              <div class="dash-grid">
+                <div class="ant-card">
+                  <div class="ant-card-head">
+                    <span>近期选品动态</span>
+                    <span style="font-size:12px;color:var(--primary);cursor:pointer">查看全部 →</span>
+                  </div>
+                  <div class="ant-card-body">
+                    <div class="todo-item">
+                      <span class="todo-dot urgent"></span>
+                      <span style="flex:1">宠物慢食碗 — 评分 <strong style="color:var(--success)">78</strong> 已通过评审</span>
+                      <span class="ant-tag ant-tag-green">已通过</span>
+                      <span style="font-size:11px;color:var(--text-muted)">2h前</span>
+                    </div>
+                    <div class="todo-item">
+                      <span class="todo-dot normal"></span>
+                      <span style="flex:1">USB-C 扩展坞 — 评分 <strong style="color:#d48806">66</strong> 待张总评审</span>
+                      <span class="ant-tag ant-tag-orange">待评审</span>
+                      <span style="font-size:11px;color:var(--text-muted)">5h前</span>
+                    </div>
+                    <div class="todo-item">
+                      <span class="todo-dot info"></span>
+                      <span style="flex:1">硅胶烘焙垫 — 评分 <strong style="color:var(--error)">54</strong> 不推荐</span>
+                      <span class="ant-tag ant-tag-red">不推荐</span>
+                      <span style="font-size:11px;color:var(--text-muted)">1天前</span>
+                    </div>
+                    <div class="todo-item">
+                      <span class="todo-dot info"></span>
+                      <span style="flex:1">便携式搅拌机 — 完成成本核算，评分 <strong>72</strong></span>
+                      <span class="ant-tag ant-tag-blue">评估完成</span>
+                      <span style="font-size:11px;color:var(--text-muted)">2天前</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="ant-card">
+                  <div class="ant-card-head"><span>我的待办</span></div>
+                  <div class="ant-card-body">
+                    <div class="todo-item">
+                      <span class="todo-dot urgent"></span>
+                      <span style="flex:1;font-size:13px">完成家居品类 3 个候选品评估</span>
+                      <span class="ant-tag ant-tag-red">今天</span>
+                    </div>
+                    <div class="todo-item">
+                      <span class="todo-dot normal"></span>
+                      <span style="flex:1;font-size:13px">补充 USB-C 扩展坞供应链数据</span>
+                      <span class="ant-tag ant-tag-orange">明天</span>
+                    </div>
+                    <div class="todo-item">
+                      <span class="todo-dot info"></span>
+                      <span style="flex:1;font-size:13px">品牌选品：宠物用品方向调研</span>
+                      <span class="ant-tag ant-tag-blue">本周</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ Screen 2: Follow-sell Product List ═══════ -->
+  <div class="screen-section">
+    <div class="screen-label">
+      <span class="num">2</span>
+      <h3>跟卖选品 — 候选品列表</h3>
+      <span class="desc">— 跨平台聚合 + 多维筛选 + 数据卡片</span>
+    </div>
+    <div class="mockup-frame">
+      <div class="mockup-titlebar">
+        <span class="mockup-dot red"></span>
+        <span class="mockup-dot yellow"></span>
+        <span class="mockup-dot green"></span>
+        <span class="mockup-url">app.selectionworkbench.com/follow-sell/products</span>
+      </div>
+      <div class="mockup-body">
+        <div class="app-shell">
+          <div class="app-sidebar">
+            <div class="sidebar-logo"><span class="icon">选</span><span>选品工作台</span></div>
+            <ul class="sidebar-menu">
+              <li><span class="menu-icon">📊</span> 工作台</li>
+              <li class="active"><span class="menu-icon">📈</span> 跟卖选品</li>
+              <li><span class="menu-icon">💡</span> 品牌选品</li>
+              <li><span class="menu-icon">📋</span> 评审中心 <span class="menu-badge">3</span></li>
+              <li><span class="menu-icon">📁</span> 选品档案库</li>
+            </ul>
+          </div>
+          <div class="app-content">
+            <div class="app-topbar">
+              <div class="topbar-breadcrumb">跟卖选品 / <span>候选品列表</span></div>
+              <div class="topbar-actions">
+                <div class="topbar-avatar">陈</div>
+              </div>
+            </div>
+            <div class="app-page">
+              <!-- Tabs -->
+              <div style="display:flex;gap:0;margin-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="padding:8px 16px;font-size:13px;font-weight:500;color:var(--primary);border-bottom:2px solid var(--primary)">全部平台</div>
+                <div style="padding:8px 16px;font-size:13px;color:var(--text-muted)">Amazon</div>
+                <div style="padding:8px 16px;font-size:13px;color:var(--text-muted)">eBay</div>
+              </div>
+              <!-- Filter bar -->
+              <div class="filter-bar">
+                <label>品类</label>
+                <select class="ant-select"><option>Home & Kitchen</option></select>
+                <label>价格</label>
+                <input class="ant-input" style="width:70px" placeholder="$15">
+                <span style="color:var(--text-muted);font-size:12px">—</span>
+                <input class="ant-input" style="width:70px" placeholder="$30">
+                <label>BSR</label>
+                <select class="ant-select"><option>Top 100</option></select>
+                <label>增长</label>
+                <select class="ant-select"><option>上升趋势</option></select>
+                <button class="ant-btn ant-btn-primary ant-btn-sm">🔍 筛选</button>
+                <button class="ant-btn ant-btn-sm">重置</button>
+                <span style="margin-left:auto;font-size:12px;color:var(--text-muted)">共 <strong style="color:var(--text)">47</strong> 个候选品</span>
+              </div>
+              <!-- Table -->
+              <div class="ant-card">
+                <table class="ant-table">
+                  <thead>
+                    <tr>
+                      <th style="width:32px"><input type="checkbox"></th>
+                      <th>商品信息</th>
+                      <th>平台</th>
+                      <th>售价</th>
+                      <th>月销量</th>
+                      <th>BSR</th>
+                      <th>竞争度</th>
+                      <th>趋势</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><input type="checkbox"></td>
+                      <td>
+                        <div class="product-row">
+                          <div class="product-thumb">🐾</div>
+                          <div class="product-info">
+                            <h4>Slow Feeder Dog Bowl</h4>
+                            <div class="meta">ASIN: B0CX...892 · 宠物用品</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td><span class="ant-tag ant-tag-blue">Amazon</span></td>
+                      <td><strong>$18.99</strong></td>
+                      <td>3,240</td>
+                      <td>#12</td>
+                      <td><span class="ant-tag ant-tag-green">低</span></td>
+                      <td>
+                        <div class="mini-chart">
+                          <div class="mini-bar" style="height:8px"></div>
+                          <div class="mini-bar" style="height:12px"></div>
+                          <div class="mini-bar" style="height:10px"></div>
+                          <div class="mini-bar" style="height:16px"></div>
+                          <div class="mini-bar" style="height:14px"></div>
+                          <div class="mini-bar" style="height:20px"></div>
+                          <div class="mini-bar" style="height:24px;background:var(--success)"></div>
+                        </div>
+                      </td>
+                      <td><button class="ant-btn ant-btn-primary ant-btn-sm">评分 →</button></td>
+                    </tr>
+                    <tr>
+                      <td><input type="checkbox"></td>
+                      <td>
+                        <div class="product-row">
+                          <div class="product-thumb">🔌</div>
+                          <div class="product-info">
+                            <h4>USB-C Hub 7-in-1 Adapter</h4>
+                            <div class="meta">ASIN: B0D1...445 · 电子产品</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td><span class="ant-tag ant-tag-blue">Amazon</span></td>
+                      <td><strong>$29.99</strong></td>
+                      <td>1,850</td>
+                      <td>#45</td>
+                      <td><span class="ant-tag ant-tag-orange">中</span></td>
+                      <td>
+                        <div class="mini-chart">
+                          <div class="mini-bar" style="height:18px"></div>
+                          <div class="mini-bar" style="height:16px"></div>
+                          <div class="mini-bar" style="height:14px"></div>
+                          <div class="mini-bar" style="height:15px"></div>
+                          <div class="mini-bar" style="height:16px"></div>
+                          <div class="mini-bar" style="height:17px"></div>
+                          <div class="mini-bar" style="height:18px;background:var(--warning)"></div>
+                        </div>
+                      </td>
+                      <td><button class="ant-btn ant-btn-primary ant-btn-sm">评分 →</button></td>
+                    </tr>
+                    <tr>
+                      <td><input type="checkbox"></td>
+                      <td>
+                        <div class="product-row">
+                          <div class="product-thumb">🧁</div>
+                          <div class="product-info">
+                            <h4>Silicone Baking Mat Set</h4>
+                            <div class="meta">ASIN: B0BK...771 · 厨房用品</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td><span class="ant-tag ant-tag-blue">Amazon</span></td>
+                      <td><strong>$12.99</strong></td>
+                      <td>4,520</td>
+                      <td>#8</td>
+                      <td><span class="ant-tag ant-tag-red">高</span></td>
+                      <td>
+                        <div class="mini-chart">
+                          <div class="mini-bar" style="height:22px"></div>
+                          <div class="mini-bar" style="height:20px"></div>
+                          <div class="mini-bar" style="height:18px"></div>
+                          <div class="mini-bar" style="height:16px"></div>
+                          <div class="mini-bar" style="height:14px"></div>
+                          <div class="mini-bar" style="height:12px"></div>
+                          <div class="mini-bar" style="height:10px;background:var(--error)"></div>
+                        </div>
+                      </td>
+                      <td><button class="ant-btn ant-btn-sm">评分 →</button></td>
+                    </tr>
+                    <tr>
+                      <td><input type="checkbox"></td>
+                      <td>
+                        <div class="product-row">
+                          <div class="product-thumb">💡</div>
+                          <div class="product-info">
+                            <h4>LED Desk Lamp with USB</h4>
+                            <div class="meta">eBay ID: 325...88 · 照明</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td><span class="ant-tag ant-tag-gray">eBay</span></td>
+                      <td><strong>$24.50</strong></td>
+                      <td>890</td>
+                      <td>#67</td>
+                      <td><span class="ant-tag ant-tag-green">低</span></td>
+                      <td>
+                        <div class="mini-chart">
+                          <div class="mini-bar" style="height:6px"></div>
+                          <div class="mini-bar" style="height:8px"></div>
+                          <div class="mini-bar" style="height:12px"></div>
+                          <div class="mini-bar" style="height:14px"></div>
+                          <div class="mini-bar" style="height:18px"></div>
+                          <div class="mini-bar" style="height:22px"></div>
+                          <div class="mini-bar" style="height:24px;background:var(--success)"></div>
+                        </div>
+                      </td>
+                      <td><button class="ant-btn ant-btn-primary ant-btn-sm">评分 →</button></td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;font-size:12px;color:var(--text-muted)">
+                  <span>已选 0 项</span>
+                  <div style="display:flex;gap:4px;align-items:center">
+                    <span>‹</span>
+                    <span style="background:var(--primary);color:#fff;padding:2px 8px;border-radius:4px">1</span>
+                    <span style="padding:2px 8px">2</span>
+                    <span style="padding:2px 8px">3</span>
+                    <span style="padding:2px 8px">...</span>
+                    <span style="padding:2px 8px">12</span>
+                    <span>›</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ Screen 3: Scoring Detail ═══════ -->
+  <div class="screen-section">
+    <div class="screen-label">
+      <span class="num">3</span>
+      <h3>评分详情页 — 6 维度评分卡 + 成本核算</h3>
+      <span class="desc">— 雷达图 + 评分依据 + 成本瀑布图 + 生成档案</span>
+    </div>
+    <div class="mockup-frame">
+      <div class="mockup-titlebar">
+        <span class="mockup-dot red"></span>
+        <span class="mockup-dot yellow"></span>
+        <span class="mockup-dot green"></span>
+        <span class="mockup-url">app.selectionworkbench.com/follow-sell/products/B0CX...892</span>
+      </div>
+      <div class="mockup-body">
+        <div class="app-shell">
+          <div class="app-sidebar">
+            <div class="sidebar-logo"><span class="icon">选</span><span>选品工作台</span></div>
+            <ul class="sidebar-menu">
+              <li><span class="menu-icon">📊</span> 工作台</li>
+              <li class="active"><span class="menu-icon">📈</span> 跟卖选品</li>
+              <li><span class="menu-icon">💡</span> 品牌选品</li>
+              <li><span class="menu-icon">📋</span> 评审中心</li>
+              <li><span class="menu-icon">📁</span> 选品档案库</li>
+            </ul>
+          </div>
+          <div class="app-content">
+            <div class="app-topbar">
+              <div class="topbar-breadcrumb">跟卖选品 / 候选品列表 / <span>评分详情</span></div>
+              <div class="topbar-actions">
+                <button class="ant-btn ant-btn-sm">← 返回列表</button>
+                <div class="topbar-avatar">陈</div>
+              </div>
+            </div>
+            <div class="app-page">
+              <!-- Product header -->
+              <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;padding:16px;background:#fff;border-radius:var(--radius);border:1px solid var(--border)">
+                <div style="width:64px;height:64px;border-radius:8px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:32px;border:1px solid var(--border)">🐾</div>
+                <div style="flex:1">
+                  <h3 style="font-size:16px;font-weight:600;margin-bottom:4px">Slow Feeder Dog Bowl — 宠物慢食碗</h3>
+                  <div style="font-size:12px;color:var(--text-muted);display:flex;gap:12px">
+                    <span>ASIN: B0CX...892</span>
+                    <span>Amazon US</span>
+                    <span>宠物用品</span>
+                    <span>数据更新：2026-10-13 08:00</span>
+                  </div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:13px;color:var(--text-muted)">售价</div>
+                  <div style="font-size:22px;font-weight:700">$18.99</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:13px;color:var(--text-muted)">月销</div>
+                  <div style="font-size:22px;font-weight:700">3,240</div>
+                </div>
+              </div>
+
+              <div class="score-layout">
+                <!-- Left: Radar + Score -->
+                <div class="ant-card">
+                  <div class="ant-card-head">
+                    <span>6 维度评分卡</span>
+                    <span class="ant-tag ant-tag-green">推荐</span>
+                  </div>
+                  <div class="ant-card-body">
+                    <!-- Overall score -->
+                    <div class="overall-score">
+                      <div class="overall-num" style="color:var(--success)">78</div>
+                      <div class="overall-label">综合评分 · 推荐</div>
+                    </div>
+                    <!-- Radar chart (SVG mock) -->
+                    <div class="radar-container">
+                      <svg width="220" height="200" viewBox="0 0 220 200">
+                        <!-- Grid lines -->
+                        <polygon points="110,30 180,65 180,135 110,170 40,135 40,65" fill="none" stroke="#f0f0f0" stroke-width="1"/>
+                        <polygon points="110,50 165,75 165,125 110,150 55,125 55,75" fill="none" stroke="#f0f0f0" stroke-width="1"/>
+                        <polygon points="110,70 150,85 150,115 110,130 70,115 70,85" fill="none" stroke="#f0f0f0" stroke-width="1"/>
+                        <polygon points="110,90 135,95 135,105 110,110 85,105 85,95" fill="none" stroke="#f0f0f0" stroke-width="1"/>
+                        <!-- Axis lines -->
+                        <line x1="110" y1="100" x2="110" y2="30" stroke="#e8e8e8" stroke-width="0.5"/>
+                        <line x1="110" y1="100" x2="180" y2="65" stroke="#e8e8e8" stroke-width="0.5"/>
+                        <line x1="110" y1="100" x2="180" y2="135" stroke="#e8e8e8" stroke-width="0.5"/>
+                        <line x1="110" y1="100" x2="110" y2="170" stroke="#e8e8e8" stroke-width="0.5"/>
+                        <line x1="110" y1="100" x2="40" y2="135" stroke="#e8e8e8" stroke-width="0.5"/>
+                        <line x1="110" y1="100" x2="40" y2="65" stroke="#e8e8e8" stroke-width="0.5"/>
+                        <!-- Data polygon -->
+                        <polygon points="110,37 172,72 155,132 110,148 52,110 55,72"
+                          fill="rgba(22,119,255,0.15)" stroke="var(--primary)" stroke-width="2"/>
+                        <!-- Data points -->
+                        <circle cx="110" cy="37" r="4" fill="var(--primary)"/>
+                        <circle cx="172" cy="72" r="4" fill="var(--primary)"/>
+                        <circle cx="155" cy="132" r="4" fill="var(--primary)"/>
+                        <circle cx="110" cy="148" r="4" fill="var(--primary)"/>
+                        <circle cx="52" cy="110" r="4" fill="var(--primary)"/>
+                        <circle cx="55" cy="72" r="4" fill="var(--primary)"/>
+                        <!-- Labels -->
+                        <text x="110" y="20" text-anchor="middle" font-size="10" fill="#595959" font-weight="500">市场容量</text>
+                        <text x="192" y="62" text-anchor="start" font-size="10" fill="#595959" font-weight="500">利润空间</text>
+                        <text x="192" y="140" text-anchor="start" font-size="10" fill="#595959" font-weight="500">竞争强度</text>
+                        <text x="110" y="188" text-anchor="middle" font-size="10" fill="#595959" font-weight="500">增长趋势</text>
+                        <text x="28" y="140" text-anchor="end" font-size="10" fill="#595959" font-weight="500">供应链难度</text>
+                        <text x="28" y="62" text-anchor="end" font-size="10" fill="#595959" font-weight="500">合规风险</text>
+                      </svg>
+                    </div>
+                    <!-- Dimension details -->
+                    <div class="score-dimensions">
+                      <div class="dim-item">
+                        <span class="dim-label">市场容量</span>
+                        <div class="dim-bar"><div class="dim-bar-fill" style="width:85%;background:var(--primary)"></div></div>
+                        <span class="dim-score" style="color:var(--success)">85</span>
+                      </div>
+                      <div class="dim-item">
+                        <span class="dim-label">利润空间</span>
+                        <div class="dim-bar"><div class="dim-bar-fill" style="width:78%;background:var(--primary)"></div></div>
+                        <span class="dim-score" style="color:var(--success)">78</span>
+                      </div>
+                      <div class="dim-item">
+                        <span class="dim-label">竞争强度</span>
+                        <div class="dim-bar"><div class="dim-bar-fill" style="width:72%;background:var(--primary)"></div></div>
+                        <span class="dim-score" style="color:var(--success)">72</span>
+                      </div>
+                      <div class="dim-item">
+                        <span class="dim-label">增长趋势</span>
+                        <div class="dim-bar"><div class="dim-bar-fill" style="width:82%;background:var(--primary)"></div></div>
+                        <span class="dim-score" style="color:var(--success)">82</span>
+                      </div>
+                      <div class="dim-item">
+                        <span class="dim-label">供应链难度</span>
+                        <div class="dim-bar"><div class="dim-bar-fill" style="width:68%;background:var(--warning)"></div></div>
+                        <span class="dim-score" style="color:#d48806">68</span>
+                      </div>
+                      <div class="dim-item">
+                        <span class="dim-label">合规风险</span>
+                        <div class="dim-bar"><div class="dim-bar-fill" style="width:88%;background:var(--success)"></div></div>
+                        <span class="dim-score" style="color:var(--success)">88</span>
+                      </div>
+                    </div>
+                    <div style="text-align:center;padding-top:12px;border-top:1px solid var(--border);margin-top:8px">
+                      <button class="ant-btn ant-btn-primary" style="width:100%">📄 生成选品档案</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right: Cost Calculator + Waterfall -->
+                <div>
+                  <div class="ant-card" style="margin-bottom:12px">
+                    <div class="ant-card-head">
+                      <span>成本核算</span>
+                      <span style="font-size:12px;color:var(--text-muted)">利润率 <strong style="color:var(--success);font-size:14px">23.4%</strong></span>
+                    </div>
+                    <div class="ant-card-body">
+                      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+                        <label style="font-size:12px;color:var(--text-muted);white-space:nowrap">采购成本</label>
+                        <div style="position:relative;flex:1">
+                          <input class="ant-input" style="width:100%;padding-left:20px" value="3.50">
+                          <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text-muted)">¥</span>
+                        </div>
+                        <span style="font-size:12px;color:var(--text-muted)">≈ $0.48</span>
+                      </div>
+                      <!-- Waterfall -->
+                      <div class="waterfall" style="padding:8px 0">
+                        <div class="waterfall-item">
+                          <span class="waterfall-label">售价</span>
+                          <div class="waterfall-bar-container">
+                            <div class="waterfall-bar" style="left:0;width:100%;background:var(--primary);opacity:0.8"></div>
+                          </div>
+                          <span class="waterfall-value">$18.99</span>
+                        </div>
+                        <div class="waterfall-item">
+                          <span class="waterfall-label">采购成本</span>
+                          <div class="waterfall-bar-container">
+                            <div class="waterfall-bar" style="left:0;width:2.5%;background:var(--error);opacity:0.6"></div>
+                          </div>
+                          <span class="waterfall-value negative">-$0.48</span>
+                        </div>
+                        <div class="waterfall-item">
+                          <span class="waterfall-label">平台佣金</span>
+                          <div class="waterfall-bar-container">
+                            <div class="waterfall-bar" style="left:0;width:15%;background:var(--error);opacity:0.6"></div>
+                          </div>
+                          <span class="waterfall-value negative">-$2.85</span>
+                        </div>
+                        <div class="waterfall-item">
+                          <span class="waterfall-label">FBA 费用</span>
+                          <div class="waterfall-bar-container">
+                            <div class="waterfall-bar" style="left:0;width:22%;background:var(--error);opacity:0.6"></div>
+                          </div>
+                          <span class="waterfall-value negative">-$4.20</span>
+                        </div>
+                        <div class="waterfall-item">
+                          <span class="waterfall-label">物流费</span>
+                          <div class="waterfall-bar-container">
+                            <div class="waterfall-bar" style="left:0;width:8%;background:var(--error);opacity:0.6"></div>
+                          </div>
+                          <span class="waterfall-value negative">-$1.50</span>
+                        </div>
+                        <div class="waterfall-item">
+                          <span class="waterfall-label">广告费</span>
+                          <div class="waterfall-bar-container">
+                            <div class="waterfall-bar" style="left:0;width:15%;background:var(--warning);opacity:0.6"></div>
+                          </div>
+                          <span class="waterfall-value negative">-$2.85</span>
+                        </div>
+                        <div class="waterfall-item" style="border-top:2px solid var(--border);padding-top:8px;margin-top:4px">
+                          <span class="waterfall-label" style="font-weight:600;color:var(--text)">净利润</span>
+                          <div class="waterfall-bar-container">
+                            <div class="waterfall-bar" style="left:0;width:23.4%;background:var(--success)"></div>
+                          </div>
+                          <span class="waterfall-value positive" style="font-size:15px">$4.44</span>
+                        </div>
+                      </div>
+                      <!-- Sensitivity -->
+                      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+                        <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                          <span style="color:var(--text-muted)">广告占比</span>
+                          <div style="flex:1;height:4px;background:#f0f0f0;border-radius:2px;position:relative">
+                            <div style="width:60%;height:100%;background:var(--primary);border-radius:2px"></div>
+                            <div style="position:absolute;top:-6px;left:60%;width:14px;height:14px;background:#fff;border:2px solid var(--primary);border-radius:50%;transform:translateX(-50%)"></div>
+                          </div>
+                          <span style="font-weight:600">15%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Risk alert -->
+                  <div class="ant-card">
+                    <div class="ant-card-head" style="font-size:13px">
+                      <span>⚠️ 风险提示</span>
+                    </div>
+                    <div class="ant-card-body" style="font-size:12px;color:var(--text-secondary)">
+                      <div style="display:flex;gap:8px;align-items:flex-start;padding:4px 0">
+                        <span class="ant-tag ant-tag-orange" style="flex-shrink:0">注意</span>
+                        <span>该品类近 30 天新入场卖家 12 家，竞争度有上升趋势</span>
+                      </div>
+                      <div style="display:flex;gap:8px;align-items:flex-start;padding:4px 0;margin-top:4px">
+                        <span class="ant-tag ant-tag-green" style="flex-shrink:0">优势</span>
+                        <span>合规风险低，无需认证；供应链成熟，1688 供应商 200+</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ Screen 4: Review Workbench ═══════ -->
+  <div class="screen-section">
+    <div class="screen-label">
+      <span class="num">4</span>
+      <h3>评审工作台 — 老板视图</h3>
+      <span class="desc">— 待审列表 + 档案只读视图 + 审批操作 + 评审纪要</span>
+    </div>
+    <div class="mockup-frame">
+      <div class="mockup-titlebar">
+        <span class="mockup-dot red"></span>
+        <span class="mockup-dot yellow"></span>
+        <span class="mockup-dot green"></span>
+        <span class="mockup-url">app.selectionworkbench.com/review/pending</span>
+      </div>
+      <div class="mockup-body">
+        <div class="app-shell">
+          <div class="app-sidebar">
+            <div class="sidebar-logo"><span class="icon">选</span><span>选品工作台</span></div>
+            <ul class="sidebar-menu">
+              <li><span class="menu-icon">📊</span> 工作台</li>
+              <li><span class="menu-icon">📈</span> 跟卖选品</li>
+              <li><span class="menu-icon">💡</span> 品牌选品</li>
+              <li class="active"><span class="menu-icon">📋</span> 评审中心 <span class="menu-badge">3</span></li>
+              <li><span class="menu-icon">📁</span> 选品档案库</li>
+            </ul>
+          </div>
+          <div class="app-content">
+            <div class="app-topbar">
+              <div class="topbar-breadcrumb">评审中心 / <span>待评审</span></div>
+              <div class="topbar-actions">
+                <div class="topbar-avatar" style="background:#fff3e6;color:#d48806">张</div>
+              </div>
+            </div>
+            <div class="app-page">
+              <!-- Summary bar -->
+              <div class="review-summary-bar">
+                <div class="review-stat">
+                  <div class="num" style="color:var(--warning)">3</div>
+                  <div class="label">待评审</div>
+                </div>
+                <div class="review-stat">
+                  <div class="num" style="color:var(--success)">8</div>
+                  <div class="label">本月已通过</div>
+                </div>
+                <div class="review-stat">
+                  <div class="num" style="color:var(--error)">2</div>
+                  <div class="label">本月已否决</div>
+                </div>
+                <div class="review-stat">
+                  <div class="num">67%</div>
+                  <div class="label">通过率</div>
+                </div>
+              </div>
+
+              <!-- Review list -->
+              <div class="ant-card" style="margin-bottom:12px">
+                <div class="ant-card-head">
+                  <span>待评审选品档案</span>
+                  <span style="font-size:12px;color:var(--text-muted)">按优先级排序</span>
+                </div>
+                <table class="ant-table">
+                  <thead>
+                    <tr>
+                      <th>商品</th>
+                      <th>品类</th>
+                      <th>综合评分</th>
+                      <th>推荐等级</th>
+                      <th>利润率</th>
+                      <th>提交人</th>
+                      <th>提交时间</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>USB-C Hub 7-in-1</strong></td>
+                      <td>电子产品</td>
+                      <td><span style="font-size:18px;font-weight:700;color:#d48806">66</span></td>
+                      <td><span class="ant-tag ant-tag-orange">谨慎</span></td>
+                      <td>18.2%</td>
+                      <td>陈琳</td>
+                      <td>2h前</td>
+                      <td>
+                        <div style="display:flex;gap:4px">
+                          <button class="ant-btn ant-btn-success ant-btn-sm">✓ 通过</button>
+                          <button class="ant-btn ant-btn-danger ant-btn-sm">✗ 否决</button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Portable Blender</strong></td>
+                      <td>厨房电器</td>
+                      <td><span style="font-size:18px;font-weight:700;color:var(--success)">72</span></td>
+                      <td><span class="ant-tag ant-tag-orange">谨慎</span></td>
+                      <td>21.5%</td>
+                      <td>陈琳</td>
+                      <td>1天前</td>
+                      <td>
+                        <div style="display:flex;gap:4px">
+                          <button class="ant-btn ant-btn-success ant-btn-sm">✓ 通过</button>
+                          <button class="ant-btn ant-btn-danger ant-btn-sm">✗ 否决</button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>LED Desk Lamp</strong></td>
+                      <td>照明</td>
+                      <td><span style="font-size:18px;font-weight:700;color:var(--success)">81</span></td>
+                      <td><span class="ant-tag ant-tag-green">推荐</span></td>
+                      <td>26.8%</td>
+                      <td>陈琳</td>
+                      <td>2天前</td>
+                      <td>
+                        <div style="display:flex;gap:4px">
+                          <button class="ant-btn ant-btn-success ant-btn-sm">✓ 通过</button>
+                          <button class="ant-btn ant-btn-danger ant-btn-sm">✗ 否决</button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Approval detail mock -->
+              <div class="ant-card">
+                <div class="ant-card-head" style="background:#fafafa">
+                  <span>📋 审批操作 — USB-C Hub 7-in-1</span>
+                  <span class="ant-tag ant-tag-orange">评审中</span>
+                </div>
+                <div class="ant-card-body">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                    <div>
+                      <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">评审摘要</div>
+                      <div style="font-size:13px;line-height:1.6;color:var(--text-secondary)">
+                        综合评分 <strong>66</strong>（谨慎），利润空间一般（18.2%），竞争度中等。增长趋势平稳，合规风险低。陈琳建议作为补充品类试水，首批 500 件小批量测试。
+                      </div>
+                    </div>
+                    <div>
+                      <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">审批决策</div>
+                      <div style="display:flex;gap:8px;margin-bottom:10px">
+                        <label style="display:flex;align-items:center;gap:4px;padding:6px 14px;border:2px solid var(--success);border-radius:6px;font-size:13px;cursor:pointer;background:var(--success-light)">
+                          <input type="radio" name="decision" checked> ✓ 通过
+                        </label>
+                        <label style="display:flex;align-items:center;gap:4px;padding:6px 14px;border:2px solid #d9d9d9;border-radius:6px;font-size:13px;cursor:pointer">
+                          <input type="radio" name="decision"> ✗ 否决
+                        </label>
+                        <label style="display:flex;align-items:center;gap:4px;padding:6px 14px;border:2px solid #d9d9d9;border-radius:6px;font-size:13px;cursor:pointer">
+                          <input type="radio" name="decision"> ⏳ 待定
+                        </label>
+                      </div>
+                      <textarea class="ant-input" style="width:100%;height:60px;resize:none" placeholder="批注（可选）：首批 500 件小批量测试方案可行，建议关注..."></textarea>
+                      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+                        <button class="ant-btn ant-btn-sm">取消</button>
+                        <button class="ant-btn ant-btn-primary ant-btn-sm">提交审批</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ Screen 5: Brand Insights ═══════ -->
+  <div class="screen-section">
+    <div class="screen-label">
+      <span class="num">5</span>
+      <h3>品牌选品 — 品类洞察</h3>
+      <span class="desc">— 品类趋势 + 差评痛点词云 + 竞品矩阵</span>
+    </div>
+    <div class="mockup-frame">
+      <div class="mockup-titlebar">
+        <span class="mockup-dot red"></span>
+        <span class="mockup-dot yellow"></span>
+        <span class="mockup-dot green"></span>
+        <span class="mockup-url">app.selectionworkbench.com/brand/insights</span>
+      </div>
+      <div class="mockup-body">
+        <div class="app-shell">
+          <div class="app-sidebar">
+            <div class="sidebar-logo"><span class="icon">选</span><span>选品工作台</span></div>
+            <ul class="sidebar-menu">
+              <li><span class="menu-icon">📊</span> 工作台</li>
+              <li><span class="menu-icon">📈</span> 跟卖选品</li>
+              <li class="active"><span class="menu-icon">💡</span> 品牌选品</li>
+              <li><span class="menu-icon">📋</span> 评审中心</li>
+              <li><span class="menu-icon">📁</span> 选品档案库</li>
+            </ul>
+          </div>
+          <div class="app-content">
+            <div class="app-topbar">
+              <div class="topbar-breadcrumb">品牌选品 / <span>品类洞察 · 宠物用品</span></div>
+              <div class="topbar-actions">
+                <button class="ant-btn ant-btn-primary ant-btn-sm">💾 保存为选品方向</button>
+                <div class="topbar-avatar">陈</div>
+              </div>
+            </div>
+            <div class="app-page">
+              <!-- Category selector -->
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+                <span style="font-size:13px;color:var(--text-muted)">当前品类：</span>
+                <select class="ant-select" style="min-width:140px"><option>🐾 宠物用品</option></select>
+                <span style="font-size:12px;color:var(--text-muted);margin-left:auto">数据范围：近 12 个月</span>
+              </div>
+
+              <!-- Stats row -->
+              <div class="dash-stats" style="margin-bottom:12px">
+                <div class="dash-stat-card">
+                  <div class="ant-stat">
+                    <div class="ant-stat-value">+34%</div>
+                    <div class="ant-stat-label">搜索量增长（YoY）</div>
+                    <div class="ant-stat-trend up">持续增长</div>
+                  </div>
+                </div>
+                <div class="dash-stat-card">
+                  <div class="ant-stat">
+                    <div class="ant-stat-value">156</div>
+                    <div class="ant-stat-label">月均新品上架</div>
+                    <div class="ant-stat-trend up">↑ 22%</div>
+                  </div>
+                </div>
+                <div class="dash-stat-card">
+                  <div class="ant-stat">
+                    <div class="ant-stat-value">8.2%</div>
+                    <div class="ant-stat-label">平均退货率</div>
+                    <div class="ant-stat-trend down">↑ 1.2%</div>
+                  </div>
+                </div>
+                <div class="dash-stat-card">
+                  <div class="ant-stat">
+                    <div class="ant-stat-value">$22</div>
+                    <div class="ant-stat-label">品类均价</div>
+                    <div class="ant-stat-trend" style="color:var(--text-muted)">稳定</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="insight-grid">
+                <!-- Trend chart -->
+                <div class="ant-card">
+                  <div class="ant-card-head"><span>📈 搜索量趋势（近 12 月）</span></div>
+                  <div class="ant-card-body">
+                    <svg width="100%" height="120" viewBox="0 0 400 120">
+                      <defs>
+                        <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stop-color="var(--primary)" stop-opacity="0.2"/>
+                          <stop offset="100%" stop-color="var(--primary)" stop-opacity="0"/>
+                        </linearGradient>
+                      </defs>
+                      <!-- Grid -->
+                      <line x1="40" y1="10" x2="40" y2="100" stroke="#f0f0f0" stroke-width="0.5"/>
+                      <line x1="40" y1="100" x2="390" y2="100" stroke="#f0f0f0" stroke-width="0.5"/>
+                      <line x1="40" y1="55" x2="390" y2="55" stroke="#f0f0f0" stroke-width="0.5" stroke-dasharray="4"/>
+                      <line x1="40" y1="10" x2="390" y2="10" stroke="#f0f0f0" stroke-width="0.5" stroke-dasharray="4"/>
+                      <!-- Area -->
+                      <path d="M40,85 L72,80 L104,75 L136,72 L168,65 L200,60 L232,52 L264,48 L296,40 L328,35 L360,28 L390,22 L390,100 L40,100 Z" fill="url(#trendGrad)"/>
+                      <!-- Line -->
+                      <polyline points="40,85 72,80 104,75 136,72 168,65 200,60 232,52 264,48 296,40 328,35 360,28 390,22" fill="none" stroke="var(--primary)" stroke-width="2"/>
+                      <!-- Dots -->
+                      <circle cx="390" cy="22" r="3" fill="var(--primary)"/>
+                      <circle cx="360" cy="28" r="3" fill="var(--primary)"/>
+                      <!-- Labels -->
+                      <text x="40" y="115" font-size="9" fill="#8c8c8c">Nov</text>
+                      <text x="104" y="115" font-size="9" fill="#8c8c8c">Jan</text>
+                      <text x="168" y="115" font-size="9" fill="#8c8c8c">Mar</text>
+                      <text x="232" y="115" font-size="9" fill="#8c8c8c">May</text>
+                      <text x="296" y="115" font-size="9" fill="#8c8c8c">Jul</text>
+                      <text x="360" y="115" font-size="9" fill="#8c8c8c">Sep</text>
+                      <text x="10" y="100" font-size="9" fill="#8c8c8c">0</text>
+                      <text x="10" y="55" font-size="9" fill="#8c8c8c">50k</text>
+                      <text x="10" y="15" font-size="9" fill="#8c8c8c">100k</text>
+                    </svg>
+                  </div>
+                </div>
+
+                <!-- Pain point word cloud -->
+                <div class="ant-card">
+                  <div class="ant-card-head"><span>😤 差评痛点聚类</span></div>
+                  <div class="ant-card-body">
+                    <div class="wordcloud" style="min-height:120px">
+                      <span class="wc-word" style="font-size:22px;color:var(--error);background:var(--error-light)">材质差</span>
+                      <span class="wc-word" style="font-size:18px;color:var(--error);background:var(--error-light)">不耐用</span>
+                      <span class="wc-word" style="font-size:20px;color:#d48806;background:var(--warning-light)">尺寸不对</span>
+                      <span class="wc-word" style="font-size:15px;color:#d48806;background:var(--warning-light)">气味大</span>
+                      <span class="wc-word" style="font-size:14px;color:var(--text-muted);background:#fafafa">颜色偏差</span>
+                      <span class="wc-word" style="font-size:16px;color:var(--error);background:var(--error-light)">易碎</span>
+                      <span class="wc-word" style="font-size:13px;color:var(--text-muted);background:#fafafa">包装简陋</span>
+                      <span class="wc-word" style="font-size:17px;color:#d48806;background:var(--warning-light)">不好清洗</span>
+                      <span class="wc-word" style="font-size:12px;color:var(--text-muted);background:#fafafa">底部滑动</span>
+                      <span class="wc-word" style="font-size:14px;color:#d48806;background:var(--warning-light)">太小了</span>
+                      <span class="wc-word" style="font-size:11px;color:var(--text-muted);background:#fafafa">无说明</span>
+                      <span class="wc-word" style="font-size:15px;color:var(--error);background:var(--error-light)">掉色</span>
+                      <span class="wc-word" style="font-size:12px;color:var(--text-muted);background:#fafafa">发货慢</span>
+                    </div>
+                    <div style="margin-top:8px;font-size:11px;color:var(--text-muted);text-align:right">基于 2,340 条差评 · NLP 聚类</div>
+                  </div>
+                </div>
+
+                <!-- Competitor matrix -->
+                <div class="ant-card" style="grid-column:1/3">
+                  <div class="ant-card-head">
+                    <span>🏆 竞品矩阵 — Top 10</span>
+                    <span style="font-size:12px;color:var(--text-muted)">按销量排序</span>
+                  </div>
+                  <table class="ant-table">
+                    <thead>
+                      <tr>
+                        <th>品牌</th>
+                        <th>代表商品</th>
+                        <th>价格带</th>
+                        <th>月销量</th>
+                        <th>评分</th>
+                        <th>核心卖点</th>
+                        <th>差评焦点</th>
+                        <th>差异化机会</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Outward Hound</strong></td>
+                        <td>Fun Feeder</td>
+                        <td>$12-18</td>
+                        <td>8,200</td>
+                        <td>4.6</td>
+                        <td><span class="ant-tag ant-tag-blue">多难度</span></td>
+                        <td>底部防滑差</td>
+                        <td style="color:var(--success)">防滑升级</td>
+                      </tr>
+                      <tr>
+                        <td><strong>JASGOOD</strong></td>
+                        <td>Slow Eating Bowl</td>
+                        <td>$8-14</td>
+                        <td>5,600</td>
+                        <td>4.4</td>
+                        <td><span class="ant-tag ant-tag-green">性价比</span></td>
+                        <td>材质廉价感</td>
+                        <td style="color:var(--success)">陶瓷材质</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Hyper Pet</strong></td>
+                        <td>Lick Mat</td>
+                        <td>$10-16</td>
+                        <td>4,100</td>
+                        <td>4.5</td>
+                        <td><span class="ant-tag ant-tag-orange">互动型</span></td>
+                        <td>不好清洗</td>
+                        <td style="color:var(--success)">可洗碗机</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ Flow Diagrams ═══════ -->
+  <div class="screen-section">
+    <div class="screen-label">
+      <span class="num">6</span>
+      <h3>功能流程图</h3>
+      <span class="desc">— 核心用户路径 + 分支逻辑 + 终态</span>
+    </div>
+
+    <!-- Flow 1: Follow-sell -->
+    <div class="flow-diagram" style="margin-bottom:20px">
+      <div class="flow-title">
+        <span class="ft-icon" style="background:var(--primary-light);color:var(--primary)">1</span>
+        跟卖选品全流程（陈琳 · 选品专员）
+      </div>
+      <div class="flow-row">
+        <div class="flow-node primary">
+          <div class="flow-node-title">工作台首页</div>
+          <div class="flow-node-desc">查看待办 · 进入选品</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <div class="flow-node-title">候选品列表</div>
+          <div class="flow-node-desc">跨平台聚合 · 筛选</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <div class="flow-node-title">评分详情页</div>
+          <div class="flow-node-desc">6维度评分 · 成本核算</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">评分 ≥ 75?</div>
+          <div style="display:flex;gap:8px">
+            <div class="flow-node success" style="min-width:110px">
+              <div class="flow-node-title" style="font-size:12px">生成档案</div>
+              <div class="flow-node-desc">→ 评审队列</div>
+            </div>
+            <div class="flow-node" style="min-width:110px;border-color:var(--error)">
+              <div class="flow-node-title" style="font-size:12px;color:var(--error)">标记不推荐</div>
+              <div class="flow-node-desc">返回列表</div>
+            </div>
+          </div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node success">
+          <div class="flow-node-title">✅ 档案提交</div>
+          <div class="flow-node-desc">进入评审流程</div>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:11px;color:var(--text-muted);margin-top:8px">
+        异常分支：第三方数据加载失败 → 显示缓存数据 + 刷新按钮 ｜ 中途退出 → 保存筛选条件和评估进度
+      </div>
+    </div>
+
+    <!-- Flow 2: Review -->
+    <div class="flow-diagram" style="margin-bottom:20px">
+      <div class="flow-title">
+        <span class="ft-icon" style="background:var(--warning-light);color:#d48806">2</span>
+        评审流程（张总 · 老板）
+      </div>
+      <div class="flow-row">
+        <div class="flow-node warning">
+          <div class="flow-node-title">评审工作台</div>
+          <div class="flow-node-desc">待审列表 · 概览统计</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <div class="flow-node-title">档案详情(只读)</div>
+          <div class="flow-node-desc">评分 + 成本 + 竞品</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">审批决策</div>
+          <div style="display:flex;gap:6px">
+            <div class="flow-node success" style="min-width:90px">
+              <div class="flow-node-title" style="font-size:12px">✓ 通过</div>
+            </div>
+            <div class="flow-node" style="min-width:90px;border-color:var(--error)">
+              <div class="flow-node-title" style="font-size:12px;color:var(--error)">✗ 否决</div>
+            </div>
+            <div class="flow-node" style="min-width:90px;border-color:var(--warning)">
+              <div class="flow-node-title" style="font-size:12px;color:#d48806">⏳ 待定</div>
+            </div>
+          </div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <div class="flow-node-title">填写批注</div>
+          <div class="flow-node-desc">可选 · 文字备注</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node success">
+          <div class="flow-node-title">✅ 评审纪要</div>
+          <div class="flow-node-desc">自动生成 · 通知专员</div>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:11px;color:var(--text-muted);margin-top:8px">
+        异常分支：网络异常 → 本地暂存批注 + 重试 ｜ 中途退出 → 保留"评审中"状态
+      </div>
+    </div>
+
+    <!-- Flow 3: Brand selection -->
+    <div class="flow-diagram">
+      <div class="flow-title">
+        <span class="ft-icon" style="background:#f9f0ff;color:#722ed1">3</span>
+        品牌选品需求挖掘（陈琳 · 选品专员）
+      </div>
+      <div class="flow-row">
+        <div class="flow-node" style="border-color:#722ed1;background:#f9f0ff">
+          <div class="flow-node-title">选择品类</div>
+          <div class="flow-node-desc">宠物用品 / 家居 / ...</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <div class="flow-node-title">品类洞察</div>
+          <div class="flow-node-desc">趋势 + 痛点 + 竞品</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <div class="flow-node-title">提炼方向</div>
+          <div class="flow-node-desc">创新点 + 差异化</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node success">
+          <div class="flow-node-title">💾 保存方向</div>
+          <div class="flow-node-desc">进入评估流程</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ Component Showcase ═══════ -->
+  <div class="screen-section">
+    <div class="screen-label">
+      <span class="num">7</span>
+      <h3>核心组件样式</h3>
+      <span class="desc">— Ant Design 风格，关键交互组件展示</span>
+    </div>
+    <div class="comp-grid">
+      <!-- Score Badge -->
+      <div class="comp-card">
+        <h4>评分等级标签</h4>
+        <div class="demo">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <span class="score-badge high">● 推荐 78</span>
+            <span class="score-badge medium">● 谨慎 66</span>
+            <span class="score-badge low">● 不推荐 54</span>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted)">推荐 ≥75 · 谨慎 50-74 · 不推荐 &lt;50</div>
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div class="comp-card">
+        <h4>状态标签系统</h4>
+        <div class="demo">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+            <span class="ant-tag ant-tag-green">已通过</span>
+            <span class="ant-tag ant-tag-orange">待评审</span>
+            <span class="ant-tag ant-tag-red">已否决</span>
+            <span class="ant-tag ant-tag-blue">评估中</span>
+            <span class="ant-tag ant-tag-gray">已归档</span>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="ant-tag ant-tag-blue">Amazon</span>
+            <span class="ant-tag ant-tag-gray">eBay</span>
+            <span class="ant-tag ant-tag-green">低竞争</span>
+            <span class="ant-tag ant-tag-orange">中竞争</span>
+            <span class="ant-tag ant-tag-red">高竞争</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="comp-card">
+        <h4>操作按钮</h4>
+        <div class="demo">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+            <button class="ant-btn ant-btn-primary">📄 生成选品档案</button>
+            <button class="ant-btn ant-btn-success">✓ 通过</button>
+            <button class="ant-btn ant-btn-danger">✗ 否决</button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="ant-btn ant-btn-sm">🔍 筛选</button>
+            <button class="ant-btn ant-btn-sm">重置</button>
+            <button class="ant-btn ant-btn-primary ant-btn-sm">评分 →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="comp-card">
+        <h4>维度评分条</h4>
+        <div class="demo">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="dim-item">
+              <span class="dim-label">市场容量</span>
+              <div class="dim-bar" style="width:80px"><div class="dim-bar-fill" style="width:85%;background:var(--success)"></div></div>
+              <span class="dim-score" style="color:var(--success)">85</span>
+            </div>
+            <div class="dim-item">
+              <span class="dim-label">利润空间</span>
+              <div class="dim-bar" style="width:80px"><div class="dim-bar-fill" style="width:78%;background:var(--primary)"></div></div>
+              <span class="dim-score" style="color:var(--primary)">78</span>
+            </div>
+            <div class="dim-item">
+              <span class="dim-label">供应链难度</span>
+              <div class="dim-bar" style="width:80px"><div class="dim-bar-fill" style="width:45%;background:var(--error)"></div></div>
+              <span class="dim-score" style="color:var(--error)">45</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Card -->
+      <div class="comp-card">
+        <h4>候选品数据卡片</h4>
+        <div class="demo">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--border);border-radius:6px">
+            <div class="product-thumb" style="width:40px;height:40px;font-size:18px">🐾</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Slow Feeder Dog Bowl</div>
+              <div style="display:flex;gap:8px;margin-top:4px;font-size:11px;color:var(--text-muted)">
+                <span>$18.99</span>
+                <span>3,240/月</span>
+                <span style="color:var(--success)">↑ 12%</span>
+              </div>
+            </div>
+            <span class="ant-tag ant-tag-green" style="font-size:10px">推荐</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notification -->
+      <div class="comp-card">
+        <h4>风险提示卡片</h4>
+        <div class="demo">
+          <div style="padding:8px 12px;border:1px solid #ffe58f;background:var(--warning-light);border-radius:6px;font-size:12px;display:flex;gap:8px;align-items:flex-start;margin-bottom:6px">
+            <span style="font-size:14px">⚠️</span>
+            <div>
+              <div style="font-weight:500;color:#d48806">竞争加剧预警</div>
+              <div style="color:var(--text-secondary);margin-top:2px">近 30 天新入场卖家 12 家</div>
+            </div>
+          </div>
+          <div style="padding:8px 12px;border:1px solid #ffccc7;background:var(--error-light);border-radius:6px;font-size:12px;display:flex;gap:8px;align-items:flex-start">
+            <span style="font-size:14px">🚫</span>
+            <div>
+              <div style="font-weight:500;color:var(--error)">一票否决：合规风险</div>
+              <div style="color:var(--text-secondary);margin-top:2px">该品类需要 FDA 认证，当前未获取</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
