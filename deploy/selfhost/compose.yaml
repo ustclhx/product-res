@@ -23,6 +23,11 @@ x-app-env: &app-env
   DB_POOL_MAX: ${DB_POOL_MAX:-10}
   SHUTDOWN_TIMEOUT_MS: ${SHUTDOWN_TIMEOUT_MS:-30000}
   EMAIL_TRANSPORT: ${EMAIL_TRANSPORT:-log}
+  # 首个管理员与注册白名单（逗号分隔邮箱）；白名单为空时任何人可注册
+  BOOTSTRAP_ADMIN_EMAILS: ${BOOTSTRAP_ADMIN_EMAILS:-}
+  SIGNUP_ALLOWED_EMAILS: ${SIGNUP_ALLOWED_EMAILS:-}
+  # AI Provider 与数据源凭据：secrets/optional/<NAME> 单文件，缺失即未配置
+  OPTIONAL_SECRETS_DIR: /run/secrets/optional
 
 x-app-secrets: &app-secrets
   - app_database_url
@@ -106,7 +111,9 @@ services:
       PORT: '3000'
       TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS-172.30.77.2/32}
     secrets: *app-secrets
-    volumes: ['${CA_FILE:-./certs/ca.crt}:/run/certs/ca.crt:ro']
+    volumes:
+      - '${CA_FILE:-./certs/ca.crt}:/run/certs/ca.crt:ro'
+      - '${SECRETS_DIR:-./secrets}/optional:/run/secrets/optional:ro'
     networks:
       data: {}
       ingress:
@@ -139,6 +146,7 @@ services:
     secrets: *app-secrets
     volumes:
       - '${CA_FILE:-./certs/ca.crt}:/run/certs/ca.crt:ro'
+      - '${SECRETS_DIR:-./secrets}/optional:/run/secrets/optional:ro'
       - job_owners:/app/.data/job-owners
       - /etc/machine-id:/run/job-host/machine-id:ro
     networks: [data]

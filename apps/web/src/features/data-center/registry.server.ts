@@ -20,11 +20,14 @@ export function webConnectors(): ReturnType<typeof createRegistry> {
   return registry
 }
 
-/** 读取数据源凭据（只在 Node 目标可用）；页面只用于显示“已配置 / 未配置” */
+/**
+ * 读取数据源凭据（只在 Node 目标可用）；页面只用于显示“已配置 / 未配置”。
+ * 用原始 process.env：env() 经 schema 校验会去掉数据源前缀的未知键。
+ */
 export async function webSecrets() {
   if (!secrets) {
     const { createDataSourceSecrets } = await import('@product-res/config/node')
-    secrets = createDataSourceSecrets(env())
+    secrets = createDataSourceSecrets(process.env)
   }
   return secrets
 }

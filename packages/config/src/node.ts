@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { parseEnv } from 'node:util'
 import type { EmailTransportConfig } from './email-env.ts'
 import { EnvValidationError, loadEnv } from './env.ts'
@@ -105,6 +106,16 @@ export function loadNodeEnv(options: NodeEnvOptions = {}): NodeEnv {
       invalid.push(key)
     }
   }
+  // 可选密钥目录：每个文件名即密钥名；文件不存在表示未配置，基础 Compose 不必为未启用集成挂载单独 secret。
+  const optionalDir = source.OPTIONAL_SECRETS_DIR
+  if (optionalDir) {
+    for (const key of nodeSecretNames) {
+      if (source[key] !== undefined || source[`${key}_FILE`] !== undefined) continue
+      const value = readOptionalSecret(optionalDir, key)
+      if (value === null) invalid.push(key)
+      else if (value !== undefined) source[key] = value
+    }
+  }
   if (invalid.length) throw new EnvValidationError([], invalid.sort())
   return loadEnv(
     source,
@@ -112,12 +123,22 @@ export function loadNodeEnv(options: NodeEnvOptions = {}): NodeEnv {
   )
 }
 
+/** 读取可选密钥目录中的单个文件：不存在返回 undefined；不可读或为空返回 null（配置错误） */
+function readOptionalSecret(dir: string, name: string): string | undefined | null {
+  try {
+    const value = readFileSync(join(dir, name), 'utf8').replace(/\r?\n$/, '')
+    return value.length === 0 ? null : value
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === 'ENOENT' ? undefined : null
+  }
+}
+
 /** 数据源凭据名前缀；只读取这些前缀的 NAME 或 NAME_FILE，未知名称不会触发文件读取 */
 const DATA_SOURCE_SECRET =
   /^(EBAY|KEEPA|JUNGLESCOUT|SELLERSPRITE|HELIUM10|DATAFORSEO|SPAPI|FX)_[A-Z0-9_]+$/
 
 /**
- * 读取数据源凭据（add-data-source-hub design D2）：优先 NAME，其次 NAME_FILE（去掉一个末尾换行）。
+ * 读取数据源凭据（add-data-source-hub design D2）：优先 NAME，其次 NAME_FILE，最后 OPTIONAL_SECRETS_DIR/NAME（去掉一个末尾换行）。
  * 结果按名称缓存；未配置、文件不可读或为空都返回 undefined，由连接器核验报告“未配置”。
  */
 export function createDataSourceSecrets(
@@ -136,6 +157,8 @@ export function createDataSourceSecrets(
         value = undefined
       }
     }
+    if (value === undefined && !file && env.OPTIONAL_SECRETS_DIR)
+      value = readOptionalSecret(env.OPTIONAL_SECRETS_DIR, name) ?? undefined
     const result = value ? value : undefined
     cache.set(name, result)
     return result

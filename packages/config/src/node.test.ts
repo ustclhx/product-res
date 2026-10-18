@@ -75,6 +75,18 @@ describe('Node runtime config', () => {
     expect(loaded.OPENAI_API_KEY).toBeUndefined()
   })
 
+  it('可选密钥目录：存在的文件加载，缺失跳过，空文件拒绝', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'node-optional-'))
+    writeFileSync(join(dir, 'OPENAI_API_KEY'), 'sk-test\n')
+    const loaded = loadNodeEnv({ dotenvPath: false, env: { ...valid, OPTIONAL_SECRETS_DIR: dir } })
+    expect(loaded.OPENAI_API_KEY).toBe('sk-test')
+    expect(loaded.DEEPSEEK_API_KEY).toBeUndefined()
+    writeFileSync(join(dir, 'DEEPSEEK_API_KEY'), '')
+    expect(() =>
+      loadNodeEnv({ dotenvPath: false, env: { ...valid, OPTIONAL_SECRETS_DIR: dir } }),
+    ).toThrow(EnvValidationError)
+  })
+
   it('两种 Node schema 保留故障闸门，仅 staging 开启并安全拒绝生产配置和非法值', () => {
     const auth = { ...templateConfigDefaults.auth, oauth: [], turnstile: false }
     for (const templateConfig of [undefined, { auth }]) {
@@ -497,5 +509,13 @@ describe('createDataSourceSecrets', () => {
     expect(secret('BETTER_AUTH_SECRET')).toBeUndefined()
     expect(secret('EBAY_EMPTY')).toBeUndefined()
     expect(secret('SPAPI_MISSING')).toBeUndefined()
+  })
+
+  it('从可选密钥目录读取，文件缺失为未配置', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ds-optional-'))
+    writeFileSync(join(dir, 'EBAY_CLIENT_SECRET'), 'ebay-secret\n')
+    const secret = createDataSourceSecrets({ OPTIONAL_SECRETS_DIR: dir })
+    expect(secret('EBAY_CLIENT_SECRET')).toBe('ebay-secret')
+    expect(secret('KEEPA_API_KEY')).toBeUndefined()
   })
 })
