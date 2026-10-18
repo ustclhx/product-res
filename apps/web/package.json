@@ -27,6 +27,7 @@
     "@product-res/auth": "workspace:*",
     "@product-res/billing": "workspace:*",
     "@product-res/config": "workspace:*",
+    "@product-res/connectors": "workspace:*",
     "@product-res/credits": "workspace:*",
     "@product-res/datasources": "workspace:*",
     "@product-res/db": "workspace:*",

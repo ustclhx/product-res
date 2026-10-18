@@ -1,3 +1,4 @@
+import { createConnectors } from '@product-res/connectors'
 import {
   type ConnectorContext,
   createRegistry,
@@ -134,7 +135,13 @@ export function registerDataSchedules(scheduler: Scheduler, context: DataSyncCon
       timeZone: 'Asia/Singapore',
       missedRun: 'once',
     },
-    ({ scheduledAt }) => runDataMaintenance(context, scheduledAt),
+    async ({ scheduledAt }) => {
+      // 先采集再做质量检查；采集失败不阻止维护
+      await runDailyCollections(context).catch((error) =>
+        log.error('datasync.daily_collection_failed', { error }),
+      )
+      await runDataMaintenance(context, scheduledAt)
+    },
   )
   scheduler.register(
     { id: 'datasources-reconcile-v1', cron: '*/10 * * * *', timeZone: 'UTC', missedRun: 'skip' },
@@ -144,9 +151,31 @@ export function registerDataSchedules(scheduler: Scheduler, context: DataSyncCon
   )
 }
 
-/** 部署中可用的连接器；add-source-connectors 逐个加入。模拟数据源只在显式开启时注册 */
+/** 部署中可用的连接器（@product-res/connectors）；模拟数据源只在显式开启时注册 */
 export function createConnectorRegistry(options: { readonly mock?: SourceConnector } = {}) {
-  return createRegistry(options.mock ? [options.mock] : [])
+  return createRegistry([...createConnectors(), ...(options.mock ? [options.mock] : [])])
+}
+
+/**
+ * 每日流水线中不依赖选品方向的固定采集（汇率）；依赖方向的采集（卖家新品、快照、关键词）
+ * 在选品方向（M2）上线后由方向配置生成。数据源未启用时 runSyncTask 记为 skipped。
+ */
+const DAILY_COLLECTIONS: readonly { sourceId: string; task: FetchTask }[] = [
+  { sourceId: 'fx-ecb', task: { kind: 'fx-rate', marketplace: 'global', scope: {} } },
+]
+
+export async function runDailyCollections(context: DataSyncContext) {
+  const archive = createDbArchive(context.db, context.archiveRetentionDays)
+  const ctx = connectorContext(context)
+  for (const { sourceId, task } of DAILY_COLLECTIONS) {
+    const connector = context.registry.get(sourceId)
+    if (!connector) continue
+    const outcome = await runSyncTask({ db: context.db, archive, ctx }, connector, task, {
+      mode: 'scheduled',
+      trigger: 'scheduled',
+    })
+    log.info('datasync.daily_collection', { sourceId, status: outcome.status })
+  }
 }
 
 export async function prepareDataSources(db: Database, registry: SourceRegistry) {

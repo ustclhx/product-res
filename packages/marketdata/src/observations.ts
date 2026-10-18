@@ -227,6 +227,8 @@ export const DEFAULT_PRIORITIES: Readonly<Record<string, readonly string[]>> = {
   price: ['amazon-spapi', 'keepa', 'dataforseo', 'ebay-browse'],
   seller_count: ['amazon-spapi', 'keepa', 'dataforseo'],
   bsr: ['keepa', 'amazon-spapi'],
+  // 手填汇率优先于公开来源（specs/connector-fx「人工覆盖」）
+  fx_rate: ['manual', 'fx-ecb'],
   search_volume_monthly: ['sellersprite', 'jungle-scout', 'helium10', 'dataforseo'],
 }
 
@@ -344,4 +346,61 @@ export async function productIds(
       ),
     )
   return new Map(rows.map((r) => [r.platformId, r.id]))
+}
+
+/**
+ * 某日（含）之前最近一个有值的观测，用于汇率等“当日缺失则沿用最近一日”的场景；
+ * 返回实际使用的日期，调用方必须展示它（specs/connector-fx「获取失败」）。
+ */
+export async function latestValue(
+  db: Database,
+  input: {
+    readonly entity: EntityKey
+    readonly metric: string
+    readonly onOrBefore: string
+  },
+) {
+  const ids = await upsertEntities(db, [{ key: input.entity }])
+  const entityId = ids.get(entityRef(input.entity)) as string
+  const points = await readMetric(db, {
+    entityType: input.entity.type,
+    entityId,
+    metric: input.metric,
+    marketplace: input.entity.marketplace,
+    to: input.onOrBefore,
+  })
+  const last = points.at(-1)
+  return last ? { observedOn: last.observedOn, ...last.primary } : null
+}
+
+/** 人工填写某日汇率：来源 manual、获取方式“手工导入”，优先于公开来源；公开来源的值保留 */
+export async function setManualRate(
+  db: Database,
+  input: {
+    readonly pair: string
+    readonly observedOn: string
+    readonly value: number
+    readonly now: Date
+  },
+) {
+  const entity = {
+    type: 'currency' as const,
+    marketplace: 'global' as const,
+    platformId: input.pair,
+  }
+  const ids = await upsertEntities(db, [{ key: entity }])
+  await upsertObservations(
+    db,
+    [
+      {
+        entity,
+        metric: 'fx_rate',
+        observedOn: input.observedOn,
+        value: input.value,
+        method: 'import',
+      },
+    ],
+    ids,
+    { sourceId: 'manual', fetchedAt: input.now },
+  )
 }

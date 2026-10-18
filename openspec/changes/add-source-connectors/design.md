@@ -82,6 +82,7 @@ eBay 价格、可售量、已售量只有 Browse 一个来源。
 | eBay `estimatedSoldQuantity` | — | 待核验 |
 | DataForSEO Amazon 评论 | — | 待核验 |
 | 卖家精灵评论内容 | — | 待核验 |
+| 汇率（ECB） | 2026-10-18 | 通过，见 `docs/receipts/fx-ecb-2026-10-18.md` |
 | Helium 10 API | — | 待确认 |
 
 ## 风险与取舍
