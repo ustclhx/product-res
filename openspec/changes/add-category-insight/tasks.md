@@ -4,7 +4,7 @@
 
 ## 1. 聚合纯函数
 
-- [ ] 1.1 `packages/insight`：同比（重叠月份）、近 90 天新品数、价格带、CR3/CR10、竞品矩阵、气泡图数据、差评筛选（design D2）。验证：spec 场景用例。
+- [x] 1.1 `packages/insight`：同比（重叠月份）、近 90 天新品数、价格带、CR3/CR10、竞品矩阵、气泡图数据、差评筛选（design D2）。验证：spec 场景用例。 证据：`pnpm --filter @product-res/insight test` 22 例通过，含“去年缺 3 个月 → 覆盖 9 个月”“无评论 → no-source”“无有效引用的建议被丢弃”；`pnpm typecheck`、`pnpm check`、`pnpm check:deps` 通过。
 
 ## 2. 数据表
 
