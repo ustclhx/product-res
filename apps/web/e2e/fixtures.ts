@@ -14,6 +14,14 @@ const uiLocale = templateConfig.i18n.enabled ? 'en' : templateConfig.i18n.defaul
 const authMessages = JSON.parse(
   readFileSync(new URL(`../messages/${uiLocale}/auth.json`, import.meta.url), 'utf8'),
 ) as Record<string, string>
+const adminMessages = JSON.parse(
+  readFileSync(new URL(`../messages/${uiLocale}/admin.json`, import.meta.url), 'utf8'),
+) as Record<string, string>
+export function adminText(key: string) {
+  const text = adminMessages[key]
+  if (!text) throw new Error(`Missing admin message ${key}`)
+  return text
+}
 export function authText(key: string) {
   const text = authMessages[key]
   if (!text) throw new Error(`Missing auth message ${key}`)
