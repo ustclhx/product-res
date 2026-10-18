@@ -15,12 +15,13 @@ import {
   sourceBudget,
 } from '@product-res/db'
 import { AppError } from '@product-res/shared'
-import { and, eq, gte, inArray, type SQL, sql } from 'drizzle-orm'
+import { and, desc, eq, gte, inArray, type SQL, sql } from 'drizzle-orm'
 import { assertWorkbenchWriter } from '../workbench/access.ts'
 import type { WorkbenchActor } from '../workbench/actor.ts'
 import { deadlineTone, nextNodeStart, todaySgt, weekStartSgt } from './dates.ts'
 import { type DecisionInput, decisionInput } from './inputs.ts'
 import { isLeadDecided } from './labels.ts'
+import { latestLeadOf } from './quotes.server.ts'
 import { summarizeScenario } from './scenario.ts'
 
 /**
@@ -39,13 +40,42 @@ const all = (...conditions: (SQL | undefined)[]) => and(...conditions) as SQL
 
 const conflict = (code: string, message: string) => new AppError(code, message, { status: 409 })
 
-/** 线索已决定时拒绝修改核算；核算矩阵（tasks 3.1）在写 costing_scenario 前调用 */
+/**
+ * 线索按簇 × 日期每天生成一条，新线索继承上一条的状态与核算组合（packages/follow 流水线），
+ * 所以核算与决定都作用于簇的最新线索：传入较早的线索 id（如页面停留跨天）时解析到同簇最新一条。
+ */
+export async function currentLeadOf(s: Scoped, leadId: string): Promise<Lead> {
+  const row = await s.findById(lead, leadId)
+  return (await latestLeadOf(s, row.clusterId)) ?? row
+}
+
+/** 簇的最新线索（候选数、待决定队列只看它，同一簇每天的线索不重复计入） */
+export const isLatestLead = sql`${lead.leadOn} = (select max(l2.lead_on) from lead l2 where l2.cluster_id = ${lead.clusterId})`
+/** 簇的任一线索已有决定 */
+const clusterHasDecision = sql`exists (select 1 from decision d join lead l3 on l3.id = d.lead_id where l3.cluster_id = ${lead.clusterId})`
+
+/**
+ * 簇是否已决定（核算按簇锁定，与报价锁定一致）：最新线索继承了已决定状态，或该簇任一线索已有 decision。
+ */
+export async function isClusterDecided(s: Scoped, row: Pick<Lead, 'clusterId' | 'status'>) {
+  if (isLeadDecided(row.status)) return true
+  const [hit] = await s
+    .select(decision, {
+      where: sql`${decision.leadId} in (select l.id from lead l where l.cluster_id = ${row.clusterId})`,
+      fields: { id: decision.id },
+    })
+    .limit(1)
+  return Boolean(hit)
+}
+
+/** 簇已决定时拒绝修改核算；核算矩阵（tasks 3.1）在写 costing_scenario 前调用。返回簇的最新线索 */
 export async function assertCostingEditable(
   actor: Pick<WorkbenchActor, 'db' | 'workspaceId'>,
   leadId: string,
 ) {
-  const row = await scoped(actor.db, actor.workspaceId).findById(lead, leadId)
-  if (isLeadDecided(row.status))
+  const s = scoped(actor.db, actor.workspaceId)
+  const row = await currentLeadOf(s, leadId)
+  if (await isClusterDecided(s, row))
     throw conflict('LEAD_DECIDED', '线索已作出决定，核算已锁定；如需重新核算请新建线索')
   return row
 }
@@ -131,10 +161,12 @@ export async function workbenchHome(actor: WorkbenchActor, now = new Date()) {
   const today = todaySgt(now)
   const s = scoped(actor.db, actor.workspaceId)
   const [pending, candidates, decidedThisWeek, nodes, quota] = await Promise.all([
-    s.select(lead, { where: eq(lead.status, 'pending') }),
-    // 线索按簇 × 日期生成，同一簇每天一条；候选数按簇去重
+    // 线索按簇 × 日期生成，同一簇每天一条：队列与候选数都只看簇的最新线索，已有决定的簇不再列出
     s.select(lead, {
-      where: inArray(lead.status, ['new', 'costing']),
+      where: all(eq(lead.status, 'pending'), isLatestLead, sql`not ${clusterHasDecision}`),
+    }),
+    s.select(lead, {
+      where: all(inArray(lead.status, ['new', 'costing']), isLatestLead),
       fields: { n: sql<number>`count(distinct ${lead.clusterId})::int` },
     }),
     s.count(decision, gte(decision.decidedAt, weekStartSgt(now))),
@@ -223,13 +255,22 @@ export async function decideLead(actor: DecisionActor, leadId: string, raw: Deci
     throw new AppError('INVALID_INPUT', '选择“其他”时请填写说明', { status: 400 })
 
   return scoped(actor.db, actor.workspaceId).transaction(async (tx) => {
-    // 锁住线索行，避免两人同时决定
-    const [row] = await tx.select(lead, { where: eq(lead.id, leadId) }).for('update')
+    const [given] = await tx.select(lead, {
+      where: eq(lead.id, leadId),
+      fields: { clusterId: lead.clusterId },
+    })
+    if (!given) throw notFound()
+    // 决定作用于簇的最新线索（它继承了选定组合）；锁住该行，避免两人同时决定
+    const [row] = await tx
+      .select(lead, { where: eq(lead.clusterId, given.clusterId) })
+      .orderBy(desc(lead.leadOn))
+      .limit(1)
+      .for('update')
     if (!row) throw notFound()
-    if (isLeadDecided(row.status)) throw conflict('LEAD_DECIDED', '该线索已作出决定')
+    if (await isClusterDecided(tx, row)) throw conflict('LEAD_DECIDED', '该线索已作出决定')
     const [scenario] = await tx
       .select(costingScenario, {
-        where: all(eq(costingScenario.leadId, leadId), eq(costingScenario.selected, true)),
+        where: all(eq(costingScenario.leadId, row.id), eq(costingScenario.selected, true)),
       })
       .limit(1)
     if (input.kind === 'follow' && (row.status !== 'pending' || !scenario))
@@ -291,7 +332,7 @@ export async function decideLead(actor: DecisionActor, leadId: string, raw: Deci
         : { kind: 'drop' as const, dropReason: input.reason, dropNote: input.note || null }
     const [created] = await tx
       .insert(decision, {
-        leadId,
+        leadId: row.id,
         scenarioId: scenario?.id ?? null,
         snapshot: snapshot as unknown as Record<string, unknown>,
         decidedBy: actor.userId,
@@ -300,9 +341,9 @@ export async function decideLead(actor: DecisionActor, leadId: string, raw: Deci
       .returning({ id: decision.id })
     if (!created) throw new Error('insert decision failed')
     const status = input.kind === 'follow' ? 'followed' : 'dropped'
-    await tx.updateById(lead, leadId, { status })
+    await tx.updateById(lead, row.id, { status })
     await tx.insert(leadEvent, {
-      leadId,
+      leadId: row.id,
       clusterId: row.clusterId,
       kind: 'status',
       payload: {
@@ -313,6 +354,6 @@ export async function decideLead(actor: DecisionActor, leadId: string, raw: Deci
       },
       actorUserId: actor.userId,
     })
-    return { decisionId: created.id, status }
+    return { decisionId: created.id, leadId: row.id, status }
   })
 }

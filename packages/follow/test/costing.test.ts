@@ -12,7 +12,7 @@ import {
 } from '@product-res/db'
 import { addDays } from '@product-res/selection'
 import { newId } from '@product-res/shared'
-import { and, eq, type SQL } from 'drizzle-orm'
+import { and, eq, inArray, type SQL } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { runSelectionForWorkspace } from '../src/index.ts'
 import { cleanup, createWorkspace, insertProduct, observe, testDb, url } from './helpers.ts'
@@ -204,14 +204,32 @@ describe.skipIf(!url)('流水线接入核算结果', () => {
     expect(row?.status).toBe('pending')
     expect(certaintyItem(row)).toMatchObject({ value: 0.8 })
     expect(row?.gates).toMatchObject({ passed: true })
+
+    // 待决定的簇换到新一天的线索时带上核算组合：选定标记与结果快照保留，并标注复制来源
+    const s = scoped(db, workspaceId)
+    const first = await leadOn(asOf)
+    const carried = await s.select(costingScenario, {
+      where: eq(costingScenario.leadId, row?.id as string),
+    })
+    expect(carried).toHaveLength(1)
+    expect(carried[0]).toMatchObject({ selected: true, plannedQty: 100, salePriceMinor: 2000 })
+    expect(carried[0]?.result).toMatchObject({
+      result: { grossMargin: 0.31 },
+      copiedFrom: { leadId: first?.id, scenarioId },
+    })
+    // 同日重跑不重复复制
+    await runSelectionForWorkspace(db, workspaceId, { now, asOf: nextDay })
+    expect(await s.count(costingScenario, eq(costingScenario.leadId, row?.id as string))).toBe(1)
   })
 
   it('核算毛利率低于底线时毛利门槛不通过', async () => {
     const s = scoped(db, workspaceId)
+    // 次日线索已持有复制来的组合：改写两天的组合，模拟重新核算
+    const leadIds = [(await leadOn(asOf))?.id as string, (await leadOn(nextDay))?.id as string]
     await s.update(
       costingScenario,
       { result: scenarioResult(0.08) },
-      eq(costingScenario.id, scenarioId),
+      inArray(costingScenario.leadId, leadIds),
     )
     await runSelectionForWorkspace(db, workspaceId, { now, asOf: nextDay })
     const row = await leadOn(nextDay)
@@ -220,7 +238,7 @@ describe.skipIf(!url)('流水线接入核算结果', () => {
     await s.update(
       costingScenario,
       { result: scenarioResult(0.31) },
-      eq(costingScenario.id, scenarioId),
+      inArray(costingScenario.leadId, leadIds),
     )
   })
 
@@ -240,5 +258,17 @@ describe.skipIf(!url)('流水线接入核算结果', () => {
     expect((await leadOn(third))?.followMode).toBe('improved')
     const again = await s.select(riskFinding, { where: eq(riskFinding.clusterId, clusterId) })
     expect(again.find((f) => f.kind === 'brand')?.level).toBe('medium')
+  })
+
+  it('已决定的簇：新一天的线索继承终态，不再复制核算组合', async () => {
+    const s = scoped(db, workspaceId)
+    const third = addDays(nextDay, 1)
+    const decided = await leadOn(third)
+    await s.update(lead, { status: 'followed' }, eq(lead.id, decided?.id as string))
+    const fourth = addDays(third, 1)
+    await runSelectionForWorkspace(db, workspaceId, { now, asOf: fourth })
+    const row = await leadOn(fourth)
+    expect(row?.status).toBe('followed')
+    expect(await s.count(costingScenario, eq(costingScenario.leadId, row?.id as string))).toBe(0)
   })
 })
