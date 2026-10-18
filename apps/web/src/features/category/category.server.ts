@@ -16,6 +16,7 @@ import {
 } from '@product-res/db'
 import { AppError } from '@product-res/shared'
 import { and, asc, desc, eq, inArray, ne, type SQL, sql } from 'drizzle-orm'
+import { isLeadDecided } from '../costing/labels.ts'
 import { assertWorkbenchWriter } from '../workbench/access.ts'
 import type { WorkbenchActor } from '../workbench/actor.ts'
 import type { InsightAi } from './ai.ts'
@@ -299,7 +300,8 @@ const todayUtc = (now: Date) => now.toISOString().slice(0, 10)
 
 /**
  * 把竞品矩阵中的商品转为跟卖线索（spec「转线索」）：在所选方向下为该商品创建（或复用）单成员商品簇与线索，
- * 跟卖方式“同款微改良”与改良点写入 lead_event 备注。之后跟卖候选按方向读取线索即可看到。
+ * 跟卖方式“同款微改良”与改良点写入线索的 follow_mode / improvement 列（核算矩阵读取），
+ * lead_event 备注仍保留一份作来源记录。之后跟卖候选按方向读取线索即可看到。
  */
 export async function convertToLead(actor: CategoryActor, input: ConvertInput, now = new Date()) {
   assertWorkbenchWriter(actor)
@@ -396,9 +398,17 @@ export async function convertToLead(actor: CategoryActor, input: ConvertInput, n
           leadOn: todayUtc(now),
           settingVersion: setting?.version ?? 1,
           status: 'new',
+          followMode: CATEGORY_LEAD_MODE,
+          improvement: improvement ? { note: improvement } : null,
         })
         .returning({ id: lead.id })
       leadId = created?.id as string
+    } else if (reusedLead && !isLeadDecided(reusedLead.status)) {
+      // 复用未决定的线索：改为微改良并补上改良点说明，保留已录入的数值参数；已决定的线索不再改动
+      await tx.updateById(lead, reusedLead.id, {
+        followMode: CATEGORY_LEAD_MODE,
+        improvement: { ...(reusedLead.improvement ?? {}), note: improvement || null },
+      })
     }
     await tx.insert(leadEvent, {
       leadId,

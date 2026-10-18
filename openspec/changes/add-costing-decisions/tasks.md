@@ -10,11 +10,11 @@
 
 - [x] 2.1 `packages/db/src/schema/costing.ts`：design D1 的表与迁移。验证：`scoped()` 跨空间隔离测试。 证据：迁移 0018_costing_insight_validation.sql 已在本地库应用；packages/db/test/costing.test.ts 覆盖隔离、决定/默认参数/核算组合唯一与放弃原因约束，db 测试 70 项通过。
 - [x] 2.2 设置页增加“物流方案 / 成本参数”标签与 server functions。验证：增删改与类目回退测试。 证据：`apps/web/src/features/costing/settings.{server,functions}.ts`、`settings-tabs.tsx`（三种计费方式：首重续重 / 体积重系数 / 按方，禁运属性；成本参数按平台 × 类目，逐项标注“平台默认”），`test/costing-decisions.test.ts` 的物流方案、成本参数用例（增改删、类型与公式校验、同名 / 默认唯一冲突、成员只读、类目回退与 effectiveCostParams）及 `e2e/costing-settings.spec.ts` 通过。
-- [ ] 2.3 供应商与报价录入（线索详情“核算”标签内）及报价导入模板（复用数据中心导入，可撤销）。验证：撤销导入只删导入报价。
+- [x] 2.3 供应商与报价录入（线索详情“核算”标签内）及报价导入模板（复用数据中心导入，可撤销）。验证：撤销导入只删导入报价。 证据：`apps/web/src/features/costing/quotes.server.ts`、`quote-editor.tsx`（商品簇详情“核算”标签：供应商增改删、阶梯 / 币种 / MOQ / 重量 / 尺寸 / 可信度 / 报价日期录入，写报价后线索 new → costing），数据中心“供应商报价表”导入 `quote-import{,.server}.ts`、`quote-import-panel.tsx`、`quote-template.ts`（按簇 ID 或平台商品 ID 关联、可下载模板、来源 import + import_id、data_import 批次按空间隔离）；`test/costing-matrix.test.ts`（真实 PG）覆盖录入与成员只读、导入错误行须跳过、重复导入确认、撤销只删本批导入的报价（手工录入与导入后手工改过的保留）、其他空间不可见不可撤销；`matrix-input.test.ts` 覆盖报价表解析与模板表头。
 
 ## 3. 核算与决定
 
-- [ ] 3.1 核算矩阵与成本瀑布（线索详情“核算”标签）：组合计算、最优高亮、选定组合 → pending。验证：组件测试与截图。
+- [x] 3.1 核算矩阵与成本瀑布（线索详情“核算”标签）：组合计算、最优高亮、选定组合 → pending。验证：组件测试与截图。 证据：`apps/web/src/features/costing/matrix.server.ts`、`matrix-input.ts`、`costing-tab.tsx`、`waterfall.tsx`（报价 × 本平台物流方案 × 跟卖方式；售价默认竞品中位价可改，汇率取 fx_rate 主值经 CNY 交叉，成本参数类目回退，节点取方向最近节点；每格落地成本 / 保本价 / 毛利率 / 最晚决定日或低于 MOQ、禁运、来不及、缺少：…；最优高亮；选定后服务端重算写 costing_scenario（完整矩阵格 + 输入来源）、线索 → pending、follow_mode 写回与 lead_event；ECharts 成本瀑布）；lead 表新增 follow_mode / improvement（迁移 0019_lead_follow_mode.sql），品类洞察转线索写这两列。`test/costing-matrix.test.ts` 覆盖组合计算与最优选择、跟卖方式切换与微改良、选定后 pending 进入待决定队列、已决定线索拒绝修改；`e2e/costing-matrix.spec.ts` 与截图 `docs/receipts/m3-costing-2026-10-19/`。
 - [x] 3.2 待决定队列（工作台首页）与跟卖/放弃决定；决定快照与锁定。验证：状态流转测试；橙/红标记测试。 证据：`apps/web/src/features/costing/decisions.server.ts`、`home-page.tsx`、路由 `/app/$slug/`（KPI、按最晚决定日升序的队列、节点倒计时、行内跟卖 / 放弃）；`src/features/costing/queue.test.ts`（5 天内橙、过期红、SGT 日期）与 `test/costing-decisions.test.ts`（pending → followed / dropped、快照含分数 / 等级 / 置信度 / 权重版本 / 所选组合 / cluster_signal 输入、lead_event、重复决定 LEAD_DECIDED、`assertCostingEditable` 锁定、无选定组合不能跟卖、“其他”须说明）通过。
 - [ ] 3.3 M2 维度接入核算结果（利润空间、供应与时效、成本确定性）。验证：有核算时维度不再为空的测试。
 

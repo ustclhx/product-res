@@ -301,7 +301,13 @@ describe('转线索与归档', () => {
     // 跟卖候选按方向读取线索：线索存在且属于该方向
     const leads = await s.select(lead, { where: eq(lead.directionId, dir?.id as string) })
     expect(leads).toHaveLength(1)
-    expect(leads[0]).toMatchObject({ id: converted.leadId, status: 'new', leadOn: '2026-10-19' })
+    expect(leads[0]).toMatchObject({
+      id: converted.leadId,
+      status: 'new',
+      leadOn: '2026-10-19',
+      followMode: 'improved',
+      improvement: { note: '底部加防滑硅胶圈' },
+    })
     const members = await s.select(clusterMember, {
       where: eq(clusterMember.clusterId, converted.clusterId),
     })
@@ -329,6 +335,8 @@ describe('转线索与归档', () => {
       reusedCluster: true,
       reusedLead: true,
     })
+    // 复用未决定的线索时改良点说明更新到线索列
+    expect((await s.findById(lead, converted.leadId)).improvement).toEqual({ note: '改陶瓷' })
     // 不在矩阵中的商品不能转
     await expect(
       convertToLead(owner, { studyId: id, snapshotId, productId: newId(), improvement: '' }, NOW),

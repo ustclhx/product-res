@@ -1,6 +1,8 @@
 import { METRICS } from '@product-res/datasources'
 import { Button, Input, Tag } from '@product-res/ui'
 import { useEffect, useState } from 'react'
+import { QuoteImportPanel } from '../costing/quote-import-panel.tsx'
+import { QUOTE_IMPORT_SOURCE } from '../costing/quote-template.ts'
 import {
   commitDataImport,
   getImports,
@@ -141,7 +143,10 @@ export function FileImport({ slug }: { slug: string }) {
     setError('')
     try {
       const { removed } = await revertDataImport({ data: { slug, importId } })
-      setMessage(`已撤销，删除 ${formatNumber(removed)} 条观测`)
+      const row = data?.history.find((h) => h.id === importId)
+      setMessage(
+        `已撤销，删除 ${formatNumber(removed)} 条${row?.sourceId === QUOTE_IMPORT_SOURCE ? '导入的报价' : '观测'}`,
+      )
       await reload()
     } catch (e) {
       setError(errorText(e))
@@ -149,6 +154,8 @@ export function FileImport({ slug }: { slug: string }) {
   }
 
   const templates = data?.templates.filter((t) => t.sourceId === sourceId) ?? []
+  // 供应商报价写入空间级报价表，使用独立的导入面板（按簇或平台商品 ID 关联）
+  const quoteMode = sourceId === QUOTE_IMPORT_SOURCE
   return (
     <div className="grid gap-4">
       <Section title="文件导入">
@@ -162,7 +169,11 @@ export function FileImport({ slug }: { slug: string }) {
             <select
               className="rounded-md border bg-background px-2 py-1.5 text-sm"
               value={sourceId}
-              onChange={(e) => setSourceId(e.target.value)}
+              onChange={(e) => {
+                setSourceId(e.target.value)
+                setPreview(null)
+                setFile(null)
+              }}
             >
               {data?.sources.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -183,62 +194,69 @@ export function FileImport({ slug }: { slug: string }) {
               ))}
             </select>
           </label>
-          <label className="grid gap-1 text-xs">
-            <span className="text-muted-foreground">每行是</span>
-            <select
-              className="rounded-md border bg-background px-2 py-1.5 text-sm"
-              value={entityType}
-              onChange={(e) => setEntityType(e.target.value as typeof entityType)}
-            >
-              <option value="product">商品</option>
-              <option value="keyword">关键词</option>
-              <option value="seller">卖家</option>
-            </select>
-          </label>
-          <div className="grid gap-1 text-xs">
-            <label htmlFor="import-observed-on" className="text-muted-foreground">
-              观测日期（文件没有日期列时使用）
-            </label>
-            <Input
-              id="import-observed-on"
-              type="date"
-              value={observedOn}
-              onChange={(e) => setObservedOn(e.target.value)}
-            />
-          </div>
-          <label className="grid gap-1 text-xs">
-            <span className="text-muted-foreground">映射模板</span>
-            <select
-              className="rounded-md border bg-background px-2 py-1.5 text-sm"
-              value={templateId}
-              onChange={(e) => setTemplateId(e.target.value)}
-            >
-              <option value="">自动识别</option>
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="grid gap-1 text-xs">
-            <label htmlFor="import-file" className="text-muted-foreground">
-              文件
-            </label>
-            <Input
-              id="import-file"
-              type="file"
-              accept=".csv,.tsv,.txt,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-              onChange={async (e) => {
-                const picked = e.target.files?.[0]
-                if (!picked) return
-                const next = { name: picked.name, base64: await toBase64(picked) }
-                setFile(next)
-                await runPreview(undefined, next)
-              }}
-            />
-          </div>
+          {quoteMode ? null : (
+            <>
+              <label className="grid gap-1 text-xs">
+                <span className="text-muted-foreground">每行是</span>
+                <select
+                  className="rounded-md border bg-background px-2 py-1.5 text-sm"
+                  value={entityType}
+                  onChange={(e) => setEntityType(e.target.value as typeof entityType)}
+                >
+                  <option value="product">商品</option>
+                  <option value="keyword">关键词</option>
+                  <option value="seller">卖家</option>
+                </select>
+              </label>
+              <div className="grid gap-1 text-xs">
+                <label htmlFor="import-observed-on" className="text-muted-foreground">
+                  观测日期（文件没有日期列时使用）
+                </label>
+                <Input
+                  id="import-observed-on"
+                  type="date"
+                  value={observedOn}
+                  onChange={(e) => setObservedOn(e.target.value)}
+                />
+              </div>
+              <label className="grid gap-1 text-xs">
+                <span className="text-muted-foreground">映射模板</span>
+                <select
+                  className="rounded-md border bg-background px-2 py-1.5 text-sm"
+                  value={templateId}
+                  onChange={(e) => setTemplateId(e.target.value)}
+                >
+                  <option value="">自动识别</option>
+                  {templates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="grid gap-1 text-xs">
+                <label htmlFor="import-file" className="text-muted-foreground">
+                  文件
+                </label>
+                <Input
+                  id="import-file"
+                  type="file"
+                  accept=".csv,.tsv,.txt,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  onChange={async (e) => {
+                    const picked = e.target.files?.[0]
+                    if (!picked) return
+                    const next = { name: picked.name, base64: await toBase64(picked) }
+                    setFile(next)
+                    await runPreview(undefined, next)
+                  }}
+                />
+              </div>
+            </>
+          )}
         </div>
+        {quoteMode ? (
+          <QuoteImportPanel slug={slug} marketplace={marketplace} onImported={reload} />
+        ) : null}
         {message ? (
           <p role="status" className="text-sm text-success-strong">
             {message}
@@ -251,7 +269,7 @@ export function FileImport({ slug }: { slug: string }) {
         ) : null}
       </Section>
 
-      {preview ? (
+      {preview && !quoteMode ? (
         <Section
           title={`预览：${preview.rowCount} 行 → ${preview.observationCount} 条观测、${preview.entityCount} 个实体`}
           actions={
@@ -385,7 +403,7 @@ export function FileImport({ slug }: { slug: string }) {
 
       <Section title="导入记录">
         <SimpleTable
-          head={['时间', '数据源', '文件', '行数', '写入观测', '跳过', '状态', '']}
+          head={['时间', '数据源', '文件', '行数', '写入条数', '跳过', '状态', '']}
           empty={data?.history.length === 0}
         >
           {data?.history.map((row) => (

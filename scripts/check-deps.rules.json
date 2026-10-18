@@ -28,6 +28,7 @@
     "apps/web/test/follow-scoring.test.ts": ["cloudflare:workers"],
     "apps/web/test/follow-candidates.test.ts": ["cloudflare:workers"],
     "apps/web/test/costing-decisions.test.ts": ["cloudflare:workers"],
+    "apps/web/test/costing-matrix.test.ts": ["cloudflare:workers"],
     "apps/web/test/follow-selection-config.test.ts": ["cloudflare:workers"],
     "apps/web/test/category-insight.test.ts": ["cloudflare:workers"],
     "apps/web/test/growth.test.ts": ["cloudflare:workers"],
