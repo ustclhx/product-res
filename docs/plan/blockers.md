@@ -10,10 +10,12 @@
 2. **服务器写入被权限策略拦截**：在 ECS 上生成数据库/缓存/登录密钥与 PG 证书的步骤（准备脚本已写好，不输出任何密钥）被本机 Claude Code 自动模式拦截（Secret-Store Writes）。需要你：
    - 允许这一步（在 Claude Code 设置里为该 ssh 命令加允许规则），或
    - 或审阅 `scripts/production/prepare-ecs-secrets.sh` 后自己执行：`! ssh product-res-ecs 'bash -s' < scripts/production/prepare-ecs-secrets.sh`
-3. **重跑/触发 GitHub Actions 被拦截**（Create Public Surface）：仓库公开后，正式发布镜像要手动触发 `selfhost-publish.yml`。需要你允许 `gh workflow run` / `gh run rerun`，或者在 GitHub 页面手动点 Run workflow（参数：sha = 最新通过 CI 的 main 提交，namespace = `ghcr.io/ustclhx/product-res`，new_services = `web,jobs,migrate,postgres,valkey,caddy,object-storage,backup`）。
+3. **触发发布被拦截**（自动模式判定为生产部署）：正式发布镜像要手动触发 `selfhost-publish.yml`。需要你允许 `gh workflow run`，或者在 GitHub 页面手动点 Run workflow（参数：sha = 最新通过 CI 的 main 提交，目前可用 `259f8ee7538a8e67a420cc7ba2b52d1c27449c55`，CI 与部署门已通过；namespace = `ghcr.io/ustclhx/product-res`，new_services = `web,jobs,migrate,postgres,valkey,caddy,object-storage,backup`）。
 4. **GHCR 包可见性**：首次发布后 8 个镜像包默认私有，服务器拉取需要改成 public（或在服务器上用只读 token 登录）。
 5. **阿里云安全组**：确认入方向 TCP 80/443 已放行。
 6. **部署后未覆盖项**：备份（需要 S3/R2 桶与独立凭据）、真实邮件发送（SMTP/Resend）、套餐/积分初始化（billing seed 需要经 SSH 隧道连接生产库）。AI Key 放在服务器 `/opt/product-res/secrets/optional/OPENAI_API_KEY`（或 DEEPSEEK_API_KEY 等），后台只配置模型与授权，不填 Key。
+
+部署顺序：1 DNS → 2 服务器密钥 → 3 发布 → 4 包可见性 → 由你授权后执行 bundle 中的部署脚本（迁移、健康检查、ACME 证书）→ 你注册 `lhx960924@gmail.com` 并确认能进 `/admin`。
 
 ## B. 开发协作方式
 
