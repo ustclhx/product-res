@@ -36,6 +36,7 @@
     "@product-res/follow": "workspace:*",
     "@product-res/marketdata": "workspace:*",
     "@product-res/platform": "workspace:*",
+    "@product-res/risk": "workspace:*",
     "@product-res/selection": "workspace:*",
     "@product-res/shared": "workspace:*",
     "@product-res/storage": "workspace:*",

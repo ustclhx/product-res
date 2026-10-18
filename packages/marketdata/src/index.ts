@@ -39,6 +39,7 @@ export {
   productIds,
   rankValues,
   readMetric,
+  readMetrics,
   type SourceValue,
   setManualRate,
   setPriority,

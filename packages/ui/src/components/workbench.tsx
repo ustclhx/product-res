@@ -58,13 +58,16 @@ export function Tag({
 export function GradeTag({
   score,
   readiness,
+  grade: override,
   className,
 }: {
   score: number | null | undefined
   readiness: Readiness
+  /** 由调用方判定的等级（如硬门槛不通过时冷启动下仍为“不推荐”），优先于按分数推导 */
+  grade?: Grade | undefined
   className?: string
 }) {
-  const grade = gradeOf(score, readiness)
+  const grade = override ?? gradeOf(score, readiness)
   return (
     <Tag tone={gradeTone[grade]} data-grade={grade} className={className}>
       {GRADE_LABELS[grade]}

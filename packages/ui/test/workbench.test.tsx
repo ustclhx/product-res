@@ -30,6 +30,11 @@ describe('GradeTag', () => {
     const { container } = render(<GradeTag score={88} readiness="cold-start" />)
     expect(container.textContent).toBe('未验证')
   })
+
+  it('调用方给出的等级优先：冷启动下硬门槛不通过仍显示不推荐', () => {
+    const { container } = render(<GradeTag score={null} readiness="cold-start" grade="reject" />)
+    expect(container.textContent).toBe('不推荐')
+  })
 })
 
 describe('ConfidenceBar', () => {

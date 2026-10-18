@@ -208,6 +208,55 @@ export function estimateRefresh(input: {
   })
 }
 
+/**
+ * 对指定站点的商品发起人工刷新时可选的数据源（商品快照能力、API 接入）：
+ * 预计花费（estimateRefresh）与当前周期额度，供页面在执行前显示；停用或暂停的数据源标明原因。
+ */
+export async function productRefreshOptions(
+  db: Database,
+  marketplace: string,
+  ids: string[],
+  now = new Date(),
+) {
+  const connectors = webConnectors()
+    .all()
+    .filter(
+      (c) =>
+        c.access === 'api' &&
+        c.capabilities.includes('product-snapshot') &&
+        c.marketplaces.includes(marketplace as never),
+    )
+  if (connectors.length === 0) return []
+  await ensureSources(db, connectors)
+  const rows = new Map((await listSources(db)).map((r) => [r.id, r]))
+  return Promise.all(
+    connectors.map(async (connector) => {
+      const row = rows.get(connector.id)
+      const spec = effectiveBudget(connector, row?.config as SourceConfig | undefined)
+      const usage = await currentUsage(db, connector.id, spec, now)
+      const cost = estimateRefresh({
+        sourceId: connector.id,
+        kind: 'product-snapshot',
+        marketplace,
+        ids,
+      })
+      return {
+        sourceId: connector.id,
+        label: connector.label,
+        enabled: row?.enabled ?? false,
+        paused: Boolean(row?.pausedReason),
+        cost,
+        unit: usage.unit,
+        used: usage.used,
+        hardCap: usage.hardCap,
+        // 人工刷新可用到硬上限（安全线只约束定时任务）
+        withinCap: usage.used + cost <= usage.hardCap,
+        resetsAt: usage.resetsAt.toISOString(),
+      }
+    }),
+  )
+}
+
 export async function syncRuns(db: Database, filter: { sourceId?: string; failedOnly?: boolean }) {
   const rows = await listRuns(db, {
     ...(filter.sourceId ? { sourceId: filter.sourceId } : {}),

@@ -25,6 +25,7 @@
     "apps/web/test/ai-media-tasks.test.ts": ["cloudflare:workers"],
     "apps/web/test/auth-email.test.ts": ["cloudflare:workers"],
     "apps/web/test/follow-scoring.test.ts": ["cloudflare:workers"],
+    "apps/web/test/follow-candidates.test.ts": ["cloudflare:workers"],
     "apps/web/test/follow-selection-config.test.ts": ["cloudflare:workers"],
     "apps/web/test/growth.test.ts": ["cloudflare:workers"],
     "apps/web/test/health.test.ts": ["cloudflare:workers"],

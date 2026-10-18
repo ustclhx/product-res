@@ -303,7 +303,11 @@ export async function readMetric(
       ),
     )
     .orderBy(asc(observation.observedOn))
-  const priority = await getPriority(db, input.marketplace, input.metric)
+  return toPoints(rows, await getPriority(db, input.marketplace, input.metric))
+}
+
+/** 已按日期升序的观测行 → 每日主值、全部来源与离散度 */
+function toPoints(rows: readonly (typeof observation.$inferSelect)[], priority: readonly string[]) {
   const byDay = new Map<string, SourceValue[]>()
   for (const row of rows) {
     const list = byDay.get(row.observedOn) ?? []
@@ -318,7 +322,7 @@ export async function readMetric(
     })
     byDay.set(row.observedOn, list)
   }
-  return [...byDay.entries()].map(([observedOn, values]) => {
+  return [...byDay.entries()].map(([observedOn, values]): MetricPoint => {
     const ranked = rankValues(values, priority)
     return {
       observedOn,
@@ -327,6 +331,58 @@ export async function readMetric(
       dispersion: dispersionOf(ranked),
     }
   })
+}
+
+/**
+ * 批量读取多个实体、多个指标的时间序列（详情页与列表一次取完，避免逐个实体查询）。
+ * 返回 实体 ID → 指标 → 序列；没有观测的实体或指标不出现在结果中。
+ */
+export async function readMetrics(
+  db: Database,
+  input: {
+    readonly entityType: EntityKey['type']
+    readonly entityIds: readonly string[]
+    readonly metrics: readonly string[]
+    readonly marketplace: Marketplace
+    readonly from?: string
+    readonly to?: string
+  },
+): Promise<Map<string, Map<string, MetricPoint[]>>> {
+  const result = new Map<string, Map<string, MetricPoint[]>>()
+  if (input.entityIds.length === 0 || input.metrics.length === 0) return result
+  const rows = await db
+    .select()
+    .from(observation)
+    .where(
+      and(
+        eq(observation.entityType, input.entityType),
+        inArray(observation.entityId, [...input.entityIds]),
+        inArray(observation.metric, [...input.metrics]),
+        ...(input.from ? [gte(observation.observedOn, input.from)] : []),
+        ...(input.to ? [lte(observation.observedOn, input.to)] : []),
+      ),
+    )
+    .orderBy(asc(observation.observedOn))
+  const priorities = new Map(
+    await Promise.all(
+      input.metrics.map(
+        async (metric) => [metric, await getPriority(db, input.marketplace, metric)] as const,
+      ),
+    ),
+  )
+  const grouped = new Map<string, Map<string, (typeof rows)[number][]>>()
+  for (const row of rows) {
+    const byMetric = grouped.get(row.entityId) ?? new Map()
+    byMetric.set(row.metric, [...(byMetric.get(row.metric) ?? []), row])
+    grouped.set(row.entityId, byMetric)
+  }
+  for (const [entityId, byMetric] of grouped) {
+    const series = new Map<string, MetricPoint[]>()
+    for (const [metric, list] of byMetric)
+      series.set(metric, toPoints(list, priorities.get(metric) ?? []))
+    result.set(entityId, series)
+  }
+  return result
 }
 
 /** 批量取实体 ID（数据中心预览、质量检查使用） */
