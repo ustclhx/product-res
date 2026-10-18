@@ -19,7 +19,7 @@
 
 ## 4. 页面
 
-- [ ] 4.1 `/app/$slug/validation`：准备度矩阵、命中率曲线、样本构成、待打标签数、权重建议、回放入口；数据中心评分维度管理显示回测命中率。验证：冷启动空状态；截图对照。
+- [x] 4.1 `/app/$slug/validation`：准备度矩阵、命中率曲线、样本构成、待打标签数、权重建议、回放入口；数据中心评分维度管理显示回测命中率。验证：冷启动空状态；截图对照。 证据：`apps/web/src/features/validation/`（validation.functions.ts / validation.server.ts 只读调用 getValidationOverview，写操作经 assertWorkbenchWriter；Keepa 回放经新增的可选 `WebRuntime.selectionReplayQueue`，Node 入口用 `createNodeQueueProducer(db, SELECTION_REPLAY_QUEUE)` 装配，未装配时页面停用“发起回放”并说明），数据中心评分维度“回测命中率”列显示 bySignalType 命中率与 Wilson 下界、无样本显示“无样本”；`apps/web/test/validation-page.test.ts`（真实 PG：冷启动、样本 30 返回“少于拟合下限 50”且不写库、采用生成版本 2、忽略版本不变、重复处理 409、member/只读 403、准备度矩阵与按月命中率、回放 REPLAY_INVALID_DATE / INVALID_OFFSET / TOO_RECENT / NOT_AMAZON / NO_PRODUCTS / QUEUE_UNAVAILABLE、预估 2 商品 2 token 后排队）5 passed；`src/features/validation/validation-page.test.tsx` 冷启动空状态（说明样本数与天数、只渲染图表空容器）3 passed；`e2e/validation.spec.ts` 通过，截图 `docs/receipts/m5-validation-2026-10-19/`（01 冷启动、02 有样本、03 曲线悬停、04 数据中心回测命中率）；`pnpm typecheck`、`pnpm check`、`pnpm check:deps`、`pnpm check:singletons`、`pnpm dedupe --check` 通过，web unit 294、node 16 passed。
 
 ## 5. 验收
 

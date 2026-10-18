@@ -1,6 +1,7 @@
 import type { ScoringSetting, SelectionDimension } from '@product-res/db'
 import {
   appendScoringSetting,
+  getValidationOverview,
   listScoringSettings,
   type ScoringSettingInput,
 } from '@product-res/follow'
@@ -25,8 +26,13 @@ const versionRow = (row: ScoringSetting) => ({
 })
 
 export async function scoringPage(actor: WorkbenchActor) {
-  const versions = await listScoringSettings(actor.db, actor.workspaceId)
+  const [versions, overview] = await Promise.all([
+    listScoringSettings(actor.db, actor.workspaceId),
+    getValidationOverview(actor.db, actor.workspaceId),
+  ])
   const [current] = versions
+  // 回测命中率：按信号类型（主导维度）汇总的 T+30 加权命中率与 Wilson 下界（add-shadow-validation 4.1）
+  const hitRates = new Map(overview.bySignalType.map((h) => [h.signalType, h]))
   if (!current) throw new Error('scoring setting missing')
   return {
     current: versionRow(current),
@@ -34,7 +40,22 @@ export async function scoringPage(actor: WorkbenchActor) {
       version: v.version,
       effectiveAt: v.effectiveAt.toISOString(),
     })),
-    dimensions: DIMENSIONS.map((id) => ({ id, label: DIMENSION_LABELS[id] })),
+    dimensions: DIMENSIONS.map((id) => {
+      const h = hitRates.get(id)
+      return {
+        id,
+        label: DIMENSION_LABELS[id],
+        backtest:
+          h && h.effectiveSamples > 0
+            ? {
+                effectiveSamples: h.effectiveSamples,
+                hitRate: h.hitRate,
+                wilsonLower: h.wilsonLower,
+                replaySamples: h.replaySamples,
+              }
+            : null,
+      }
+    }),
     canWrite: canWriteWorkbench(actor),
   }
 }
