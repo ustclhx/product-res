@@ -262,6 +262,36 @@ describe('利润空间', () => {
   })
 })
 
+describe('利润空间（M3 核算结果）', () => {
+  const costed = {
+    scenarioId: 's1',
+    plan: '义乌工厂 · FBA · 同货源',
+    currency: 'USD',
+    salePriceMinor: 2999,
+    landedCostMinor: 1200,
+    grossMargin: 0.25,
+    selected: true,
+  }
+
+  it('直接采用核算毛利率，来源引用标注 costing_scenario；不再按默认费率估算', () => {
+    const result = profit({ platform: 'amazon', asOf: ASOF, prices: [], costed })
+    expect(result.score).toBe(50)
+    expect(result.detail).toMatchObject({
+      bestMargin: 0.25,
+      source: 'costing_scenario',
+      scenarioId: 's1',
+    })
+    expect(result.inputs).toEqual([
+      expect.objectContaining({
+        sourceId: 'costing_scenario',
+        entityId: 's1',
+        metric: 'gross_margin',
+      }),
+    ])
+    expect(result.reason).toContain('落地成本 12.00 USD')
+  })
+})
+
 describe('竞争强度（反向）', () => {
   it('卖家数增长、最低价跌幅、评论数中位数取平均', () => {
     const result = competition({
@@ -309,6 +339,23 @@ describe('供应与时效（反向）', () => {
       usedDefaultLeadTime: true,
     })
     expect(result.score).toBe(77.6)
+  })
+
+  it('有核算组合时采用其最晚决定日，不用默认提前期', () => {
+    const costed = { scenarioId: 's1', plan: '海运', deadline: '2026-06-01', leadDays: 44 }
+    const ok = supplyTiming({ asOf: '2026-05-10', platform: 'amazon', costed })
+    expect(ok.detail).toMatchObject({
+      deadline: '2026-06-01',
+      slackDays: 22,
+      leadDays: 44,
+      allPlansLate: false,
+      usedDefaultLeadTime: false,
+      source: 'costing_scenario',
+    })
+    expect(ok.inputs[0]).toMatchObject({ sourceId: 'costing_scenario', entityId: 's1' })
+    const late = supplyTiming({ asOf: '2026-06-02', platform: 'amazon', costed })
+    expect(late.score).toBe(100)
+    expect(late.detail?.allPlansLate).toBe(true)
   })
 
   it('所有物流方案都来不及时为 100 并标记', () => {

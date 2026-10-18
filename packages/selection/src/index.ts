@@ -110,6 +110,8 @@ export {
 export {
   type CompetitionInput,
   type ComplianceInput,
+  type CostedProfit,
+  type CostedTiming,
   competition,
   compliance,
   type FeeParams,

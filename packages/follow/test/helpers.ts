@@ -3,11 +3,16 @@ import {
   cluster,
   clusterMember,
   clusterSignal,
+  costingScenario,
+  costParam,
   createDb,
   type Database,
+  decision,
   direction,
   directionSeller,
   lead,
+  leadEvent,
+  logisticsProfile,
   marketplaceProduct,
   observation,
   organization,
@@ -17,6 +22,8 @@ import {
   scoped,
   scoringSetting,
   seasonalNode,
+  supplier,
+  supplierQuote,
   weightSuggestion,
 } from '@product-res/db'
 import { newId } from '@product-res/shared'
@@ -47,6 +54,7 @@ export interface ProductInput {
   readonly title: string
   readonly categoryId?: string
   readonly sellerId?: string
+  readonly brand?: string
   readonly gtin?: string
   readonly listedOn?: string
   readonly firstSeenOn: string
@@ -60,6 +68,7 @@ export async function insertProduct(db: Database, input: ProductInput): Promise<
       platformId: input.platformId,
       title: input.title,
       sellerId: input.sellerId,
+      brand: input.brand,
       gtin: input.gtin,
       categoryId: input.categoryId,
       listedAt: input.listedOn ? new Date(`${input.listedOn}T00:00:00Z`) : null,
@@ -94,13 +103,23 @@ export async function observe(db: Database, rows: readonly Obs[]): Promise<void>
   }
 }
 
-/** 按外键顺序清理一个测试空间及其商品（市场商品与观测是部署级共享表） */
+/**
+ * 按外键顺序清理一个测试空间及其商品（市场商品与观测是部署级共享表）：
+ * 推荐 → 决定 → 线索（级联核算组合与事件）→ 报价 → 簇 → 方向；最后删商品与空间。
+ */
 export async function cleanup(db: Database, workspaceId: string, productIds: readonly string[]) {
   const s = scoped(db, workspaceId)
   await s.delete(recommendation, undefined)
   await s.delete(readinessStat, undefined)
   await s.delete(weightSuggestion, undefined)
+  await s.delete(decision, undefined)
+  await s.delete(costingScenario, undefined)
+  await s.delete(leadEvent, undefined)
   await s.delete(lead, undefined)
+  await s.delete(supplierQuote, undefined)
+  await s.delete(supplier, undefined)
+  await s.delete(logisticsProfile, undefined)
+  await s.delete(costParam, undefined)
   await s.delete(riskFinding, undefined)
   await s.delete(clusterSignal, undefined)
   await s.delete(clusterMember, undefined)

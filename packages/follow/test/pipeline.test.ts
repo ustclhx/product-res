@@ -13,14 +13,14 @@ import {
   recommendation,
   riskFinding,
   scoped,
-  scoringSetting,
   seasonalNode,
 } from '@product-res/db'
 import { addDays } from '@product-res/selection'
 import { newId } from '@product-res/shared'
-import { eq, inArray } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { appendScoringSetting, runSelectionDaily, runSelectionForWorkspace } from '../src/index.ts'
+import { cleanup } from './helpers.ts'
 
 // tasks.md 3.1：用模拟数据（直接写 marketplace_product 与 observation）在真实 PG 上跑流水线。
 const url = process.env.FOLLOW_TEST_DATABASE_URL
@@ -33,6 +33,8 @@ const now = new Date(`${asOf}T00:00:00+08:00`)
 const tag = newId().slice(-10)
 const category = `cat-${tag}`
 const workspaceId = newId()
+// 另一个空间：方向范围与本测试商品重叠，模拟库里其他（如 e2e 遗留）空间的启用方向
+const otherWorkspaceId = newId()
 const productIds: string[] = []
 
 const product = async (values: {
@@ -110,6 +112,17 @@ describe.skipIf(!url)('selection-daily 流水线', () => {
       })
       .returning()
     directionId = row?.id as string
+    await db.insert(organization).values({
+      id: otherWorkspaceId,
+      name: 'Pipeline other',
+      slug: `pipeline-other-${tag}`,
+      isPersonal: false,
+    })
+    await scoped(db, otherWorkspaceId).insert(direction, {
+      name: '重叠方向',
+      marketplaces: ['ebay-us'],
+      categoryIds: [category],
+    })
     await s.insert(directionSeller, [
       { directionId, marketplace: 'ebay-us', sellerPlatformId: 'seller-a', status: 'seed' },
       { directionId, marketplace: 'ebay-us', sellerPlatformId: 'seller-b', status: 'accepted' },
@@ -164,21 +177,8 @@ describe.skipIf(!url)('selection-daily 流水线', () => {
 
   afterAll(async () => {
     if (!url) return
-    const s = scoped(db, workspaceId)
-    await s.delete(recommendation, undefined)
-    await s.delete(lead, undefined)
-    await s.delete(riskFinding, undefined)
-    await s.delete(clusterSignal, undefined)
-    await s.delete(clusterMember, undefined)
-    await s.delete(cluster, undefined)
-    await s.delete(directionSeller, undefined)
-    await s.delete(direction, undefined)
-    await s.delete(seasonalNode, undefined)
-    await s.delete(brandEntry, undefined)
-    await s.delete(scoringSetting, undefined)
-    await db.delete(observation).where(inArray(observation.entityId, productIds))
-    await db.delete(marketplaceProduct).where(inArray(marketplaceProduct.id, productIds))
-    await db.delete(organization).where(eq(organization.id, workspaceId))
+    await cleanup(db, otherWorkspaceId, [])
+    await cleanup(db, workspaceId, productIds)
   })
 
   const leadsOn = (day: string) =>
@@ -335,8 +335,17 @@ describe.skipIf(!url)('selection-daily 流水线', () => {
     const s = scoped(db, workspaceId)
     await s.update(direction, { enabled: false }, eq(direction.id, directionId))
     const day = addDays(asOf, 2)
-    const results = await runSelectionDaily(db, { now, asOf: day })
+    // 只跑本测试的两个空间，不处理库里其他空间的方向
+    const results = await runSelectionDaily(db, {
+      now,
+      asOf: day,
+      workspaceIds: [workspaceId, otherWorkspaceId],
+    })
     expect(results.some((r) => r.workspaceId === workspaceId)).toBe(false)
+    // 另一个空间按自己的方向运行，归并出的簇只属于它自己
+    expect(results.map((r) => r.workspaceId)).toEqual([otherWorkspaceId])
+    expect(await scoped(db, otherWorkspaceId).count(cluster)).toBeGreaterThan(0)
+    expect(await runSelectionDaily(db, { now, asOf: day, workspaceIds: [] })).toEqual([])
     expect(await runSelectionForWorkspace(db, workspaceId, { now, asOf: day })).toMatchObject({
       directions: [],
     })

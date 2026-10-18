@@ -26,5 +26,5 @@
 
 ## 5. 验收
 
-- [ ] 5.1 用模拟连接器数据端到端：配置方向 → 流水线 → 候选列表 → 详情能说明推荐理由与来源。验证：e2e 记录。
+- [x] 5.1 用模拟连接器数据端到端：配置方向 → 流水线 → 候选列表 → 详情能说明推荐理由与来源。验证：e2e 记录。 证据：`apps/web/e2e/follow-acceptance.spec.ts`（页面配置品牌库与方向 → 直接写入隔离库的 eBay 市场数据 → `runSelectionForWorkspace` 只跑本空间 → 候选列表 2 条线索、VeRO 簇不推荐 → 详情显示维度理由、eBay Browse API / DataForSEO 来源与来源对比、风险说明）本地 1 passed；回执 `docs/receipts/m2-acceptance-2026-10-19.md`，截图 `docs/receipts/m2-acceptance-2026-10-19/01–04`。
 - [ ] 5.2 用真实数据源数据跑一次并记录回执（依赖 M1b 凭据）。
