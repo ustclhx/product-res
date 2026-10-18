@@ -30,6 +30,7 @@
     "apps/web/test/costing-decisions.test.ts": ["cloudflare:workers"],
     "apps/web/test/follow-selection-config.test.ts": ["cloudflare:workers"],
     "apps/web/test/category-insight.test.ts": ["cloudflare:workers"],
+    "apps/web/test/validation-page.test.ts": ["cloudflare:workers"],
     "apps/web/test/growth.test.ts": ["cloudflare:workers"],
     "apps/web/test/health.test.ts": ["cloudflare:workers"],
     "apps/web/test/marketing-pricing.test.ts": ["cloudflare:workers"],

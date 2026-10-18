@@ -14,6 +14,28 @@ const GATES = [
   ['margin', '毛利率低于底线（无利润数据时不判）'],
 ] as const
 
+const rate = (v: number | null) => (v === null ? '—' : `${(v * 100).toFixed(1)}%`)
+
+/** 回测命中率：T+30 加权命中率与 Wilson 下界；没有已打标签样本时显示“无样本”，不按 0 计 */
+function BacktestRate({ backtest }: { backtest: ScoringData['dimensions'][number]['backtest'] }) {
+  if (!backtest) return <span className="text-xs text-muted-foreground">无样本</span>
+  return (
+    <div className="grid gap-0.5">
+      <span>
+        <span className="font-mono font-medium">{rate(backtest.hitRate)}</span>
+        <span className="text-xs text-muted-foreground">
+          {' '}
+          · 下界 <span className="font-mono">{rate(backtest.wilsonLower)}</span>
+        </span>
+      </span>
+      <span className="text-xs text-muted-foreground">
+        有效样本 {backtest.effectiveSamples}
+        {backtest.replaySamples > 0 ? `（含回放 ${backtest.replaySamples} 条）` : ''}
+      </span>
+    </div>
+  )
+}
+
 /** 毛利底线以百分比编辑，库中存基点 */
 const percentText = (bp: number) => String(bp / 100)
 
@@ -142,7 +164,9 @@ export function ScoringSettings({ slug }: { slug: string }) {
                     onChange={(e) => toggleReverse(id, e.target.checked)}
                   />
                 </td>
-                <td className="px-3 py-2 text-muted-foreground">—（M5 后提供）</td>
+                <td className="px-3 py-2" data-testid={`backtest-${d.id}`}>
+                  <BacktestRate backtest={d.backtest} />
+                </td>
               </tr>
             )
           })}

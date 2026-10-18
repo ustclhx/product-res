@@ -19,7 +19,7 @@ const TABS = [
 ] as const
 export type DataCenterTab = (typeof TABS)[number][0]
 
-/** 数据中心（docs/design/data-center.html）；AI 助手后置，回测命中率在 M5 填充 */
+/** 数据中心（docs/design/data-center.html）；AI 助手后置；评分维度旁显示回测命中率 */
 export function DataCenterPage({ slug, initial }: { slug: string; initial: DataCenterData }) {
   const [tab, setTab] = useState<DataCenterTab>('overview')
   const [data, setData] = useState(initial)
