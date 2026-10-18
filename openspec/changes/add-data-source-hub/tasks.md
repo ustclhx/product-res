@@ -27,7 +27,7 @@
 
 ## 5. 文件导入
 
-- [ ] 5.1 上传、CSV/XLSX 解析、工作表选择、原文件存档。验证：中文表头、BOM、千分位、日期格式的解析测试。进度：CSV/TSV 解析、原文件存档、解析测试已完成；XLSX 与工作表选择未完成（需选定依赖）。
+- [x] 5.1 上传、CSV/XLSX 解析、工作表选择、原文件存档。验证：中文表头、BOM、千分位、日期格式的解析测试。证据：CSV/TSV 解析、原文件存档、解析测试；XLSX 解析（read-excel-file 9.3.10）、工作表选择（预览下拉 + sheetName 参数）、按扩展名分派与 XLSX 夹具测试（`packages/datasources/test/xlsx.test.ts`：表头、日期、数字精度、空行、多工作表、分派）。
 - [x] 5.2 列名识别、手动映射、模板保存复用、单位币种确认、预览校验、跳过错误行。验证：空单元格不补零；模板复用测试。 证据：`suggestMapping`（同义词 + 模板）、`buildImport`（空值不补零、错误行）、数据中心导入向导的列映射/模板保存/跳过错误行；`datasources/test/import.test.ts`。
 - [x] 5.3 导入批次入库、重复文件提示、整批撤销。验证：撤销只影响本批次。 证据：`commitImport` / `revertImport` / 重复文件确认；`marketdata/test/sync.test.ts`「文件导入」。
 

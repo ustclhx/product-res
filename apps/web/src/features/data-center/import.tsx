@@ -66,7 +66,7 @@ export function FileImport({ slug }: { slug: string }) {
   const [entityType, setEntityType] = useState<'product' | 'keyword' | 'seller'>('product')
   const [observedOn, setObservedOn] = useState(() => new Date().toISOString().slice(0, 10))
   const [templateId, setTemplateId] = useState('')
-  const [file, setFile] = useState<{ name: string; base64: string } | null>(null)
+  const [file, setFile] = useState<{ name: string; base64: string; sheet?: string } | null>(null)
   const [preview, setPreview] = useState<Preview | null>(null)
   const [mapping, setMapping] = useState<Record<string, Target>>({})
   const [skipErrorRows, setSkipErrorRows] = useState(false)
@@ -84,13 +84,14 @@ export function FileImport({ slug }: { slug: string }) {
     reload().catch((e) => setError(errorText(e)))
   }, [])
 
-  const request = (base64: string, name: string, map?: Record<string, Target>) => ({
+  const request = (base64: string, name: string, map?: Record<string, Target>, sheet?: string) => ({
     slug,
     sourceId,
     fileName: name,
     contentBase64: base64,
     context: { marketplace, entityType, ...(observedOn ? { observedOn } : {}) },
     ...(map ? { mapping: map } : {}),
+    ...(sheet ? { sheetName: sheet } : {}),
     ...(templateId ? { templateId } : {}),
   })
 
@@ -100,7 +101,9 @@ export function FileImport({ slug }: { slug: string }) {
     setError('')
     setMessage('')
     try {
-      const result = await previewDataImport({ data: request(picked.base64, picked.name, map) })
+      const result = await previewDataImport({
+        data: request(picked.base64, picked.name, map, picked.sheet),
+      })
       setPreview(result)
       setMapping(result.mapping)
     } catch (e) {
@@ -117,7 +120,7 @@ export function FileImport({ slug }: { slug: string }) {
     try {
       const result = await commitDataImport({
         data: {
-          ...request(file.base64, file.name, mapping),
+          ...request(file.base64, file.name, mapping, file.sheet),
           skipErrorRows,
           confirmDuplicate,
           ...(templateName ? { saveTemplateName: templateName } : {}),
@@ -150,8 +153,8 @@ export function FileImport({ slug }: { slug: string }) {
     <div className="grid gap-4">
       <Section title="文件导入">
         <p className="text-xs text-muted-foreground">
-          用于没有接口的工具导出（如 Helium 10）和供应商报价表。支持 CSV / TSV，最大 5
-          MB；空单元格保持为空，不补零。
+          用于没有接口的工具导出（如 Helium 10）和供应商报价表。支持 CSV / TSV /
+          XLSX（多工作表可在预览中切换，默认第一个），最大 5 MB；空单元格保持为空，不补零。
         </p>
         <div className="grid gap-3 md:grid-cols-3">
           <label className="grid gap-1 text-xs">
@@ -225,7 +228,7 @@ export function FileImport({ slug }: { slug: string }) {
             <Input
               id="import-file"
               type="file"
-              accept=".csv,.tsv,.txt,text/csv"
+              accept=".csv,.tsv,.txt,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               onChange={async (e) => {
                 const picked = e.target.files?.[0]
                 if (!picked) return
@@ -257,6 +260,28 @@ export function FileImport({ slug }: { slug: string }) {
             </Button>
           }
         >
+          {preview.sheetNames.length > 1 ? (
+            <label className="flex items-center gap-2 text-xs">
+              <span className="text-muted-foreground">工作表</span>
+              <select
+                aria-label="工作表"
+                className="rounded-md border bg-background px-2 py-1"
+                value={preview.sheetName ?? ''}
+                disabled={busy}
+                onChange={async (e) => {
+                  if (!file) return
+                  // 换工作表后列不同，重新自动识别映射
+                  const next = { ...file, sheet: e.target.value }
+                  setFile(next)
+                  await runPreview(undefined, next)
+                }}
+              >
+                {preview.sheetNames.map((name) => (
+                  <option key={name}>{name}</option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <div className="grid gap-2 md:grid-cols-2">
             {preview.headers.map((header) => (
               <label key={header} className="flex items-center justify-between gap-2 text-xs">
