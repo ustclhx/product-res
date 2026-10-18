@@ -2,6 +2,7 @@ import { BarChart, LineChart, RadarChart, ScatterChart } from 'echarts/charts'
 import {
   GridComponent,
   LegendComponent,
+  MarkLineComponent,
   RadarComponent,
   TooltipComponent,
 } from 'echarts/components'
@@ -18,6 +19,7 @@ echarts.use([
   ScatterChart,
   GridComponent,
   LegendComponent,
+  MarkLineComponent,
   RadarComponent,
   TooltipComponent,
   CanvasRenderer,

@@ -12,10 +12,10 @@
 
 ## 3. 报告
 
-- [ ] 3.1 研究列表与新建、生成/刷新快照（只读观测值）的 server functions。验证：刷新保留历史的测试。
-- [ ] 3.2 报告页面（模块卡片 + 图表 + 快照切换 + 来源查看），对照设计稿。验证：截图对照；无数据模块显示“无数据来源”。
-- [ ] 3.3 差评痛点与差异化建议（`packages/ai`，引用校验，未配置 AI 时显示原因）。验证：引用缺失的建议被丢弃的测试；用量记录测试。
-- [ ] 3.4 转为线索（同款微改良）与归档到档案库。验证：转线索后候选列表可见。
+- [x] 3.1 研究列表与新建、生成/刷新快照（只读观测值）的 server functions。验证：刷新保留历史的测试。 证据：apps/web/src/features/category/{category.functions.ts,category.server.ts,snapshot.server.ts}；apps/web/test/category-insight.test.ts（真实 PG）“刷新新增快照且旧快照保留可选”“无匹配商品时各模块无数据来源”通过（同比覆盖 9 个月、退货率 no-source）；只读 observation / marketplace_* 表，不调用连接器。
+- [x] 3.2 报告页面（模块卡片 + 图表 + 快照切换 + 来源查看），对照设计稿。验证：截图对照；无数据模块显示“无数据来源”。 证据：/app/$slug/category 与 /app/$slug/category/$studyId；apps/web/e2e/category-insight.spec.ts 通过，截图 docs/receipts/m4-category-2026-10-19/（01 生成报告、02 主题与建议版式（AI 结果为截图夹具）、03 来源查看、04 转线索、05 无数据来源、06 列表）。
+- [x] 3.3 差评痛点与差异化建议（`packages/ai`，引用校验，未配置 AI 时显示原因）。验证：引用缺失的建议被丢弃的测试；用量记录测试。 证据：apps/web/src/features/category/ai.test.ts（丢弃无有效引用、主题占比按差评数）；category-insight.test.ts“引用缺失的被丢弃、输入不变时沿用不重复调用”“未配置 AI 不调用”“经 packages/ai 计费链路写入 ai_message 并扣积分”（mock 模型）通过。
+- [x] 3.4 转为线索（同款微改良）与归档到档案库。验证：转线索后候选列表可见。 证据：category-insight.test.ts“转线索”通过：按方向可查到线索、单成员锁定簇、lead_event 备注 followMode=improved 与改良点、再次转换复用、无方向时 DIRECTION_REQUIRED；“归档”通过：listArchivedStudies 可查到（档案库页面待另一任务接入）。跟卖候选页面尚为占位，“候选可见”以按方向查询线索验证。
 
 ## 4. 验收
 

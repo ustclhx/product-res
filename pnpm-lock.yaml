@@ -320,6 +320,9 @@ importers:
       '@product-res/entitlements':
         specifier: workspace:*
         version: link:../../packages/entitlements
+      '@product-res/insight':
+        specifier: workspace:*
+        version: link:../../packages/insight
       '@product-res/marketdata':
         specifier: workspace:*
         version: link:../../packages/marketdata
