@@ -1,0 +1,31 @@
+# 待审阅卡点（需要人工介入或决策）
+
+长任务开发过程中遇到的、需要你处理或拍板的事项集中记录在这里。每项写明：现状、需要你做什么、我先采用的默认做法（如有）。处理完可以直接删掉对应条目。
+
+## A. 部署（product.ezarouter.cc / 43.106.17.72）
+
+1. **DNS 写权限**：wrangler 的 OAuth 没有任何 DNS 写 scope，cloudflared 本机也没有登录凭据，所以 CLI 改不了 DNS。二选一：
+   - 你在 Cloudflare 控制台把 `product.ezarouter.cc` 改为 **A → 43.106.17.72，仅 DNS（灰云）**（目前指向已失效的 Tunnel，返回 530）；
+   - 或创建一个只含 `Zone → DNS → Edit`、限定 `ezarouter.cc` 的 API Token，保存到 `~/.config/cloudflare/dns-token`（0600），之后我用 Cloudflare API 修改。
+2. **服务器写入被权限策略拦截**：在 ECS 上生成数据库/缓存/登录密钥与 PG 证书的步骤（准备脚本已写好，不输出任何密钥）被本机 Claude Code 自动模式拦截（Secret-Store Writes）。需要你：
+   - 允许这一步（在 Claude Code 设置里为该 ssh 命令加允许规则），或
+   - 或审阅 `scripts/production/prepare-ecs-secrets.sh` 后自己执行：`! ssh product-res-ecs 'bash -s' < scripts/production/prepare-ecs-secrets.sh`
+3. **重跑/触发 GitHub Actions 被拦截**（Create Public Surface）：仓库公开后，正式发布镜像要手动触发 `selfhost-publish.yml`。需要你允许 `gh workflow run` / `gh run rerun`，或者在 GitHub 页面手动点 Run workflow（参数：sha = 最新通过 CI 的 main 提交，namespace = `ghcr.io/ustclhx/product-res`，new_services = `web,jobs,migrate,postgres,valkey,caddy,object-storage,backup`）。
+4. **GHCR 包可见性**：首次发布后 8 个镜像包默认私有，服务器拉取需要改成 public（或在服务器上用只读 token 登录）。
+5. **阿里云安全组**：确认入方向 TCP 80/443 已放行。
+6. **部署后未覆盖项**：备份（需要 S3/R2 桶与独立凭据）、真实邮件发送（SMTP/Resend）、套餐/积分初始化（billing seed 需要经 SSH 隧道连接生产库）。AI Key 放在服务器 `/opt/product-res/secrets/optional/OPENAI_API_KEY`（或 DEEPSEEK_API_KEY 等），后台只配置模型与授权，不填 Key。
+
+## B. 开发协作方式
+
+1. **Codex 派发被拦截**：按 AGENTS.md 约定，简单任务应通过 Orca 派 Codex，但本机自动模式拦截了 `codex --dangerously-bypass-approvals-and-sandbox`（Create Unsafe Agents），连查看 codex 帮助也被拦截。目前简单任务改由 Claude subagent（Sonnet）在独立 worktree 完成。若要恢复 Codex 派发，需要你在 Claude Code 权限设置中允许 `orca terminal create ... codex ...`。
+2. **本地 Orca worktree 数据库**：`scripts/orca/lib.sh` 默认容器名 `product-res-pg`，本机实际使用的是模板的 `saas-template-pg`，Orca 自动 setup 会跳过建库。目前手动加 `PRODUCT_RES_PG_CONTAINER=saas-template-pg`。可以考虑在本机起一个 `product-res-pg` 容器（换端口）或改默认值。
+3. **CI 中各包的集成测试被跳过**：turbo 严格环境模式没有透传 `MIGRATION_DATABASE_URL` 等变量，`pnpm test` 下 marketdata（以及模板的 entitlements 等）集成测试在 CI 里实际被跳过，只在本地运行。是否在 `turbo.json` 的 test 任务加 `passThroughEnv` 让它们在 CI 真正运行，需要你决定（会让 CI 变慢，且可能暴露模板集成测试的问题）。
+
+## C. 数据源（M1b，凭据由你配置）
+
+- eBay Production、SP-API、Keepa、Jungle Scout、卖家精灵、DataForSEO 的账号/Key；Helium 10 是否有 API 或只能导出文件（需要真实导出样本）。凭据放服务器 `secrets/optional/<NAME>`。
+- Terapeak 仍为 hold。
+
+## D. 产品与算法默认值（已按默认实施，请审阅）
+
+（开发过程中逐项补充）
