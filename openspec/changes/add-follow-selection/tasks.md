@@ -16,8 +16,8 @@
 
 ## 3. 流水线与持久化
 
-- [ ] 3.1 `apps/jobs/src/selection`：`selection-daily-v1`（04:00 SGT，once），读取观测值 → 归并 → 信号 → 风险 → 打分 → 线索，按 簇 × 日期 幂等。验证：真实 PG 集成测试（模拟连接器数据），重复运行不产生重复线索。
-- [ ] 3.2 评分设置版本：数据中心“评分维度管理”标签与 server functions。验证：修改生成新版本、历史线索不变。
+- [x] 3.1 `apps/jobs/src/selection`：`selection-daily-v1`（04:00 SGT，once），读取观测值 → 归并 → 信号 → 风险 → 打分 → 线索，按 簇 × 日期 幂等。验证：真实 PG 集成测试（模拟连接器数据），重复运行不产生重复线索。 证据：`apps/jobs/src/selection/node.ts`（`registerNodeSelection`，在 `node/runtime.ts` 于 `registerNodeDataSources` 之后挂载），组合与持久化在新包 `packages/follow`（`pipeline.ts`、`settings.ts`、`mapping.ts`），市场数据批量读取加在 `packages/marketdata/src/series.ts`（`findProducts`、`readMetricSeries`、`keywordIds`）；`apps/jobs/test/selection-schedule.unit.test.ts`「每天 04:00 新加坡时间运行，错过补跑一次…」；`packages/follow/test/pipeline.test.ts`（真实 PG，直接写 marketplace_product 与 observation）「归并、信号、风险与线索写入；第二次运行不产生重复」「锁定成员不被自动归并合回；新版本设置只用于之后的线索」「停用方向不生成新线索」；`packages/follow/test/mapping.test.ts`「维度名与顺序一致」「硬门槛键一致」「等级一一对应」「db 默认设置换算后与 selection 默认设置相同（毛利底线 1500bp = 0.15）」；follow 8/8、jobs 151 通过 / 2 跳过、jobs 单元 77 通过。
+- [x] 3.2 评分设置版本：数据中心“评分维度管理”标签与 server functions。验证：修改生成新版本、历史线索不变。 证据：`apps/web/src/features/data-center/scoring.{tsx,functions.ts,server.ts}`（权重、反向维度、否决阈值、硬门槛、毛利底线、最少维度数、版本历史，“回测命中率”列显示“—（M5 后提供）”；写权限 `assertWorkbenchWriter`），版本追加在 `packages/follow/src/settings.ts`（`appendScoringSetting`）；`apps/web/test/follow-scoring.test.ts`「首次打开显示默认版本 1…」「修改权重生成新版本，旧版本与已有线索不变」「member 与只读空间不能保存；全部权重为 0 被拒绝」；web 测试 412 通过 / 32 跳过。
 
 ## 4. 候选页面
 

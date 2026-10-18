@@ -54,6 +54,15 @@ export {
 } from './quality.ts'
 export { finishRun, getRun, listRuns, type SyncStatus, type SyncTrigger, startRun } from './runs.ts'
 export {
+  findProducts,
+  keywordIds,
+  type MarketProduct,
+  type MetricSeriesMap,
+  type ProductScope,
+  productsByIds,
+  readMetricSeries,
+} from './series.ts'
+export {
   credentialStatus,
   effectiveBudget,
   ensureSources,
