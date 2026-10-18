@@ -43,6 +43,10 @@ interface KeepaProduct {
   listedSince?: number
   csv?: (number[] | null)[]
   stats?: { current?: number[] }
+  /** 商品页“过去一个月购买”数（Amazon 展示值，下限估计）；-1 / 缺省表示无 */
+  monthlySold?: number
+  /** history=1 时：[keepa 时间, monthlySold, ...] */
+  monthlySoldHistory?: number[]
 }
 
 interface KeepaResponse {
@@ -288,6 +292,39 @@ export function normalizeKeepa(payload: RawPayload): NormalizedBatch {
           method: 'official',
         })
       }
+    }
+    // 月销量：Amazon 展示的“过去一个月购买”数，属第三方估算口径，供 Keepa 历史回放打标签
+    if (history) {
+      const csv = product.monthlySoldHistory ?? []
+      const daily = new Map<string, number>()
+      for (let i = 0; i + 1 < csv.length; i += 2) {
+        const value = plain(csv[i + 1])
+        if (value === undefined) continue
+        daily.set(
+          keepaTimeToDate(csv[i] as number)
+            .toISOString()
+            .slice(0, 10),
+          value,
+        )
+      }
+      for (const [day, value] of daily)
+        observations.push({
+          entity,
+          metric: 'sales_estimate_monthly',
+          observedOn: day,
+          value,
+          method: 'estimate',
+        })
+    } else {
+      const value = plain(product.monthlySold)
+      if (value !== undefined)
+        observations.push({
+          entity,
+          metric: 'sales_estimate_monthly',
+          observedOn,
+          value,
+          method: 'estimate',
+        })
     }
   }
   return { entities, observations }

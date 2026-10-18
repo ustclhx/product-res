@@ -154,14 +154,15 @@ export async function startNodeJobs(config: NodeEnv, options: NodeJobsOptions) {
         scheduler = createNodeScheduler({ engine })
         dispose = registerNodeJobsSchedules(scheduler, context, template)
         // 数据层（add-data-source-hub）：同步队列与每日维护
-        await registerNodeDataSources({
+        const dataSync = await registerNodeDataSources({
           db,
           queues,
           scheduler,
           mock: config.DATASOURCE_MOCK === 'true',
         })
-        // 跟卖选品（add-follow-selection）：每日 04:00 SGT 归并、打分并生成线索
-        registerNodeSelection({ db, scheduler })
+        // 跟卖选品（add-follow-selection）：每日 04:00 SGT 归并、打分并生成线索；
+        // 影子验证（add-shadow-validation）：05:00 打标签、周一 05:30 重算准备度、Keepa 回放队列
+        registerNodeSelection({ db, scheduler, queues, dataSync })
         registerSelectionReview(scheduler, db)
         await queues.prepare()
         await scheduler.prepare()

@@ -5,6 +5,7 @@ import {
   DEFAULT_SCORING_SETTINGS,
   type DimensionId,
   type DimensionResult,
+  dominantDimension,
   evaluateGates,
   evaluateLead,
   GRADE_LABELS,
@@ -170,5 +171,35 @@ describe('硬门槛与等级', () => {
       Math.round((lead.composite.score as number) * confidence.value * 100) / 100,
     )
     expect(evaluateLead(input, 'usable').displayGrade).toBe('recommended')
+  })
+})
+
+describe('主导维度（信号类型）', () => {
+  it('取权重 × 分数贡献最高的维度，反向维度按 100 − 分数', () => {
+    // 竞争强度是反向维度：分数 10 → 贡献 90，高于需求 80
+    expect(dominantDimension(dims({ 'market-demand': 80, competition: 10, profit: null }))).toBe(
+      'competition',
+    )
+    const weighted = {
+      ...DEFAULT_SCORING_SETTINGS,
+      weights: { ...DEFAULT_SCORING_SETTINGS.weights, 'growth-season': 3 },
+    }
+    expect(dominantDimension(dims({ 'market-demand': 80, 'growth-season': 40 }), weighted)).toBe(
+      'growth-season',
+    )
+  })
+
+  it('并列按维度顺序；权重为 0 或无分数的维度不参与；全部不可算为 null', () => {
+    expect(dominantDimension(dims({ 'peer-spread': 70, 'market-demand': 70 }))).toBe(
+      'market-demand',
+    )
+    const zero = {
+      ...DEFAULT_SCORING_SETTINGS,
+      weights: { ...DEFAULT_SCORING_SETTINGS.weights, 'market-demand': 0 },
+    }
+    expect(dominantDimension(dims({ 'market-demand': 99, compliance: 40 }), zero)).toBe(
+      'compliance',
+    )
+    expect(dominantDimension(dims({ 'market-demand': null }))).toBeNull()
   })
 })
