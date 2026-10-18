@@ -2,6 +2,7 @@ import { BarChart, LineChart, RadarChart, ScatterChart } from 'echarts/charts'
 import {
   GridComponent,
   LegendComponent,
+  MarkAreaComponent,
   RadarComponent,
   TooltipComponent,
 } from 'echarts/components'
@@ -18,6 +19,8 @@ echarts.use([
   ScatterChart,
   GridComponent,
   LegendComponent,
+  // 季节曲线用阴影区间标出节点销售窗口
+  MarkAreaComponent,
   RadarComponent,
   TooltipComponent,
   CanvasRenderer,

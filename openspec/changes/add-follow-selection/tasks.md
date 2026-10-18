@@ -21,8 +21,8 @@
 
 ## 4. 候选页面
 
-- [ ] 4.1 候选列表（`/app/$slug/follow`）：平台切换、方向筛选、排序、eBay 无 BSR、空状态。验证：组件或 e2e 测试；对照设计稿截图。
-- [ ] 4.2 商品簇详情（`/app/$slug/follow/$clusterId`）：雷达、置信度、曲线、风险、来源对比、拆分/合并、人工刷新。验证：拆分合并测试；截图对照。
+- [x] 4.1 候选列表（`/app/$slug/follow`）：平台切换、方向筛选、排序、eBay 无 BSR、空状态。验证：组件或 e2e 测试；对照设计稿截图。 证据：`apps/web/src/features/follow/candidates{.ts,.server.ts,.functions.ts,-page.tsx}`，读市场数据用新增的 `packages/marketdata` `readMetrics`（批量）；`src/features/follow/candidates.test.ts`「eBay 不显示 BSR 列，Amazon 显示」「冷启动显示未验证；硬门槛不通过仍为不推荐」「高分低置信标“值得关注但证据不足”」「命中信号…反向维度取 100 − 分数」；集成测试 `apps/web/test/follow-candidates.test.ts`「没有线索时返回空状态所需的配置情况，不返回示例数据」「按平台筛选、按 综合分 × 置信度 排序，每个簇只取最新一天的线索」；e2e `apps/web/e2e/follow-candidates.spec.ts` 覆盖空状态、Amazon 有 BSR、切换 eBay 表头无 BSR；截图 `docs/receipts/m2-candidates-2026-10-19/01–03`。
+- [x] 4.2 商品簇详情（`/app/$slug/follow/$clusterId`）：雷达、置信度、曲线、风险、来源对比、拆分/合并、人工刷新。验证：拆分合并测试；截图对照。 证据：`apps/web/src/features/follow/cluster-page.tsx`、`clusters.server.ts`（拆分 / 合并写 lead_event 与 locked，写操作 assertWorkbenchWriter；人工刷新复用数据中心 `estimateRefresh` / `refreshNow`，新增 `productRefreshOptions` 显示预计花费与额度）；集成测试「详情：缺失维度为空而不是 0；来源对比带各来源值与离散度」「拆分：成员进入新簇并锁定…」「合并：来源簇成员移入并锁定，来源簇标为 merged；同一商品不重复」「不同站点不能合并；member、只读空间与其他空间不能修改」；e2e 覆盖雷达缺失维度“无数据”、月销量悬浮来源（主值、离散度、获取时间）、人工刷新预计花费、拆分；截图 `docs/receipts/m2-candidates-2026-10-19/04–06`；web 测试 423 通过 / 32 跳过。
 
 ## 5. 验收
 

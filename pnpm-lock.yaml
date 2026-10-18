@@ -326,6 +326,12 @@ importers:
       '@product-res/platform':
         specifier: workspace:*
         version: link:../../packages/platform
+      '@product-res/risk':
+        specifier: workspace:*
+        version: link:../../packages/risk
+      '@product-res/selection':
+        specifier: workspace:*
+        version: link:../../packages/selection
       '@product-res/shared':
         specifier: workspace:*
         version: link:../../packages/shared

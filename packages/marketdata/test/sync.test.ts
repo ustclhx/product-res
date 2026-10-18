@@ -11,6 +11,7 @@ import {
   getSource,
   productIds,
   readMetric,
+  readMetrics,
   replayPayloads,
   revertImport,
   runSyncTask,
@@ -57,6 +58,16 @@ describe.skipIf(!integration)('同步编排（模拟数据源，真实 Postgres�
       value: 9.99,
       method: 'official',
     })
+    // 批量读取与逐个读取一致；没有观测的指标不出现在结果中
+    const batch = await readMetrics(db, {
+      entityType: 'product',
+      entityIds: [productId],
+      metrics: ['price', 'available_quantity', 'bsr'],
+      marketplace: 'ebay-us',
+    })
+    expect(batch.get(productId)?.get('price')).toEqual([point])
+    expect(batch.get(productId)?.get('available_quantity')).toHaveLength(1)
+    expect(batch.get(productId)?.has('bsr')).toBe(false)
     const stored = await archive.get(point?.primary.rawPayloadId as string)
     expect(new TextDecoder().decode(stored?.body)).toContain(ids[0])
     const spec = effectiveBudget(connector, undefined)
