@@ -21,6 +21,7 @@ import templateConfig from '../../../../template.config.ts'
 import { registerNodeDataSources } from '../datasources/node.ts'
 import { consumeJobsBatch, type JobsContext } from '../handlers.ts'
 import { type JobObserver, logJobObserver } from '../observer.ts'
+import { registerNodeSelection } from '../selection/node.ts'
 import { createNodeMediaHandler } from './media.ts'
 import { createNodeMediaWorkflowHttpHandler } from './media-http.ts'
 import { getNodeJobFeatures, registerNodeJobsSchedules } from './registration.ts'
@@ -158,6 +159,8 @@ export async function startNodeJobs(config: NodeEnv, options: NodeJobsOptions) {
           scheduler,
           mock: config.DATASOURCE_MOCK === 'true',
         })
+        // 跟卖选品（add-follow-selection）：每日 04:00 SGT 归并、打分并生成线索
+        registerNodeSelection({ db, scheduler })
         await queues.prepare()
         await scheduler.prepare()
       },

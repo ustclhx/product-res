@@ -217,6 +217,9 @@ importers:
       '@product-res/entitlements':
         specifier: workspace:*
         version: link:../../packages/entitlements
+      '@product-res/follow':
+        specifier: workspace:*
+        version: link:../../packages/follow
       '@product-res/marketdata':
         specifier: workspace:*
         version: link:../../packages/marketdata
@@ -320,12 +323,18 @@ importers:
       '@product-res/entitlements':
         specifier: workspace:*
         version: link:../../packages/entitlements
+      '@product-res/follow':
+        specifier: workspace:*
+        version: link:../../packages/follow
       '@product-res/marketdata':
         specifier: workspace:*
         version: link:../../packages/marketdata
       '@product-res/platform':
         specifier: workspace:*
         version: link:../../packages/platform
+      '@product-res/selection':
+        specifier: workspace:*
+        version: link:../../packages/selection
       '@product-res/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -725,6 +734,40 @@ importers:
         specifier: ^0.45.3
         version: 0.45.3(@cloudflare/workers-types@5.20261002.1)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.29.6)(pg@8.20.0)(postgres@3.4.9)
     devDependencies:
+      vitest:
+        specifier: ^4.1.11
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@22.20.5)(happy-dom@20.14.5)(vite@8.3.2(@types/node@22.20.5)(esbuild@0.28.2))
+
+  packages/follow:
+    dependencies:
+      '@product-res/datasources':
+        specifier: workspace:*
+        version: link:../datasources
+      '@product-res/db':
+        specifier: workspace:*
+        version: link:../db
+      '@product-res/marketdata':
+        specifier: workspace:*
+        version: link:../marketdata
+      '@product-res/risk':
+        specifier: workspace:*
+        version: link:../risk
+      '@product-res/selection':
+        specifier: workspace:*
+        version: link:../selection
+      '@product-res/shared':
+        specifier: workspace:*
+        version: link:../shared
+      drizzle-orm:
+        specifier: ^0.45.3
+        version: 0.45.3(@cloudflare/workers-types@5.20261002.1)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.29.6)(pg@8.20.0)(postgres@3.4.9)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.5
+        version: 22.20.5
+      postgres:
+        specifier: ^3.4.9
+        version: 3.4.9
       vitest:
         specifier: ^4.1.11
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@22.20.5)(happy-dom@20.14.5)(vite@8.3.2(@types/node@22.20.5)(esbuild@0.28.2))
