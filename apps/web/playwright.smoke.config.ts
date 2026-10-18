@@ -7,7 +7,8 @@ if (process.env.STAGING_URL || process.env.E2E_REAL_TURNSTILE === '1' || process
 export default defineConfig({
   ...base,
   testMatch: 'smoke.spec.ts',
-  testIgnore: '**/staging/**',
+  // production/ 是 Cloudflare 生产只读冒烟（依赖营销页），本项目不部署 Cloudflare
+  testIgnore: ['**/staging/**', '**/production/**'],
   globalSetup: './e2e/smoke-setup.ts',
   timeout: 60_000,
   globalTimeout: 240_000,

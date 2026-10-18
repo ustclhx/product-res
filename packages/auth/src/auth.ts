@@ -19,6 +19,7 @@ import { passwordHasher } from './password.ts'
 import { personalWorkspaceHooks } from './personal-workspace.ts'
 import { authProtection } from './protection.ts'
 import { sessionStorageOptions } from './session.ts'
+import { signupAllowlist } from './signup-allowlist.ts'
 import { type ResolveMaxSeats, teamWorkspaces } from './team-workspaces.ts'
 import { verificationReservation } from './verification-reservation.ts'
 import { workspaceLifecyclePlugin } from './workspace-lifecycle.ts'
@@ -62,6 +63,7 @@ export function createAuth(env: AuthEnv, db: Database, deps: CreateAuthDeps) {
   const vars = parseAuthEnv(env, config)
   const workspaceHooks = personalWorkspaceHooks(db)
   const bootstrapAdmin = adminBootstrap(db, vars.BOOTSTRAP_ADMIN_EMAILS)
+  const assertSignupAllowed = signupAllowlist(vars.SIGNUP_ALLOWED_EMAILS)
 
   const auth = betterAuth({
     appName: config.app.name,
@@ -89,14 +91,14 @@ export function createAuth(env: AuthEnv, db: Database, deps: CreateAuthDeps) {
       ...workspaceHooks,
       user: {
         create: {
-          ...(deps.beforeUserCreate && {
-            before: async (
-              user: { email: string },
-              context: { headers?: Headers | undefined; request?: Request | undefined } | null,
-            ) => {
-              await deps.beforeUserCreate?.(user, context?.request?.headers ?? context?.headers)
-            },
-          }),
+          before: async (
+            user: { email: string },
+            context: { headers?: Headers | undefined; request?: Request | undefined } | null,
+          ) => {
+            // 白名单先于注入回调，名单外邮箱不触发任何副作用
+            assertSignupAllowed(user.email)
+            await deps.beforeUserCreate?.(user, context?.request?.headers ?? context?.headers)
+          },
           after: async (user) => {
             await workspaceHooks.user.create.after(user)
             await bootstrapAdmin(user.id, 'user.create')

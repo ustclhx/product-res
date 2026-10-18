@@ -1,4 +1,7 @@
 /* apps/web 的全局样式：主题与基础样式来自 @product-res/ui，再声明本应用的源码目录供 Tailwind 扫描类名 */
+/* 字体随应用自托管，不依赖外部字体服务；中文使用系统字体 */
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
 @import "@product-res/ui/globals.css";
 
 @source "../";

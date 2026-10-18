@@ -15,26 +15,43 @@
 /* color-scheme 让原生控件（select、滚动条等）跟随主题 */
 :root {
   color-scheme: light;
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --success: oklch(0.527 0.154 150.069);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  /* 选品工作台主题（docs/design 设计稿）：Ant Design 风格的色板映射到 shadcn 变量 */
+  --radius: 0.5rem; /* 8px；卡片使用 rounded-xl = 12px */
+  --app-font-sans:
+    "Inter Variable", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC",
+    system-ui, sans-serif;
+  --app-font-mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", monospace;
+  --background: #ffffff;
+  --foreground: #262626;
+  --card: #ffffff;
+  --card-foreground: #262626;
+  --popover: #ffffff;
+  --popover-foreground: #262626;
+  --primary: #1677ff;
+  --primary-foreground: #ffffff;
+  --primary-soft: #e6f4ff;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #262626;
+  --muted: #f5f5f5;
+  --muted-foreground: #8c8c8c;
+  --subtle-foreground: #595959;
+  --accent: #f5f5f5;
+  --accent-foreground: #262626;
+  --destructive: #ff4d4f;
+  --destructive-soft: #fff2f0;
+  --success: #52c41a;
+  --success-soft: #f6ffed;
+  --success-strong: #389e0d;
+  --warning: #faad14;
+  --warning-soft: #fffbe6;
+  --warning-strong: #d48806;
+  --border: #f0f0f0;
+  --input: #d9d9d9;
+  --ring: #4096ff;
+  --page: #f0f2f5;
+  --sidebar: #001529;
+  --sidebar-foreground: #ffffff;
+  --sidebar-muted: rgb(255 255 255 / 65%);
 }
 
 .dark {
@@ -58,6 +75,19 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
+  /* 设计稿只有浅色；暗色沿用模板默认，下列业务变量给出可读的近似值 */
+  --primary-soft: oklch(0.3 0.08 255);
+  --subtle-foreground: oklch(0.8 0 0);
+  --destructive-soft: oklch(0.3 0.08 25);
+  --success-soft: oklch(0.3 0.06 150);
+  --success-strong: oklch(0.8 0.15 150);
+  --warning: oklch(0.8 0.15 80);
+  --warning-soft: oklch(0.32 0.06 80);
+  --warning-strong: oklch(0.85 0.14 80);
+  --page: oklch(0.12 0 0);
+  --sidebar: oklch(0.18 0.03 255);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-muted: oklch(0.985 0 0 / 65%);
 }
 
 @theme inline {
@@ -81,6 +111,20 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-strong: var(--success-strong);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-strong: var(--warning-strong);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-primary-soft: var(--primary-soft);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-page: var(--page);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --font-sans: var(--app-font-sans);
+  --font-mono: var(--app-font-mono);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

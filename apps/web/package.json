@@ -21,6 +21,8 @@
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.130",
+    "@fontsource-variable/inter": "5.3.0",
+    "@fontsource-variable/jetbrains-mono": "5.3.0",
     "@product-res/ai": "workspace:*",
     "@product-res/auth": "workspace:*",
     "@product-res/billing": "workspace:*",
@@ -65,10 +67,10 @@
     "nitro": "3.0.260903-beta",
     "openai": "^7.28.0",
     "postgres": "^3.4.9",
+    "srvx": "1.0.5",
     "tailwindcss": "^4.3.3",
     "vite": "^8.3.2",
     "vitest": "^4.1.11",
-    "wrangler": "^4.146.0",
-    "srvx": "1.0.5"
+    "wrangler": "^4.146.0"
   }
 }

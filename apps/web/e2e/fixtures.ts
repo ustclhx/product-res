@@ -6,8 +6,19 @@ import type { Database } from '@product-res/db'
 import { DEFAULT_FREE_FEATURES } from '@product-res/entitlements'
 import { newId } from '@product-res/shared'
 import { loadEnv } from 'vite'
+import templateConfig from '../../../template.config.ts'
 
 export const PASSWORD = 'correct-horse-battery'
+// i18n 关闭时页面使用默认语言，表单标签按该语言的消息文件匹配
+const uiLocale = templateConfig.i18n.enabled ? 'en' : templateConfig.i18n.defaultLocale
+const authMessages = JSON.parse(
+  readFileSync(new URL(`../messages/${uiLocale}/auth.json`, import.meta.url), 'utf8'),
+) as Record<string, string>
+export function authText(key: string) {
+  const text = authMessages[key]
+  if (!text) throw new Error(`Missing auth message ${key}`)
+  return text
+}
 export const APP_URL = /\/app\/u-[a-z0-9]+\/?$/
 const env = loadEnv('worktree', new URL('../../../', import.meta.url).pathname, '')
 const require = createRequire(new URL('../../../packages/db/package.json', import.meta.url))
@@ -47,19 +58,19 @@ export async function seedWorkspaceSeats(slug: string) {
 
 export async function register(page: Page, email: string, name = 'Workspace Owner') {
   await page.goto('/register')
-  const form = page.getByRole('form', { name: 'Create an account' })
-  await form.getByLabel('Name', { exact: true }).fill(name)
-  await form.getByLabel('Email', { exact: true }).fill(email)
-  await form.getByLabel('Password', { exact: true }).fill(PASSWORD)
-  await form.getByRole('button', { name: 'Create account' }).click()
+  const form = page.getByRole('form', { name: authText('auth_create_an_account') })
+  await form.getByLabel(authText('auth_name'), { exact: true }).fill(name)
+  await form.getByLabel(authText('auth_email'), { exact: true }).fill(email)
+  await form.getByLabel(authText('auth_password'), { exact: true }).fill(PASSWORD)
+  await form.getByRole('button', { name: authText('auth_create_account') }).click()
   await expect(page).toHaveURL(APP_URL)
 }
 export async function login(page: Page, email: string, path = '/login') {
   await page.goto(path)
-  const form = page.getByRole('form', { name: 'Sign in with password' })
-  await form.getByLabel('Email', { exact: true }).fill(email)
-  await form.getByLabel('Password', { exact: true }).fill(PASSWORD)
-  await form.getByRole('button', { name: 'Sign in', exact: true }).click()
+  const form = page.getByRole('form', { name: authText('auth_sign_in_with_password') })
+  await form.getByLabel(authText('auth_email'), { exact: true }).fill(email)
+  await form.getByLabel(authText('auth_password'), { exact: true }).fill(PASSWORD)
+  await form.getByRole('button', { name: authText('auth_sign_in'), exact: true }).click()
   await expect(page).not.toHaveURL(/\/login(?:\?|$)/)
 }
 /** Local workerd honors this header; separate simulated clients retain real 10/min limits. */

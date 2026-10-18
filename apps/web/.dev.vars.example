@@ -1,5 +1,5 @@
 # 密钥为空，APP_URL 为公开默认值；复制到对应 app 的 .dev.vars 后填写。
-APP_URL=https://product.ezarouter.cc
+APP_URL=http://localhost:3000
 APP_VERSION=
 EMAIL_TRANSPORT=
 EMAIL_FROM=
@@ -8,6 +8,8 @@ SENTRY_ENVIRONMENT=
 PAYMENT_MODE=test
 BETTER_AUTH_SECRET=
 BOOTSTRAP_ADMIN_EMAILS=
+# 注册白名单（逗号分隔）；空值不限制注册
+SIGNUP_ALLOWED_EMAILS=
 DATABASE_URL=
 MIGRATION_DATABASE_URL=
 VALKEY_URL=

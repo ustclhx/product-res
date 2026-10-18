@@ -63,3 +63,14 @@
 #### Scenario: 定时任务写库
 - **WHEN** 配置一个每日 02:00（新加坡时间）运行的示例任务并到达触发时间
 - **THEN** 数据库中出现该时刻的一条运行记录，健康检查显示最近一次运行时间
+
+### Requirement: 注册白名单
+部署在公网的实例 SHALL 支持用邮箱白名单限制注册：名单非空时，名单外邮箱 MUST NOT 创建用户，无论通过哪种登录方式；名单比较 SHALL 忽略大小写和首尾空白；名单为空时保持模板原有的注册行为。
+
+#### Scenario: 名单外邮箱
+- **WHEN** 白名单为 `team@example.com`，有人用 `other@example.com` 注册
+- **THEN** 注册返回 403，数据库中没有新增用户
+
+#### Scenario: 名单内邮箱大小写不同
+- **WHEN** 白名单为 `team@example.com`，用 `TEAM@example.com` 注册
+- **THEN** 注册成功
