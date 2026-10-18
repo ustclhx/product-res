@@ -192,6 +192,21 @@ describe('每日采集投递', () => {
       ['ebay-browse', 'product-snapshot', 'scheduled', 'scheduled'],
       ['ebay-browse', 'seller-new-listings', 'scheduled', 'scheduled'],
     ])
+    // 周一额外投递 eBay 类目树同步（不带方向标记，单独按幂等键查）
+    const taxonomy = await db
+      .select()
+      .from(jobMessage)
+      .where(
+        and(
+          eq(jobMessage.queue, DATASYNC_QUEUE),
+          eq(jobMessage.idempotencyKey, `${DAILY_KEY_PREFIX}:2031-06-02:taxonomy:ebay-us`),
+        ),
+      )
+    expect(taxonomy).toHaveLength(1)
+    expect(taxonomy[0]?.body).toMatchObject({
+      sourceId: 'ebay-browse',
+      task: { kind: 'taxonomy', marketplace: 'ebay-us' },
+    })
     const seller = bodies.find((b) => b.task.kind === 'seller-new-listings')
     expect(seller?.task.scope).toEqual({ sellerId: `seed-${tag}`, categoryIds: `cat-${tag}` })
     expect(bodies.some((b) => JSON.stringify(b).includes(`off-${tag}`))).toBe(false)
@@ -209,7 +224,7 @@ describe('每日采集投递', () => {
     const before = await ours('2031-06-02')
     const again = await dispatchDailyCollections(context(monday), monday)
     expect(again.enqueued).toBe(0)
-    expect(again.duplicates).toBe(again.plan.tasks.length)
+    expect(again.duplicates).toBe(again.plan.tasks.length + 1)
     expect(await ours('2031-06-02')).toHaveLength(before.length)
   })
 
@@ -219,6 +234,7 @@ describe('每日采集投递', () => {
     expect(result.weekly).toBe(false)
     const bodies = (await ours('2031-06-03')).map((r) => r.body as DailyMessage['body'])
     expect(bodies.map((b) => b.sourceId)).not.toContain('dataforseo')
+    expect(bodies.map((b) => b.task.kind)).not.toContain('taxonomy')
     expect(bodies.map((b) => b.task.kind).sort()).toEqual([
       'product-snapshot',
       'seller-new-listings',

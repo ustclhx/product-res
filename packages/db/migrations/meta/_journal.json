@@ -141,6 +141,13 @@
       "when": 1792350618974,
       "tag": "0019_lead_follow_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792355058441,
+      "tag": "0020_marketplace_category",
+      "breakpoints": true
     }
   ]
 }

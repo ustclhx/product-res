@@ -27,6 +27,14 @@ export const getDirectionsPage = createServerFn({ method: 'GET' })
     canWrite: canWriteWorkbench(context),
   }))
 
+/** 方向配置的类目搜索（eBay 站点）；没有类目数据时返回空列表，页面保持手填 */
+export const searchDirectionCategories = createServerFn({ method: 'GET' })
+  .middleware([withWorkspace])
+  .inputValidator(slug.extend({ marketplace: z.literal('ebay-us'), q: z.string().trim().max(64) }))
+  .handler(async ({ context, data }) =>
+    (await service()).searchCategoryOptions(actorOf(context), data.marketplace, data.q),
+  )
+
 export const saveDirection = createServerFn({ method: 'POST' })
   .middleware([withWorkspace])
   .inputValidator(slug.extend({ id: z.uuid().optional(), direction: directionInput }))

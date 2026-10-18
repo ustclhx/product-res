@@ -71,10 +71,19 @@ export async function dataCenterOverview(db: Database, now = new Date()) {
         .where(eq(syncRun.sourceId, connector.id))
         .orderBy(desc(syncRun.startedAt))
         .limit(1)
+      const [lastImport] = await db
+        .select({ createdAt: dataImport.createdAt, fileName: dataImport.fileName })
+        .from(dataImport)
+        .where(and(eq(dataImport.sourceId, connector.id), isNull(dataImport.revertedAt)))
+        .orderBy(desc(dataImport.createdAt))
+        .limit(1)
       return {
         id: connector.id,
         label: connector.label,
         access: connector.access,
+        lastImport: lastImport
+          ? { at: lastImport.createdAt.toISOString(), fileName: lastImport.fileName }
+          : null,
         marketplaces: connector.marketplaces,
         capabilities: connector.capabilities,
         enabled: row?.enabled ?? false,

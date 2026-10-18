@@ -1,6 +1,7 @@
 import { Button, Input, StatCard, Tag } from '@product-res/ui'
 import { useState } from 'react'
 import { probeDataSource, saveDataSource } from './data-center.functions.ts'
+import { FileSourceCard } from './file-source-card.tsx'
 import {
   errorText,
   formatNumber,
@@ -30,10 +31,13 @@ export function Overview({
   slug,
   data,
   onChanged,
+  onImport,
 }: {
   slug: string
   data: DataCenterData
   onChanged: () => Promise<void>
+  /** 文件导入类型的数据源：跳到导入标签并预选该数据源 */
+  onImport: (sourceId: string) => void
 }) {
   return (
     <div className="grid gap-4">
@@ -58,9 +62,13 @@ export function Overview({
           </p>
         ) : (
           <div className="grid gap-3 lg:grid-cols-2">
-            {data.sources.map((source) => (
-              <SourceCard key={source.id} slug={slug} source={source} onChanged={onChanged} />
-            ))}
+            {data.sources.map((source) =>
+              source.access === 'file' ? (
+                <FileSourceCard key={source.id} source={source} onImport={onImport} />
+              ) : (
+                <SourceCard key={source.id} slug={slug} source={source} onChanged={onChanged} />
+              ),
+            )}
           </div>
         )}
       </Section>

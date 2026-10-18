@@ -1,0 +1,34 @@
+{
+  "categoryTreeId": "0",
+  "categoryTreeVersion": "131",
+  "applicableMarketplaceIds": ["EBAY_US"],
+  "rootCategoryNode": {
+    "categoryTreeNodeLevel": 0,
+    "childCategoryTreeNodes": [
+      {
+        "category": { "categoryId": "6000", "categoryName": "eBay Motors" },
+        "categoryTreeNodeLevel": 1,
+        "childCategoryTreeNodes": [
+          {
+            "category": { "categoryId": "6030", "categoryName": "Parts & Accessories" },
+            "categoryTreeNodeLevel": 2,
+            "parentCategoryTreeNodeHref": "https://api.ebay.com/commerce/taxonomy/v1/category_tree/0/get_category_subtree?category_id=6000",
+            "childCategoryTreeNodes": [
+              {
+                "category": { "categoryId": "33694", "categoryName": "Interior" },
+                "categoryTreeNodeLevel": 3,
+                "leafCategoryTreeNode": true,
+                "parentCategoryTreeNodeHref": "https://api.ebay.com/commerce/taxonomy/v1/category_tree/0/get_category_subtree?category_id=6030"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "category": { "categoryId": "281", "categoryName": "Jewelry & Watches" },
+        "categoryTreeNodeLevel": 1,
+        "leafCategoryTreeNode": true
+      }
+    ]
+  }
+}

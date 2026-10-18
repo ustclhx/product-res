@@ -13,7 +13,7 @@ import { log } from '@product-res/shared/log'
 import { eq } from 'drizzle-orm'
 import type { RawArchive } from './archive.ts'
 import { reconcileExternalRemaining, release, reserve, settle } from './budgets.ts'
-import { upsertEntities, upsertObservations } from './observations.ts'
+import { upsertCategories, upsertEntities, upsertObservations } from './observations.ts'
 import { finishRun, type SyncTrigger, startRun } from './runs.ts'
 import { effectiveBudget, getSource, pauseSource, type SourceConfig } from './sources.ts'
 
@@ -119,6 +119,7 @@ export async function runSyncTask(
         fetchedAt,
         rawPayloadId: archived.id,
       })
+      if (batch.categories?.length) written += await upsertCategories(db, batch.categories)
       cursor = batch.nextCursor ?? cursor
       if (payload.remainingQuota !== undefined)
         await reconcileExternalRemaining(db, connector.id, spec, payload.remainingQuota, now)

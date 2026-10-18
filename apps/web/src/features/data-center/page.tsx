@@ -23,6 +23,7 @@ export type DataCenterTab = (typeof TABS)[number][0]
 export function DataCenterPage({ slug, initial }: { slug: string; initial: DataCenterData }) {
   const [tab, setTab] = useState<DataCenterTab>('overview')
   const [data, setData] = useState(initial)
+  const [importSource, setImportSource] = useState<string | undefined>()
   const apiSources = data.sources
     .filter((s) => s.access === 'api')
     .map((s) => ({ id: s.id, label: s.label }))
@@ -58,11 +59,15 @@ export function DataCenterPage({ slug, initial }: { slug: string; initial: DataC
           slug={slug}
           data={data}
           onChanged={async () => setData(await getDataCenter({ data: { slug } }))}
+          onImport={(sourceId) => {
+            setImportSource(sourceId)
+            setTab('import')
+          }}
         />
       ) : null}
       {tab === 'runs' ? <SyncRuns slug={slug} /> : null}
       {tab === 'preview' ? <DataPreview slug={slug} sources={apiSources} /> : null}
-      {tab === 'import' ? <FileImport slug={slug} /> : null}
+      {tab === 'import' ? <FileImport slug={slug} initialSourceId={importSource} /> : null}
       {tab === 'quality' ? <QualityIssues slug={slug} /> : null}
       {tab === 'scoring' ? <ScoringSettings slug={slug} /> : null}
     </div>

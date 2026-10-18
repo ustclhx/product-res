@@ -1,3 +1,4 @@
+import type { FetchTask } from '@product-res/datasources'
 import type { Database } from '@product-res/db'
 import { jobMessage } from '@product-res/db'
 import {
@@ -146,6 +147,32 @@ export function toDailyMessages(
   })
 }
 
+/** 每周一的 eBay 类目树同步（Taxonomy，2 次调用）；延到 02:20，避开卖家扫描 */
+export const TAXONOMY_OFFSET_MINUTES = 20
+
+export function toTaxonomyMessage(
+  day: string,
+  scheduledAt: Date,
+  now: Date,
+  allowances: ReadonlyMap<string, SourceAllowance>,
+): DailyMessage | undefined {
+  const allowance = allowances.get(COLLECT_SOURCES.ebay)
+  if (!allowance || allowance.headroom < allowance.connector.plan(TAXONOMY_TASK)) return undefined
+  const at = scheduledAt.getTime() + TAXONOMY_OFFSET_MINUTES * 60_000
+  return {
+    body: {
+      sourceId: COLLECT_SOURCES.ebay,
+      task: TAXONOMY_TASK,
+      mode: 'scheduled',
+      trigger: 'scheduled',
+      idempotencyKey: `${DAILY_KEY_PREFIX}:${day}:taxonomy:ebay-us`,
+    },
+    delaySeconds: Math.max(0, Math.ceil((at - now.getTime()) / 1000)),
+  }
+}
+
+const TAXONOMY_TASK: FetchTask = { kind: 'taxonomy', marketplace: 'ebay-us', scope: {} }
+
 /**
  * 每日采集投递：读取启用方向 → 计划 → 幂等投递。补跑（missedRun once）沿用原计划日，
  * 同一天重复触发只投递尚未投递的任务；超过安全线的任务顺延到之后的运行。
@@ -160,6 +187,9 @@ export async function dispatchDailyCollections(context: DataSyncContext, schedul
   const targets = await loadCollectionTargets(context.db, { asOf: day, keywords: weekly })
   const plan = planCollections(targets, allowances, { keywords: weekly })
   const messages = toDailyMessages(plan, day, scheduledAt, now)
+  // 周一：eBay 已启用且有凭据（进入 allowances）时同步类目树
+  const taxonomy = weekly ? toTaxonomyMessage(day, scheduledAt, now, allowances) : undefined
+  if (taxonomy) messages.push(taxonomy)
   const result =
     context.dispatcher && messages.length > 0
       ? await context.dispatcher.dispatch(messages)
