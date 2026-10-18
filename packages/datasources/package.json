@@ -11,9 +11,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@product-res/shared": "workspace:*"
+    "@product-res/shared": "workspace:*",
+    "read-excel-file": "9.3.10"
   },
   "devDependencies": {
+    "fflate": "0.8.3",
     "vitest": "^4.1.11"
   }
 }

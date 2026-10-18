@@ -2,9 +2,10 @@ import {
   buildImport,
   type ColumnMapping,
   type DATA_KINDS,
+  detectImportKind,
   type ImportContext,
   METRICS,
-  parseCsv,
+  parseImportFile,
   type SourceConnector,
   suggestMapping,
 } from '@product-res/datasources'
@@ -356,23 +357,44 @@ export interface ImportRequest {
   readonly context: Omit<ImportContext, 'sourceId'>
   readonly mapping?: ColumnMapping
   readonly templateId?: string
+  /** 仅 XLSX：指定工作表名，缺省取第一个 */
+  readonly sheetName?: string
 }
 
 function decodeFile(input: ImportRequest) {
   const bytes = Uint8Array.from(atob(input.contentBase64), (c) => c.charCodeAt(0))
   if (bytes.byteLength > MAX_IMPORT_BYTES)
     throw new AppError('IMPORT_TOO_LARGE', '文件超过 5 MB', { status: 413 })
-  if (!/\.(csv|tsv|txt)$/i.test(input.fileName))
-    throw new AppError('IMPORT_UNSUPPORTED', '目前支持 CSV / TSV；Excel 请先另存为 CSV', {
-      status: 400,
-    })
+  if (!detectImportKind(input.fileName))
+    throw new AppError(
+      'IMPORT_UNSUPPORTED',
+      '支持 CSV / TSV / XLSX 文件（旧版 .xls 请另存为 .xlsx）',
+      {
+        status: 400,
+      },
+    )
   return bytes
+}
+
+async function readTable(input: ImportRequest, bytes: Uint8Array) {
+  try {
+    return await parseImportFile(input.fileName, bytes, input.sheetName)
+  } catch (error) {
+    // 损坏文件或不存在的工作表都是用户输入问题，不应表现为 500
+    throw new AppError(
+      'IMPORT_INVALID_FILE',
+      error instanceof Error ? error.message : '文件无法解析',
+      {
+        status: 400,
+      },
+    )
+  }
 }
 
 async function parseImport(db: Database, input: ImportRequest) {
   const bytes = decodeFile(input)
-  const table = parseCsv(new TextDecoder().decode(bytes))
-  const [headers = [], ...rows] = table
+  const file = await readTable(input, bytes)
+  const [headers = [], ...rows] = file.table
   const templates = await listTemplates(db, input.sourceId)
   const template = input.templateId ? templates.find((t) => t.id === input.templateId) : undefined
   const suggestion = suggestMapping(
@@ -384,6 +406,7 @@ async function parseImport(db: Database, input: ImportRequest) {
   const preview = buildImport(headers, rows, mapping, context)
   return {
     bytes,
+    file,
     headers,
     rows,
     mapping,
@@ -397,6 +420,8 @@ async function parseImport(db: Database, input: ImportRequest) {
 export async function previewImport(db: Database, input: ImportRequest) {
   const parsed = await parseImport(db, input)
   return {
+    sheetNames: parsed.file.sheetNames,
+    sheetName: parsed.file.sheetName,
     headers: parsed.headers,
     sampleRows: parsed.rows.slice(0, 50),
     mapping: parsed.mapping,
@@ -434,7 +459,7 @@ export async function confirmImport(
   return commitImport(db, createDbArchive(db), {
     fileName: input.fileName,
     file: parsed.bytes,
-    contentType: 'text/csv',
+    contentType: parsed.file.contentType,
     context: parsed.context,
     preview: parsed.preview,
     skipErrorRows: input.skipErrorRows,

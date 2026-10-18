@@ -152,10 +152,11 @@ const importInput = slug.extend({
   }),
   mapping: z.record(z.string().max(255), columnTarget).optional(),
   templateId: z.uuid().optional(),
+  sheetName: z.string().min(1).max(255).optional(),
 })
 
 function importRequest(data: z.infer<typeof importInput>) {
-  const { slug: _slug, mapping, templateId, ...rest } = data
+  const { slug: _slug, mapping, templateId, sheetName, ...rest } = data
   return {
     ...rest,
     context: {
@@ -166,6 +167,7 @@ function importRequest(data: z.infer<typeof importInput>) {
     },
     ...(mapping ? { mapping: mapping as never } : {}),
     ...(templateId ? { templateId } : {}),
+    ...(sheetName ? { sheetName } : {}),
   }
 }
 
