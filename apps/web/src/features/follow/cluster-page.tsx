@@ -11,6 +11,7 @@ import {
 } from '@product-res/ui'
 import { Link, useRouter } from '@tanstack/react-router'
 import { type ReactNode, useEffect, useState } from 'react'
+import { CostingTab } from '../costing/costing-tab.tsx'
 import { formatTime, Section } from '../data-center/shared.tsx'
 import { controlClass, EmptyState, ErrorText, useAction } from '../workbench/fields.tsx'
 import {
@@ -30,6 +31,13 @@ import {
 } from './follow-ui.tsx'
 
 const ATTENTION_LABEL = '值得关注但证据不足'
+/** 核算标签旁的线索状态提示 */
+const COSTING_STATUS_TEXT: Record<string, string> = {
+  costing: '核算中',
+  pending: '待决定',
+  followed: '已跟卖',
+  dropped: '已放弃',
+}
 const GRADE_TEXT = { recommend: '推荐', caution: '谨慎', reject: '不推荐', unverified: '未验证' }
 const METHOD_LABELS: Record<string, string> = {
   gtin: 'GTIN',
@@ -225,7 +233,15 @@ function MetricStat({
 }
 
 /** 商品簇详情（specs/follow-candidates「商品簇详情」，对照设计稿“评分详情页”） */
-export function ClusterPage({ slug, data }: { slug: string; data: Detail }) {
+export function ClusterPage({
+  slug,
+  data,
+  tab = 'overview',
+}: {
+  slug: string
+  data: Detail
+  tab?: 'overview' | 'costing'
+}) {
   const router = useRouter()
   const reload = () => router.invalidate()
   const { cluster: c, lead } = data
@@ -301,231 +317,272 @@ export function ClusterPage({ slug, data }: { slug: string; data: Detail }) {
         </div>
       </section>
 
-      {lead && lead.gateReasons.length > 0 ? (
-        <p
-          role="status"
-          className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-[13px] text-destructive"
-        >
-          不推荐：{lead.gateReasons.join('；')}
-        </p>
-      ) : null}
-      {!lead ? (
-        <p className="rounded-md bg-muted px-3 py-2 text-[13px] text-muted-foreground">
-          每日流水线还没有为该商品簇生成线索，评分与置信度会在下次运行后出现。
-        </p>
-      ) : null}
+      <div role="tablist" aria-label="商品簇详情" className="flex gap-1 border-b">
+        {(
+          [
+            ['overview', '概览'],
+            ['costing', '核算'],
+          ] as const
+        ).map(([key, label]) => (
+          <Link
+            key={key}
+            to="/app/$slug/follow/$clusterId"
+            params={{ slug, clusterId: c.id }}
+            search={key === 'costing' ? { tab: 'costing' } : {}}
+            role="tab"
+            aria-selected={tab === key}
+            className={cn(
+              '-mb-px border-b-2 px-3 py-2 text-sm',
+              tab === key
+                ? 'border-primary font-medium text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {label}
+            {key === 'costing' && lead ? (
+              <span className="ml-1.5 text-[11px] font-normal text-muted-foreground">
+                {COSTING_STATUS_TEXT[lead.status] ?? ''}
+              </span>
+            ) : null}
+          </Link>
+        ))}
+      </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
-        {/* 左：7 维评分卡 */}
-        <Card
-          title="7 维评分卡"
-          testId="score-card"
-          extra={
-            lead ? (
-              <span className="text-xs text-muted-foreground">评分设置 v{lead.settingVersion}</span>
-            ) : null
-          }
-        >
-          <div className="grid justify-items-center gap-0.5 pb-1">
-            <span
-              className={cn(
-                'font-mono text-[40px] font-bold leading-none',
-                lead?.score == null
-                  ? 'text-muted-foreground'
-                  : lead.grade === 'reject'
-                    ? 'text-destructive'
-                    : lead.score >= 75
-                      ? 'text-success-strong'
-                      : lead.score >= 50
-                        ? 'text-warning-strong'
-                        : 'text-destructive',
-              )}
-              data-testid="overall-score"
+      {tab === 'costing' ? (
+        <CostingTab slug={slug} clusterId={c.id} leadId={lead?.id ?? null} onLeadChanged={reload} />
+      ) : (
+        <>
+          {lead && lead.gateReasons.length > 0 ? (
+            <p
+              role="status"
+              className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-[13px] text-destructive"
             >
-              {lead?.score == null ? '—' : Math.round(lead.score)}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              综合评分 · {lead ? GRADE_TEXT[lead.grade] : '暂无线索'}
-              {lead?.score == null && lead ? `（${scored}/7 个维度可计算，少于 4 个不给分）` : ''}
-            </span>
-          </div>
-          <Chart
-            option={radarOption(data.dimensions)}
-            empty={scored < 3}
-            height={240}
-            aria-label="7 维雷达"
-          />
-          <p className="text-center text-[11px] text-muted-foreground">
-            雷达按对综合分的贡献绘制：反向维度取 100 − 分数，越靠外越有利
-          </p>
-          {data.dimensions.some((d) => d.score === null) ? (
-            <div
-              className="flex flex-wrap justify-center gap-1.5 text-xs text-muted-foreground"
-              data-testid="radar-missing"
-            >
-              <span>无数据（未计入综合分）：</span>
-              {data.dimensions
-                .filter((d) => d.score === null)
-                .map((d) => (
-                  <Tag key={d.dimension}>{d.label}</Tag>
-                ))}
-            </div>
+              不推荐：{lead.gateReasons.join('；')}
+            </p>
           ) : null}
-          <ul className="grid gap-2.5" data-testid="dimension-list">
-            {data.dimensions.map((d) => (
-              <DimensionRow key={d.dimension} d={d} labels={data.sourceLabels} />
-            ))}
-          </ul>
-        </Card>
+          {!lead ? (
+            <p className="rounded-md bg-muted px-3 py-2 text-[13px] text-muted-foreground">
+              每日流水线还没有为该商品簇生成线索，评分与置信度会在下次运行后出现。
+            </p>
+          ) : null}
 
-        {/* 右：置信度、风险 */}
-        <div className="grid content-start gap-4">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
+            {/* 左：7 维评分卡 */}
+            <Card
+              title="7 维评分卡"
+              testId="score-card"
+              extra={
+                lead ? (
+                  <span className="text-xs text-muted-foreground">
+                    评分设置 v{lead.settingVersion}
+                  </span>
+                ) : null
+              }
+            >
+              <div className="grid justify-items-center gap-0.5 pb-1">
+                <span
+                  className={cn(
+                    'font-mono text-[40px] font-bold leading-none',
+                    lead?.score == null
+                      ? 'text-muted-foreground'
+                      : lead.grade === 'reject'
+                        ? 'text-destructive'
+                        : lead.score >= 75
+                          ? 'text-success-strong'
+                          : lead.score >= 50
+                            ? 'text-warning-strong'
+                            : 'text-destructive',
+                  )}
+                  data-testid="overall-score"
+                >
+                  {lead?.score == null ? '—' : Math.round(lead.score)}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  综合评分 · {lead ? GRADE_TEXT[lead.grade] : '暂无线索'}
+                  {lead?.score == null && lead
+                    ? `（${scored}/7 个维度可计算，少于 4 个不给分）`
+                    : ''}
+                </span>
+              </div>
+              <Chart
+                option={radarOption(data.dimensions)}
+                empty={scored < 3}
+                height={240}
+                aria-label="7 维雷达"
+              />
+              <p className="text-center text-[11px] text-muted-foreground">
+                雷达按对综合分的贡献绘制：反向维度取 100 − 分数，越靠外越有利
+              </p>
+              {data.dimensions.some((d) => d.score === null) ? (
+                <div
+                  className="flex flex-wrap justify-center gap-1.5 text-xs text-muted-foreground"
+                  data-testid="radar-missing"
+                >
+                  <span>无数据（未计入综合分）：</span>
+                  {data.dimensions
+                    .filter((d) => d.score === null)
+                    .map((d) => (
+                      <Tag key={d.dimension}>{d.label}</Tag>
+                    ))}
+                </div>
+              ) : null}
+              <ul className="grid gap-2.5" data-testid="dimension-list">
+                {data.dimensions.map((d) => (
+                  <DimensionRow key={d.dimension} d={d} labels={data.sourceLabels} />
+                ))}
+              </ul>
+            </Card>
+
+            {/* 右：置信度、风险 */}
+            <div className="grid content-start gap-4">
+              <Card
+                title="置信度明细"
+                testId="confidence-card"
+                extra={
+                  lead?.confidence != null ? (
+                    <span className="text-xs text-muted-foreground">与综合分分开显示</span>
+                  ) : null
+                }
+              >
+                <ConfidenceBar value={lead?.confidence ?? null} label="总置信度" />
+                {data.confidence.items.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">暂无置信度明细</p>
+                ) : (
+                  <ul className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+                    {data.confidence.items.map((item) => (
+                      <li key={item.id} className="grid gap-1">
+                        <div className="flex items-baseline justify-between gap-2 text-xs">
+                          <span className="font-medium">{item.label}</span>
+                          <span className="font-mono text-muted-foreground">
+                            {item.value === null ? '不可算' : `${Math.round(item.value * 100)}%`}
+                          </span>
+                        </div>
+                        <div className="h-1 overflow-hidden rounded-full bg-muted">
+                          {item.value === null ? null : (
+                            <div
+                              className={cn(
+                                'h-full rounded-full',
+                                item.value >= 0.7
+                                  ? 'bg-success'
+                                  : item.value >= 0.4
+                                    ? 'bg-warning'
+                                    : 'bg-destructive',
+                              )}
+                              style={{ width: `${Math.round(item.value * 100)}%` }}
+                            />
+                          )}
+                        </div>
+                        <span className="text-[11px] leading-snug text-muted-foreground">
+                          {item.note}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {data.confidence.unverifiedMetrics.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-1.5 border-t pt-3 text-xs text-muted-foreground">
+                    <span>未交叉验证：</span>
+                    {data.confidence.unverifiedMetrics.map((m) => (
+                      <Tag key={m.metric}>{m.label}</Tag>
+                    ))}
+                  </div>
+                ) : null}
+              </Card>
+
+              <Card title="风险提示" testId="risk-card" extra={<RiskSummary risks={data.risks} />}>
+                {data.risks.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    品牌库、VeRO、受限类目与认证规则均未命中。
+                  </p>
+                ) : (
+                  <div className="grid gap-2">
+                    {data.risks.map((r) => (
+                      <RiskCard
+                        key={r.id}
+                        level={(r.level === 'info' ? 'hint' : r.level) as RiskLevel}
+                        veto={r.veto}
+                        title={r.label}
+                      >
+                        <span>{r.basis || '—'}</span>
+                        {r.link ? (
+                          <a
+                            href={r.link}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="ml-2 text-primary hover:underline"
+                          >
+                            {r.kind === 'design-patent' ? '在 Google Patents 检索 ↗' : '查看依据 ↗'}
+                          </a>
+                        ) : null}
+                      </RiskCard>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            </div>
+          </div>
+
+          {/* 曲线 */}
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card title="店铺价格（近 90 天）">
+              <Chart
+                option={lineOption(data.series.price, true)}
+                empty={data.series.price.length === 0}
+                height={240}
+                aria-label="价格曲线"
+              />
+            </Card>
+            <Card title={`${data.series.sales.label}（近 90 天）`}>
+              <Chart
+                option={lineOption(data.series.sales.series, false)}
+                empty={data.series.sales.series.length === 0}
+                height={240}
+                aria-label="销量曲线"
+              />
+            </Card>
+          </div>
+
           <Card
-            title="置信度明细"
-            testId="confidence-card"
+            title="季节曲线"
             extra={
-              lead?.confidence != null ? (
-                <span className="text-xs text-muted-foreground">与综合分分开显示</span>
+              data.season?.keywords.length ? (
+                <span className="text-xs text-muted-foreground">
+                  搜索趋势：{data.season.keywords.join('、')}
+                </span>
               ) : null
             }
           >
-            <ConfidenceBar value={lead?.confidence ?? null} label="总置信度" />
-            {data.confidence.items.length === 0 ? (
-              <p className="text-xs text-muted-foreground">暂无置信度明细</p>
-            ) : (
-              <ul className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
-                {data.confidence.items.map((item) => (
-                  <li key={item.id} className="grid gap-1">
-                    <div className="flex items-baseline justify-between gap-2 text-xs">
-                      <span className="font-medium">{item.label}</span>
-                      <span className="font-mono text-muted-foreground">
-                        {item.value === null ? '不可算' : `${Math.round(item.value * 100)}%`}
-                      </span>
-                    </div>
-                    <div className="h-1 overflow-hidden rounded-full bg-muted">
-                      {item.value === null ? null : (
-                        <div
-                          className={cn(
-                            'h-full rounded-full',
-                            item.value >= 0.7
-                              ? 'bg-success'
-                              : item.value >= 0.4
-                                ? 'bg-warning'
-                                : 'bg-destructive',
-                          )}
-                          style={{ width: `${Math.round(item.value * 100)}%` }}
-                        />
-                      )}
-                    </div>
-                    <span className="text-[11px] leading-snug text-muted-foreground">
-                      {item.note}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {data.confidence.unverifiedMetrics.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-1.5 border-t pt-3 text-xs text-muted-foreground">
-                <span>未交叉验证：</span>
-                {data.confidence.unverifiedMetrics.map((m) => (
-                  <Tag key={m.metric}>{m.label}</Tag>
-                ))}
-              </div>
-            ) : null}
-          </Card>
-
-          <Card title="风险提示" testId="risk-card" extra={<RiskSummary risks={data.risks} />}>
-            {data.risks.length === 0 ? (
+            {data.season === null ? (
               <p className="text-xs text-muted-foreground">
-                品牌库、VeRO、受限类目与认证规则均未命中。
+                该方向没有关联销售节点。可在“选品方向”中关联节点，季节曲线会叠加节点关键词的搜索趋势。
               </p>
             ) : (
-              <div className="grid gap-2">
-                {data.risks.map((r) => (
-                  <RiskCard
-                    key={r.id}
-                    level={(r.level === 'info' ? 'hint' : r.level) as RiskLevel}
-                    veto={r.veto}
-                    title={r.label}
-                  >
-                    <span>{r.basis || '—'}</span>
-                    {r.link ? (
-                      <a
-                        href={r.link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="ml-2 text-primary hover:underline"
-                      >
-                        {r.kind === 'design-patent' ? '在 Google Patents 检索 ↗' : '查看依据 ↗'}
-                      </a>
-                    ) : null}
-                  </RiskCard>
-                ))}
-              </div>
+              <>
+                <Chart
+                  option={seasonOption(data.season)}
+                  empty={data.season.years.length === 0}
+                  height={220}
+                  aria-label="季节曲线"
+                />
+                <div className="flex flex-wrap gap-1.5 text-xs text-muted-foreground">
+                  <span>节点销售窗口：</span>
+                  {data.season.windows.map((w) => (
+                    <Tag key={w.name} tone="warning">
+                      {w.name} {w.startMonth}/{w.startDay} 起 {w.salesDays} 天
+                    </Tag>
+                  ))}
+                </div>
+              </>
             )}
           </Card>
-        </div>
-      </div>
 
-      {/* 曲线 */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card title="店铺价格（近 90 天）">
-          <Chart
-            option={lineOption(data.series.price, true)}
-            empty={data.series.price.length === 0}
-            height={240}
-            aria-label="价格曲线"
-          />
-        </Card>
-        <Card title={`${data.series.sales.label}（近 90 天）`}>
-          <Chart
-            option={lineOption(data.series.sales.series, false)}
-            empty={data.series.sales.series.length === 0}
-            height={240}
-            aria-label="销量曲线"
-          />
-        </Card>
-      </div>
+          <SourceCompare compare={data.compare} />
 
-      <Card
-        title="季节曲线"
-        extra={
-          data.season?.keywords.length ? (
-            <span className="text-xs text-muted-foreground">
-              搜索趋势：{data.season.keywords.join('、')}
-            </span>
-          ) : null
-        }
-      >
-        {data.season === null ? (
-          <p className="text-xs text-muted-foreground">
-            该方向没有关联销售节点。可在“选品方向”中关联节点，季节曲线会叠加节点关键词的搜索趋势。
-          </p>
-        ) : (
-          <>
-            <Chart
-              option={seasonOption(data.season)}
-              empty={data.season.years.length === 0}
-              height={220}
-              aria-label="季节曲线"
-            />
-            <div className="flex flex-wrap gap-1.5 text-xs text-muted-foreground">
-              <span>节点销售窗口：</span>
-              {data.season.windows.map((w) => (
-                <Tag key={w.name} tone="warning">
-                  {w.name} {w.startMonth}/{w.startDay} 起 {w.salesDays} 天
-                </Tag>
-              ))}
-            </div>
-          </>
-        )}
-      </Card>
+          <Members slug={slug} data={data} onChanged={reload} />
+        </>
+      )}
 
-      <SourceCompare compare={data.compare} />
-
-      <Members slug={slug} data={data} onChanged={reload} />
-
-      {data.events.length > 0 ? (
+      {tab === 'overview' && data.events.length > 0 ? (
         <Section title="修正记录">
           <ul className="grid gap-1.5 text-[13px]">
             {data.events.map((e) => (

@@ -34,6 +34,8 @@ import {
 } from '@product-res/marketdata'
 import { AppError } from '@product-res/shared'
 import { and, count, desc, eq, gte, isNull } from 'drizzle-orm'
+import type { DecisionActor } from '../costing/decisions.server.ts'
+import { QUOTE_IMPORT_SOURCE } from '../costing/quote-template.ts'
 import { webConnectors, webSecrets } from './registry.server.ts'
 
 /** “今天”按新加坡时间（团队所在时区）计算 */
@@ -441,6 +443,9 @@ async function readTable(input: ImportRequest, bytes: Uint8Array) {
 }
 
 async function parseImport(db: Database, input: ImportRequest) {
+  // 供应商报价写入空间级报价表，走核算模块的报价导入（features/costing/quote-import.server.ts）
+  if (input.sourceId === QUOTE_IMPORT_SOURCE)
+    throw new AppError('IMPORT_UNSUPPORTED', '供应商报价请使用“供应商报价”导入', { status: 400 })
   const bytes = decodeFile(input)
   const file = await readTable(input, bytes)
   const [headers = [], ...rows] = file.table
@@ -519,8 +524,11 @@ export async function confirmImport(
   })
 }
 
-export async function importHistory(db: Database) {
-  const rows = await listImports(db, 50)
+/** 导入记录：观测导入是部署级共享的；供应商报价导入只显示本空间的批次 */
+export async function importHistory(db: Database, workspaceId: string) {
+  const rows = (await listImports(db, 100))
+    .filter((r) => r.sourceId !== QUOTE_IMPORT_SOURCE || r.context.workspaceId === workspaceId)
+    .slice(0, 50)
   return rows.map((r) => ({
     id: r.id,
     sourceId: r.sourceId,
@@ -534,7 +542,18 @@ export async function importHistory(db: Database) {
   }))
 }
 
-export const undoImport = (db: Database, importId: string) => revertImport(db, importId, new Date())
+/** 撤销导入：报价批次只删该批次导入的报价（且只能撤销本空间的），其他批次删除写入的观测值 */
+export async function undoImport(actor: DecisionActor, importId: string) {
+  const [row] = await actor.db
+    .select({ sourceId: dataImport.sourceId })
+    .from(dataImport)
+    .where(eq(dataImport.id, importId))
+  if (row?.sourceId === QUOTE_IMPORT_SOURCE) {
+    const { revertQuoteImport } = await import('../costing/quote-import.server.ts')
+    return revertQuoteImport(actor, importId)
+  }
+  return revertImport(actor.db, importId, new Date())
+}
 
 export async function importTemplates(db: Database, sourceId?: string) {
   const rows = await listTemplates(db, sourceId)

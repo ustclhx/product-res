@@ -3,6 +3,7 @@ import { AppError } from '@product-res/shared'
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { withWorkspace } from '../../server/middleware.ts'
+import { actorOf } from '../workbench/actor.ts'
 
 /**
  * 数据中心（specs/data-center）。市场数据是部署级共享数据：读取要求是空间成员，
@@ -206,7 +207,7 @@ export const getImports = createServerFn({ method: 'GET' })
   .handler(async ({ context }) => {
     const s = await service()
     return {
-      history: await s.importHistory(context.db),
+      history: await s.importHistory(context.db, context.workspace.id),
       templates: await s.importTemplates(context.db),
       sources: s.importSources(),
     }
@@ -217,5 +218,6 @@ export const revertDataImport = createServerFn({ method: 'POST' })
   .inputValidator(slug.extend({ importId: z.uuid() }))
   .handler(async ({ context, data }) => {
     assertWriter(context)
-    return { removed: await (await service()).undoImport(context.db, data.importId) }
+    const actor = { ...actorOf(context), userId: context.user.id }
+    return { removed: await (await service()).undoImport(actor, data.importId) }
   })

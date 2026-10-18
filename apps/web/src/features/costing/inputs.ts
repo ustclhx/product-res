@@ -85,3 +85,77 @@ export const outcomeInput = z.object({
   note: z.string().trim().max(500).nullish(),
 })
 export type OutcomeInput = z.input<typeof outcomeInput>
+
+// ---- 供应商、报价与核算矩阵（tasks 2.3 / 3.1） ----
+
+export const SUPPLIER_PLATFORMS = ['1688', 'alibaba', 'other'] as const
+export const QUOTE_CONFIDENCES = ['public', 'confirmed'] as const
+export const FOLLOW_MODES = ['same-source', 'improved'] as const
+
+const optionalUrl = z
+  .string()
+  .trim()
+  .max(2048)
+  .refine((v) => !v || /^https?:\/\//i.test(v), '链接须以 http:// 或 https:// 开头')
+  .nullish()
+
+export const supplierInput = z.object({
+  name: z.string().trim().min(1, '请填写供应商名称').max(120),
+  url: optionalUrl,
+  platform: z.enum(SUPPLIER_PLATFORMS),
+  note: z.string().trim().max(500).nullish(),
+})
+export type SupplierInput = z.input<typeof supplierInput>
+
+const dimension = z.number().positive().max(1000)
+
+export const quoteInput = z
+  .object({
+    supplierId: z.uuid(),
+    tiers: z
+      .array(z.object({ minQty: positiveInt, unitPriceMinor: minor }))
+      .min(1, '至少填写一档价格')
+      .max(10),
+    currency,
+    moq: positiveInt.nullish(),
+    weightG: positiveInt.nullish(),
+    dimensions: z
+      .object({ lengthCm: dimension, widthCm: dimension, heightCm: dimension })
+      .nullish(),
+    confidence: z.enum(QUOTE_CONFIDENCES),
+    quotedOn: isoDate,
+    procurementDays: z.number().int().min(0).max(365).nullish(),
+    note: z.string().trim().max(500).nullish(),
+  })
+  .refine((q) => new Set(q.tiers.map((t) => t.minQty)).size === q.tiers.length, {
+    message: '阶梯的起订数量不能重复',
+    path: ['tiers'],
+  })
+export type QuoteInput = z.input<typeof quoteInput>
+
+/** 微改良参数；数值项留空表示尚未确定，核算时报告缺少“微改良参数” */
+export const improvementInput = z.object({
+  unitSurchargeRate: z.number().min(0).max(10).nullish(),
+  toolingCost: z.object({ amountMinor: minor, currency }).nullish(),
+  sampleDays: z.number().int().min(0).max(365).nullish(),
+  note: z.string().trim().max(500).nullish(),
+})
+export type ImprovementInput = z.input<typeof improvementInput>
+
+/** 矩阵的可调输入：计划数量、售价（默认竞品中位价）、商品属性（与禁运属性比对）、对比的跟卖方式 */
+export const matrixOptions = z.object({
+  plannedQty: positiveInt.optional(),
+  salePriceMinor: z.number().int().positive().max(1_000_000_000).optional(),
+  attributes: z.array(z.string().trim().min(1).max(64)).max(20).optional(),
+  modes: z.array(z.enum(FOLLOW_MODES)).min(1).max(2).optional(),
+  /** FBA 配送费（费率表，售价币种）；SP-API 预估接通前由人工按费率表填写 */
+  fbaFeeMinor: minor.optional(),
+})
+export type MatrixOptions = z.input<typeof matrixOptions>
+
+export const scenarioPick = z.object({
+  quoteId: z.uuid(),
+  profileId: z.uuid(),
+  mode: z.enum(FOLLOW_MODES),
+})
+export type ScenarioPick = z.infer<typeof scenarioPick>

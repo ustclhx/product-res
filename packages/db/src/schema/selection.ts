@@ -71,6 +71,21 @@ export type RiskLevelValue = (typeof RISK_LEVELS)[number]
 export const RISK_FINDING_LEVELS = [...RISK_LEVELS, 'info'] as const
 export const LEAD_STATUSES = ['new', 'costing', 'pending', 'followed', 'dropped'] as const
 export const LEAD_GRADES = ['recommend', 'caution', 'reject'] as const
+/** 与 packages/costing 的 FollowMode、costing_scenario.mode 一致 */
+export const LEAD_FOLLOW_MODES = ['same-source', 'improved'] as const
+
+/**
+ * 线索的微改良参数，与 packages/costing 的 Improvement 一致（db 不依赖 costing，由写入方保证）；
+ * 数值项可空表示尚未录入，note 为改良点说明。
+ */
+export interface LeadImprovement {
+  /** 单价加成率（0.1 = 10%） */
+  unitSurchargeRate?: number | null
+  /** 一次性改款费（最小单位 + 币种），按计划数量分摊 */
+  toolingCost?: { amountMinor: number; currency: string } | null
+  sampleDays?: number | null
+  note?: string | null
+}
 
 /** 选品方向：平台站点、类目、关键词与关联节点均可多选；停用后不进入每日流水线 */
 export const direction = pgTable(
@@ -334,6 +349,10 @@ export const lead = pgTable(
     latestDecisionOn: date('latest_decision_on'),
     settingVersion: integer('setting_version').notNull(),
     status: text('status', { enum: LEAD_STATUSES }).notNull().default('new'),
+    /** 跟卖方式：核算矩阵按此默认，切换对比时写回 */
+    followMode: text('follow_mode', { enum: LEAD_FOLLOW_MODES }).notNull().default('same-source'),
+    /** 微改良参数；只有改良点说明（如品类洞察转入）时数值项为空，核算报告缺少“微改良参数” */
+    improvement: jsonb('improvement').$type<LeadImprovement>(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
