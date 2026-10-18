@@ -9,7 +9,6 @@ import {
   splitList,
 } from '../follow/marketplaces.ts'
 import {
-  CheckboxGroup,
   controlClass,
   EmptyState,
   ErrorText,
@@ -107,6 +106,8 @@ interface TabProps<T> {
   canWrite: boolean
   onChanged: () => Promise<void>
 }
+
+const PLATFORM_LABELS = { amazon: 'Amazon', ebay: 'eBay' } as const
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
@@ -510,7 +511,7 @@ function RulesTab({ slug, rows, canWrite, onChanged }: TabProps<RuleRow>) {
       }
     >
       <p className="text-xs text-muted-foreground">
-        按类目 ID 或标题关键词匹配商品簇；高风险规则命中时一票否决。
+        按类目 ID 或商品属性（如 battery、liquid）匹配商品；勾选“一票否决”的规则命中时线索被否决。
       </p>
       {editing !== null ? (
         <RuleForm
@@ -535,17 +536,21 @@ function RulesTab({ slug, rows, canWrite, onChanged }: TabProps<RuleRow>) {
               <td className="px-3 py-2">{RULE_KIND_LABELS[r.kind]}</td>
               <td className="px-3 py-2">
                 <Tag tone={RULE_LEVEL_LABELS[r.level].tone}>{RULE_LEVEL_LABELS[r.level].label}</Tag>
+                {r.veto ? (
+                  <Tag className="ml-1" tone="danger">
+                    一票否决
+                  </Tag>
+                ) : null}
               </td>
               <td className="px-3 py-2 text-xs">
                 {r.match.categoryIds.length ? (
                   <div>类目：{r.match.categoryIds.join('、')}</div>
                 ) : null}
-                {r.match.keywords.length ? <div>关键词：{r.match.keywords.join('、')}</div> : null}
+                {r.match.attributes.length ? (
+                  <div>属性：{r.match.attributes.join('、')}</div>
+                ) : null}
                 <div className="text-muted-foreground">
-                  平台：
-                  {r.match.marketplaces.length
-                    ? r.match.marketplaces.map(marketplaceLabel).join('、')
-                    : '全部'}
+                  平台：{r.match.platform ? PLATFORM_LABELS[r.match.platform] : '全部'}
                 </div>
               </td>
               <td className="px-3 py-2">{r.description}</td>
@@ -586,10 +591,9 @@ function RuleForm({
   const [level, setLevel] = useState<RuleRow['level']>(initial?.level ?? 'high')
   const [description, setDescription] = useState(initial?.description ?? '')
   const [categories, setCategories] = useState(initial?.match.categoryIds.join(', ') ?? '')
-  const [keywords, setKeywords] = useState(initial?.match.keywords.join(', ') ?? '')
-  const [marketplaces, setMarketplaces] = useState<DirectionMarketplace[]>(
-    (initial?.match.marketplaces ?? []) as DirectionMarketplace[],
-  )
+  const [attributes, setAttributes] = useState(initial?.match.attributes.join(', ') ?? '')
+  const [platform, setPlatform] = useState<'amazon' | 'ebay' | ''>(initial?.match.platform ?? '')
+  const [veto, setVeto] = useState(initial?.veto ?? false)
   const [enabled, setEnabled] = useState(initial?.enabled ?? true)
   const { busy, error, setError, run } = useAction(onSaved)
   return (
@@ -599,10 +603,10 @@ function RuleForm({
       onSubmit={async (e) => {
         e.preventDefault()
         const categoryIds = splitList(categories)
-        const kw = splitList(keywords)
+        const attrs = splitList(attributes)
         if (!description.trim()) return setError('请填写说明')
-        if (categoryIds.length === 0 && kw.length === 0)
-          return setError('至少填写一个类目 ID 或关键词')
+        if (categoryIds.length === 0 && attrs.length === 0)
+          return setError('至少填写一个类目 ID 或商品属性')
         await run(() =>
           saveRiskRule({
             data: {
@@ -612,8 +616,9 @@ function RuleForm({
                 kind,
                 level,
                 description,
+                veto,
                 enabled,
-                match: { categoryIds, keywords: kw, marketplaces },
+                match: { platform: platform || null, categoryIds, attributes: attrs },
               },
             },
           }),
@@ -674,17 +679,42 @@ function RuleForm({
             />
           )}
         </Field>
-        <Field label="标题关键词" hint="逗号分隔">
+        <Field label="商品属性" hint="逗号分隔，如 battery, liquid">
           {(id) => (
             <Input
               id={id}
               className="h-8 text-[13px]"
-              value={keywords}
-              onChange={(e) => setKeywords(e.target.value)}
+              value={attributes}
+              onChange={(e) => setAttributes(e.target.value)}
             />
           )}
         </Field>
-        <label className="inline-flex items-center gap-1.5 self-end pb-1.5 text-[13px]">
+        <Field label="适用平台">
+          {(id) => (
+            <select
+              id={id}
+              className={controlClass}
+              value={platform}
+              onChange={(e) => setPlatform(e.target.value as 'amazon' | 'ebay' | '')}
+            >
+              <option value="">全部平台</option>
+              <option value="amazon">{PLATFORM_LABELS.amazon}</option>
+              <option value="ebay">{PLATFORM_LABELS.ebay}</option>
+            </select>
+          )}
+        </Field>
+      </div>
+      <div className="flex flex-wrap gap-4 text-[13px]">
+        <label className="inline-flex items-center gap-1.5">
+          <input
+            type="checkbox"
+            className="size-3.5 accent-primary"
+            checked={veto}
+            onChange={(e) => setVeto(e.target.checked)}
+          />
+          一票否决
+        </label>
+        <label className="inline-flex items-center gap-1.5">
           <input
             type="checkbox"
             className="size-3.5 accent-primary"
@@ -694,12 +724,6 @@ function RuleForm({
           启用
         </label>
       </div>
-      <CheckboxGroup
-        label="适用平台（不选为全部）"
-        options={DIRECTION_MARKETPLACES.map((m) => ({ value: m, label: MARKETPLACE_LABELS[m] }))}
-        value={marketplaces}
-        onChange={setMarketplaces}
-      />
       <ErrorText>{error}</ErrorText>
       <FormActions busy={busy} onCancel={onClose} />
     </form>

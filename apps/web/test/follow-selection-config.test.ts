@@ -305,24 +305,33 @@ describe('设置：节点日历、品牌库、风险规则', () => {
         kind: 'hazmat',
         level: 'high',
         description: '无条件',
+        veto: false,
         enabled: true,
-        match: { categoryIds: [], keywords: [], marketplaces: ['ebay-us'] },
+        match: { platform: 'ebay', categoryIds: [], attributes: [' '] },
       }),
     ).rejects.toMatchObject({ code: 'INVALID_RULE' })
     const rule = await saveRule(owner, undefined, {
       kind: 'hazmat',
       level: 'high',
       description: '锂电池需危险品申报',
+      veto: true,
       enabled: true,
-      match: { categoryIds: [], keywords: ['lithium battery'], marketplaces: [] },
+      match: { categoryIds: [], attributes: ['Battery', 'battery'] },
     })
-    expect(rule.match).toEqual({ categoryIds: [], keywords: ['lithium battery'], marketplaces: [] })
+    // 存储结构与 packages/risk 的 RiskRule.match 一致：空字段不写入，属性小写去重
+    expect(rule).toMatchObject({
+      veto: true,
+      match: { platform: null, categoryIds: [], attributes: ['battery'] },
+    })
+    const [stored] = await scoped(db(), owner.workspaceId).select(riskRule)
+    expect(stored?.match).toEqual({ attributes: ['battery'] })
     const edited = await saveRule(owner, rule.id, {
       kind: 'shipping-ban',
       level: 'medium',
       description: '海运禁运',
+      veto: false,
       enabled: false,
-      match: { categoryIds: ['177'], keywords: [], marketplaces: ['amazon-us'] },
+      match: { platform: 'amazon', categoryIds: ['177'], attributes: [] },
     })
     expect(edited).toMatchObject({ kind: 'shipping-ban', level: 'medium', enabled: false })
     await expect(deleteRule(asMember(owner), rule.id)).rejects.toMatchObject(forbidden)

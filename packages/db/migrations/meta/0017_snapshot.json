@@ -1,5 +1,5 @@
 {
-  "id": "381a915d-444e-47eb-b720-9d3315ac6fb8",
+  "id": "f01a8628-de81-491b-ba56-38ead695b72e",
   "prevId": "36442a1f-7cc2-4ff2-be95-26504e480d3b",
   "version": "7",
   "dialect": "postgresql",
@@ -7609,6 +7609,13 @@
           "primaryKey": false,
           "notNull": true
         },
+        "veto": {
+          "name": "veto",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "enabled": {
           "name": "enabled",
           "type": "boolean",
@@ -7711,6 +7718,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "min_dimensions": {
+          "name": "min_dimensions",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
         "hard_gates": {
           "name": "hard_gates",
           "type": "jsonb",
@@ -7798,6 +7811,10 @@
         "scoring_setting_veto_range": {
           "name": "scoring_setting_veto_range",
           "value": "\"scoring_setting\".\"veto_threshold\" between 0 and 100"
+        },
+        "scoring_setting_min_dimensions_range": {
+          "name": "scoring_setting_min_dimensions_range",
+          "value": "\"scoring_setting\".\"min_dimensions\" between 1 and 7"
         }
       },
       "isRLSEnabled": false

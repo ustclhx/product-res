@@ -125,6 +125,7 @@ CREATE TABLE "risk_rule" (
 	"match" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"level" text NOT NULL,
 	"description" text NOT NULL,
+	"veto" boolean DEFAULT false NOT NULL,
 	"enabled" boolean DEFAULT true NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
@@ -137,13 +138,15 @@ CREATE TABLE "scoring_setting" (
 	"weights" jsonb NOT NULL,
 	"reverse_dimensions" text[] NOT NULL,
 	"veto_threshold" integer NOT NULL,
+	"min_dimensions" integer NOT NULL,
 	"hard_gates" jsonb NOT NULL,
 	"margin_floor_bp" integer NOT NULL,
 	"effective_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"created_by" uuid,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "scoring_setting_version_positive" CHECK ("scoring_setting"."version" > 0),
-	CONSTRAINT "scoring_setting_veto_range" CHECK ("scoring_setting"."veto_threshold" between 0 and 100)
+	CONSTRAINT "scoring_setting_veto_range" CHECK ("scoring_setting"."veto_threshold" between 0 and 100),
+	CONSTRAINT "scoring_setting_min_dimensions_range" CHECK ("scoring_setting"."min_dimensions" between 1 and 7)
 );
 --> statement-breakpoint
 CREATE TABLE "seasonal_node" (

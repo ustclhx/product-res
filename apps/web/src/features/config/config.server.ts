@@ -37,7 +37,12 @@ export interface RuleInput {
   kind: RiskRule['kind']
   level: RiskRule['level']
   description: string
-  match: RiskRuleMatch
+  match: {
+    platform?: 'amazon' | 'ebay' | null | undefined
+    categoryIds: string[]
+    attributes: string[]
+  }
+  veto: boolean
   enabled: boolean
 }
 
@@ -68,10 +73,11 @@ const ruleRow = (r: RiskRule) => ({
   level: r.level,
   description: r.description,
   match: {
+    platform: r.match.platform ?? null,
     categoryIds: r.match.categoryIds ?? [],
-    keywords: r.match.keywords ?? [],
-    marketplaces: r.match.marketplaces ?? [],
+    attributes: r.match.attributes ?? [],
   },
+  veto: r.veto,
   enabled: r.enabled,
   updatedAt: iso(r.updatedAt),
 })
@@ -181,21 +187,22 @@ export async function deleteBrand(actor: WorkbenchActor, id: string) {
 // ---- 风险规则 ----
 
 function ruleValues(input: RuleInput) {
+  // 结构与 packages/risk 的 RiskRule.match 一致；属性统一小写便于匹配
   const match: RiskRuleMatch = {}
-  const clean = (list: string[] | undefined) => [...new Set((list ?? []).filter(Boolean))]
+  const clean = (list: string[]) => [...new Set(list.map((v) => v.trim()).filter(Boolean))]
   const categoryIds = clean(input.match.categoryIds)
-  const keywords = clean(input.match.keywords)
-  const marketplaces = clean(input.match.marketplaces)
+  const attributes = clean(input.match.attributes.map((a) => a.toLowerCase()))
+  if (input.match.platform) match.platform = input.match.platform
   if (categoryIds.length) match.categoryIds = categoryIds
-  if (keywords.length) match.keywords = keywords
-  if (marketplaces.length) match.marketplaces = marketplaces
-  if (!match.categoryIds && !match.keywords)
-    throw new AppError('INVALID_RULE', '至少填写一个类目 ID 或关键词', { status: 400 })
+  if (attributes.length) match.attributes = attributes
+  if (!match.categoryIds && !match.attributes)
+    throw new AppError('INVALID_RULE', '至少填写一个类目 ID 或商品属性', { status: 400 })
   return {
     kind: input.kind,
     level: input.level,
     description: input.description.trim(),
     match,
+    veto: input.veto,
     enabled: input.enabled,
   }
 }

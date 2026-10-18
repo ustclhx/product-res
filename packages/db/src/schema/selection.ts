@@ -39,14 +39,17 @@ const updatedAt = () =>
     .defaultNow()
     .$onUpdate(() => new Date())
 
-/** 7 个评分维度（方案第 5 节）；packages/selection 以同样的键输出维度分 */
+/**
+ * 7 个评分维度（方案第 5 节），与 packages/selection 的 DIMENSIONS 一致
+ * （db 不能依赖 selection，取值在 apps/web 的单元测试中核对）。
+ */
 export const SELECTION_DIMENSIONS = [
-  'demand',
-  'growth',
-  'diffusion',
+  'market-demand',
+  'growth-season',
+  'peer-spread',
   'profit',
   'competition',
-  'supply',
+  'supply-timing',
   'compliance',
 ] as const
 export type SelectionDimension = (typeof SELECTION_DIMENSIONS)[number]
@@ -62,8 +65,10 @@ export const RISK_RULE_KINDS = [
   'shipping-ban',
 ] as const
 export type RiskRuleKind = (typeof RISK_RULE_KINDS)[number]
+/** 规则等级；风险发现另有 info（仅提示），与 packages/risk 的 RiskLevel 一致 */
 export const RISK_LEVELS = ['high', 'medium', 'low'] as const
 export type RiskLevelValue = (typeof RISK_LEVELS)[number]
+export const RISK_FINDING_LEVELS = [...RISK_LEVELS, 'info'] as const
 export const LEAD_STATUSES = ['new', 'costing', 'pending', 'followed', 'dropped'] as const
 export const LEAD_GRADES = ['recommend', 'caution', 'reject'] as const
 
@@ -162,11 +167,15 @@ export const brandEntry = pgTable(
   (t) => [index('brand_entry_workspace_kind_idx').on(t.workspaceId, t.kind)],
 )
 
-/** 风险规则匹配条件：任一字段命中即视为命中；空字段不参与匹配 */
+/**
+ * 风险规则匹配条件，与 packages/risk 的 RiskRule.match 一致：类目 ID 或商品属性任一命中即触发，
+ * platform 为空表示不限平台。
+ */
 export interface RiskRuleMatch {
+  platform?: 'amazon' | 'ebay'
   categoryIds?: string[]
-  keywords?: string[]
-  marketplaces?: string[]
+  /** 商品属性，如 battery / liquid / children */
+  attributes?: string[]
 }
 
 export const riskRule = pgTable(
@@ -178,6 +187,8 @@ export const riskRule = pgTable(
     match: jsonb('match').$type<RiskRuleMatch>().notNull().default({}),
     level: text('level', { enum: RISK_LEVELS }).notNull(),
     description: text('description').notNull(),
+    /** 命中即一票否决 */
+    veto: boolean('veto').notNull().default(false),
     enabled: boolean('enabled').notNull().default(true),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -185,12 +196,12 @@ export const riskRule = pgTable(
   (t) => [index('risk_rule_workspace_kind_idx').on(t.workspaceId, t.kind)],
 )
 
-/** 硬门槛开关（design D5） */
+/** 硬门槛开关（design D5），键与 packages/selection 的 ScoringSettings.gates 一致 */
 export interface ScoringHardGates {
   /** 合规分低于否决阈值即否决 */
   compliance: boolean
   /** 所有物流方案都来不及 */
-  lateness: boolean
+  timing: boolean
   /** 毛利率低于底线（无利润数据时不判） */
   margin: boolean
 }
@@ -205,6 +216,8 @@ export const scoringSetting = pgTable(
     weights: jsonb('weights').$type<Record<SelectionDimension, number>>().notNull(),
     reverseDimensions: text('reverse_dimensions').array().notNull(),
     vetoThreshold: integer('veto_threshold').notNull(),
+    /** 可计算维度少于此数不给综合分 */
+    minDimensions: integer('min_dimensions').notNull(),
     hardGates: jsonb('hard_gates').$type<ScoringHardGates>().notNull(),
     /** 毛利底线，基点（1500 = 15%） */
     marginFloorBp: integer('margin_floor_bp').notNull(),
@@ -216,6 +229,7 @@ export const scoringSetting = pgTable(
     uniqueIndex('scoring_setting_workspace_version_idx').on(t.workspaceId, t.version),
     check('scoring_setting_version_positive', sql`${t.version} > 0`),
     check('scoring_setting_veto_range', sql`${t.vetoThreshold} between 0 and 100`),
+    check('scoring_setting_min_dimensions_range', sql`${t.minDimensions} between 1 and 7`),
   ],
 )
 
@@ -359,10 +373,11 @@ export const riskFinding = pgTable(
     clusterId: uuid('cluster_id')
       .notNull()
       .references(() => cluster.id, { onDelete: 'cascade' }),
+    /** packages/risk 的 RiskType（brand / vero / brand-registry / design-patent …） */
     kind: text('kind').notNull(),
     /** 命中的规则 ID / 品牌名等；无具体依据对象时为空串 */
     ref: text('ref').notNull().default(''),
-    level: text('level', { enum: [...RISK_LEVELS, 'hint'] }).notNull(),
+    level: text('level', { enum: RISK_FINDING_LEVELS }).notNull(),
     evidence: jsonb('evidence').$type<Record<string, unknown>>().notNull().default({}),
     veto: boolean('veto').notNull().default(false),
     detectedAt: timestamp('detected_at', { withTimezone: true }).notNull().defaultNow(),

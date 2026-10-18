@@ -51,6 +51,7 @@ export const DEFAULT_SCORING_SETTING: {
   weights: Record<SelectionDimension, number>
   reverseDimensions: SelectionDimension[]
   vetoThreshold: number
+  minDimensions: number
   hardGates: ScoringHardGates
   marginFloorBp: number
 } = {
@@ -58,9 +59,10 @@ export const DEFAULT_SCORING_SETTING: {
     SelectionDimension,
     number
   >,
-  reverseDimensions: ['competition', 'supply'],
+  reverseDimensions: ['competition', 'supply-timing'],
   vetoThreshold: 30,
-  hardGates: { compliance: true, lateness: true, margin: true },
+  minDimensions: 4,
+  hardGates: { compliance: true, timing: true, margin: true },
   marginFloorBp: 1500,
 }
 

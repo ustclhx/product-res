@@ -61,7 +61,7 @@ async function seedWorkspace(label: string) {
   await s.insert(clusterSignal, {
     clusterId: cl.id,
     observedOn: '2026-10-01',
-    dimension: 'demand',
+    dimension: 'market-demand',
     score: null,
   })
   const [ld] = await s
