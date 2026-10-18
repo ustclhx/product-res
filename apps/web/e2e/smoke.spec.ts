@@ -33,7 +33,7 @@ test('register, see the workbench navigation, sign out and back in', async ({
   ).toHaveCount(0)
 
   await nav.getByRole('link', { name: '数据中心' }).click()
-  await expect(page.getByTestId('page-placeholder')).toContainText('数据中心')
+  await expect(page.getByRole('heading', { level: 1, name: '数据中心' })).toBeVisible()
   await expect(nav.getByRole('link', { name: '数据中心' })).toHaveAttribute('aria-current', 'page')
   const workspaceURL = page.url()
 

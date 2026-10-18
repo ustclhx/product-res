@@ -8,7 +8,8 @@ const url = process.env.MARKETDATA_TEST_DATABASE_URL
 export const integration = Boolean(url)
 
 export function testDb() {
-  const db = createDb(url as string)
+  // describe.skipIf 仍会执行回调收集用例；未配置时用占位地址（postgres.js 惰性连接，不会真正连库）
+  const db = createDb(url ?? 'postgres://skip@127.0.0.1:1/skip')
   afterAll(() => db.$client.end())
   return db
 }

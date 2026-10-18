@@ -1,6 +1,7 @@
 import { Button, cn } from '@product-res/ui'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { type ReactNode, useEffect, useState } from 'react'
+import { m } from '../../paraglide/messages.js'
 import { templateConfig } from '../../server/template-config.ts'
 import { authClient } from '../auth/auth-client.ts'
 import { NotificationCenter } from '../notifications/center.tsx'
@@ -53,8 +54,17 @@ export function WorkbenchShell({ page, children }: { page: WorkspacePage; childr
                 <span className="font-medium text-foreground">{current.label}</span>
               </>
             ) : null}
+            <span className="ml-3 text-xs">
+              <span>
+                {page.workspace.isPersonal ? m.app_personal_workspace() : m.app_team_workspace()}
+              </span>
+              {' · '}
+              <span>{m.app_role({ role: page.role })}</span>
+            </span>
           </div>
           <div className="flex items-center gap-3">
+            {/* 多租户关闭时不渲染；开启时团队切换与创建需在顶栏直接可用 */}
+            <WorkspaceSwitcher page={page} />
             {page.readOnly ? (
               <span role="status" className="text-xs text-warning-strong">
                 只读
@@ -99,7 +109,6 @@ function AccountMenu({ page }: { page: WorkspacePage }) {
         <a href="/account" className="rounded-md px-2 py-1.5 hover:bg-accent">
           账号设置
         </a>
-        <WorkspaceSwitcher page={page} />
         <ThemeToggle className="px-1 py-1" />
         <SignOutButton />
       </div>
