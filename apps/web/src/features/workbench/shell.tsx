@@ -65,6 +65,13 @@ export function WorkbenchShell({ page, children }: { page: WorkspacePage; childr
           <div className="flex items-center gap-3">
             {/* 多租户关闭时不渲染；开启时团队切换与创建需在顶栏直接可用 */}
             <WorkspaceSwitcher page={page} />
+            <Link
+              to="/app/$slug/settings"
+              params={{ slug }}
+              className="text-[13px] text-muted-foreground hover:text-foreground"
+            >
+              {m.app_workspace_settings()}
+            </Link>
             {page.readOnly ? (
               <span role="status" className="text-xs text-warning-strong">
                 只读
@@ -98,9 +105,6 @@ function AccountMenu({ page }: { page: WorkspacePage }) {
             AI 对话
           </MenuLink>
         ) : null}
-        <MenuLink to="/app/$slug/settings" slug={slug}>
-          空间设置
-        </MenuLink>
         {templateConfig.credits.enabled ? (
           <MenuLink to="/app/$slug/usage" slug={slug}>
             AI 用量
