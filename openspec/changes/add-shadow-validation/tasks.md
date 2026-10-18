@@ -8,7 +8,7 @@
 
 ## 2. 数据表与流水线
 
-- [ ] 2.1 `recommendation`、`recommendation_label`、`readiness_stat`、`weight_suggestion` 表与迁移。验证：隔离测试。
+- [x] 2.1 `recommendation`、`recommendation_label`、`readiness_stat`、`weight_suggestion` 表与迁移。验证：隔离测试。 证据：迁移 0018_costing_insight_validation.sql 已在本地库应用；packages/db/test/validation.test.ts 覆盖四表隔离、线索 × 冻结日与推荐 × 窗口唯一、窗口取值约束。
 - [ ] 2.2 冻结影子推荐（接入 `selection-daily-v1` 末尾）与 `selection-label-v1`（05:00 SGT）打标签、每周准备度重算。验证：冻结记录不随重算变化；到期打标签幂等。
 - [ ] 2.3 准备度驱动 M2 等级显示与置信度历史命中率项。验证：19 → 20 样本时等级出现的测试。
 

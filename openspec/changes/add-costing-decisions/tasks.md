@@ -8,7 +8,7 @@
 
 ## 2. 数据表与设置
 
-- [ ] 2.1 `packages/db/src/schema/costing.ts`：design D1 的表与迁移。验证：`scoped()` 跨空间隔离测试。
+- [x] 2.1 `packages/db/src/schema/costing.ts`：design D1 的表与迁移。验证：`scoped()` 跨空间隔离测试。 证据：迁移 0018_costing_insight_validation.sql 已在本地库应用；packages/db/test/costing.test.ts 覆盖隔离、决定/默认参数/核算组合唯一与放弃原因约束，db 测试 70 项通过。
 - [ ] 2.2 设置页增加“物流方案 / 成本参数”标签与 server functions。验证：增删改与类目回退测试。
 - [ ] 2.3 供应商与报价录入（线索详情“核算”标签内）及报价导入模板（复用数据中心导入，可撤销）。验证：撤销导入只删导入报价。
 

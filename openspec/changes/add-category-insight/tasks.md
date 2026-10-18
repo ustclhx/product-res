@@ -8,7 +8,7 @@
 
 ## 2. 数据表
 
-- [ ] 2.1 `category_study`、`category_study_snapshot`（空间级）与 `marketplace_review`（部署级）、评论指标登记。验证：迁移与隔离测试。
+- [ ] 2.1 `category_study`、`category_study_snapshot`（空间级）与 `marketplace_review`（部署级）、评论指标登记。验证：迁移与隔离测试。 证据：迁移 0018_costing_insight_validation.sql 已在本地库应用；packages/db/test/insight.test.ts 覆盖研究/快照隔离与评论（商品 × 评论 ID）唯一、评分范围；评论不是观测指标，未改 metrics。
 
 ## 3. 报告
 
