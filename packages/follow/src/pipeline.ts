@@ -10,7 +10,10 @@ import {
   direction,
   directionSeller,
   lead,
+  type ReadinessStat,
   type RiskRule,
+  readinessStat,
+  recommendation,
   riskFinding,
   riskRule,
   type SeasonalNode,
@@ -38,13 +41,17 @@ import {
   assignClusters,
   type ClusterMember,
   type ClusterProduct,
+  type ConfidenceResult,
   competition,
   compliance,
   computeConfidence,
   type DimensionResult,
   diffDays,
+  dominantDimension,
   evaluateLead,
   growthSeason,
+  type HistoryHitRate,
+  type LeadEvaluation,
   type ListingSighting,
   type MemberSeries,
   marketDemand,
@@ -77,8 +84,8 @@ import { currentScoringSetting, toScoringSettings } from './settings.ts'
 /** 每日流水线的时区：日期按新加坡时间计 */
 export const SELECTION_TIME_ZONE = 'Asia/Singapore'
 
-/** M5（回测与准备度）之前全部按冷启动处理 */
-const READINESS: Readiness = 'cold-start'
+/** 尚无准备度统计的组合按冷启动处理（只展示信号，不给等级） */
+const COLD_START: Readiness = 'cold-start'
 
 /** 没有关联跟卖方式配置前按“同款同货源”检查风险（更严格） */
 const FOLLOW_MODE = 'same-source' as const
@@ -158,7 +165,7 @@ export async function runSelectionDaily(
   return results
 }
 
-interface WorkspaceContext {
+export interface WorkspaceContext {
   readonly db: Database
   readonly workspaceId: string
   readonly asOf: string
@@ -169,24 +176,45 @@ interface WorkspaceContext {
   readonly nodes: ReadonlyMap<string, SeasonalNode>
   /** 方向 ID → 种子与已接受的对标店铺 */
   readonly benchmarks: ReadonlyMap<string, readonly { marketplace: string; sellerId: string }[]>
+  /** 站点 | 方向 | 信号类型 → 最新一次准备度统计 */
+  readonly readiness: ReadonlyMap<string, ReadinessStat>
 }
 
-/** 运行一个空间的全部启用方向（也供人工刷新使用） */
-export async function runSelectionForWorkspace(
+export const readinessKey = (marketplace: string, directionId: string, signalType: string) =>
+  `${marketplace}|${directionId}|${signalType}`
+
+/** 每个 站点 × 方向 × 信号类型 的最新准备度统计（按计算日取最新一条） */
+export async function latestReadiness(
+  db: Database,
+  workspaceId: string,
+): Promise<Map<string, ReadinessStat>> {
+  const rows = await scoped(db, workspaceId)
+    .select(readinessStat)
+    .orderBy(desc(readinessStat.computedOn))
+  const out = new Map<string, ReadinessStat>()
+  for (const row of rows) {
+    const key = readinessKey(row.marketplace, row.directionId, row.signalType)
+    if (!out.has(key)) out.set(key, row)
+  }
+  return out
+}
+
+/** 读取一个空间的评分设置、风险词库、节点、对标店铺与准备度（流水线与回放共用） */
+export async function loadWorkspaceContext(
   db: Database,
   workspaceId: string,
   options: RunOptions,
-): Promise<WorkspaceRunResult> {
+): Promise<WorkspaceContext> {
   const s = scoped(db, workspaceId)
   const settings = toScoringSettings(await currentScoringSetting(db, workspaceId))
-  const [directions, brands, rules, nodes, sellers] = await Promise.all([
-    s.select(direction, { where: eq(direction.enabled, true) }).orderBy(direction.createdAt),
+  const [brands, rules, nodes, sellers, readiness] = await Promise.all([
     s.select(brandEntry),
     s.select(riskRule, { where: eq(riskRule.enabled, true) }),
     s.select(seasonalNode),
     s.select(directionSeller, {
       where: inArray(directionSeller.status, ['seed', 'accepted']),
     }),
+    latestReadiness(db, workspaceId),
   ])
   const benchmarks = new Map<string, { marketplace: string; sellerId: string }[]>()
   for (const seller of sellers) {
@@ -194,7 +222,7 @@ export async function runSelectionForWorkspace(
     list.push({ marketplace: seller.marketplace, sellerId: seller.sellerPlatformId })
     benchmarks.set(seller.directionId, list)
   }
-  const context: WorkspaceContext = {
+  return {
     db,
     workspaceId,
     asOf: options.asOf ?? localDay(options.now),
@@ -204,7 +232,20 @@ export async function runSelectionForWorkspace(
     rules,
     nodes: new Map(nodes.map((n) => [n.id, n])),
     benchmarks,
+    readiness,
   }
+}
+
+/** 运行一个空间的全部启用方向（也供人工刷新使用） */
+export async function runSelectionForWorkspace(
+  db: Database,
+  workspaceId: string,
+  options: RunOptions,
+): Promise<WorkspaceRunResult> {
+  const directions = await scoped(db, workspaceId)
+    .select(direction, { where: eq(direction.enabled, true) })
+    .orderBy(direction.createdAt)
+  const context = await loadWorkspaceContext(db, workspaceId, options)
   const results: DirectionRunResult[] = []
   const failures: { directionId: string; error: string }[] = []
   for (const row of directions) {
@@ -332,23 +373,45 @@ async function runDirection(ctx: WorkspaceContext, row: Direction): Promise<Dire
             active.map((c) => c.id),
           ),
         })
-  const membersOf = new Map<string, typeof allMembers>()
-  for (const member of allMembers) {
+  const inputs = await clusterInputs(ctx, row, active, allMembers, products)
+  for (const input of inputs) await evaluateCluster(ctx, input)
+  const leads = inputs.length
+  return {
+    directionId: row.id,
+    clusters: active.length,
+    createdClusters: assigned.createdClusterIds.length,
+    leads,
+  }
+}
+
+/**
+ * 为一组簇准备计算输入：成员商品、指标序列（截至 ctx.asOf）、目标节点与搜索趋势。
+ * 回放复用此函数，只需把 ctx.asOf 设为回放日。
+ */
+export async function clusterInputs(
+  ctx: WorkspaceContext,
+  row: Direction,
+  clusters: readonly { id: string; marketplace: string }[],
+  members: readonly { clusterId: string; productId: string; confidence: number }[],
+  products: ReadonlyMap<string, MarketProduct>,
+): Promise<ClusterInput[]> {
+  const benchmark = ctx.benchmarks.get(row.id) ?? []
+  const membersOf = new Map<string, (typeof members)[number][]>()
+  for (const member of members) {
     membersOf.set(member.clusterId, [...(membersOf.get(member.clusterId) ?? []), member])
   }
-  const series = await readProductSeries(ctx, active, allMembers)
+  const series = await readProductSeries(ctx, clusters, members)
   const timing = targetNode(ctx, row)
-  const trends = await readTrends(ctx, row, active)
-
-  let leads = 0
-  for (const c of active) {
+  const trends = await readTrends(ctx, row, clusters)
+  const out: ClusterInput[] = []
+  for (const c of clusters) {
     const platform = platformOf(c.marketplace as Marketplace)
     const clusterMembers = membersOf.get(c.id) ?? []
     if (!platform || clusterMembers.length === 0) continue
     const memberProducts = clusterMembers
       .map((m) => products.get(m.productId))
       .filter((p): p is MarketProduct => p !== undefined)
-    await evaluateCluster(ctx, {
+    out.push({
       row,
       clusterId: c.id,
       marketplace: c.marketplace,
@@ -360,14 +423,8 @@ async function runDirection(ctx: WorkspaceContext, row: Direction): Promise<Dire
       timing,
       trend: trends.get(c.marketplace) ?? null,
     })
-    leads += 1
   }
-  return {
-    directionId: row.id,
-    clusters: active.length,
-    createdClusters: assigned.createdClusterIds.length,
-    leads,
-  }
+  return out
 }
 
 /** 按站点批量读取簇成员的商品指标（来源优先级按站点） */
@@ -628,7 +685,7 @@ function complianceDimension(asOf: string, risk: RiskResult): DimensionResult {
   }
 }
 
-interface ClusterInput {
+export interface ClusterInput {
   readonly row: Direction
   readonly clusterId: string
   readonly marketplace: string
@@ -641,7 +698,59 @@ interface ClusterInput {
   readonly trend: Trend | null
 }
 
-async function evaluateCluster(ctx: WorkspaceContext, input: ClusterInput) {
+export interface ClusterEvaluation {
+  readonly dimensions: readonly DimensionResult[]
+  readonly risk: RiskResult
+  readonly confidence: ConfidenceResult
+  readonly evaluation: LeadEvaluation
+  /** 综合分（两位小数）；不可算时为 null */
+  readonly score: number | null
+  /** 主导维度（信号类型）；没有可算维度时为 null */
+  readonly signalType: SelectionDimension | null
+  readonly readiness: Readiness
+  /** 季节类打标签用：预测的高峰周（周一）；无节点或无趋势时为 null */
+  readonly predictedPeakWeek: string | null
+}
+
+/** 所在周的周一 YYYY-MM-DD */
+export function weekStart(on: string): string {
+  const weekday = new Date(`${on}T00:00:00Z`).getUTCDay()
+  return addDays(on, -((weekday + 6) % 7))
+}
+
+/**
+ * 预测高峰周：目标销售窗口内搜索趋势季节轮廓最高的月份，取下一次该月 15 日所在周。
+ * 没有趋势或节点时为 null。
+ */
+function predictPeakWeek(
+  timing: NodeTiming | null,
+  trend: Trend | null,
+  asOf: string,
+): string | null {
+  if (!timing || !trend) return null
+  const profile = new Map<number, number[]>()
+  for (const point of trend.points) {
+    if (point.observedOn > asOf) continue
+    const month = Number(point.observedOn.slice(5, 7))
+    profile.set(month, [...(profile.get(month) ?? []), point.value])
+  }
+  let best: number | null = null
+  let bestValue = Number.NEGATIVE_INFINITY
+  for (const month of timing.targetMonths) {
+    const values = profile.get(month)
+    if (!values || values.length === 0) continue
+    const avg = values.reduce((a, b) => a + b, 0) / values.length
+    if (avg > bestValue) {
+      best = month
+      bestValue = avg
+    }
+  }
+  if (best === null) return null
+  return weekStart(nextOccurrence(best, 15, asOf))
+}
+
+/** 计算一个簇在 ctx.asOf 的 7 维信号、风险、综合分、等级与置信度（不写库） */
+export function computeCluster(ctx: WorkspaceContext, input: ClusterInput): ClusterEvaluation {
   const { asOf } = ctx
   const { products, series, platform } = input
   const lookup = new Map<string, MetricPoint>()
@@ -705,6 +814,18 @@ async function evaluateCluster(ctx: WorkspaceContext, input: ClusterInput) {
         if (diffDays(point.observedOn, asOf) <= COVERAGE_WINDOW_DAYS) days.add(point.observedOn)
     }
   }
+
+  // 准备度按 站点 × 方向 × 信号类型 查最新统计；没有统计时为冷启动、历史命中率“无样本”
+  const signalType = dominantDimension(dimensions, ctx.settings) as SelectionDimension | null
+  const stat =
+    signalType === null
+      ? undefined
+      : ctx.readiness.get(readinessKey(input.marketplace, input.row.id, signalType))
+  const readiness: Readiness = stat?.level ?? COLD_START
+  const historyHitRate: HistoryHitRate = {
+    effectiveSamples: stat?.effectiveSamples ?? 0,
+    lowerBound: stat?.wilsonLower ?? null,
+  }
   const confidence = computeConfidence({
     now: ctx.now.toISOString(),
     dimensions,
@@ -714,10 +835,68 @@ async function evaluateCluster(ctx: WorkspaceContext, input: ClusterInput) {
       sellerCount: new Set(products.map((p) => p.sellerId).filter(Boolean)).size,
     },
     memberConfidences: input.memberConfidences,
-    readiness: READINESS,
+    readiness,
+    historyHitRate,
   })
-  const evaluation = evaluateLead(dimensions, READINESS, ctx.settings)
+  const evaluation = evaluateLead(dimensions, readiness, ctx.settings)
   const score = evaluation.composite.score === null ? null : round2(evaluation.composite.score)
+  return {
+    dimensions,
+    risk,
+    confidence,
+    evaluation,
+    score,
+    signalType,
+    readiness,
+    predictedPeakWeek: predictPeakWeek(input.timing, input.trend, asOf),
+  }
+}
+
+/** 冻结时保存的每维输入引用上限：趋势序列可能有上千个点，只留最近的若干条 */
+const FROZEN_REFS_PER_DIMENSION = 40
+
+/**
+ * 推荐的输入引用快照（design D1「输入引用快照」）：每维分数、理由、所用观测（实体、指标、日期、来源）
+ * 与成员商品。打标签按冻结时的成员计算，之后的拆分合并不影响回看。
+ */
+export function frozenInputs(
+  input: ClusterInput,
+  result: ClusterEvaluation,
+  extra: Record<string, unknown> = {},
+): Record<string, unknown> {
+  const dimensions: Record<string, unknown> = {}
+  for (const d of result.dimensions) {
+    dimensions[d.dimension] = {
+      score: d.score === null ? null : round2(d.score),
+      reason: d.reason,
+      sources: [...new Set(d.inputs.map((r) => r.sourceId))].sort(),
+      refCount: d.inputs.length,
+      refs: d.inputs.slice(-FROZEN_REFS_PER_DIMENSION).map((r) => ({
+        metric: r.metric,
+        entityId: r.entityId ?? null,
+        observedOn: r.observedOn,
+        sourceId: r.sourceId,
+        fetchedAt: r.fetchedAt,
+      })),
+    }
+  }
+  return {
+    clusterId: input.clusterId,
+    members: input.products.map((p) => p.id),
+    dimensions,
+    readiness: result.readiness,
+    displayGrade: result.evaluation.displayGrade,
+    confidenceLevel: result.confidence.level,
+    gates: result.evaluation.gates.failures.map((f) => f.gate),
+    predictedPeakWeek: result.predictedPeakWeek,
+    ...extra,
+  }
+}
+
+async function evaluateCluster(ctx: WorkspaceContext, input: ClusterInput) {
+  const { asOf } = ctx
+  const result = computeCluster(ctx, input)
+  const { dimensions, risk, confidence, evaluation, score, readiness } = result
   const deadline = dimensions.find((d) => d.dimension === 'supply-timing')?.detail?.deadline
 
   await scoped(ctx.db, ctx.workspaceId).transaction(async (tx) => {
@@ -777,7 +956,8 @@ async function evaluateCluster(ctx: WorkspaceContext, input: ClusterInput) {
         level: confidence.level,
         items: confidence.items,
         unverifiedMetrics: confidence.unverifiedMetrics,
-        readiness: READINESS,
+        readiness,
+        signalType: result.signalType,
         displayGrade: evaluation.displayGrade,
         rankKey: rankKey(evaluation.composite.score, confidence.value),
         attention: needsAttention(evaluation.composite.score, confidence.level),
@@ -789,7 +969,7 @@ async function evaluateCluster(ctx: WorkspaceContext, input: ClusterInput) {
       latestDecisionOn: typeof deadline === 'string' ? deadline : null,
       settingVersion: evaluation.settingsVersion,
     }
-    await tx
+    const [written] = await tx
       .insert(lead, {
         clusterId: input.clusterId,
         directionId: input.row.id,
@@ -801,7 +981,42 @@ async function evaluateCluster(ctx: WorkspaceContext, input: ClusterInput) {
         target: [lead.clusterId, lead.leadOn],
         set: { ...values, updatedAt: ctx.now },
       })
+      .returning({ id: lead.id })
+
+    // 流水线末步：冻结影子推荐（tasks 2.2）。线索 × 冻结日唯一，已冻结的不覆盖，
+    // 所以同日重跑或之后改权重都不改变已冻结的分数与权重版本
+    const frozen = freezeValues(input, result, 'shadow', { leadId: written?.id ?? null })
+    if (frozen) {
+      await tx
+        .insert(recommendation, { ...frozen, leadId: written?.id ?? null, frozenOn: asOf })
+        .onConflictDoNothing()
+    }
   })
+}
+
+/**
+ * 推荐行（不含 leadId、frozenOn）。综合分或主导维度不可算的簇没有可验证的推荐，返回 null。
+ */
+export function freezeValues(
+  input: ClusterInput,
+  result: ClusterEvaluation,
+  sampleKind: 'shadow' | 'replay',
+  extra: Record<string, unknown> = {},
+) {
+  const { score, signalType, evaluation, confidence } = result
+  if (score === null || signalType === null || evaluation.grade === null) return null
+  return {
+    clusterId: input.clusterId,
+    directionId: input.row.id,
+    marketplace: input.marketplace,
+    signalType,
+    score,
+    grade: GRADE_TO_DB[evaluation.grade],
+    confidence: Math.round(confidence.value * 1000) / 1000,
+    settingVersion: evaluation.settingsVersion,
+    inputs: frozenInputs(input, result, extra),
+    sampleKind,
+  }
 }
 
 const sqlExcluded = (column: string) => sql.raw(`excluded.${column}`)

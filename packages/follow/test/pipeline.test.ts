@@ -10,6 +10,7 @@ import {
   marketplaceProduct,
   observation,
   organization,
+  recommendation,
   riskFinding,
   scoped,
   scoringSetting,
@@ -164,6 +165,7 @@ describe.skipIf(!url)('selection-daily 流水线', () => {
   afterAll(async () => {
     if (!url) return
     const s = scoped(db, workspaceId)
+    await s.delete(recommendation, undefined)
     await s.delete(lead, undefined)
     await s.delete(riskFinding, undefined)
     await s.delete(clusterSignal, undefined)
@@ -293,6 +295,40 @@ describe.skipIf(!url)('selection-daily 流水线', () => {
     expect(today.find((l) => l.clusterId === spiceCluster)?.status).toBe('costing')
     // 已有线索保留原版本
     expect((await leadsOn(asOf)).every((l) => l.settingVersion === 1)).toBe(true)
+
+    // 影子推荐冻结（tasks 2.2）：改权重后同日重算，线索更新为新版本，已冻结的推荐保留原分数与权重版本
+    const frozenBefore = await s.select(recommendation, {
+      where: eq(recommendation.frozenOn, nextDay),
+    })
+    expect(frozenBefore.length).toBeGreaterThan(0)
+    expect(frozenBefore.every((r) => r.sampleKind === 'shadow' && r.settingVersion === 2)).toBe(
+      true,
+    )
+    expect(frozenBefore.every((r) => r.leadId !== null)).toBe(true)
+    await appendScoringSetting(db, workspaceId, {
+      weights: {
+        'market-demand': 1,
+        'growth-season': 1,
+        'peer-spread': 5,
+        profit: 1,
+        competition: 1,
+        'supply-timing': 1,
+        compliance: 1,
+      },
+      reverseDimensions: ['competition', 'supply-timing'],
+      vetoThreshold: 30,
+      minDimensions: 4,
+      hardGates: { compliance: true, timing: true, margin: true },
+      marginFloorBp: 1500,
+    })
+    await runSelectionForWorkspace(db, workspaceId, { now, asOf: nextDay })
+    expect((await leadsOn(nextDay)).every((l) => l.settingVersion === 3)).toBe(true)
+    const frozenAfter = await s.select(recommendation, {
+      where: eq(recommendation.frozenOn, nextDay),
+    })
+    const view = (rows: typeof frozenBefore) =>
+      rows.map((r) => `${r.id}|${r.score}|${r.settingVersion}|${r.signalType}`).sort()
+    expect(view(frozenAfter)).toEqual(view(frozenBefore))
   })
 
   it('停用方向不生成新线索', async () => {

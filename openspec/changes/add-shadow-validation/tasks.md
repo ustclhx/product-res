@@ -9,13 +9,13 @@
 ## 2. 数据表与流水线
 
 - [x] 2.1 `recommendation`、`recommendation_label`、`readiness_stat`、`weight_suggestion` 表与迁移。验证：隔离测试。 证据：迁移 0018_costing_insight_validation.sql 已在本地库应用；packages/db/test/validation.test.ts 覆盖四表隔离、线索 × 冻结日与推荐 × 窗口唯一、窗口取值约束。
-- [ ] 2.2 冻结影子推荐（接入 `selection-daily-v1` 末尾）与 `selection-label-v1`（05:00 SGT）打标签、每周准备度重算。验证：冻结记录不随重算变化；到期打标签幂等。
-- [ ] 2.3 准备度驱动 M2 等级显示与置信度历史命中率项。验证：19 → 20 样本时等级出现的测试。
+- [x] 2.2 冻结影子推荐（接入 `selection-daily-v1` 末尾）与 `selection-label-v1`（05:00 SGT）打标签、每周准备度重算。验证：冻结记录不随重算变化；到期打标签幂等。 证据：`packages/follow/src/pipeline.ts` 在写线索的同一事务末尾冻结 shadow 推荐（onConflictDoNothing，主导维度来自新增的 `dominantDimension`），`src/validation.ts` 提供 `runSelectionLabels`（eBay 累计已售差分、Amazon 日销量或月销量估算 ÷ 30，来源写入 sources）、`recomputeReadiness` 与同方向随机新品基线（只在内存计算，不写推荐表）；`apps/jobs/src/selection/node.ts` 注册 `selection-label-v1`（05:00）与 `selection-readiness-v1`（周一 05:30）。`test/pipeline.test.ts` 改权重同日重算后冻结记录不变；`test/validation.test.ts` T+14 未命中 / T+30 命中（45 件、跌 8%）、数据不足、重复运行不新增、基线样本不入表；`apps/jobs/test/selection-schedule.unit.test.ts` 三个计划。
+- [x] 2.3 准备度驱动 M2 等级显示与置信度历史命中率项。验证：19 → 20 样本时等级出现的测试。 证据：流水线按 站点 × 方向 × 信号类型 读取最新 readiness_stat 决定等级显示，并把有效样本与 Wilson 下界传入置信度历史命中率项；`test/validation.test.ts` 有效样本 19 时线索仍显示“未验证”、历史命中率为空，20 时准备度为观察期、显示等级、置信度不为高且历史命中率 = 下界。
 
 ## 3. 回放与拟合
 
-- [ ] 3.1 Keepa 历史回放任务（遵守额度，样本标注 replay）。验证：额度不足顺延测试；用 Keepa 历史夹具回放并打标签。
-- [ ] 3.2 权重拟合建议与采用/忽略。验证：采用生成新版本、忽略不变。
+- [x] 3.1 Keepa 历史回放任务（遵守额度，样本标注 replay）。验证：额度不足顺延测试；用 Keepa 历史夹具回放并打标签。 证据：`packages/follow/src/replay.ts` 的 `startReplay` / `runReplayStep`（按 ASIN 预估 token，经 runSyncTask 预扣，额度不足返回 deferred，无凭据失败并记 KEEPA_API_KEY_MISSING），`apps/jobs/src/selection/replay.ts` 队列消费者按额度重置时刻延迟重投；Keepa 连接器新增 monthlySoldHistory → sales_estimate_monthly。`test/replay.test.ts`（真实 PG 账本）本分钟额度占满时顺延且未发请求，下一分钟取历史、冻结 1 条 replay 推荐并打 14/30/60 三个命中标签，重复投递不再请求；`apps/jobs/test/selection-replay.unit.test.ts` 顺延 / 确认 / 死信。
+- [x] 3.2 权重拟合建议与采用/忽略。验证：采用生成新版本、忽略不变。 证据：`packages/follow/src/weights.ts` 的 `proposeWeights` / `acceptSuggestion`（复用 appendScoringSetting）/ `dismissSuggestion`；`test/validation.test.ts` 有效样本 30 返回原因、70 条可分样本给出需求权重最高的建议，采用生成版本 2 且建议记 acceptedVersion，忽略后版本仍为 2、重复处理 409。`pnpm typecheck`、`pnpm check`、`pnpm check:deps`、`pnpm check:singletons` 通过；follow 17、selection 84、connectors 16、marketdata 16、jobs test:node 81 passed。
 
 ## 4. 页面
 

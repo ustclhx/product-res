@@ -92,6 +92,7 @@ export {
   compositeScore,
   DEFAULT_SCORING_SETTINGS,
   type DisplayGrade,
+  dominantDimension,
   evaluateGates,
   evaluateLead,
   GATE_REASONS,

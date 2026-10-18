@@ -202,6 +202,33 @@ describe('Keepa（文档样例）', () => {
     ])
   })
 
+  it('月销量历史记为 sales_estimate_monthly 估算值；快照取 monthlySold', () => {
+    const day1 = Date.UTC(2026, 9, 16, 1) / 60_000 - 21_564_000
+    const history = normalizeKeepa(
+      payload(
+        { kind: 'rank-history', marketplace: 'amazon-us', scope: { ids: ['B0'] } },
+        { products: [{ asin: 'B0', monthlySoldHistory: [day1, 300, day1 + 1440, -1] }] },
+      ),
+    )
+    expect(history.observations).toEqual([
+      expect.objectContaining({
+        metric: 'sales_estimate_monthly',
+        observedOn: '2026-10-16',
+        value: 300,
+        method: 'estimate',
+      }),
+    ])
+    const snapshot = normalizeKeepa(
+      payload(
+        { kind: 'product-snapshot', marketplace: 'amazon-us', scope: { ids: ['B0'] } },
+        { products: [{ asin: 'B0', monthlySold: 200 }] },
+      ),
+    )
+    expect(snapshot.observations).toEqual([
+      expect.objectContaining({ metric: 'sales_estimate_monthly', value: 200 }),
+    ])
+  })
+
   it('卖家店铺商品列表', () => {
     const batch = normalizeKeepa(
       payload(

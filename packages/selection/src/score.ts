@@ -188,3 +188,29 @@ export function evaluateLead(
     grade === null ? null : gates.passed && readiness === 'cold-start' ? 'unverified' : grade
   return { composite, gates, grade, displayGrade, settingsVersion: settings.version }
 }
+
+/**
+ * 信号类型（准备度按 平台 × 方向 × 信号类型 分组）= 对综合分贡献最高的维度：
+ * 贡献 = 权重 × 分数'（反向维度取 100 − 分数）。并列时按 DIMENSIONS 顺序取先出现的；
+ * 没有分数或权重为 0 的维度不参与；全部不可算时为 null。
+ */
+export function dominantDimension(
+  dimensions: readonly Pick<DimensionResult, 'dimension' | 'score'>[],
+  settings: ScoringSettings = DEFAULT_SCORING_SETTINGS,
+): DimensionId | null {
+  const byId = new Map(dimensions.map((d) => [d.dimension, d.score]))
+  const reversed = new Set(settings.reversed)
+  let best: DimensionId | null = null
+  let bestValue = -1
+  for (const id of DIMENSIONS) {
+    const score = byId.get(id)
+    const weight = settings.weights[id]
+    if (score === null || score === undefined || !(weight > 0)) continue
+    const value = weight * (reversed.has(id) ? 100 - score : score)
+    if (value > bestValue) {
+      best = id
+      bestValue = value
+    }
+  }
+  return best
+}
