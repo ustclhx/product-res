@@ -5,6 +5,7 @@ import {
   clusterMember,
   clusterSignal,
   cluster as clusterTable,
+  costingScenario,
   type Database,
   type Direction,
   direction,
@@ -42,6 +43,8 @@ import {
   type ClusterMember,
   type ClusterProduct,
   type ConfidenceResult,
+  type CostedProfit,
+  type CostedTiming,
   competition,
   compliance,
   computeConfidence,
@@ -71,7 +74,7 @@ import {
 } from '@product-res/selection'
 import { newId } from '@product-res/shared'
 import { log } from '@product-res/shared/log'
-import { and, desc, eq, inArray, lt, type SQL, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, lt, lte, type SQL, sql } from 'drizzle-orm'
 import { GRADE_TO_DB, METHOD_FROM_DB, METHOD_TO_DB } from './mapping.ts'
 import { currentScoringSetting, toScoringSettings } from './settings.ts'
 
@@ -87,8 +90,9 @@ export const SELECTION_TIME_ZONE = 'Asia/Singapore'
 /** 尚无准备度统计的组合按冷启动处理（只展示信号，不给等级） */
 const COLD_START: Readiness = 'cold-start'
 
-/** 没有关联跟卖方式配置前按“同款同货源”检查风险（更严格） */
-const FOLLOW_MODE = 'same-source' as const
+/** 跟卖方式取簇最新线索的 lead.follow_mode；还没有线索时按“同款同货源”检查风险（更严格） */
+const DEFAULT_FOLLOW_MODE: FollowMode = 'same-source'
+type FollowMode = 'same-source' | 'improved'
 
 /** 商品首次出现记录的来源标识（来自 marketplace_product 的上架 / 首次发现时间） */
 export const CATALOG_SOURCE = 'marketplace-catalog'
@@ -147,17 +151,28 @@ export interface RunOptions {
  */
 export async function runSelectionDaily(
   db: Database,
-  options: RunOptions,
+  options: RunOptions & {
+    /** 只运行这些空间（测试与人工补跑用）；省略时运行所有有启用方向的空间 */
+    readonly workspaceIds?: readonly string[] | undefined
+  },
 ): Promise<WorkspaceRunResult[]> {
+  const only = options.workspaceIds
+  if (only && only.length === 0) return []
   // 系统任务需要跨空间列出“有启用方向的空间”；之后的读写都经 scoped() 限定在单个空间
   const workspaces = await db
     .selectDistinct({ workspaceId: direction.workspaceId })
     .from(direction)
-    .where(eq(direction.enabled, true))
+    .where(
+      only
+        ? (and(eq(direction.enabled, true), inArray(direction.workspaceId, [...only])) as SQL)
+        : eq(direction.enabled, true),
+    )
   const results: WorkspaceRunResult[] = []
   for (const { workspaceId } of workspaces) {
     try {
-      results.push(await runSelectionForWorkspace(db, workspaceId, options))
+      results.push(
+        await runSelectionForWorkspace(db, workspaceId, { now: options.now, asOf: options.asOf }),
+      )
     } catch (error) {
       log.error('selection.workspace_failed', { workspaceId, error })
     }
@@ -278,6 +293,138 @@ function toClusterProduct(product: MarketProduct): ClusterProduct {
 const keyOf = (product: MarketProduct) =>
   productKey({ marketplace: product.marketplace as Marketplace, platformId: product.platformId })
 
+/** 簇在计算日之前（含当日）的核算状态：最新线索的跟卖方式与可用的核算组合 */
+export interface ClusterCosting {
+  readonly followMode: FollowMode
+  readonly profit: CostedProfit | null
+  readonly timing: CostedTiming | null
+  /** 核算组合的成本确定性（packages/costing certainty，矩阵计算时写入快照） */
+  readonly certainty: number | null
+}
+
+const asRecord = (v: unknown): Record<string, unknown> | null =>
+  v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null
+const finite = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+const text = (v: unknown) => (typeof v === 'string' && v ? v : null)
+
+interface ParsedScenario {
+  readonly id: string
+  readonly selected: boolean
+  readonly profit: CostedProfit
+  readonly deadline: string | null
+  readonly saleStart: string | null
+  readonly certainty: number | null
+}
+
+/**
+ * 解析 costing_scenario.result（apps/web 核算矩阵写入的 MatrixCell + inputs 快照）。
+ * 只有带完整核算结果（status ok）的组合可用；缺输入的组合返回 null。
+ */
+function parseScenario(row: {
+  id: string
+  selected: boolean
+  result: Record<string, unknown>
+}): ParsedScenario | null {
+  const cell = row.result
+  const outcome = asRecord(cell.result)
+  if (outcome?.status !== 'ok') return null
+  const grossMargin = finite(outcome.grossMargin)
+  const salePriceMinor = finite(outcome.salePriceMinor)
+  const landedCostMinor = finite(outcome.landedCostMinor)
+  const currency = text(outcome.currency)
+  if (grossMargin === null || salePriceMinor === null || landedCostMinor === null || !currency)
+    return null
+  const inputs = asRecord(cell.inputs)
+  const supplierName = text(asRecord(inputs?.quote)?.supplierName)
+  const profileName = text(asRecord(inputs?.profile)?.name)
+  const mode = cell.mode === 'improved' ? '微改良' : '同货源'
+  const plan = [supplierName, profileName, mode].filter(Boolean).join(' · ')
+  return {
+    id: row.id,
+    selected: row.selected,
+    profit: {
+      scenarioId: row.id,
+      plan,
+      currency,
+      salePriceMinor,
+      landedCostMinor,
+      grossMargin,
+      selected: row.selected,
+    },
+    deadline: text(cell.deadline),
+    saleStart: text(asRecord(inputs?.node)?.saleStartDate),
+    certainty: finite(cell.certainty),
+  }
+}
+
+/**
+ * 读取簇的核算状态（add-costing-decisions tasks 3.3）：
+ * - 跟卖方式取计算日及之前最新一条线索的 follow_mode；
+ * - 核算组合取最近一条有可用组合的线索：选定组合优先，否则取毛利率最高的可计算组合。
+ *   新一天的线索没有核算行，所以不只看最新线索，否则核算次日维度又会变空。
+ */
+export async function loadClusterCosting(
+  ctx: WorkspaceContext,
+  clusterIds: readonly string[],
+): Promise<Map<string, ClusterCosting>> {
+  const out = new Map<string, ClusterCosting>()
+  if (clusterIds.length === 0) return out
+  const s = scoped(ctx.db, ctx.workspaceId)
+  const leads = await s
+    .select(lead, {
+      where: and(inArray(lead.clusterId, [...clusterIds]), lte(lead.leadOn, ctx.asOf)) as SQL,
+      fields: { id: lead.id, clusterId: lead.clusterId, followMode: lead.followMode },
+    })
+    .orderBy(desc(lead.leadOn))
+  if (leads.length === 0) return out
+  const scenarios = await s.select(costingScenario, {
+    where: inArray(
+      costingScenario.leadId,
+      leads.map((l) => l.id),
+    ),
+    fields: {
+      id: costingScenario.id,
+      leadId: costingScenario.leadId,
+      selected: costingScenario.selected,
+      result: costingScenario.result,
+    },
+  })
+  const byLead = new Map<string, ParsedScenario[]>()
+  for (const row of scenarios) {
+    const parsed = parseScenario(row)
+    if (parsed) byLead.set(row.leadId, [...(byLead.get(row.leadId) ?? []), parsed])
+  }
+  for (const l of leads) {
+    const current = out.get(l.clusterId)
+    if (current?.profit) continue
+    const options = byLead.get(l.id) ?? []
+    const pick =
+      options.find((o) => o.selected) ??
+      [...options].sort((a, b) => b.profit.grossMargin - a.profit.grossMargin)[0]
+    // 跟卖方式只取最新一条线索；核算组合继续向前找
+    const followMode = current?.followMode ?? l.followMode
+    if (!pick) {
+      if (!current)
+        out.set(l.clusterId, { followMode, profit: null, timing: null, certainty: null })
+      continue
+    }
+    out.set(l.clusterId, {
+      followMode,
+      profit: pick.profit,
+      timing: pick.deadline
+        ? {
+            scenarioId: pick.id,
+            plan: pick.profit.plan,
+            deadline: pick.deadline,
+            leadDays: pick.saleStart ? Math.max(0, diffDays(pick.deadline, pick.saleStart)) : 0,
+          }
+        : null,
+      certainty: pick.certainty,
+    })
+  }
+  return out
+}
+
 async function runDirection(ctx: WorkspaceContext, row: Direction): Promise<DirectionRunResult> {
   const { db, workspaceId } = ctx
   const s = scoped(db, workspaceId)
@@ -373,7 +520,11 @@ async function runDirection(ctx: WorkspaceContext, row: Direction): Promise<Dire
             active.map((c) => c.id),
           ),
         })
-  const inputs = await clusterInputs(ctx, row, active, allMembers, products)
+  const costing = await loadClusterCosting(
+    ctx,
+    active.map((c) => c.id),
+  )
+  const inputs = await clusterInputs(ctx, row, active, allMembers, products, costing)
   for (const input of inputs) await evaluateCluster(ctx, input)
   const leads = inputs.length
   return {
@@ -386,7 +537,7 @@ async function runDirection(ctx: WorkspaceContext, row: Direction): Promise<Dire
 
 /**
  * 为一组簇准备计算输入：成员商品、指标序列（截至 ctx.asOf）、目标节点与搜索趋势。
- * 回放复用此函数，只需把 ctx.asOf 设为回放日。
+ * 回放复用此函数，只需把 ctx.asOf 设为回放日；回放不传核算状态（历史日没有当时的核算结果）。
  */
 export async function clusterInputs(
   ctx: WorkspaceContext,
@@ -394,6 +545,7 @@ export async function clusterInputs(
   clusters: readonly { id: string; marketplace: string }[],
   members: readonly { clusterId: string; productId: string; confidence: number }[],
   products: ReadonlyMap<string, MarketProduct>,
+  costing?: ReadonlyMap<string, ClusterCosting>,
 ): Promise<ClusterInput[]> {
   const benchmark = ctx.benchmarks.get(row.id) ?? []
   const membersOf = new Map<string, (typeof members)[number][]>()
@@ -422,6 +574,7 @@ export async function clusterInputs(
       benchmark: benchmark.filter((b) => b.marketplace === c.marketplace).map((b) => b.sellerId),
       timing,
       trend: trends.get(c.marketplace) ?? null,
+      ...(costing ? { costing: costing.get(c.id) ?? null } : {}),
     })
   }
   return out
@@ -633,6 +786,7 @@ function clusterRisk(
   platform: Platform,
   marketplace: string,
   products: readonly MarketProduct[],
+  mode: FollowMode,
 ): RiskResult {
   const { brands, rules } = riskInputs(ctx, marketplace)
   const sellers = new Set(products.map((p) => p.sellerId).filter(Boolean))
@@ -646,7 +800,7 @@ function clusterRisk(
         categoryId: product.categoryId,
         mainSellerCount: sellers.size,
       },
-      mode: FOLLOW_MODE,
+      mode,
       brands,
       rules,
     })
@@ -696,6 +850,11 @@ export interface ClusterInput {
   readonly benchmark: readonly string[]
   readonly timing: NodeTiming | null
   readonly trend: Trend | null
+  /**
+   * 核算状态（tasks 3.3）；省略时（回放）利润与时效按 M2 默认处理、置信度不含成本确定性，
+   * null 表示簇还没有线索或核算
+   */
+  readonly costing?: ClusterCosting | null
 }
 
 export interface ClusterEvaluation {
@@ -778,7 +937,14 @@ export function computeCluster(ctx: WorkspaceContext, input: ClusterInput): Clus
         ]
       : [],
   )
-  const risk = clusterRisk(ctx, platform, input.marketplace, products)
+  const costing = input.costing ?? null
+  const risk = clusterRisk(
+    ctx,
+    platform,
+    input.marketplace,
+    products,
+    costing?.followMode ?? DEFAULT_FOLLOW_MODE,
+  )
 
   const dimensions: DimensionResult[] = [
     marketDemand({
@@ -795,15 +961,20 @@ export function computeCluster(ctx: WorkspaceContext, input: ClusterInput): Clus
       targetMonths: input.timing?.targetMonths,
     }),
     peerSpread({ asOf, benchmarkSellerIds: input.benchmark, listings }),
-    // M3 核算前没有落地成本，利润维度为空
-    profit({ platform, asOf, prices, landedCosts: null }),
+    // 有核算组合时利润采用其毛利率（毛利门槛随之生效）；未核算时没有落地成本，利润为空
+    profit({ platform, asOf, prices, landedCosts: null, costed: costing?.profit ?? null }),
     competition({
       asOf,
       sellerCount: clusterSellerCount(products, series),
       prices,
       reviewCounts: memberSeries(products, series, 'review_count'),
     }),
-    supplyTiming({ asOf, platform, salesStart: input.timing?.salesStart ?? null }),
+    supplyTiming({
+      asOf,
+      platform,
+      salesStart: input.timing?.salesStart ?? null,
+      costed: costing?.timing ?? null,
+    }),
     complianceDimension(asOf, risk),
   ].map((d) => withAlternates(d, lookup))
 
@@ -837,6 +1008,8 @@ export function computeCluster(ctx: WorkspaceContext, input: ClusterInput): Clus
     memberConfidences: input.memberConfidences,
     readiness,
     historyHitRate,
+    // 回放（未传核算状态）不计该项；流水线中未核算的簇该项为空
+    ...(input.costing === undefined ? {} : { costCertainty: costing?.certainty ?? null }),
   })
   const evaluation = evaluateLead(dimensions, readiness, ctx.settings)
   const score = evaluation.composite.score === null ? null : round2(evaluation.composite.score)
@@ -941,7 +1114,7 @@ async function evaluateCluster(ctx: WorkspaceContext, input: ClusterInput) {
       )
     }
 
-    // 线索：簇 × 日期唯一；新线索沿用该簇上一条线索的处理状态，重复运行不改团队设置的状态
+    // 线索：簇 × 日期唯一；新线索沿用该簇上一条线索的处理状态与跟卖方式，重复运行不改团队设置的状态
     const [previous] = await tx
       .select(lead, {
         where: and(eq(lead.clusterId, input.clusterId), lt(lead.leadOn, asOf)) as SQL,
@@ -975,6 +1148,9 @@ async function evaluateCluster(ctx: WorkspaceContext, input: ClusterInput) {
         directionId: input.row.id,
         leadOn: asOf,
         status: previous?.status ?? 'new',
+        // 跟卖方式与改良参数同样沿用，否则次日风险评估会退回同货源
+        followMode: previous?.followMode ?? DEFAULT_FOLLOW_MODE,
+        improvement: previous?.improvement ?? null,
         ...values,
       })
       .onConflictDoUpdate({

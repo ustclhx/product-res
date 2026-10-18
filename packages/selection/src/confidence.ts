@@ -6,7 +6,7 @@ import type { DimensionId, DimensionResult, Readiness } from './types.ts'
 
 /**
  * 单条线索的置信度（design D6，docs/plan/selection-workbench.md 第 11.1 节）。
- * M2 可算 8 项；历史命中率（M5）在调用方传入准备度统计时加入，成本确定性（M3）之后加入。
+ * M2 可算 8 项；成本确定性（M3）与历史命中率（M5）在调用方传入对应输入时加入。
  * 每项 0–1，不可算时为 null 且不计入平均。
  */
 
@@ -19,6 +19,7 @@ export const CONFIDENCE_ITEMS = [
   'season-stability',
   'time-slack',
   'competition-stability',
+  'cost-certainty',
   'history-hit-rate',
 ] as const
 export type ConfidenceItemId = (typeof CONFIDENCE_ITEMS)[number]
@@ -32,6 +33,7 @@ export const CONFIDENCE_LABELS: Readonly<Record<ConfidenceItemId, string>> = {
   'season-stability': '季节规律稳定性',
   'time-slack': '时间余量',
   'competition-stability': '竞争稳定性',
+  'cost-certainty': '成本确定性',
   'history-hit-rate': '历史命中率',
 }
 
@@ -90,6 +92,11 @@ export interface ConfidenceInput {
   readonly readiness?: Readiness | undefined
   /** 同平台 × 方向 × 信号类型的已打标签样本统计；省略时不计算历史命中率项（M2 行为） */
   readonly historyHitRate?: HistoryHitRate | undefined
+  /**
+   * 成本确定性（packages/costing 的 certainty，0–1）；null 表示尚未核算（该项为空），
+   * 省略时不计算该项（M2 行为）
+   */
+  readonly costCertainty?: number | null | undefined
 }
 
 export interface ConfidenceResult {
@@ -243,6 +250,19 @@ export function computeConfidence(input: ConfidenceInput): ConfidenceResult {
     value: compStability === null ? null : round(compStability),
     note: compStability === null ? '没有价格或卖家数历史' : '按价格波动率与卖家数增速',
   })
+
+  // ⑨ 成本确定性：报价可信度、物流字段齐全度、FBA 费来源
+  if (input.costCertainty !== undefined) {
+    items.push(
+      input.costCertainty === null
+        ? { id: 'cost-certainty', value: null, note: '未核算' }
+        : {
+            id: 'cost-certainty',
+            value: round(clamp(input.costCertainty, 0, 1)),
+            note: '按核算组合的报价可信度、物流字段与 FBA 费来源',
+          },
+    )
+  }
 
   // ⑩ 历史命中率（Wilson 下界）
   let factor = 1

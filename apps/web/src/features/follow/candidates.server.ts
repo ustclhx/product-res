@@ -77,6 +77,7 @@ function sourceLabels(): Record<string, string> {
     manual: '人工填写',
     'selection-config': '选品配置',
     'risk-rules': '风险规则',
+    costing_scenario: '核算组合',
   }
   for (const c of webConnectors().all()) labels[c.id] = c.label
   return labels

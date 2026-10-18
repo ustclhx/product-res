@@ -63,6 +63,26 @@ const strong: DimensionResult[] = [
   },
 ]
 
+describe('置信度：成本确定性（M3）', () => {
+  const base = {
+    now: NOW,
+    dimensions: strong,
+    coverage: { snapshotDays: 30, memberCount: 5, sellerCount: 3 },
+    memberConfidences: [1],
+  }
+
+  it('传入核算的成本确定性时计入平均；未核算为空且不计入；省略时没有该项', () => {
+    const without = computeConfidence(base)
+    expect(item(without, 'cost-certainty')).toBeUndefined()
+    const empty = computeConfidence({ ...base, costCertainty: null })
+    expect(item(empty, 'cost-certainty')).toMatchObject({ value: null, note: '未核算' })
+    expect(empty.value).toBe(without.value)
+    const low = computeConfidence({ ...base, costCertainty: 0.3 })
+    expect(item(low, 'cost-certainty')?.value).toBe(0.3)
+    expect(low.value).toBeLessThan(without.value)
+  })
+})
+
 describe('置信度（design D6）', () => {
   it('证据充足、多来源一致时为高', () => {
     const result = computeConfidence({

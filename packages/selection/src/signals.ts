@@ -32,6 +32,8 @@ import type {
 export const INTERNAL_SOURCES = {
   config: 'selection-config',
   risk: 'risk-rules',
+  /** M3 核算矩阵选定（或可计算）的组合，来自 costing_scenario 快照 */
+  costing: 'costing_scenario',
 } as const
 
 /** 一个簇成员（平台商品）的某个指标序列 */
@@ -421,7 +423,26 @@ export interface ProfitInput {
   /** 各物流方案的落地成本；M3 核算前通常为空 */
   readonly landedCosts?: readonly LogisticsCost[] | null | undefined
   readonly fees?: FeeParams | undefined
+  /** M3 核算结果；给出时直接采用其毛利率（已含实际费率），不再按默认费率估算 */
+  readonly costed?: CostedProfit | null | undefined
 }
+
+/** 核算组合的利润结果（金额为最小单位整数） */
+export interface CostedProfit {
+  /** costing_scenario 的 ID，作为来源引用的实体 */
+  readonly scenarioId: string
+  /** 组合说明，如「供应商 A · FBA」 */
+  readonly plan: string
+  readonly currency: string
+  readonly salePriceMinor: number
+  readonly landedCostMinor: number
+  /** 净利润 ÷ 售价 */
+  readonly grossMargin: number
+  /** 是否为团队选定的组合（否则为可计算组合中毛利率最高的一个） */
+  readonly selected: boolean
+}
+
+const minor = (amount: number, currency: string) => `${(amount / 100).toFixed(2)} ${currency}`
 
 export function profit(input: ProfitInput): DimensionResult {
   const inputs: SourceRef[] = []
@@ -433,6 +454,28 @@ export function profit(input: ProfitInput): DimensionResult {
     inputs.push(ref('price', latest, member.entityId))
   }
   const price = median(latestPrices)
+  const costed = input.costed
+  if (costed) {
+    // 核算结果优先：售价、落地成本、平台费与退货预留都已在矩阵中按团队参数计算
+    const margin = costed.grossMargin
+    const costRef: SourceRef = {
+      ...internalRef('gross_margin', round(margin, 4), input.asOf, INTERNAL_SOURCES.costing),
+      entityId: costed.scenarioId,
+    }
+    return result(
+      'profit',
+      linearScale(margin, SCALES.margin.low, SCALES.margin.high),
+      [...inputs, costRef],
+      `核算${costed.selected ? '选定' : '最优'}组合「${costed.plan}」：售价 ${minor(costed.salePriceMinor, costed.currency)}，落地成本 ${minor(costed.landedCostMinor, costed.currency)}，毛利率 ${Math.round(margin * 100)}%`,
+      {
+        ...(price === null ? {} : { medianPrice: round(price) }),
+        bestMargin: round(margin, 4),
+        bestPlan: costed.plan,
+        source: INTERNAL_SOURCES.costing,
+        scenarioId: costed.scenarioId,
+      },
+    )
+  }
   if (price === null) return missing('profit', '无数据：没有竞品价格')
   const costs = input.landedCosts ?? []
   if (costs.length === 0) return missing('profit', '无数据：没有落地成本（待核算）')
@@ -576,10 +619,22 @@ export interface SupplyTimingInput {
   /** 核算的物流方案；为空时使用默认提前期 */
   readonly plans?: readonly LogisticsPlan[] | undefined
   readonly improved?: boolean | undefined
+  /** M3 核算组合给出的最晚决定日；给出时直接采用，不再按默认提前期推算 */
+  readonly costed?: CostedTiming | null | undefined
+}
+
+export interface CostedTiming {
+  readonly scenarioId: string
+  readonly plan: string
+  /** 核算矩阵算出的最晚决定日 */
+  readonly deadline: string
+  /** 总提前期（销售开始日 − 最晚决定日） */
+  readonly leadDays: number
 }
 
 export function supplyTiming(input: SupplyTimingInput): DimensionResult {
   const { asOf } = input
+  if (input.costed) return costedTiming(asOf, input.costed)
   if (!input.salesStart) return missing('supply-timing', '无数据：未关联销售节点')
   const usedDefaultLeadTime = !input.plans || input.plans.length === 0
   const plans: readonly LogisticsPlan[] = usedDefaultLeadTime
@@ -618,6 +673,39 @@ export function supplyTiming(input: SupplyTimingInput): DimensionResult {
       allPlansLate,
       usedDefaultLeadTime,
       bestPlan: plan,
+    },
+  )
+}
+
+/** 按核算组合的最晚决定日计算供应与时效；分数换算与默认路径一致 */
+function costedTiming(asOf: string, costed: CostedTiming): DimensionResult {
+  const { plan, deadline, leadDays } = costed
+  const slack = slackDays(deadline, asOf)
+  const late = slack < 0
+  const { onTimeMax, late: lateScore } = SCALES.supplyTiming
+  const ratio = leadDays > 0 ? slack / leadDays : 1
+  const score = late ? lateScore : onTimeMax * (1 - Math.min(Math.max(ratio, 0), 1))
+  const ref: SourceRef = {
+    ...internalRef('slack_days', slack, asOf, INTERNAL_SOURCES.costing),
+    entityId: costed.scenarioId,
+  }
+  return result(
+    'supply-timing',
+    score,
+    [ref],
+    late
+      ? `核算组合「${plan}」来不及：最晚决定日 ${deadline} 已过`
+      : `核算组合「${plan}」最晚决定日 ${deadline}，余量 ${slack} 天 / 提前期 ${leadDays} 天`,
+    {
+      deadline,
+      slackDays: slack,
+      leadDays,
+      // 核算只给出所选（或最优）组合；它来不及即视为来不及
+      allPlansLate: late,
+      usedDefaultLeadTime: false,
+      bestPlan: plan,
+      source: INTERNAL_SOURCES.costing,
+      scenarioId: costed.scenarioId,
     },
   )
 }
