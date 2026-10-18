@@ -19,6 +19,7 @@ import { log, newRequestId, withLogContext } from '@product-res/shared/log'
 import { createNodeStorage } from '@product-res/storage/node'
 import templateConfig from '../../../../template.config.ts'
 import { registerNodeDataSources } from '../datasources/node.ts'
+import { DATASYNC_QUEUE } from '../datasources/sync.ts'
 import { consumeJobsBatch, type JobsContext } from '../handlers.ts'
 import { type JobObserver, logJobObserver } from '../observer.ts'
 import { registerSelectionReview } from '../review/selection-review.ts'
@@ -159,6 +160,7 @@ export async function startNodeJobs(config: NodeEnv, options: NodeJobsOptions) {
           queues,
           scheduler,
           mock: config.DATASOURCE_MOCK === 'true',
+          producer: createNodeQueueProducer(db, DATASYNC_QUEUE).producer,
         })
         // 跟卖选品（add-follow-selection）：每日 04:00 SGT 归并、打分并生成线索；
         // 影子验证（add-shadow-validation）：05:00 打标签、周一 05:30 重算准备度、Keepa 回放队列

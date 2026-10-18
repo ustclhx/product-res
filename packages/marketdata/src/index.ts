@@ -14,6 +14,7 @@ export {
   reconcileExternalRemaining,
   release,
   reserve,
+  scheduledHeadroom,
   settle,
 } from './budgets.ts'
 export {

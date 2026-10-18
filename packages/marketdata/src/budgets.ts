@@ -1,5 +1,7 @@
 import {
   type BudgetSpec,
+  dailyAllowance,
+  daysRemainingInMonth,
   decideReservation,
   nextReset,
   periodKey,
@@ -246,6 +248,40 @@ export async function reconcileExternalRemaining(
         .set({ pausedReason: 'quota-mismatch', pausedUntil: nextReset(spec, now) })
         .where(eq(dataSource.id, sourceId))
     return mismatch
+  })
+}
+
+/**
+ * 定时任务在本周期（月度日分配时为今天）还能预扣的额度：只算到安全线，绝不计入安全线到硬上限的人工余量。
+ * 每日采集计划据此截断任务；实际调用前仍由 reserve 在事务内把关。分钟周期返回每分钟的容量。
+ */
+export async function scheduledHeadroom(
+  db: Database,
+  sourceId: string,
+  spec: BudgetSpec,
+  now: Date,
+): Promise<number> {
+  if (spec.period === 'minute') return Math.max(0, spec.safetyLine)
+  const key = periodKey(spec, now)
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .select()
+      .from(sourceBudget)
+      .where(and(eq(sourceBudget.sourceId, sourceId), eq(sourceBudget.periodKey, key)))
+    const used = row ? row.reserved + row.settled : 0
+    const toSafety = Math.max(0, spec.safetyLine - used)
+    if (
+      spec.period !== 'month' ||
+      (spec.monthlyAllocation ?? 'daily-rollover') !== 'daily-rollover'
+    )
+      return toSafety
+    const today = await usedToday(tx, sourceId, key, spec, now)
+    const allowance = dailyAllowance(
+      spec.safetyLine,
+      used - today,
+      daysRemainingInMonth(spec.timeZone, now),
+    )
+    return Math.min(toSafety, Math.max(0, allowance - today))
   })
 }
 
