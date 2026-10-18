@@ -37,6 +37,8 @@
 2. **本地 Orca worktree 数据库**：`scripts/orca/lib.sh` 默认容器名 `product-res-pg`，本机实际使用的是模板的 `saas-template-pg`，Orca 自动 setup 会跳过建库。目前手动加 `PRODUCT_RES_PG_CONTAINER=saas-template-pg`。可以考虑在本机起一个 `product-res-pg` 容器（换端口）或改默认值。
 3. **CI 中各包的集成测试被跳过**：turbo 严格环境模式没有透传 `MIGRATION_DATABASE_URL` 等变量，`pnpm test` 下 marketdata（以及模板的 entitlements 等）集成测试在 CI 里实际被跳过，只在本地运行。是否在 `turbo.json` 的 test 任务加 `passThroughEnv` 让它们在 CI 真正运行，需要你决定（会让 CI 变慢，且可能暴露模板集成测试的问题）。
 
+4. **模板的完整 e2e 套件未适配本项目**：`pnpm exec playwright test`（全部用例，CI 只跑 smoke）在 main 上 44 个失败，主要是模板对已关闭功能（营销页、i18n/英文、SEO、支付页面、AI 媒体、分析）的用例，以及按英文文案匹配的认证/后台用例（本项目默认中文）。本项目新增的用例单独运行全部通过；但这些用例里用 `waitForLoadState('networkidle')` 等待页面，在长时间连续运行后（dev server 负载高）偶发超时（costing-acceptance、follow-* 各出现过一次），重跑通过，之后可改为等待具体元素。是否清理或改写这些模板用例（删除已关闭功能的用例、按语言消息文件匹配文案）需要你决定；工作量中等。
+
 ## C. 数据源（M1b，凭据由你配置）
 
 - eBay Production、SP-API、Keepa、Jungle Scout、卖家精灵、DataForSEO 的账号/Key；Helium 10 是否有 API 或只能导出文件（需要真实导出样本）。凭据放服务器 `secrets/optional/<NAME>`。
