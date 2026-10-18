@@ -17,6 +17,7 @@ import {
   recommendation,
   riskFinding,
   riskRule,
+  type Scoped,
   type SeasonalNode,
   type SelectionDimension,
   scoped,
@@ -361,7 +362,8 @@ function parseScenario(row: {
  * 读取簇的核算状态（add-costing-decisions tasks 3.3）：
  * - 跟卖方式取计算日及之前最新一条线索的 follow_mode；
  * - 核算组合取最近一条有可用组合的线索：选定组合优先，否则取毛利率最高的可计算组合。
- *   新一天的线索没有核算行，所以不只看最新线索，否则核算次日维度又会变空。
+ *   核算中 / 待决定的簇的新线索会带上上一条的组合，但计算发生在写入当日线索之前，
+ *   且已决定的簇不复制，所以仍向前找，否则核算次日维度又会变空。
  */
 export async function loadClusterCosting(
   ctx: WorkspaceContext,
@@ -1121,6 +1123,13 @@ async function evaluateCluster(ctx: WorkspaceContext, input: ClusterInput) {
       })
       .orderBy(desc(lead.leadOn))
       .limit(1)
+    // 同一天重跑时线索已存在，只更新分数，不重复复制核算
+    const [existing] = await tx
+      .select(lead, {
+        where: and(eq(lead.clusterId, input.clusterId), eq(lead.leadOn, asOf)) as SQL,
+        fields: { id: lead.id },
+      })
+      .limit(1)
     const values = {
       score,
       grade: evaluation.grade === null ? null : GRADE_TO_DB[evaluation.grade],
@@ -1159,6 +1168,12 @@ async function evaluateCluster(ctx: WorkspaceContext, input: ClusterInput) {
       })
       .returning({ id: lead.id })
 
+    // 核算组合挂在具体线索上：核算中 / 待决定的簇换到新一天的线索时把组合（含选定标记与结果快照）
+    // 一并带过去，使簇的最新线索始终持有当前核算状态，待决定队列与跟卖决定只看最新线索即可。
+    // 已决定的簇只继承状态并保持锁定，决定与其组合留在原线索上，档案库按 decision 展示。
+    if (!existing && written && previous && CARRIED_STATUSES.has(previous.status))
+      await carryScenarios(tx, previous.id, written.id)
+
     // 流水线末步：冻结影子推荐（tasks 2.2）。线索 × 冻结日唯一，已冻结的不覆盖，
     // 所以同日重跑或之后改权重都不改变已冻结的分数与权重版本
     const frozen = freezeValues(input, result, 'shadow', { leadId: written?.id ?? null })
@@ -1168,6 +1183,44 @@ async function evaluateCluster(ctx: WorkspaceContext, input: ClusterInput) {
         .onConflictDoNothing()
     }
   })
+}
+
+/** 新一天的线索需要带上核算组合的状态 */
+const CARRIED_STATUSES: ReadonlySet<string> = new Set(['costing', 'pending'])
+
+/**
+ * 把上一条线索的核算组合复制到新线索；结果快照原样保留，并在 result.copiedFrom 记下来源，
+ * 计算时间沿用原组合（不是重算）。新线索已有同键组合时不覆盖。
+ */
+async function carryScenarios(tx: Scoped, fromLeadId: string, toLeadId: string) {
+  const rows = await tx.select(costingScenario, { where: eq(costingScenario.leadId, fromLeadId) })
+  if (rows.length === 0) return 0
+  const copied = await tx
+    .insert(
+      costingScenario,
+      rows.map((r) => ({
+        leadId: toLeadId,
+        quoteId: r.quoteId,
+        profileId: r.profileId,
+        mode: r.mode,
+        plannedQty: r.plannedQty,
+        salePriceMinor: r.salePriceMinor,
+        currency: r.currency,
+        improvement: r.improvement,
+        result: {
+          ...r.result,
+          copiedFrom: {
+            leadId: fromLeadId,
+            scenarioId: (asRecord(r.result.copiedFrom)?.scenarioId as string | undefined) ?? r.id,
+          },
+        },
+        selected: r.selected,
+        computedAt: r.computedAt,
+      })),
+    )
+    .onConflictDoNothing()
+    .returning({ id: costingScenario.id })
+  return copied.length
 }
 
 /**

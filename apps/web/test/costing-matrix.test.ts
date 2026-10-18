@@ -2,6 +2,7 @@ import { env } from 'cloudflare:workers'
 import {
   cluster,
   clusterMember,
+  clusterSignal,
   costingScenario,
   costParam,
   createDb,
@@ -14,17 +15,24 @@ import {
   member,
   organization,
   rawPayload,
+  readinessStat,
+  recommendation,
+  riskFinding,
   scoped,
+  scoringSetting,
   seasonalNode,
   supplier,
   supplierQuote,
   user,
+  weightSuggestion,
 } from '@product-res/db'
+import { runSelectionForWorkspace } from '@product-res/follow'
 import { setManualRate, upsertEntities, upsertObservations } from '@product-res/marketdata'
 import { newId } from '@product-res/shared'
-import { eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, type SQL } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
+  assertCostingEditable,
   type DecisionActor,
   decideLead,
   workbenchHome,
@@ -79,6 +87,12 @@ const view = (a: DecisionActor, leadId: string, options = {}) =>
 afterAll(async () => {
   for (const ws of spaces) {
     const s = scoped(db(), ws)
+    // 跨天用例运行了每日流水线：先删它写入的推荐、准备度、信号与风险
+    await s.delete(recommendation, undefined)
+    await s.delete(readinessStat, undefined)
+    await s.delete(weightSuggestion, undefined)
+    await s.delete(riskFinding, undefined)
+    await s.delete(clusterSignal, undefined)
     await s.delete(decision, undefined)
     await s.delete(leadEvent, undefined)
     await s.delete(costingScenario, undefined)
@@ -91,6 +105,7 @@ afterAll(async () => {
     await s.delete(cluster, undefined)
     await s.delete(direction, undefined)
     await s.delete(seasonalNode, undefined)
+    await s.delete(scoringSetting, undefined)
     await s.delete(member, undefined)
   }
   if (imports.length) {
@@ -586,5 +601,124 @@ describe('核算矩阵', () => {
     const v = await view(owner, seeded.leadId)
     expect(v.editable).toBe(false)
     expect(v.lead.status).toBe('followed')
+  })
+})
+
+// 线索按簇 × 日期每天生成：选定组合后跨天运行流水线，簇的最新线索继承核算状态，队列与决定按簇只处理一次
+describe('跨天的线索连续性', () => {
+  const day2 = '2026-10-19'
+  const day3 = '2026-10-20'
+  const runDay = async (a: DecisionActor, asOf: string) => {
+    const result = await runSelectionForWorkspace(a.db, a.workspaceId, { now: NOW, asOf })
+    expect(result.failures).toEqual([])
+  }
+  const leadOn = async (a: DecisionActor, clusterId: string, day: string) => {
+    const [row] = await scoped(a.db, a.workspaceId).select(lead, {
+      where: and(eq(lead.clusterId, clusterId), eq(lead.leadOn, day)) as SQL,
+    })
+    if (!row) throw new Error(`no lead on ${day}`)
+    return row
+  }
+  /** 第 1 天选定组合 → pending，再运行第 2 天流水线 */
+  async function pendingAcrossDays() {
+    const owner = await space()
+    const seeded = await seed(owner)
+    const good = await saveQuote(owner, seeded.clusterId, undefined, quote(seeded.supplierId))
+    const pick = { quoteId: good.id, profileId: seeded.direct.id, mode: 'same-source' as const }
+    const selected = await selectScenario(owner, seeded.leadId, pick, { plannedQty: 300 }, NOW)
+    expect(selected).toMatchObject({ leadId: seeded.leadId, status: 'pending' })
+    await runDay(owner, day2)
+    const second = await leadOn(owner, seeded.clusterId, day2)
+    return { owner, seeded, second, scenarioId: selected.scenarioId }
+  }
+
+  it('跟卖：第 2 天队列中该簇只出现一次并可直接跟卖；第 3 天新线索仍为已跟卖且核算锁定', async () => {
+    const { owner, seeded, second, scenarioId } = await pendingAcrossDays()
+    expect(second.status).toBe('pending')
+    const s = scoped(owner.db, owner.workspaceId)
+    const carried = await s.select(costingScenario, {
+      where: eq(costingScenario.leadId, second.id),
+    })
+    expect(carried).toEqual([
+      expect.objectContaining({
+        selected: true,
+        plannedQty: 300,
+        result: expect.objectContaining({
+          copiedFrom: { leadId: seeded.leadId, scenarioId },
+        }),
+      }),
+    ])
+
+    const home = await workbenchHome(owner, NOW)
+    expect(home.kpi.pending).toBe(1)
+    expect(home.queue).toEqual([
+      expect.objectContaining({
+        leadId: second.id,
+        deadline: '2026-11-06',
+        scenario: expect.objectContaining({ id: carried[0]?.id, landedCostMinor: 600 }),
+      }),
+    ])
+    // 停留在第 1 天线索的页面也解析到簇的最新线索
+    const stale = await view(owner, seeded.leadId)
+    expect(stale.lead.id).toBe(second.id)
+    expect(stale.selected?.id).toBe(carried[0]?.id)
+
+    const done = await decideLead(owner, second.id, {
+      kind: 'follow',
+      firstBatchQty: 300,
+      targetPriceMinor: 2499,
+      currency: 'XTS',
+      plannedListingOn: '2026-11-20',
+    })
+    expect(done).toMatchObject({ leadId: second.id, status: 'followed' })
+    const [d] = await s.select(decision, { where: eq(decision.id, done.decisionId) })
+    expect(d).toMatchObject({ leadId: second.id, scenarioId: carried[0]?.id })
+    expect((await workbenchHome(owner, NOW)).queue).toEqual([])
+    // 第 1 天的旧线索不能再次决定
+    await expect(
+      decideLead(owner, seeded.leadId, { kind: 'drop', reason: 'timing' }),
+    ).rejects.toMatchObject({ code: 'LEAD_DECIDED' })
+
+    await runDay(owner, day3)
+    const third = await leadOn(owner, seeded.clusterId, day3)
+    expect(third.status).toBe('followed')
+    for (const id of [third.id, second.id, seeded.leadId])
+      await expect(assertCostingEditable(owner, id)).rejects.toMatchObject({
+        code: 'LEAD_DECIDED',
+      })
+    const pick = {
+      quoteId: carried[0]?.quoteId as string,
+      profileId: seeded.direct.id,
+      mode: 'same-source' as const,
+    }
+    await expect(selectScenario(owner, third.id, pick, {}, NOW)).rejects.toMatchObject({
+      code: 'LEAD_DECIDED',
+    })
+    const locked = await view(owner, third.id)
+    expect(locked.editable).toBe(false)
+    expect(locked.lead.status).toBe('followed')
+    // 选定组合留在做决定的线索上，核算标签从 decision 取回
+    expect(locked.selected?.id).toBe(carried[0]?.id)
+    expect((await workbenchHome(owner, NOW)).queue).toEqual([])
+  })
+
+  it('放弃：从第 1 天的旧线索放弃也作用于最新线索；第 3 天新线索仍为已放弃且核算锁定', async () => {
+    const { owner, seeded, second } = await pendingAcrossDays()
+    const dropped = await decideLead(owner, seeded.leadId, { kind: 'drop', reason: 'low-margin' })
+    expect(dropped).toMatchObject({ leadId: second.id, status: 'dropped' })
+    const home = await workbenchHome(owner, NOW)
+    expect(home.queue).toEqual([])
+    expect(home.kpi).toMatchObject({ pending: 0, candidates: 0 })
+
+    await runDay(owner, day3)
+    const third = await leadOn(owner, seeded.clusterId, day3)
+    expect(third.status).toBe('dropped')
+    await expect(setFollowMode(owner, third.id, 'improved')).rejects.toMatchObject({
+      code: 'LEAD_DECIDED',
+    })
+    await expect(
+      saveQuote(owner, seeded.clusterId, undefined, quote(seeded.supplierId)),
+    ).rejects.toMatchObject({ code: 'LEAD_DECIDED' })
+    expect((await view(owner, third.id)).editable).toBe(false)
   })
 })

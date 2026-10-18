@@ -10,6 +10,7 @@ import {
   cluster,
   clusterMember,
   costingScenario,
+  decision,
   direction,
   type JsonValue,
   lead,
@@ -25,11 +26,16 @@ import {
 import { latestValue, readMetrics } from '@product-res/marketdata'
 import { addDays, DEFAULT_LEAD_TIMES } from '@product-res/selection'
 import { AppError } from '@product-res/shared'
-import { and, asc, eq, inArray, ne, type SQL } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, ne, type SQL, sql } from 'drizzle-orm'
 import { platformOfMarketplace } from '../follow/candidates.ts'
 import { assertWorkbenchWriter } from '../workbench/access.ts'
 import { todaySgt } from './dates.ts'
-import { assertCostingEditable, type DecisionActor } from './decisions.server.ts'
+import {
+  assertCostingEditable,
+  currentLeadOf,
+  type DecisionActor,
+  isClusterDecided,
+} from './decisions.server.ts'
 import {
   type ImprovementInput,
   improvementInput,
@@ -37,7 +43,6 @@ import {
   matrixOptions,
   type ScenarioPick,
 } from './inputs.ts'
-import { isLeadDecided } from './labels.ts'
 import {
   cellIssues,
   cellKey,
@@ -64,7 +69,8 @@ type Actor = Pick<DecisionActor, 'db' | 'workspaceId'>
 async function loadContext(actor: Actor, leadId: string, raw: MatrixOptions, now: Date) {
   const opts = matrixOptions.parse(raw)
   const s = scoped(actor.db, actor.workspaceId)
-  const leadRow = await s.findById(lead, leadId)
+  // 核算标签与写入都落到簇的最新线索：它继承了上一天的状态与核算组合
+  const leadRow = await currentLeadOf(s, leadId)
   const c = await s.findById(cluster, leadRow.clusterId)
   const platform = platformOfMarketplace(c.marketplace) ?? 'amazon'
   const today = todaySgt(now)
@@ -81,7 +87,7 @@ async function loadContext(actor: Actor, leadId: string, raw: MatrixOptions, now
       .select(logisticsProfile, { where: eq(logisticsProfile.platform, platform) })
       .orderBy(asc(logisticsProfile.name)),
     s.select(costingScenario, {
-      where: all(eq(costingScenario.leadId, leadId), eq(costingScenario.selected, true)),
+      where: all(eq(costingScenario.leadId, leadRow.id), eq(costingScenario.selected, true)),
     }),
   ])
   const supplierIds = [...new Set(quoteRows.map((q) => q.supplierId))]
@@ -280,10 +286,12 @@ export async function costingView(
   const matrix = buildCostingMatrix(ctx.input)
   const bestKey = matrix.best ? cellKey(matrix.best) : null
   const supplierName = new Map(ctx.suppliers.map((x) => [x.id, x.name]))
-  const sel = ctx.selected
+  const decided = await isClusterDecided(ctx.s, ctx.leadRow)
+  // 已决定的簇：新一天的线索只继承状态，选定组合留在做决定的线索上，从 decision 取回展示
+  const sel = ctx.selected ?? (decided ? await decidedScenario(ctx.s, ctx.leadRow.clusterId) : null)
   return {
     canWrite: actor.canWrite,
-    editable: !isLeadDecided(ctx.leadRow.status),
+    editable: !decided,
     today: ctx.today,
     lead: {
       id: ctx.leadRow.id,
@@ -335,6 +343,25 @@ export async function costingView(
 }
 export type CostingViewData = Awaited<ReturnType<typeof costingView>>
 
+/** 簇最近一次决定所用的组合 */
+async function decidedScenario(s: Context['s'], clusterId: string) {
+  const [row] = await s
+    .select(decision, {
+      where: all(
+        sql`${decision.leadId} in (select l.id from lead l where l.cluster_id = ${clusterId})`,
+        isNotNull(decision.scenarioId),
+      ),
+      fields: { scenarioId: decision.scenarioId },
+    })
+    .orderBy(desc(decision.decidedAt))
+    .limit(1)
+  if (!row?.scenarioId) return null
+  const [scenario] = await s.select(costingScenario, {
+    where: eq(costingScenario.id, row.scenarioId),
+  })
+  return scenario ?? null
+}
+
 /**
  * 选定组合：服务端按同样输入重算该格（不信任客户端结果），只有可用格可选；
  * 写 costing_scenario（同一线索只保留一个 selected）、线索 → pending、follow_mode 写回，并记 lead_event。
@@ -347,8 +374,9 @@ export async function selectScenario(
   now = new Date(),
 ) {
   assertWorkbenchWriter(actor)
-  await assertCostingEditable(actor, leadId)
-  const ctx = await loadContext(actor, leadId, { ...options, modes: [pick.mode] }, now)
+  const current = await assertCostingEditable(actor, leadId)
+  const ctx = await loadContext(actor, current.id, { ...options, modes: [pick.mode] }, now)
+  const target = ctx.leadRow.id
   const quote = ctx.input.quotes.find((q) => q.id === pick.quoteId)
   const profile = ctx.input.profiles.find((p) => p.id === pick.profileId)
   if (!quote || !profile) throw notFound()
@@ -363,9 +391,9 @@ export async function selectScenario(
 
   return scoped(actor.db, actor.workspaceId).transaction(async (tx) => {
     // 锁住线索行：与 decideLead 互斥，避免决定后仍写入核算
-    const [row] = await tx.select(lead, { where: eq(lead.id, leadId) }).for('update')
+    const [row] = await tx.select(lead, { where: eq(lead.id, target) }).for('update')
     if (!row) throw notFound()
-    if (isLeadDecided(row.status))
+    if (await isClusterDecided(tx, row))
       throw new AppError('LEAD_DECIDED', '线索已作出决定，核算已锁定；如需重新核算请新建线索', {
         status: 409,
       })
@@ -380,7 +408,7 @@ export async function selectScenario(
       computedAt: now,
     }
     const [saved] = await tx
-      .insert(costingScenario, { leadId, ...pick, ...values })
+      .insert(costingScenario, { leadId: target, ...pick, ...values })
       .onConflictDoUpdate({
         target: [
           costingScenario.leadId,
@@ -395,11 +423,11 @@ export async function selectScenario(
     await tx.update(
       costingScenario,
       { selected: false },
-      all(eq(costingScenario.leadId, leadId), ne(costingScenario.id, saved.id)),
+      all(eq(costingScenario.leadId, target), ne(costingScenario.id, saved.id)),
     )
-    await tx.updateById(lead, leadId, { status: 'pending', followMode: pick.mode })
+    await tx.updateById(lead, target, { status: 'pending', followMode: pick.mode })
     await tx.insert(leadEvent, {
-      leadId,
+      leadId: target,
       clusterId: row.clusterId,
       kind: 'status',
       payload: {
@@ -411,7 +439,7 @@ export async function selectScenario(
       },
       actorUserId: actor.userId,
     })
-    return { scenarioId: saved.id, status: 'pending' as const }
+    return { scenarioId: saved.id, leadId: target, status: 'pending' as const }
   })
 }
 
@@ -421,7 +449,7 @@ export async function setFollowMode(actor: DecisionActor, leadId: string, mode: 
   const row = await assertCostingEditable(actor, leadId)
   const s = scoped(actor.db, actor.workspaceId)
   return s.transaction(async (tx) => {
-    await tx.updateById(lead, leadId, { followMode: mode })
+    await tx.updateById(lead, row.id, { followMode: mode })
     await enterCosting(tx, row, actor.userId, 'follow-mode')
     return { followMode: mode }
   })
@@ -439,7 +467,7 @@ export async function saveImprovement(actor: DecisionActor, leadId: string, raw:
   }
   const s = scoped(actor.db, actor.workspaceId)
   return s.transaction(async (tx) => {
-    await tx.updateById(lead, leadId, { improvement: value })
+    await tx.updateById(lead, row.id, { improvement: value })
     await enterCosting(tx, row, actor.userId, 'improvement')
     return value
   })
