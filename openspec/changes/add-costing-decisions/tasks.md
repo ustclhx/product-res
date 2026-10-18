@@ -4,7 +4,7 @@
 
 ## 1. 核算纯函数
 
-- [ ] 1.1 `packages/costing`：阶梯价、MOQ、计费重量（首重续重 / 体积重 / 按方）、各成本项、净利润、保本价、毛利率、缺失输入报告、最优组合选择、成本确定性（design D2–D3）。验证：spec 场景（阶梯价、MOQ、体积重、保本价 $10.78、缺少重量、来不及）。
+- [x] 1.1 `packages/costing`：阶梯价、MOQ、计费重量（首重续重 / 体积重 / 按方）、各成本项、净利润、保本价、毛利率、缺失输入报告、最优组合选择、成本确定性（design D2–D3）。验证：spec 场景（阶梯价、MOQ、体积重、保本价 $10.78、缺少重量、来不及）。 证据：`packages/costing`（quote/shipping/costing/deadline/matrix/certainty/params），`test/basics.test.ts`、`test/costing.test.ts`、`test/matrix.test.ts` 共 34 例覆盖阶梯价 ¥12、低于 MOQ、体积重 1.0 kg、保本价 $10.78、缺少重量、来不及、禁运、最晚决定日 5/18、成本确定性与类目回退；`typecheck`、`check`、`check:deps` 通过。
 
 ## 2. 数据表与设置
 
