@@ -329,6 +329,9 @@ importers:
       '@product-res/follow':
         specifier: workspace:*
         version: link:../../packages/follow
+      '@product-res/insight':
+        specifier: workspace:*
+        version: link:../../packages/insight
       '@product-res/marketdata':
         specifier: workspace:*
         version: link:../../packages/marketdata

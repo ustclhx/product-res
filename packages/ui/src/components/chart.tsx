@@ -3,6 +3,7 @@ import {
   GridComponent,
   LegendComponent,
   MarkAreaComponent,
+  MarkLineComponent,
   RadarComponent,
   TooltipComponent,
 } from 'echarts/components'
@@ -21,6 +22,7 @@ echarts.use([
   LegendComponent,
   // 季节曲线用阴影区间标出节点销售窗口
   MarkAreaComponent,
+  MarkLineComponent,
   RadarComponent,
   TooltipComponent,
   CanvasRenderer,

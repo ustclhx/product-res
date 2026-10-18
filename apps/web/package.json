@@ -35,6 +35,7 @@
     "@product-res/email": "workspace:*",
     "@product-res/entitlements": "workspace:*",
     "@product-res/follow": "workspace:*",
+    "@product-res/insight": "workspace:*",
     "@product-res/marketdata": "workspace:*",
     "@product-res/platform": "workspace:*",
     "@product-res/risk": "workspace:*",
