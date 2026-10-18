@@ -1,0 +1,169 @@
+{
+  "checkedAt": "2026-10-16T17:58:55.820970+00:00",
+  "runtimeImageSha": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+  "local": {
+    "pnpmCheck": {
+      "exitCode": 0,
+      "existingWarnings": 4
+    },
+    "pnpmTypecheck": {
+      "exitCode": 0,
+      "tasks": 14,
+      "cacheHits": 8
+    },
+    "pythonBackupTests": {
+      "passed": 24
+    },
+    "pythonDeployTests": {
+      "passed": 11
+    },
+    "pythonBundleTests": {
+      "passed": 8
+    },
+    "proposedPatchGitApplyCheck": true,
+    "proposedPatchApplied": true,
+    "approvedFixtureCommit": "e5cdd87",
+    "finalEvidencePnpmCheck": {
+      "exitCode": 0,
+      "existingWarnings": 4
+    }
+  },
+  "server": {
+    "queueEngine": {
+      "passed": 14,
+      "failed": 0
+    },
+    "scheduler": {
+      "passed": 10,
+      "failed": 0,
+      "realStaleHeartbeatSeconds": 601
+    },
+    "workflowFirst": {
+      "passed": 10,
+      "failed": 1,
+      "skipped": 0
+    },
+    "workflowLong": {
+      "passed": true,
+      "durationSeconds": 3675.357646,
+      "earlyHeldSeconds": 3672.115415
+    },
+    "originalRecoveryTargetCpu05Cpu1Cpu2": "all failed unchanged deadline + 1000ms assertion",
+    "readonlyPitrChecksPerBucket": 15,
+    "logicalRestoreChecks": 11,
+    "rebootPerformed": true,
+    "workflowApprovedFast": {
+      "passed": 10,
+      "failed": 0,
+      "skippedLong": 1,
+      "report": "workflow-approved-fast.json"
+    },
+    "workflowComposite": {
+      "uniqueCases": 11,
+      "singleAllGreenSuiteRun": false,
+      "accepted": true,
+      "report": "workflow-acceptance.json"
+    },
+    "originalFailuresPreserved": true,
+    "rebootChecksPassed": 21,
+    "rebootReport": "reboot.json",
+    "postbootSessionAndFilePassed": true,
+    "nonSelfhostBaselinePreserved": 15,
+    "finalResidentServicesHealthy": 6,
+    "temporaryHelperExitCodes": [0, 0]
+  },
+  "openspecStrict": {
+    "add-selfhost-foundation": "valid",
+    "add-selfhost-job-engine": "valid",
+    "add-selfhost-storage-observability": "valid",
+    "add-selfhost-delivery": "valid"
+  },
+  "completedCiBeforeThisEvidenceBatch": {
+    "at": "2026-10-16T16:59:56.479474+00:00",
+    "head": "e02312b",
+    "scope": "completed CI for committed evidence batch; later evidence-only commits require fresh CI",
+    "checks": [
+      {
+        "link": "https://github.com/ustclhx/product-res/actions/runs/38933383792/job/117082698380",
+        "name": "check",
+        "state": "SUCCESS"
+      },
+      {
+        "link": "https://github.com/ustclhx/product-res/actions/runs/38933383792/job/117082698083",
+        "name": "node",
+        "state": "SUCCESS"
+      },
+      {
+        "link": "https://github.com/ustclhx/product-res/actions/runs/38933383792/job/117082698580",
+        "name": "e2e-smoke",
+        "state": "SUCCESS"
+      }
+    ]
+  },
+  "fixtureCommitCi": {
+    "head": "e5cdd87",
+    "checks": [
+      {
+        "link": "https://github.com/ustclhx/product-res/actions/runs/38941875863/job/117111262830",
+        "name": "images (arm64, ubuntu-24.04-arm)",
+        "state": "IN_PROGRESS"
+      },
+      {
+        "link": "https://github.com/ustclhx/product-res/actions/runs/38941875863/job/117111262948",
+        "name": "images (amd64, ubuntu-24.04)",
+        "state": "IN_PROGRESS"
+      },
+      {
+        "link": "https://github.com/ustclhx/product-res/actions/runs/38941875894/job/117111263651",
+        "name": "compose",
+        "state": "SUCCESS"
+      },
+      {
+        "link": "https://github.com/ustclhx/product-res/actions/runs/38941875900/job/117111263712",
+        "name": "check",
+        "state": "SUCCESS"
+      },
+      {
+        "link": "https://github.com/ustclhx/product-res/actions/runs/38941875859/job/117111262992",
+        "name": "local-delivery",
+        "state": "SUCCESS"
+      },
+      {
+        "link": "https://github.com/ustclhx/product-res/actions/runs/38941875900/job/117111263548",
+        "name": "node",
+        "state": "SUCCESS"
+      },
+      {
+        "link": "https://github.com/ustclhx/product-res/actions/runs/38941875900/job/117111263222",
+        "name": "e2e-smoke",
+        "state": "SUCCESS"
+      }
+    ],
+    "note": "check/node/e2e-smoke/compose/local-delivery success; dual-arch image checks still in progress at this snapshot"
+  },
+  "evidenceAudit": {
+    "sensitivePatternFindings": 0,
+    "missingLinks": 0,
+    "rawResourceHashAndCountValid": true
+  },
+  "openspecProgress": {
+    "foundation": {
+      "complete": 32,
+      "total": 33,
+      "remaining": "9.4 coordinator review"
+    },
+    "jobEngine": {
+      "complete": 32,
+      "total": 32
+    },
+    "storageObservability": {
+      "complete": 18,
+      "total": 18
+    },
+    "delivery": {
+      "complete": 32,
+      "total": 33,
+      "remaining": "7.4 coordinator review"
+    }
+  }
+}

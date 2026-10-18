@@ -1,0 +1,45 @@
+{
+  "sourceSha": "80983d29f83cb5b57563fc8360119793cf8c12be",
+  "publishRun": "https://github.com/ustclhx/product-res/actions/runs/38573156122",
+  "fixture": false,
+  "cleanDirectoryConfig": true,
+  "runtimeSource": "Git objects at sourceSha",
+  "buildOrApplicationSourceRequired": false,
+  "images": {
+    "web": "ghcr.io/ustclhx/product-res/web@sha256:05bce5fada4dfafe4a91acd41cd1832d1c32f6113a1d230ce1ced53b35f3f1a3",
+    "jobs": "ghcr.io/ustclhx/product-res/jobs@sha256:e84f9eb2bdd4b9400f04b72cd6e9e168fd54b593da53f2d32f1261108bfafddd",
+    "migrate": "ghcr.io/ustclhx/product-res/migrate@sha256:2c5f8b35a5f13bfef6bcd1698724b0ea1e8614f86ab743a7f44fed8b17fb96a8",
+    "postgres": "ghcr.io/ustclhx/product-res/postgres@sha256:1abbb015fffe3f9f69b9d909cd61b96aa87b95a873e43175ac76b39a2f521af5",
+    "valkey": "ghcr.io/ustclhx/product-res/valkey@sha256:1229b152f742f1522dc8a87e77062a5c78f2fce94506eeda08844186eb924f80",
+    "caddy": "ghcr.io/ustclhx/product-res/caddy@sha256:8ec6b136f27a126718a22e8f1e107dcc0d7857a902e614b1eba44ebde01daa3d",
+    "object-storage": "ghcr.io/ustclhx/product-res/object-storage@sha256:8b8dcf877370434ae6c5a280d1d3eca458051c55a656c959695a773b89de1133",
+    "backup": "ghcr.io/ustclhx/product-res/backup@sha256:fffe4b509144b8c82cd707b5d433be6749a8b1ed551ea5d86599fd74a5d6099a"
+  },
+  "checksums": {
+    ".env.example": "490ce92538c4a47bf599245373614ecd51eca0c2faced88492abd668d568ec05",
+    "Caddyfile.object-storage": "a138764489daac384ac0e4dbc7314698d46b1731caba67417232c176351cbec7",
+    "OPERATIONS.md": "785b26aba3d96528aa6af1fde9bcbbe75385524478bd8d00998db0e9f84bfba0",
+    "README.md": "32919c1ac219783de9edc3491cec177b4d59de8c8894c484335a66922e65ac7e",
+    "compose.backup.yaml": "1d0b3a2f6cd576876a057bb456d16a0ad62fd1b7ef011743ec159aa24ae2ea85",
+    "compose.object-storage.yaml": "e418497b187d216ed4a8de7030ae4f77c2adf3b13dfee2eaf012eac6a17afc25",
+    "compose.proxy.yaml": "247b459641d8969c6a2190d98786aa7ebbbe5fb80a15988740aed79e86c8a2d4",
+    "compose.yaml": "2ab71c91bee7d9cee76585bf24579c802ed224916edb6b1af26cf03f3bb952a2",
+    "deploy.py": "836a4d8c352c54dd4bbd9124ba7c2c80e994746c9be67e8be9cec2f464b5ce1f",
+    "deploy.sh": "8064808e5d81a4deb200e01a3082893fbe3d7527c1dc79425a0ff74531357843",
+    "health.py": "07df3cad2845bf45e9cc2666efae99524a2095711eb02e8d3f005d8446479846",
+    "image-catalog.json": "17f0bce7dfca0944fb2dc5fe12578061f919dad6ef8d729692b9eb74ff65ffd0",
+    "image-set.json": "f25d60339651b8e30dcf200a5fba48e450fd3542ea8b262786c116d3739994b6",
+    "images.env": "f6aa8fce26022c2e9b63004890b419f705c3d49d12c78c69cf13af1412d8113d",
+    "init-firewall.sh": "6693a9aab0d3bfbf9af8878f78f95a31372687a6bdb9eb9486f3a4a78bd5632f",
+    "init-server.py": "79e46e6a601cba6d056d49eb04cfa8a87e3ed41f2b0c494563c59a844828372a",
+    "init-server.sh": "d91a299c1a5be9634e8402c9e756d7b1c9e8e7502d2eef99939c7fea365f9329",
+    "object-storage-init.mjs": "ef9fbb9f509961f9ff77fea0c9eacf04e2a16a56909942b850de9e52de23af7e",
+    "release/bundle.py": "923192905bccc981d2bc4972f7d850a6875fb24f6c4e94031019e39a5be8f63b",
+    "secrets.example": "857c3759da84c48961822d735f8fcbbbfdbcd0a83cd20a52c6e9aa812714ba05"
+  },
+  "archiveSha256": "b73ef8af881168f06213ddcac9d2f882cf6fa6a0937cf1b4dd8e1b4e33d88ed1",
+  "limitations": [
+    "This immutable source-SHA deployment bundle uses the original 17-file runtime whitelist; restore/drill/replica materials are not included.",
+    "B/D ownership acceptance and real server group 7 remain pending."
+  ]
+}

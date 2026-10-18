@@ -1,0 +1,79 @@
+{
+  "id": "WH-2VP98395RE5073433-7B321684F76048538",
+  "event_version": "1.0",
+  "create_time": "2026-10-14T17:08:44.800Z",
+  "resource_type": "capture",
+  "resource_version": "2.0",
+  "event_type": "PAYMENT.CAPTURE.COMPLETED",
+  "resource": {
+    "id": "14549073EE7057637",
+    "amount": {
+      "currency_code": "USD",
+      "value": "0.01"
+    },
+    "final_capture": true,
+    "seller_protection": {
+      "status": "NOT_ELIGIBLE"
+    },
+    "seller_receivable_breakdown": {
+      "gross_amount": {
+        "currency_code": "USD",
+        "value": "0.01"
+      },
+      "paypal_fee": {
+        "currency_code": "USD",
+        "value": "0.01"
+      },
+      "net_amount": {
+        "currency_code": "USD",
+        "value": "0.00"
+      }
+    },
+    "custom_id": "paypal-worker-independent-card-recording",
+    "status": "REFUNDED",
+    "processor_response": {
+      "avs_code": "Y",
+      "cvv_code": "S",
+      "response_code": "0000"
+    },
+    "supplementary_data": {
+      "related_ids": {
+        "order_id": "6KE705423D766922N"
+      }
+    },
+    "payee": {
+      "merchant_id": "MERCHANTRECORDED"
+    },
+    "create_time": "2026-10-14T17:08:39Z",
+    "update_time": "2026-10-14T17:08:42Z",
+    "links": [
+      {
+        "href": "https://api.sandbox.paypal.com/v2/payments/captures/14549073EE7057637",
+        "rel": "self",
+        "method": "GET"
+      },
+      {
+        "href": "https://api.sandbox.paypal.com/v2/payments/captures/14549073EE7057637/refund",
+        "rel": "refund",
+        "method": "POST"
+      },
+      {
+        "href": "https://api.sandbox.paypal.com/v2/checkout/orders/6KE705423D766922N",
+        "rel": "up",
+        "method": "GET"
+      }
+    ]
+  },
+  "links": [
+    {
+      "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-2VP98395RE5073433-7B321684F76048538",
+      "rel": "self",
+      "method": "GET"
+    },
+    {
+      "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-2VP98395RE5073433-7B321684F76048538/resend",
+      "rel": "resend",
+      "method": "POST"
+    }
+  ]
+}

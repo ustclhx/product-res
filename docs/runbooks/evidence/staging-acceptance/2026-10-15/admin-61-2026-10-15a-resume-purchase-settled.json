@@ -1,0 +1,98 @@
+{
+  "runId": "admin-61-2026-10-15a",
+  "recordedAt": "2026-10-14T19:50:31.223Z",
+  "data": {
+    "state": {
+      "readOnlyTransaction": true,
+      "roleCannotWritePayment": true,
+      "snapshot": {
+        "ledgerTotal": 1024,
+        "activeRemaining": 1024,
+        "held": 0,
+        "debt": 0,
+        "negativeGrants": 0,
+        "reconciliationDifference": 0
+      },
+      "purchases": [
+        {
+          "id": "01a13bf7-4015-7381-ad26-d8f0be16989b",
+          "status": "paid",
+          "provider": "stripe",
+          "amount": 1000,
+          "currency": "USD",
+          "paidAt": "2026-10-14T19:50:18+00:00"
+        }
+      ],
+      "payments": [
+        {
+          "id": "01a13bf7-422f-734e-bf15-31eca9c442f7",
+          "purchaseId": "01a13bf7-4015-7381-ad26-d8f0be16989b",
+          "provider": "stripe",
+          "providerPaymentId": "pi_3UQYBqL3UTpBAoXo0b56s9ef",
+          "status": "succeeded",
+          "amount": 1000,
+          "currency": "USD",
+          "refundedAmount": 0,
+          "paidAt": "2026-10-14T19:50:18+00:00"
+        }
+      ],
+      "grants": [
+        {
+          "id": "01a13bf7-42da-74c7-a544-f6ca524d5bbb",
+          "paymentId": "01a13bf7-422f-734e-bf15-31eca9c442f7",
+          "source": "purchase",
+          "sourceRef": "01a13bf7-422f-734e-bf15-31eca9c442f7",
+          "amount": 1000,
+          "remaining": 1000,
+          "status": "active"
+        }
+      ],
+      "ledger": [
+        {
+          "id": "01a13bf7-4324-77ad-955d-977da6edd9f2",
+          "type": "grant",
+          "delta": 1000,
+          "grantId": "01a13bf7-42da-74c7-a544-f6ca524d5bbb",
+          "refType": "purchase",
+          "refId": "01a13bf7-422f-734e-bf15-31eca9c442f7",
+          "createdAt": "2026-10-14T19:50:21.690919+00:00"
+        }
+      ],
+      "refundRequests": [],
+      "refunds": [],
+      "webhooks": [
+        {
+          "id": "01a13bf7-3ca0-70ea-80c3-80be9dc44018",
+          "providerEventId": "evt_1UQYBsL3UTpBAoXo5fkhPqcE",
+          "type": "checkout.session.completed",
+          "status": "processed",
+          "attempts": 1,
+          "testMode": true,
+          "apiVersion": "2026-09-30.endive",
+          "receivedAt": "2026-10-14T19:50:21.113938+00:00",
+          "processedAt": "2026-10-14T19:50:22.79+00:00",
+          "hasError": false
+        }
+      ],
+      "audits": [],
+      "untouchedPaypalPaymentDigest": "0ac6a8406de25505f1fbec53bfb26d14",
+      "untouchedPaypalRefundDigest": "d751713988987e9331980363e24189ce",
+      "untouchedOtherRefundRequestDigest": "cb2c2abeea9e7e44099109bcbbb18993"
+    },
+    "provider": {
+      "providerPaymentId": "pi_3UQYBqL3UTpBAoXo0b56s9ef",
+      "livemode": false,
+      "status": "succeeded",
+      "amount": 1000,
+      "amountReceived": 1000,
+      "currency": "usd",
+      "checkoutStatus": "complete",
+      "checkoutPaymentStatus": "paid"
+    },
+    "originalSessionReused": true,
+    "newCheckoutCreationCount": 0,
+    "cardSubmissionCount": 1,
+    "paidRetries": 0,
+    "billingReturnObserved": true
+  }
+}

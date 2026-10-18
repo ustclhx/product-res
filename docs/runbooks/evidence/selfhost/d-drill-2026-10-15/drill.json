@@ -1,0 +1,2220 @@
+{
+  "sha": "598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+  "sourceRevision": "598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+  "harnessRevision": "8b1c3cf0c77c204aa0ebaf5284cbc6c06c03a0cd",
+  "sourceDirty": false,
+  "full": true,
+  "restoreSuite": true,
+  "releaseDrill": true,
+  "passed": true,
+  "cleaned": true,
+  "events": [
+    {
+      "event": "release.provenance",
+      "sourceRevision": "598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+      "harnessRevision": "8b1c3cf0c77c204aa0ebaf5284cbc6c06c03a0cd",
+      "sourceDirty": false,
+      "images": {
+        "web": "ghcr.io/ustclhx/product-res/web@sha256:2696ff833d692cddac8d510fe648b10f361ad41b66fa87aa5d0666c4e8fa6979",
+        "jobs": "ghcr.io/ustclhx/product-res/jobs@sha256:8241f6426ae06e1b143ce6e3d3c919904bdc472f90645f06d0d201b088e7012d",
+        "migrate": "ghcr.io/ustclhx/product-res/migrate@sha256:77f0a708d07ef1f209b33153dfd7793c32446ce396525600c6279ca59d939e52",
+        "postgres": "ghcr.io/ustclhx/product-res/postgres@sha256:69afef1287f173dd9596200529a95554b49f36bf8fe254331bb8a3ccc16f11ba",
+        "valkey": "ghcr.io/ustclhx/product-res/valkey@sha256:5bab9fa251b160746e787bc2987aac9b1df24d19c56c56ce3413726ab6919c0a",
+        "caddy": "ghcr.io/ustclhx/product-res/caddy@sha256:bf16c6ffcd6d05980b927e932b8252487b722d5223222400e5d70b04784d1154",
+        "object-storage": "ghcr.io/ustclhx/product-res/object-storage@sha256:be1727a37710debb38a01bd1b0c8e2df2cad8bcbb1c200c92b966fcb59337b17",
+        "backup": "ghcr.io/ustclhx/product-res/backup@sha256:27197e1c7921e65b6d8bd9042d8acedd3c7bfdfcaedf6ceafcb7a7f45b79b3bb"
+      },
+      "bundleVerified": true,
+      "imageContainedRuntime": true
+    },
+    {
+      "event": "backup.fixture",
+      "mode": "release-drill",
+      "project": "selfhost-d-drill-d5321cb4c968",
+      "noPublishedPorts": true,
+      "internalOnly": true
+    },
+    {
+      "event": "backup.bucket_ready"
+    },
+    {
+      "event": "backup.production_schemas",
+      "businessSql": true,
+      "dbosMigrate": true
+    },
+    {
+      "event": "backup.configuration",
+      "fileSecretsNonRoot": true,
+      "missingFileRejected": true,
+      "fileValueConflictRejected": true,
+      "invalidTlsRejected": true,
+      "selfSignedCaVerified": true
+    },
+    {
+      "event": "backup.real_cycle",
+      "baseCount": 1,
+      "walArchived": true,
+      "dumpUploaded": true,
+      "scheduleSlot": "2026-10-14T22:06:00Z",
+      "runtimeUid": 999,
+      "healthy": true
+    },
+    {
+      "event": "backup.logical_restore",
+      "customFormatList": true,
+      "marker": 17,
+      "job": "pending",
+      "dbos": "pending",
+      "appDml": true,
+      "readonlySelect": true,
+      "readonlyWrite": false,
+      "appSuper": false,
+      "appCreate": false,
+      "migratorCreate": true,
+      "roleMaterial": true,
+      "databaseAcl": true,
+      "productionSchemas": true
+    },
+    {
+      "event": "backup.schedule_restart",
+      "successfulSlotPreserved": true,
+      "noDuplicateBase": true
+    },
+    {
+      "event": "backup.gap_protection",
+      "missingWalRejected": true,
+      "noDelete": true
+    },
+    {
+      "event": "backup.retention_plan",
+      "plan": {
+        "plannedAt": "2026-10-14T22:08:28.790519Z",
+        "policy": {
+          "dailyDays": 7,
+          "weeklyWeeks": 4,
+          "weeklyDay": 0
+        },
+        "daily": ["base_00000001000000000000000A", "base_00000001000000000000000B"],
+        "weekly": [
+          "base_00000001000000000000000B",
+          "base_00000001000000000000000A",
+          "base_000000010000000000000009",
+          "base_000000010000000000000007"
+        ],
+        "missingWeeklyAnchors": [],
+        "retained": [
+          "base_000000010000000000000007",
+          "base_000000010000000000000009",
+          "base_00000001000000000000000A",
+          "base_00000001000000000000000B"
+        ],
+        "oldest": "base_000000010000000000000007",
+        "latest": "base_00000001000000000000000B",
+        "candidates": ["base_000000010000000000000003"],
+        "preserveFromWal": "000000010000000000000007",
+        "clusterId": "7696648614416543780",
+        "timeline": 1,
+        "latestFinish": "2026-10-14T22:08:15.196702Z",
+        "latestFinishLsn": 184549664,
+        "execution": {
+          "dryRun": true,
+          "oldest": "base_000000010000000000000007",
+          "candidates": ["base_000000010000000000000003"],
+          "replica": "not_configured",
+          "continuousUntil": "2026-10-14T22:08:23.291531Z",
+          "lastWal": "00000001000000000000000C"
+        }
+      },
+      "originalDates": [
+        {
+          "backupId": "base_000000010000000000000003",
+          "startTime": "2026-10-14T22:07:50.233743Z",
+          "finishTime": "2026-10-14T22:07:51.103776Z"
+        },
+        {
+          "backupId": "base_000000010000000000000007",
+          "startTime": "2026-10-14T22:08:06.681941Z",
+          "finishTime": "2026-10-14T22:08:07.626593Z"
+        },
+        {
+          "backupId": "base_000000010000000000000009",
+          "startTime": "2026-10-14T22:08:10.486212Z",
+          "finishTime": "2026-10-14T22:08:11.424516Z"
+        },
+        {
+          "backupId": "base_00000001000000000000000A",
+          "startTime": "2026-10-14T22:08:12.483557Z",
+          "finishTime": "2026-10-14T22:08:13.419179Z"
+        },
+        {
+          "backupId": "base_00000001000000000000000B",
+          "startTime": "2026-10-14T22:08:14.38432Z",
+          "finishTime": "2026-10-14T22:08:15.196702Z"
+        }
+      ],
+      "simulatedDates": [
+        {
+          "backupId": "base_000000010000000000000003",
+          "startTime": "2026-09-04T22:08:17.769Z",
+          "finishTime": "2026-09-04T22:08:17.769Z"
+        },
+        {
+          "backupId": "base_000000010000000000000007",
+          "startTime": "2026-09-21T02:00:00Z",
+          "finishTime": "2026-09-21T02:00:00Z"
+        },
+        {
+          "backupId": "base_000000010000000000000009",
+          "startTime": "2026-09-28T02:00:00Z",
+          "finishTime": "2026-09-28T02:00:00Z"
+        },
+        {
+          "backupId": "base_00000001000000000000000A",
+          "startTime": "2026-10-05T02:00:00Z",
+          "finishTime": "2026-10-05T02:00:00Z"
+        },
+        {
+          "backupId": "base_00000001000000000000000B",
+          "startTime": "2026-10-14T22:08:14.38432Z",
+          "finishTime": "2026-10-14T22:08:15.196702Z"
+        }
+      ],
+      "metadataOnlyAged": true,
+      "actualBackupCount": 5,
+      "weeklyDate": "2026-09-21T02:00:00.000Z",
+      "simulatedWeeklyOffsetDays": 21
+    },
+    {
+      "event": "backup.oldest_weekly_pitr",
+      "backupId": "base_000000010000000000000007",
+      "retentionDateSimulated": true,
+      "retainedAgeDays": 23.839319421296295,
+      "realTarget": "2026-10-14T22:08:08.319539Z",
+      "beforePresent": true,
+      "afterAbsent": true,
+      "historyArchived": false,
+      "historyDeferredToReplicaPhase": true,
+      "elapsedMs": 4612
+    },
+    {
+      "event": "backup.idle_upper_bound",
+      "target": "2026-10-14 22:08:23.291531+00",
+      "reached": true,
+      "businessWritesAfterVerify": false
+    },
+    {
+      "event": "backup.disk_failure",
+      "nonzero": true,
+      "statusFailed": true,
+      "temporaryFiles": 0
+    },
+    {
+      "event": "backup.archive_upload_failure",
+      "nonzero": true,
+      "unarchivedWalRetained": true,
+      "archiverFailuresIncreased": true,
+      "dumpStatusFailed": true,
+      "newBaseFailed": true,
+      "failedCycleNoDelete": true
+    },
+    {
+      "event": "backup.failure_recovery",
+      "archiveRetried": true,
+      "dumpRecovered": true
+    },
+    {
+      "event": "restore.primary",
+      "report": {
+        "project": "selfhost-restore-d-drill-f68ba296f50b",
+        "backupId": "base_000000010000000000000007",
+        "targetTime": "2026-10-14T22:08:08.319539Z",
+        "clusterId": "7696648614416543780",
+        "pgMajor": 17,
+        "actualReplayTime": null,
+        "replayLsn": "0/8002E80",
+        "elapsedSeconds": 8.203,
+        "checks": [
+          {
+            "name": "pg17",
+            "ok": true
+          },
+          {
+            "name": "schemas",
+            "ok": true
+          },
+          {
+            "name": "business_tables",
+            "ok": true
+          },
+          {
+            "name": "engine_tables",
+            "ok": true
+          },
+          {
+            "name": "constraints",
+            "ok": true
+          },
+          {
+            "name": "roles",
+            "ok": true
+          },
+          {
+            "name": "role_permissions",
+            "ok": true
+          },
+          {
+            "name": "credits_balance",
+            "ok": true
+          },
+          {
+            "name": "markers",
+            "ok": true
+          },
+          {
+            "name": "schemas",
+            "ok": true
+          },
+          {
+            "name": "database-acl",
+            "ok": true
+          },
+          {
+            "name": "task-state",
+            "ok": true
+          },
+          {
+            "name": "credit-snapshot",
+            "ok": true
+          }
+        ],
+        "status": "validated_paused",
+        "phase": "validated",
+        "error": null,
+        "errorType": null,
+        "errorLine": null,
+        "cleaned": null
+      },
+      "target": "2026-10-14T22:08:08.319539Z",
+      "beforePresent": true,
+      "afterAbsent": true
+    },
+    {
+      "event": "restore.promote",
+      "explicit": true,
+      "isolated": true
+    },
+    {
+      "event": "restore.diagnostic",
+      "report": {
+        "project": "selfhost-restore-d-drill-72ac275557eb",
+        "backupId": "base_000000010000000000000007",
+        "targetTime": "2026-10-15T22:10:04.433000Z",
+        "clusterId": "7696648614416543780",
+        "pgMajor": 17,
+        "actualReplayTime": null,
+        "replayLsn": null,
+        "elapsedSeconds": 7.393,
+        "checks": null,
+        "status": "failed",
+        "phase": "replay",
+        "error": "RESTORE_CHAIN_OR_TARGET_INSUFFICIENT",
+        "errorType": "RestoreError",
+        "errorLine": 333,
+        "cleaned": null
+      }
+    },
+    {
+      "event": "restore.diagnostic",
+      "report": {
+        "project": "selfhost-restore-d-drill-3b0c533f992f",
+        "backupId": "base_000000010000000000000007",
+        "targetTime": "2026-10-14T22:08:08.319539Z",
+        "clusterId": "7696648614416543780",
+        "pgMajor": 17,
+        "actualReplayTime": null,
+        "replayLsn": null,
+        "elapsedSeconds": 6.018,
+        "checks": null,
+        "status": "failed",
+        "phase": "replay",
+        "error": "RESTORE_RECOVERY_FAILED",
+        "errorType": "RestoreError",
+        "errorLine": 336,
+        "cleaned": null
+      }
+    },
+    {
+      "event": "restore.boundaries",
+      "existingPathRejected": true,
+      "missingWalRejected": true,
+      "beyondUpperBoundRejected": true
+    },
+    {
+      "event": "restore.diagnostic",
+      "report": {
+        "project": "selfhost-restore-d-drill-6ba1cefaeb72",
+        "backupId": "base_000000010000000000000007",
+        "targetTime": "2026-10-14T22:08:08.319539Z",
+        "clusterId": "7696648614416543780",
+        "pgMajor": 17,
+        "actualReplayTime": null,
+        "replayLsn": null,
+        "elapsedSeconds": 7.726,
+        "checks": [
+          {
+            "name": "pg17",
+            "ok": true
+          },
+          {
+            "name": "schemas",
+            "ok": true
+          },
+          {
+            "name": "business_tables",
+            "ok": true
+          },
+          {
+            "name": "engine_tables",
+            "ok": true
+          },
+          {
+            "name": "constraints",
+            "ok": true
+          },
+          {
+            "name": "roles",
+            "ok": true
+          },
+          {
+            "name": "role_permissions",
+            "ok": true
+          },
+          {
+            "name": "credits_balance",
+            "ok": true
+          },
+          {
+            "name": "expected-failure",
+            "ok": false
+          }
+        ],
+        "status": "failed",
+        "phase": "replay",
+        "error": "RESTORE_CHECK_FAILED",
+        "errorType": "RestoreError",
+        "errorLine": 175,
+        "cleaned": null
+      }
+    },
+    {
+      "event": "restore.failed_drill",
+      "nonzero": true,
+      "diagnosisRetained": true,
+      "volumeRetainedUntilExplicitCleanup": true
+    },
+    {
+      "event": "replica.sync",
+      "complete": true,
+      "repeated": true,
+      "interruptedResumed": true,
+      "independentCredentials": true,
+      "dump": true,
+      "continuousUntil": "2026-10-14 22:09:50.893684+00",
+      "lagSeconds": 55.28059
+    },
+    {
+      "event": "replica.history",
+      "realPromotionHistoryCopied": true,
+      "primaryTimeline": 1,
+      "promotedFixtureTimeline": 2,
+      "chainVerifiedBeforeHistory": true,
+      "laterPrimaryVerificationOrRetention": false
+    },
+    {
+      "event": "replica.failure",
+      "nonzero": true,
+      "primaryArchiveIndependent": true,
+      "recovered": true
+    },
+    {
+      "event": "replica.source_delete",
+      "deletionNotPropagated": true
+    },
+    {
+      "event": "replica.final_bound",
+      "configured": false,
+      "ok": true,
+      "lastAttempt": "2026-10-14T22:12:00.989950Z",
+      "running": false,
+      "clusterId": "7696648614416543780",
+      "timeline": 1,
+      "backupId": "base_00000001000000000000000F",
+      "oldestBackupId": "base_000000010000000000000007",
+      "continuousUntil": "2026-10-14 22:11:32.185425+00",
+      "lastWal": "000000010000000000000012",
+      "lastSuccess": "2026-10-14T22:12:18.585012Z",
+      "syncLagSeconds": 46.391409,
+      "copiedObjects": 0,
+      "objectCount": 54,
+      "retention": "retain-all-independent",
+      "manifestSha256": "ca0901c71841047beaad375b9468e4c462bf1c2be9f2ae7497c3f6c323050290",
+      "consecutiveFailures": 0,
+      "failures": 1,
+      "lastFailure": "2026-10-14T22:11:28.830516Z",
+      "lastError": "REPLICA_S3_DNS_FAILED",
+      "target": "2026-10-14T22:08:08.319539Z",
+      "observedAt": "2026-10-14T22:12:19.798Z",
+      "observedLagSeconds": 47.613
+    },
+    {
+      "event": "restore.secondary",
+      "report": {
+        "project": "selfhost-restore-d-drill-96487cc055ad",
+        "backupId": "base_000000010000000000000007",
+        "targetTime": "2026-10-14T22:08:08.319539Z",
+        "clusterId": "7696648614416543780",
+        "pgMajor": 17,
+        "actualReplayTime": null,
+        "replayLsn": "0/8002E80",
+        "elapsedSeconds": 7.837,
+        "checks": [
+          {
+            "name": "pg17",
+            "ok": true
+          },
+          {
+            "name": "schemas",
+            "ok": true
+          },
+          {
+            "name": "business_tables",
+            "ok": true
+          },
+          {
+            "name": "engine_tables",
+            "ok": true
+          },
+          {
+            "name": "constraints",
+            "ok": true
+          },
+          {
+            "name": "roles",
+            "ok": true
+          },
+          {
+            "name": "role_permissions",
+            "ok": true
+          },
+          {
+            "name": "credits_balance",
+            "ok": true
+          },
+          {
+            "name": "markers",
+            "ok": true
+          },
+          {
+            "name": "schemas",
+            "ok": true
+          },
+          {
+            "name": "database-acl",
+            "ok": true
+          },
+          {
+            "name": "task-state",
+            "ok": true
+          },
+          {
+            "name": "credit-snapshot",
+            "ok": true
+          }
+        ],
+        "status": "validated_paused",
+        "phase": "validated",
+        "error": null,
+        "errorType": null,
+        "errorLine": null,
+        "cleaned": true
+      },
+      "target": "2026-10-14T22:08:08.319539Z",
+      "primaryStopped": true,
+      "independentCredentials": true,
+      "beforePresent": true,
+      "afterAbsent": true
+    },
+    {
+      "event": "restore.same_point",
+      "backupId": "base_000000010000000000000007",
+      "target": "2026-10-14T22:08:08.319539Z",
+      "replayLsn": "0/8002E80",
+      "actualReplayTime": null,
+      "primaryRtoSeconds": 8.203,
+      "secondaryRtoSeconds": 7.837,
+      "sameReplayPosition": true
+    },
+    {
+      "event": "backup.resources",
+      "budgets": {
+        "recoveryEachMiB": 512,
+        "backupMiB": 256,
+        "backupCpu": 0.2,
+        "maxConnections": 10
+      },
+      "interpretation": "Per-service sampled maxima; these are not a simultaneous whole-host peak",
+      "measurements": {
+        "scheduled_cycle": {
+          "samples": 2,
+          "services": {
+            "postgres": {
+              "rssPeakBytes": 127590400,
+              "cgroupPeakBytes": 156553216,
+              "cpuUsec": 1241607,
+              "cpuPeakPercent": 9.997168475696084,
+              "samples": 2,
+              "maxConnections": 8,
+              "maxWalBytes": 50332012,
+              "maxPgDataBytes": 85172224,
+              "minFreeBytes": 781882691584
+            },
+            "replica-storage": {
+              "rssPeakBytes": 120971264,
+              "cgroupPeakBytes": 40415232,
+              "cpuUsec": 332174,
+              "cpuPeakPercent": 0.8578972182932579,
+              "samples": 2,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "replica-tls": {
+              "rssPeakBytes": 68276224,
+              "cgroupPeakBytes": 24215552,
+              "cpuUsec": 157404,
+              "cpuPeakPercent": 0.5128712871287129,
+              "samples": 2,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "object-storage": {
+              "rssPeakBytes": 168042496,
+              "cgroupPeakBytes": 98521088,
+              "cpuUsec": 445061,
+              "cpuPeakPercent": 3.5270754716981134,
+              "samples": 2,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "tls": {
+              "rssPeakBytes": 74727424,
+              "cgroupPeakBytes": 30834688,
+              "cpuUsec": 257776,
+              "cpuPeakPercent": 2.092358490566038,
+              "samples": 2,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "backup": {
+              "rssPeakBytes": 101175296,
+              "cgroupPeakBytes": 76029952,
+              "cpuUsec": 632059,
+              "cpuPeakPercent": 20.359626719056976,
+              "samples": 2,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            }
+          },
+          "maxConnections": 8,
+          "maxWalBytes": 50332012,
+          "maxPgDataBytes": 85172224,
+          "minFreeBytes": 781882691584
+        },
+        "logical_restore": {
+          "samples": 1,
+          "services": {
+            "backup": {
+              "rssPeakBytes": 24829952,
+              "cgroupPeakBytes": 76029952,
+              "cpuUsec": 1134959,
+              "cpuPeakPercent": 7.048353188507358,
+              "samples": 1,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "object-storage": {
+              "rssPeakBytes": 172191744,
+              "cgroupPeakBytes": 102678528,
+              "cpuUsec": 511893,
+              "cpuPeakPercent": 0.9366783461807989,
+              "samples": 1,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "postgres": {
+              "rssPeakBytes": 102625280,
+              "cgroupPeakBytes": 173629440,
+              "cpuUsec": 1602263,
+              "cpuPeakPercent": 5.051912032497548,
+              "samples": 1,
+              "maxConnections": 7,
+              "maxWalBytes": 83886444,
+              "maxPgDataBytes": 118833152,
+              "minFreeBytes": 781808381952
+            },
+            "replica-tls": {
+              "rssPeakBytes": 68272128,
+              "cgroupPeakBytes": 24215552,
+              "cpuUsec": 167887,
+              "cpuPeakPercent": 0.14688244360375508,
+              "samples": 1,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "replica-storage": {
+              "rssPeakBytes": 120971264,
+              "cgroupPeakBytes": 40415232,
+              "cpuUsec": 377664,
+              "cpuPeakPercent": 0.6348032375104661,
+              "samples": 1,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "tls": {
+              "rssPeakBytes": 73396224,
+              "cgroupPeakBytes": 30834688,
+              "cpuUsec": 322339,
+              "cpuPeakPercent": 0.9008371703641691,
+              "samples": 1,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            }
+          },
+          "maxConnections": 7,
+          "maxWalBytes": 83886444,
+          "maxPgDataBytes": 118833152,
+          "minFreeBytes": 781808381952
+        },
+        "oldest_weekly_pitr": {
+          "samples": 13,
+          "services": {
+            "object-storage": {
+              "rssPeakBytes": 232017920,
+              "cgroupPeakBytes": 191332352,
+              "cpuUsec": 1242625,
+              "cpuPeakPercent": 6.701577287066246,
+              "samples": 13,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "postgres": {
+              "rssPeakBytes": 121552896,
+              "cgroupPeakBytes": 211111936,
+              "cpuUsec": 3316673,
+              "cpuPeakPercent": 15.802726602800295,
+              "samples": 13,
+              "maxConnections": 8,
+              "maxWalBytes": 100663660,
+              "maxPgDataBytes": 135610368,
+              "minFreeBytes": 781671133184
+            },
+            "restore": {
+              "rssPeakBytes": 122032128,
+              "cgroupPeakBytes": 147673088,
+              "cpuUsec": 320044,
+              "cpuPeakPercent": 13.858804258804259,
+              "samples": 11,
+              "maxConnections": 6,
+              "maxWalBytes": 16777216,
+              "maxPgDataBytes": 45805568,
+              "minFreeBytes": 781767159808
+            },
+            "replica-tls": {
+              "rssPeakBytes": 68276224,
+              "cgroupPeakBytes": 24215552,
+              "cpuUsec": 278830,
+              "cpuPeakPercent": 0.7917786561264822,
+              "samples": 13,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "replica-storage": {
+              "rssPeakBytes": 121470976,
+              "cgroupPeakBytes": 41586688,
+              "cpuUsec": 722125,
+              "cpuPeakPercent": 1.4647943037974684,
+              "samples": 13,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "tls": {
+              "rssPeakBytes": 91537408,
+              "cgroupPeakBytes": 45109248,
+              "cpuUsec": 802939,
+              "cpuPeakPercent": 4.141737288135594,
+              "samples": 13,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "backup": {
+              "rssPeakBytes": 142802944,
+              "cgroupPeakBytes": 93872128,
+              "cpuUsec": 2487066,
+              "cpuPeakPercent": 19.794532488114104,
+              "samples": 13,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            }
+          },
+          "maxConnections": 8,
+          "maxWalBytes": 100663660,
+          "maxPgDataBytes": 135610368,
+          "minFreeBytes": 781671133184
+        },
+        "archive_upload_failure": {
+          "samples": 46,
+          "services": {
+            "postgres": {
+              "rssPeakBytes": 180232192,
+              "cgroupPeakBytes": 211111936,
+              "cpuUsec": 7045540,
+              "cpuPeakPercent": 14.231553784860557,
+              "samples": 46,
+              "maxConnections": 8,
+              "maxWalBytes": 100663660,
+              "maxPgDataBytes": 135520256,
+              "minFreeBytes": 781671014400
+            },
+            "restore": {
+              "rssPeakBytes": 53628928,
+              "cgroupPeakBytes": 146132992,
+              "cpuUsec": 2167932,
+              "cpuPeakPercent": 10.187355718782792,
+              "samples": 46,
+              "maxConnections": 4,
+              "maxWalBytes": 100663296,
+              "maxPgDataBytes": 135348224,
+              "minFreeBytes": 781671014400
+            },
+            "backup": {
+              "rssPeakBytes": 52871168,
+              "cgroupPeakBytes": 93872128,
+              "cpuUsec": 3137810,
+              "cpuPeakPercent": 5.5984398216939075,
+              "samples": 46,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "replica-storage": {
+              "rssPeakBytes": 121806848,
+              "cgroupPeakBytes": 41586688,
+              "cpuUsec": 1517510,
+              "cpuPeakPercent": 2.501708817498291,
+              "samples": 46,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "object-storage": {
+              "rssPeakBytes": 248750080,
+              "cgroupPeakBytes": 228012032,
+              "cpuUsec": 2046410,
+              "cpuPeakPercent": 3.2421279654924513,
+              "samples": 46,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "replica-tls": {
+              "rssPeakBytes": 68284416,
+              "cgroupPeakBytes": 24215552,
+              "cpuUsec": 687859,
+              "cpuPeakPercent": 0.961402157164869,
+              "samples": 46,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "tls": {
+              "rssPeakBytes": 84111360,
+              "cgroupPeakBytes": 45109248,
+              "cpuUsec": 571537,
+              "cpuPeakPercent": 3.321689683184403,
+              "samples": 44,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            }
+          },
+          "maxConnections": 8,
+          "maxWalBytes": 100663660,
+          "maxPgDataBytes": 135520256,
+          "minFreeBytes": 781671014400
+        },
+        "base_failure_recovery": {
+          "samples": 2,
+          "services": {
+            "replica-storage": {
+              "rssPeakBytes": 121757696,
+              "cgroupPeakBytes": 41586688,
+              "cpuUsec": 1545757,
+              "cpuPeakPercent": 1.4450996015936255,
+              "samples": 2,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "replica-tls": {
+              "rssPeakBytes": 68284416,
+              "cgroupPeakBytes": 24215552,
+              "cpuUsec": 703501,
+              "cpuPeakPercent": 0.6319587628865979,
+              "samples": 2,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "object-storage": {
+              "rssPeakBytes": 248700928,
+              "cgroupPeakBytes": 228012032,
+              "cpuUsec": 2142963,
+              "cpuPeakPercent": 6.129463570856685,
+              "samples": 2,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "restore": {
+              "rssPeakBytes": 53628928,
+              "cgroupPeakBytes": 146132992,
+              "cpuUsec": 2241774,
+              "cpuPeakPercent": 3.009736632083001,
+              "samples": 2,
+              "maxConnections": 4,
+              "maxWalBytes": 100663296,
+              "maxPgDataBytes": 135348224,
+              "minFreeBytes": 781675225088
+            },
+            "postgres": {
+              "rssPeakBytes": 116535296,
+              "cgroupPeakBytes": 211111936,
+              "cpuUsec": 7330840,
+              "cpuPeakPercent": 14.012121212121212,
+              "samples": 2,
+              "maxConnections": 7,
+              "maxWalBytes": 100663660,
+              "maxPgDataBytes": 135684096,
+              "minFreeBytes": 781675225088
+            },
+            "tls": {
+              "rssPeakBytes": 71020544,
+              "cgroupPeakBytes": 28225536,
+              "cpuUsec": 632223,
+              "cpuPeakPercent": 2.9598001537279015,
+              "samples": 2,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "backup": {
+              "rssPeakBytes": 101015552,
+              "cgroupPeakBytes": 93872128,
+              "cpuUsec": 3611086,
+              "cpuPeakPercent": 20.71937394247039,
+              "samples": 2,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            }
+          },
+          "maxConnections": 7,
+          "maxWalBytes": 100663660,
+          "maxPgDataBytes": 135684096,
+          "minFreeBytes": 781675225088
+        },
+        "restore_primary": {
+          "samples": 9,
+          "services": {
+            "postgres": {
+              "rssPeakBytes": 115036160,
+              "cgroupPeakBytes": 211111936,
+              "cpuUsec": 7963182,
+              "cpuPeakPercent": 5.109954977488744,
+              "samples": 9,
+              "maxConnections": 7,
+              "maxWalBytes": 100663660,
+              "maxPgDataBytes": 135684096,
+              "minFreeBytes": 781539672064
+            },
+            "tls": {
+              "rssPeakBytes": 80941056,
+              "cgroupPeakBytes": 36315136,
+              "cpuUsec": 803116,
+              "cpuPeakPercent": 2.3270793036750486,
+              "samples": 9,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "restore": {
+              "rssPeakBytes": 53760000,
+              "cgroupPeakBytes": 146132992,
+              "cpuUsec": 2606016,
+              "cpuPeakPercent": 3.2657754010695186,
+              "samples": 9,
+              "maxConnections": 4,
+              "maxWalBytes": 100663296,
+              "maxPgDataBytes": 135348224,
+              "minFreeBytes": 781539672064
+            },
+            "replica-tls": {
+              "rssPeakBytes": 68284416,
+              "cgroupPeakBytes": 24215552,
+              "cpuUsec": 790830,
+              "cpuPeakPercent": 1.0036153846153846,
+              "samples": 9,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "backup": {
+              "rssPeakBytes": 24666112,
+              "cgroupPeakBytes": 93872128,
+              "cpuUsec": 4058158,
+              "cpuPeakPercent": 9.06075886170744,
+              "samples": 9,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "replica-storage": {
+              "rssPeakBytes": 121819136,
+              "cgroupPeakBytes": 41586688,
+              "cpuUsec": 1712390,
+              "cpuPeakPercent": 1.9592539454806313,
+              "samples": 9,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "object-storage": {
+              "rssPeakBytes": 230526976,
+              "cgroupPeakBytes": 228012032,
+              "cpuUsec": 2385624,
+              "cpuPeakPercent": 2.504938271604938,
+              "samples": 9,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "recovery:selfhost-restore-d-drill-f68ba296f50b": {
+              "rssPeakBytes": 64847872,
+              "cgroupPeakBytes": 145944576,
+              "cpuUsec": 1187802,
+              "cpuPeakPercent": 26.243606036536935,
+              "samples": 5,
+              "maxConnections": 4,
+              "maxWalBytes": 100663296,
+              "maxPgDataBytes": 135270400,
+              "minFreeBytes": 781539672064
+            }
+          },
+          "maxConnections": 7,
+          "maxWalBytes": 100663660,
+          "maxPgDataBytes": 135684096,
+          "minFreeBytes": 781539672064
+        },
+        "restore_failure_boundaries": {
+          "samples": 16,
+          "services": {
+            "restore": {
+              "rssPeakBytes": 53956608,
+              "cgroupPeakBytes": 146132992,
+              "cpuUsec": 3324711,
+              "cpuPeakPercent": 3.7394059405940596,
+              "samples": 16,
+              "maxConnections": 4,
+              "maxWalBytes": 100663296,
+              "maxPgDataBytes": 135348224,
+              "minFreeBytes": 781149736960
+            },
+            "postgres": {
+              "rssPeakBytes": 127062016,
+              "cgroupPeakBytes": 211111936,
+              "cpuUsec": 8956357,
+              "cpuPeakPercent": 5.300142755174875,
+              "samples": 16,
+              "maxConnections": 7,
+              "maxWalBytes": 100663660,
+              "maxPgDataBytes": 135684096,
+              "minFreeBytes": 781149736960
+            },
+            "replica-storage": {
+              "rssPeakBytes": 132296704,
+              "cgroupPeakBytes": 42156032,
+              "cpuUsec": 2011371,
+              "cpuPeakPercent": 2.09621698786581,
+              "samples": 16,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "object-storage": {
+              "rssPeakBytes": 230580224,
+              "cgroupPeakBytes": 228012032,
+              "cpuUsec": 2786838,
+              "cpuPeakPercent": 3.339643084767368,
+              "samples": 16,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "backup": {
+              "rssPeakBytes": 24666112,
+              "cgroupPeakBytes": 93872128,
+              "cpuUsec": 4334709,
+              "cpuPeakPercent": 6.311951684678958,
+              "samples": 16,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "replica-tls": {
+              "rssPeakBytes": 68284416,
+              "cgroupPeakBytes": 24215552,
+              "cpuUsec": 958818,
+              "cpuPeakPercent": 1.3111974110032363,
+              "samples": 16,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "tls": {
+              "rssPeakBytes": 86437888,
+              "cgroupPeakBytes": 41218048,
+              "cpuUsec": 1177724,
+              "cpuPeakPercent": 3.0469472436277414,
+              "samples": 16,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "recovery:selfhost-restore-d-drill-f68ba296f50b": {
+              "rssPeakBytes": 75157504,
+              "cgroupPeakBytes": 174239744,
+              "cpuUsec": 2140698,
+              "cpuPeakPercent": 17.321615384615384,
+              "samples": 16,
+              "maxConnections": 6,
+              "maxWalBytes": 117440562,
+              "maxPgDataBytes": 152059904,
+              "minFreeBytes": 781149736960
+            },
+            "recovery:selfhost-restore-d-drill-72ac275557eb": {
+              "rssPeakBytes": 90284032,
+              "cgroupPeakBytes": 174419968,
+              "cpuUsec": 564245,
+              "cpuPeakPercent": 0,
+              "samples": 2,
+              "maxConnections": 4,
+              "maxWalBytes": 150994944,
+              "maxPgDataBytes": 185675776,
+              "minFreeBytes": 781353836544
+            },
+            "recovery:selfhost-restore-d-drill-6ba1cefaeb72": {
+              "rssPeakBytes": 121712640,
+              "cgroupPeakBytes": 146497536,
+              "cpuUsec": 562484,
+              "cpuPeakPercent": 19.372867025365103,
+              "samples": 3,
+              "maxConnections": 4,
+              "maxWalBytes": 100663296,
+              "maxPgDataBytes": 135270400,
+              "minFreeBytes": 781149736960
+            }
+          },
+          "maxConnections": 7,
+          "maxWalBytes": 150994944,
+          "maxPgDataBytes": 185675776,
+          "minFreeBytes": 781149736960
+        },
+        "replica_failure": {
+          "samples": 5,
+          "services": {
+            "restore": {
+              "rssPeakBytes": 69611520,
+              "cgroupPeakBytes": 166559744,
+              "cpuUsec": 712890,
+              "cpuPeakPercent": 22.943282636248416,
+              "samples": 4,
+              "maxConnections": 6,
+              "maxWalBytes": 117440562,
+              "maxPgDataBytes": 135348224,
+              "minFreeBytes": 781253656576
+            },
+            "replica-storage": {
+              "rssPeakBytes": 218038272,
+              "cgroupPeakBytes": 174473216,
+              "cpuUsec": 3737564,
+              "cpuPeakPercent": 2.6190098912455095,
+              "samples": 5,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "object-storage": {
+              "rssPeakBytes": 232366080,
+              "cgroupPeakBytes": 228012032,
+              "cpuUsec": 3576904,
+              "cpuPeakPercent": 1.9999258710155672,
+              "samples": 5,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "backup": {
+              "rssPeakBytes": 24666112,
+              "cgroupPeakBytes": 93872128,
+              "cpuUsec": 7639784,
+              "cpuPeakPercent": 7.391079156777886,
+              "samples": 5,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "postgres": {
+              "rssPeakBytes": 115036160,
+              "cgroupPeakBytes": 211111936,
+              "cpuUsec": 10097096,
+              "cpuPeakPercent": 4.321766169154229,
+              "samples": 5,
+              "maxConnections": 7,
+              "maxWalBytes": 100663660,
+              "maxPgDataBytes": 135684096,
+              "minFreeBytes": 781236899840
+            },
+            "replica-tls": {
+              "rssPeakBytes": 85798912,
+              "cgroupPeakBytes": 54689792,
+              "cpuUsec": 136975,
+              "cpuPeakPercent": 5.394420748712228,
+              "samples": 4,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "recovery:selfhost-restore-d-drill-f68ba296f50b": {
+              "rssPeakBytes": 75874304,
+              "cgroupPeakBytes": 174239744,
+              "cpuUsec": 2369676,
+              "cpuPeakPercent": 3.163169984686064,
+              "samples": 5,
+              "maxConnections": 6,
+              "maxWalBytes": 100663346,
+              "maxPgDataBytes": 135282688,
+              "minFreeBytes": 781236899840
+            },
+            "tls": {
+              "rssPeakBytes": 87056384,
+              "cgroupPeakBytes": 48197632,
+              "cpuUsec": 2339869,
+              "cpuPeakPercent": 1.809191430545957,
+              "samples": 5,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            }
+          },
+          "maxConnections": 7,
+          "maxWalBytes": 117440562,
+          "maxPgDataBytes": 135684096,
+          "minFreeBytes": 781236899840
+        },
+        "restore_secondary_only": {
+          "samples": 8,
+          "services": {
+            "replica-tls": {
+              "rssPeakBytes": 92385280,
+              "cgroupPeakBytes": 52441088,
+              "cpuUsec": 2482031,
+              "cpuPeakPercent": 5.615488147342323,
+              "samples": 8,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "backup": {
+              "rssPeakBytes": 24666112,
+              "cgroupPeakBytes": 93872128,
+              "cpuUsec": 9436069,
+              "cpuPeakPercent": 4.534928048472608,
+              "samples": 1,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "postgres": {
+              "rssPeakBytes": 115036160,
+              "cgroupPeakBytes": 211111936,
+              "cpuUsec": 10525828,
+              "cpuPeakPercent": 1.0822466237536286,
+              "samples": 1,
+              "maxConnections": 7,
+              "maxWalBytes": 100663660,
+              "maxPgDataBytes": 135835648,
+              "minFreeBytes": 781236682752
+            },
+            "replica-storage": {
+              "rssPeakBytes": 213286912,
+              "cgroupPeakBytes": 174710784,
+              "cpuUsec": 4752670,
+              "cpuPeakPercent": 2.356884561891516,
+              "samples": 8,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "object-storage": {
+              "rssPeakBytes": 231149568,
+              "cgroupPeakBytes": 228012032,
+              "cpuUsec": 3980782,
+              "cpuPeakPercent": 1.0195077622112836,
+              "samples": 1,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "recovery:selfhost-restore-d-drill-f68ba296f50b": {
+              "rssPeakBytes": 76005376,
+              "cgroupPeakBytes": 174239744,
+              "cpuUsec": 2681811,
+              "cpuPeakPercent": 2.969492703266157,
+              "samples": 8,
+              "maxConnections": 6,
+              "maxWalBytes": 100663346,
+              "maxPgDataBytes": 135282688,
+              "minFreeBytes": 781101281280
+            },
+            "tls": {
+              "rssPeakBytes": 87920640,
+              "cgroupPeakBytes": 49614848,
+              "cpuUsec": 2921350,
+              "cpuPeakPercent": 1.4683863636363637,
+              "samples": 1,
+              "maxConnections": 0,
+              "maxWalBytes": 0,
+              "maxPgDataBytes": 0,
+              "minFreeBytes": null
+            },
+            "recovery:selfhost-restore-d-drill-96487cc055ad": {
+              "rssPeakBytes": 84758528,
+              "cgroupPeakBytes": 146817024,
+              "cpuUsec": 759192,
+              "cpuPeakPercent": 20.477566225165564,
+              "samples": 4,
+              "maxConnections": 4,
+              "maxWalBytes": 100663296,
+              "maxPgDataBytes": 135270400,
+              "minFreeBytes": 781101281280
+            }
+          },
+          "maxConnections": 7,
+          "maxWalBytes": 100663660,
+          "maxPgDataBytes": 135835648,
+          "minFreeBytes": 781101281280
+        }
+      },
+      "disk": {
+        "freeBytes": 781237108736,
+        "walBytes": 100663660,
+        "pgDataBytes": 135154967
+      }
+    },
+    {
+      "event": "backup.passed",
+      "full": true,
+      "restoreSuite": true,
+      "releaseDrill": true,
+      "fixtureData": "direct SQL into production schemas; no jobs executed"
+    }
+  ],
+  "measurements": {
+    "scheduled_cycle": {
+      "samples": 2,
+      "services": {
+        "postgres": {
+          "rssPeakBytes": 127590400,
+          "cgroupPeakBytes": 156553216,
+          "cpuUsec": 1241607,
+          "cpuPeakPercent": 9.997168475696084,
+          "samples": 2,
+          "maxConnections": 8,
+          "maxWalBytes": 50332012,
+          "maxPgDataBytes": 85172224,
+          "minFreeBytes": 781882691584
+        },
+        "replica-storage": {
+          "rssPeakBytes": 120971264,
+          "cgroupPeakBytes": 40415232,
+          "cpuUsec": 332174,
+          "cpuPeakPercent": 0.8578972182932579,
+          "samples": 2,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "replica-tls": {
+          "rssPeakBytes": 68276224,
+          "cgroupPeakBytes": 24215552,
+          "cpuUsec": 157404,
+          "cpuPeakPercent": 0.5128712871287129,
+          "samples": 2,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "object-storage": {
+          "rssPeakBytes": 168042496,
+          "cgroupPeakBytes": 98521088,
+          "cpuUsec": 445061,
+          "cpuPeakPercent": 3.5270754716981134,
+          "samples": 2,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "tls": {
+          "rssPeakBytes": 74727424,
+          "cgroupPeakBytes": 30834688,
+          "cpuUsec": 257776,
+          "cpuPeakPercent": 2.092358490566038,
+          "samples": 2,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "backup": {
+          "rssPeakBytes": 101175296,
+          "cgroupPeakBytes": 76029952,
+          "cpuUsec": 632059,
+          "cpuPeakPercent": 20.359626719056976,
+          "samples": 2,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        }
+      },
+      "maxConnections": 8,
+      "maxWalBytes": 50332012,
+      "maxPgDataBytes": 85172224,
+      "minFreeBytes": 781882691584
+    },
+    "logical_restore": {
+      "samples": 1,
+      "services": {
+        "backup": {
+          "rssPeakBytes": 24829952,
+          "cgroupPeakBytes": 76029952,
+          "cpuUsec": 1134959,
+          "cpuPeakPercent": 7.048353188507358,
+          "samples": 1,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "object-storage": {
+          "rssPeakBytes": 172191744,
+          "cgroupPeakBytes": 102678528,
+          "cpuUsec": 511893,
+          "cpuPeakPercent": 0.9366783461807989,
+          "samples": 1,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "postgres": {
+          "rssPeakBytes": 102625280,
+          "cgroupPeakBytes": 173629440,
+          "cpuUsec": 1602263,
+          "cpuPeakPercent": 5.051912032497548,
+          "samples": 1,
+          "maxConnections": 7,
+          "maxWalBytes": 83886444,
+          "maxPgDataBytes": 118833152,
+          "minFreeBytes": 781808381952
+        },
+        "replica-tls": {
+          "rssPeakBytes": 68272128,
+          "cgroupPeakBytes": 24215552,
+          "cpuUsec": 167887,
+          "cpuPeakPercent": 0.14688244360375508,
+          "samples": 1,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "replica-storage": {
+          "rssPeakBytes": 120971264,
+          "cgroupPeakBytes": 40415232,
+          "cpuUsec": 377664,
+          "cpuPeakPercent": 0.6348032375104661,
+          "samples": 1,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "tls": {
+          "rssPeakBytes": 73396224,
+          "cgroupPeakBytes": 30834688,
+          "cpuUsec": 322339,
+          "cpuPeakPercent": 0.9008371703641691,
+          "samples": 1,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        }
+      },
+      "maxConnections": 7,
+      "maxWalBytes": 83886444,
+      "maxPgDataBytes": 118833152,
+      "minFreeBytes": 781808381952
+    },
+    "oldest_weekly_pitr": {
+      "samples": 13,
+      "services": {
+        "object-storage": {
+          "rssPeakBytes": 232017920,
+          "cgroupPeakBytes": 191332352,
+          "cpuUsec": 1242625,
+          "cpuPeakPercent": 6.701577287066246,
+          "samples": 13,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "postgres": {
+          "rssPeakBytes": 121552896,
+          "cgroupPeakBytes": 211111936,
+          "cpuUsec": 3316673,
+          "cpuPeakPercent": 15.802726602800295,
+          "samples": 13,
+          "maxConnections": 8,
+          "maxWalBytes": 100663660,
+          "maxPgDataBytes": 135610368,
+          "minFreeBytes": 781671133184
+        },
+        "restore": {
+          "rssPeakBytes": 122032128,
+          "cgroupPeakBytes": 147673088,
+          "cpuUsec": 320044,
+          "cpuPeakPercent": 13.858804258804259,
+          "samples": 11,
+          "maxConnections": 6,
+          "maxWalBytes": 16777216,
+          "maxPgDataBytes": 45805568,
+          "minFreeBytes": 781767159808
+        },
+        "replica-tls": {
+          "rssPeakBytes": 68276224,
+          "cgroupPeakBytes": 24215552,
+          "cpuUsec": 278830,
+          "cpuPeakPercent": 0.7917786561264822,
+          "samples": 13,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "replica-storage": {
+          "rssPeakBytes": 121470976,
+          "cgroupPeakBytes": 41586688,
+          "cpuUsec": 722125,
+          "cpuPeakPercent": 1.4647943037974684,
+          "samples": 13,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "tls": {
+          "rssPeakBytes": 91537408,
+          "cgroupPeakBytes": 45109248,
+          "cpuUsec": 802939,
+          "cpuPeakPercent": 4.141737288135594,
+          "samples": 13,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "backup": {
+          "rssPeakBytes": 142802944,
+          "cgroupPeakBytes": 93872128,
+          "cpuUsec": 2487066,
+          "cpuPeakPercent": 19.794532488114104,
+          "samples": 13,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        }
+      },
+      "maxConnections": 8,
+      "maxWalBytes": 100663660,
+      "maxPgDataBytes": 135610368,
+      "minFreeBytes": 781671133184
+    },
+    "archive_upload_failure": {
+      "samples": 46,
+      "services": {
+        "postgres": {
+          "rssPeakBytes": 180232192,
+          "cgroupPeakBytes": 211111936,
+          "cpuUsec": 7045540,
+          "cpuPeakPercent": 14.231553784860557,
+          "samples": 46,
+          "maxConnections": 8,
+          "maxWalBytes": 100663660,
+          "maxPgDataBytes": 135520256,
+          "minFreeBytes": 781671014400
+        },
+        "restore": {
+          "rssPeakBytes": 53628928,
+          "cgroupPeakBytes": 146132992,
+          "cpuUsec": 2167932,
+          "cpuPeakPercent": 10.187355718782792,
+          "samples": 46,
+          "maxConnections": 4,
+          "maxWalBytes": 100663296,
+          "maxPgDataBytes": 135348224,
+          "minFreeBytes": 781671014400
+        },
+        "backup": {
+          "rssPeakBytes": 52871168,
+          "cgroupPeakBytes": 93872128,
+          "cpuUsec": 3137810,
+          "cpuPeakPercent": 5.5984398216939075,
+          "samples": 46,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "replica-storage": {
+          "rssPeakBytes": 121806848,
+          "cgroupPeakBytes": 41586688,
+          "cpuUsec": 1517510,
+          "cpuPeakPercent": 2.501708817498291,
+          "samples": 46,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "object-storage": {
+          "rssPeakBytes": 248750080,
+          "cgroupPeakBytes": 228012032,
+          "cpuUsec": 2046410,
+          "cpuPeakPercent": 3.2421279654924513,
+          "samples": 46,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "replica-tls": {
+          "rssPeakBytes": 68284416,
+          "cgroupPeakBytes": 24215552,
+          "cpuUsec": 687859,
+          "cpuPeakPercent": 0.961402157164869,
+          "samples": 46,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "tls": {
+          "rssPeakBytes": 84111360,
+          "cgroupPeakBytes": 45109248,
+          "cpuUsec": 571537,
+          "cpuPeakPercent": 3.321689683184403,
+          "samples": 44,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        }
+      },
+      "maxConnections": 8,
+      "maxWalBytes": 100663660,
+      "maxPgDataBytes": 135520256,
+      "minFreeBytes": 781671014400
+    },
+    "base_failure_recovery": {
+      "samples": 2,
+      "services": {
+        "replica-storage": {
+          "rssPeakBytes": 121757696,
+          "cgroupPeakBytes": 41586688,
+          "cpuUsec": 1545757,
+          "cpuPeakPercent": 1.4450996015936255,
+          "samples": 2,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "replica-tls": {
+          "rssPeakBytes": 68284416,
+          "cgroupPeakBytes": 24215552,
+          "cpuUsec": 703501,
+          "cpuPeakPercent": 0.6319587628865979,
+          "samples": 2,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "object-storage": {
+          "rssPeakBytes": 248700928,
+          "cgroupPeakBytes": 228012032,
+          "cpuUsec": 2142963,
+          "cpuPeakPercent": 6.129463570856685,
+          "samples": 2,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "restore": {
+          "rssPeakBytes": 53628928,
+          "cgroupPeakBytes": 146132992,
+          "cpuUsec": 2241774,
+          "cpuPeakPercent": 3.009736632083001,
+          "samples": 2,
+          "maxConnections": 4,
+          "maxWalBytes": 100663296,
+          "maxPgDataBytes": 135348224,
+          "minFreeBytes": 781675225088
+        },
+        "postgres": {
+          "rssPeakBytes": 116535296,
+          "cgroupPeakBytes": 211111936,
+          "cpuUsec": 7330840,
+          "cpuPeakPercent": 14.012121212121212,
+          "samples": 2,
+          "maxConnections": 7,
+          "maxWalBytes": 100663660,
+          "maxPgDataBytes": 135684096,
+          "minFreeBytes": 781675225088
+        },
+        "tls": {
+          "rssPeakBytes": 71020544,
+          "cgroupPeakBytes": 28225536,
+          "cpuUsec": 632223,
+          "cpuPeakPercent": 2.9598001537279015,
+          "samples": 2,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "backup": {
+          "rssPeakBytes": 101015552,
+          "cgroupPeakBytes": 93872128,
+          "cpuUsec": 3611086,
+          "cpuPeakPercent": 20.71937394247039,
+          "samples": 2,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        }
+      },
+      "maxConnections": 7,
+      "maxWalBytes": 100663660,
+      "maxPgDataBytes": 135684096,
+      "minFreeBytes": 781675225088
+    },
+    "restore_primary": {
+      "samples": 9,
+      "services": {
+        "postgres": {
+          "rssPeakBytes": 115036160,
+          "cgroupPeakBytes": 211111936,
+          "cpuUsec": 7963182,
+          "cpuPeakPercent": 5.109954977488744,
+          "samples": 9,
+          "maxConnections": 7,
+          "maxWalBytes": 100663660,
+          "maxPgDataBytes": 135684096,
+          "minFreeBytes": 781539672064
+        },
+        "tls": {
+          "rssPeakBytes": 80941056,
+          "cgroupPeakBytes": 36315136,
+          "cpuUsec": 803116,
+          "cpuPeakPercent": 2.3270793036750486,
+          "samples": 9,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "restore": {
+          "rssPeakBytes": 53760000,
+          "cgroupPeakBytes": 146132992,
+          "cpuUsec": 2606016,
+          "cpuPeakPercent": 3.2657754010695186,
+          "samples": 9,
+          "maxConnections": 4,
+          "maxWalBytes": 100663296,
+          "maxPgDataBytes": 135348224,
+          "minFreeBytes": 781539672064
+        },
+        "replica-tls": {
+          "rssPeakBytes": 68284416,
+          "cgroupPeakBytes": 24215552,
+          "cpuUsec": 790830,
+          "cpuPeakPercent": 1.0036153846153846,
+          "samples": 9,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "backup": {
+          "rssPeakBytes": 24666112,
+          "cgroupPeakBytes": 93872128,
+          "cpuUsec": 4058158,
+          "cpuPeakPercent": 9.06075886170744,
+          "samples": 9,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "replica-storage": {
+          "rssPeakBytes": 121819136,
+          "cgroupPeakBytes": 41586688,
+          "cpuUsec": 1712390,
+          "cpuPeakPercent": 1.9592539454806313,
+          "samples": 9,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "object-storage": {
+          "rssPeakBytes": 230526976,
+          "cgroupPeakBytes": 228012032,
+          "cpuUsec": 2385624,
+          "cpuPeakPercent": 2.504938271604938,
+          "samples": 9,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "recovery:selfhost-restore-d-drill-f68ba296f50b": {
+          "rssPeakBytes": 64847872,
+          "cgroupPeakBytes": 145944576,
+          "cpuUsec": 1187802,
+          "cpuPeakPercent": 26.243606036536935,
+          "samples": 5,
+          "maxConnections": 4,
+          "maxWalBytes": 100663296,
+          "maxPgDataBytes": 135270400,
+          "minFreeBytes": 781539672064
+        }
+      },
+      "maxConnections": 7,
+      "maxWalBytes": 100663660,
+      "maxPgDataBytes": 135684096,
+      "minFreeBytes": 781539672064
+    },
+    "restore_failure_boundaries": {
+      "samples": 16,
+      "services": {
+        "restore": {
+          "rssPeakBytes": 53956608,
+          "cgroupPeakBytes": 146132992,
+          "cpuUsec": 3324711,
+          "cpuPeakPercent": 3.7394059405940596,
+          "samples": 16,
+          "maxConnections": 4,
+          "maxWalBytes": 100663296,
+          "maxPgDataBytes": 135348224,
+          "minFreeBytes": 781149736960
+        },
+        "postgres": {
+          "rssPeakBytes": 127062016,
+          "cgroupPeakBytes": 211111936,
+          "cpuUsec": 8956357,
+          "cpuPeakPercent": 5.300142755174875,
+          "samples": 16,
+          "maxConnections": 7,
+          "maxWalBytes": 100663660,
+          "maxPgDataBytes": 135684096,
+          "minFreeBytes": 781149736960
+        },
+        "replica-storage": {
+          "rssPeakBytes": 132296704,
+          "cgroupPeakBytes": 42156032,
+          "cpuUsec": 2011371,
+          "cpuPeakPercent": 2.09621698786581,
+          "samples": 16,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "object-storage": {
+          "rssPeakBytes": 230580224,
+          "cgroupPeakBytes": 228012032,
+          "cpuUsec": 2786838,
+          "cpuPeakPercent": 3.339643084767368,
+          "samples": 16,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "backup": {
+          "rssPeakBytes": 24666112,
+          "cgroupPeakBytes": 93872128,
+          "cpuUsec": 4334709,
+          "cpuPeakPercent": 6.311951684678958,
+          "samples": 16,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "replica-tls": {
+          "rssPeakBytes": 68284416,
+          "cgroupPeakBytes": 24215552,
+          "cpuUsec": 958818,
+          "cpuPeakPercent": 1.3111974110032363,
+          "samples": 16,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "tls": {
+          "rssPeakBytes": 86437888,
+          "cgroupPeakBytes": 41218048,
+          "cpuUsec": 1177724,
+          "cpuPeakPercent": 3.0469472436277414,
+          "samples": 16,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "recovery:selfhost-restore-d-drill-f68ba296f50b": {
+          "rssPeakBytes": 75157504,
+          "cgroupPeakBytes": 174239744,
+          "cpuUsec": 2140698,
+          "cpuPeakPercent": 17.321615384615384,
+          "samples": 16,
+          "maxConnections": 6,
+          "maxWalBytes": 117440562,
+          "maxPgDataBytes": 152059904,
+          "minFreeBytes": 781149736960
+        },
+        "recovery:selfhost-restore-d-drill-72ac275557eb": {
+          "rssPeakBytes": 90284032,
+          "cgroupPeakBytes": 174419968,
+          "cpuUsec": 564245,
+          "cpuPeakPercent": 0,
+          "samples": 2,
+          "maxConnections": 4,
+          "maxWalBytes": 150994944,
+          "maxPgDataBytes": 185675776,
+          "minFreeBytes": 781353836544
+        },
+        "recovery:selfhost-restore-d-drill-6ba1cefaeb72": {
+          "rssPeakBytes": 121712640,
+          "cgroupPeakBytes": 146497536,
+          "cpuUsec": 562484,
+          "cpuPeakPercent": 19.372867025365103,
+          "samples": 3,
+          "maxConnections": 4,
+          "maxWalBytes": 100663296,
+          "maxPgDataBytes": 135270400,
+          "minFreeBytes": 781149736960
+        }
+      },
+      "maxConnections": 7,
+      "maxWalBytes": 150994944,
+      "maxPgDataBytes": 185675776,
+      "minFreeBytes": 781149736960
+    },
+    "replica_failure": {
+      "samples": 5,
+      "services": {
+        "restore": {
+          "rssPeakBytes": 69611520,
+          "cgroupPeakBytes": 166559744,
+          "cpuUsec": 712890,
+          "cpuPeakPercent": 22.943282636248416,
+          "samples": 4,
+          "maxConnections": 6,
+          "maxWalBytes": 117440562,
+          "maxPgDataBytes": 135348224,
+          "minFreeBytes": 781253656576
+        },
+        "replica-storage": {
+          "rssPeakBytes": 218038272,
+          "cgroupPeakBytes": 174473216,
+          "cpuUsec": 3737564,
+          "cpuPeakPercent": 2.6190098912455095,
+          "samples": 5,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "object-storage": {
+          "rssPeakBytes": 232366080,
+          "cgroupPeakBytes": 228012032,
+          "cpuUsec": 3576904,
+          "cpuPeakPercent": 1.9999258710155672,
+          "samples": 5,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "backup": {
+          "rssPeakBytes": 24666112,
+          "cgroupPeakBytes": 93872128,
+          "cpuUsec": 7639784,
+          "cpuPeakPercent": 7.391079156777886,
+          "samples": 5,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "postgres": {
+          "rssPeakBytes": 115036160,
+          "cgroupPeakBytes": 211111936,
+          "cpuUsec": 10097096,
+          "cpuPeakPercent": 4.321766169154229,
+          "samples": 5,
+          "maxConnections": 7,
+          "maxWalBytes": 100663660,
+          "maxPgDataBytes": 135684096,
+          "minFreeBytes": 781236899840
+        },
+        "replica-tls": {
+          "rssPeakBytes": 85798912,
+          "cgroupPeakBytes": 54689792,
+          "cpuUsec": 136975,
+          "cpuPeakPercent": 5.394420748712228,
+          "samples": 4,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "recovery:selfhost-restore-d-drill-f68ba296f50b": {
+          "rssPeakBytes": 75874304,
+          "cgroupPeakBytes": 174239744,
+          "cpuUsec": 2369676,
+          "cpuPeakPercent": 3.163169984686064,
+          "samples": 5,
+          "maxConnections": 6,
+          "maxWalBytes": 100663346,
+          "maxPgDataBytes": 135282688,
+          "minFreeBytes": 781236899840
+        },
+        "tls": {
+          "rssPeakBytes": 87056384,
+          "cgroupPeakBytes": 48197632,
+          "cpuUsec": 2339869,
+          "cpuPeakPercent": 1.809191430545957,
+          "samples": 5,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        }
+      },
+      "maxConnections": 7,
+      "maxWalBytes": 117440562,
+      "maxPgDataBytes": 135684096,
+      "minFreeBytes": 781236899840
+    },
+    "restore_secondary_only": {
+      "samples": 8,
+      "services": {
+        "replica-tls": {
+          "rssPeakBytes": 92385280,
+          "cgroupPeakBytes": 52441088,
+          "cpuUsec": 2482031,
+          "cpuPeakPercent": 5.615488147342323,
+          "samples": 8,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "backup": {
+          "rssPeakBytes": 24666112,
+          "cgroupPeakBytes": 93872128,
+          "cpuUsec": 9436069,
+          "cpuPeakPercent": 4.534928048472608,
+          "samples": 1,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "postgres": {
+          "rssPeakBytes": 115036160,
+          "cgroupPeakBytes": 211111936,
+          "cpuUsec": 10525828,
+          "cpuPeakPercent": 1.0822466237536286,
+          "samples": 1,
+          "maxConnections": 7,
+          "maxWalBytes": 100663660,
+          "maxPgDataBytes": 135835648,
+          "minFreeBytes": 781236682752
+        },
+        "replica-storage": {
+          "rssPeakBytes": 213286912,
+          "cgroupPeakBytes": 174710784,
+          "cpuUsec": 4752670,
+          "cpuPeakPercent": 2.356884561891516,
+          "samples": 8,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "object-storage": {
+          "rssPeakBytes": 231149568,
+          "cgroupPeakBytes": 228012032,
+          "cpuUsec": 3980782,
+          "cpuPeakPercent": 1.0195077622112836,
+          "samples": 1,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "recovery:selfhost-restore-d-drill-f68ba296f50b": {
+          "rssPeakBytes": 76005376,
+          "cgroupPeakBytes": 174239744,
+          "cpuUsec": 2681811,
+          "cpuPeakPercent": 2.969492703266157,
+          "samples": 8,
+          "maxConnections": 6,
+          "maxWalBytes": 100663346,
+          "maxPgDataBytes": 135282688,
+          "minFreeBytes": 781101281280
+        },
+        "tls": {
+          "rssPeakBytes": 87920640,
+          "cgroupPeakBytes": 49614848,
+          "cpuUsec": 2921350,
+          "cpuPeakPercent": 1.4683863636363637,
+          "samples": 1,
+          "maxConnections": 0,
+          "maxWalBytes": 0,
+          "maxPgDataBytes": 0,
+          "minFreeBytes": null
+        },
+        "recovery:selfhost-restore-d-drill-96487cc055ad": {
+          "rssPeakBytes": 84758528,
+          "cgroupPeakBytes": 146817024,
+          "cpuUsec": 759192,
+          "cpuPeakPercent": 20.477566225165564,
+          "samples": 4,
+          "maxConnections": 4,
+          "maxWalBytes": 100663296,
+          "maxPgDataBytes": 135270400,
+          "minFreeBytes": 781101281280
+        }
+      },
+      "maxConnections": 7,
+      "maxWalBytes": 100663660,
+      "maxPgDataBytes": 135835648,
+      "minFreeBytes": 781101281280
+    }
+  }
+}

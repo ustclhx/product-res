@@ -1,0 +1,61 @@
+{
+  "sha": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+  "at": "2026-10-16T16:05:42.240137+00:00",
+  "tlsVerified": true,
+  "certificate": {
+    "san": [["DNS", "selfhost.ezarouter.cc"]],
+    "issuer": [
+      [["countryName", "US"]],
+      [["organizationName", "Let's Encrypt"]],
+      [["commonName", "YE2"]]
+    ],
+    "notBefore": "Oct 16 15:05:37 2026 GMT",
+    "notAfter": "Jan 14 15:05:36 2027 GMT",
+    "sha256": "621ae3ee8c624e4fee249c76a8afa93d8948d916854f200a4384490a2127f5b1"
+  },
+  "httpStatus": "308",
+  "web": {
+    "status": "ok",
+    "version": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+    "db": {
+      "status": "up",
+      "latencyMs": 1
+    },
+    "cache": {
+      "status": "up"
+    },
+    "queue": {
+      "status": "up"
+    },
+    "scheduler": {
+      "status": "up",
+      "lastCronAt": "2026-10-16T16:05:01.046Z"
+    },
+    "jobs": {
+      "lastCronAt": "2026-10-16T16:05:01.046Z"
+    }
+  },
+  "jobs": {
+    "http": 200,
+    "body": {
+      "status": "ok",
+      "version": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+      "queue": {
+        "status": "up"
+      },
+      "scheduler": {
+        "status": "up",
+        "lastCronAt": "2026-10-16T16:05:01.046Z"
+      },
+      "jobs": {
+        "lastCronAt": "2026-10-16T16:05:01.046Z"
+      },
+      "db": {
+        "status": "up"
+      },
+      "cache": {
+        "status": "up"
+      }
+    }
+  }
+}

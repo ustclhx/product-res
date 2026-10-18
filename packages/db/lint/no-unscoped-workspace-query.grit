@@ -1,0 +1,50 @@
+// 禁止绕过 scoped(db, workspaceId) 直接查询带空间列的表（docs/04-auth-and-tenancy.md §3「数据隔离」）。
+// 生效范围见根目录 biome.json 的 plugins.includes：apps/web/src/features/** 与 apps/jobs/src/**（不含测试）。
+// 注意（Biome 2.5）：插件的 includes 按绝对路径匹配，glob 必须以 `**/` 开头，写成 `apps/...` 不会生效。
+//
+// 拦截：db.select().from(t)、db.insert(t)、db.update(t)、db.delete(t)、db.query.t（含 tx.* 与 schema.t 写法）。
+// scoped 的方法以表为参数、写入方法至少两个参数（s.select(t)、s.insert(t, v)、s.delete(t, where)），不会命中。
+// 确需跨空间查询的系统任务（如回收卡住任务的 Cron）用 `// biome-ignore lint/plugin: <理由>` 显式豁免。
+//
+// workspace_table() 必须列出 schema 中所有带 workspace_id / organization_id 列的表（导出名），
+// packages/db/lint/no-unscoped-workspace-query.test.ts 会对照 schema 校验，新增空间表时在这里补上。
+
+language js
+
+pattern workspace_table() {
+  or {
+    `aiConversation`,
+    `aiMessage`,
+    `aiTask`,
+    `auditLog`,
+    `billingCustomer`,
+    `billingCompensation`,
+    `creditDebt`,
+    `creditGrant`,
+    `creditHold`,
+    `creditLedger`,
+    `file`,
+    `invitation`,
+    `member`,
+    `notification`,
+    `payment`,
+    `paymentRefund`,
+    `purchase`,
+    `refundRequest`,
+    `subscription`
+  }
+}
+
+or {
+  `$_.from($table)`,
+  `$_.insert($table)`,
+  `$_.update($table)`,
+  `$_.delete($table)`,
+  `$_.query.$table`
+} where {
+  $table <: or {
+    workspace_table(),
+    `$_.$name` where { $name <: workspace_table() }
+  },
+  register_diagnostic(span=$table, message="Direct query on a workspace-owned table: use scoped(db, workspaceId) from @product-res/db so the workspace filter cannot be forgotten.", severity="error")
+}

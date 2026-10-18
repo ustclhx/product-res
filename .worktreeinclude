@@ -1,0 +1,3 @@
+.dev.vars
+apps/web/.dev.vars
+apps/jobs/.dev.vars

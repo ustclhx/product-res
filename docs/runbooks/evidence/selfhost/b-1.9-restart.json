@@ -1,0 +1,42 @@
+{
+  "at": "2026-10-14T17:09:56.967627+00:00",
+  "before": {
+    "effects": 90,
+    "beforeCalls": 1,
+    "workflows": [
+      {
+        "id": "workflow:YnVkZ2V0LWxvbmctc2xlZXAtdjE:YjE5LTIwMjYxMDE1LWxvbmctc2xlZXA",
+        "status": "PENDING",
+        "executor": "probe-worker-a",
+        "createdAt": 1791997271746,
+        "updatedAt": 1791997274911,
+        "recovery": 1
+      }
+    ]
+  },
+  "restartedAt": "2026-10-14T17:10:54.688893+00:00",
+  "localBudgetCaps": {
+    "postgres": ["1g", "0.5"],
+    "valkey": ["256m", "0.1"],
+    "web": ["768m", "0.4"],
+    "jobs": ["512m", "0.3"],
+    "jobs2": ["512m", "0.3"],
+    "caddy": ["128m", "0.1"]
+  },
+  "defaultComposeChanged": false,
+  "after": {
+    "effects": 90,
+    "beforeCalls": 1,
+    "workflows": [
+      {
+        "id": "workflow:YnVkZ2V0LWxvbmctc2xlZXAtdjE:YjE5LTIwMjYxMDE1LWxvbmctc2xlZXA",
+        "status": "PENDING",
+        "executor": "probe-worker-b",
+        "createdAt": 1791997271746,
+        "updatedAt": 1791997857543,
+        "recovery": 2
+      }
+    ]
+  },
+  "sameIdentityAndBeforeCallbackCount": true
+}

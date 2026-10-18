@@ -1,0 +1,88 @@
+{
+  "mode": "sandbox",
+  "recordingMethod": "Additional temporary PayPal webhook to a local receiver through Docker cloudflared quick tunnel; original staging endpoint unchanged",
+  "rawBodiesPersisted": false,
+  "events": [
+    {
+      "receivedAt": "2026-10-18T06:06:58.351Z",
+      "providerEventId": "WH-74996607YG492504P-63W01416TB2611352",
+      "eventType": "BILLING.SUBSCRIPTION.ACTIVATED",
+      "rawBodySha256": "58edb8ee6785706c9ad7ad0b59aea76ad3ef004e9d478eec848d7d85bd58ed1f",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200
+    },
+    {
+      "receivedAt": "2026-10-18T06:07:31.720Z",
+      "providerEventId": "WH-06795432VE1603914-568340816M101843Y",
+      "eventType": "PAYMENT.SALE.COMPLETED",
+      "rawBodySha256": "9221cf3464fc2ad1f5c58131fe7ce7df6a7c4079b8cc9b109d5d9c359fe1e92e",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200
+    },
+    {
+      "receivedAt": "2026-10-18T06:07:45.874Z",
+      "providerEventId": "WH-3098816049670534W-0VR011767E8642234",
+      "eventType": "BILLING.SUBSCRIPTION.SUSPENDED",
+      "rawBodySha256": "8a97ff55657d8f233d9bb3379994e23f6c61a4d543c6b984c37b7915251ffb10",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200
+    },
+    {
+      "receivedAt": "2026-10-18T06:08:46.660Z",
+      "providerEventId": "WH-85E01599LH0241923-97384431CX2988629",
+      "eventType": "BILLING.SUBSCRIPTION.ACTIVATED",
+      "rawBodySha256": "c69149f1d3a14d0c426c06b0021acdd34ea54bd3a3e56d73dfcd3efb309fddc7",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200
+    },
+    {
+      "receivedAt": "2026-10-18T06:09:25.697Z",
+      "providerEventId": "WH-4LW90199Y94128644-7TX318226L151503C",
+      "eventType": "BILLING.SUBSCRIPTION.SUSPENDED",
+      "rawBodySha256": "7b56a695c3b784a9cfe1e579676810a92bb76dd0eb07a3a560914564e3cdddc1",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200
+    },
+    {
+      "receivedAt": "2026-10-18T06:09:56.989Z",
+      "providerEventId": "WH-459610351E450045E-75E46635T6944624M",
+      "eventType": "BILLING.SUBSCRIPTION.ACTIVATED",
+      "rawBodySha256": "6fbf8ecac3f9e3599e7497c7145fc05300ea88f75e261a0c897404cd70a1730b",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200
+    },
+    {
+      "receivedAt": "2026-10-18T06:10:07.026Z",
+      "providerEventId": "WH-3LK2667568219715H-8FH43325L09479807",
+      "eventType": "PAYMENT.SALE.COMPLETED",
+      "rawBodySha256": "caf5e0d985d5d3c38bc1c61d121344b512dcbfaea271cd0a58f788e866e89b3e",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200
+    },
+    {
+      "receivedAt": "2026-10-18T06:11:17.149Z",
+      "providerEventId": "WH-8TC931069P0969745-5N416127V23922151",
+      "eventType": "BILLING.SUBSCRIPTION.SUSPENDED",
+      "rawBodySha256": "29ee9b9e04a870df1deb04fafa28b10f3d0fec868eac18c0a13ea7faa0f210aa",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200
+    },
+    {
+      "receivedAt": "2026-10-18T06:11:57.255Z",
+      "providerEventId": "WH-2SA46682YS500962V-3HD30640FY995753X",
+      "eventType": "PAYMENT.SALE.REFUNDED",
+      "rawBodySha256": "bc81c79483193b132f98843f31a712bc8f2ad391c7ff0946f771a9db07e6dfbf",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200
+    },
+    {
+      "receivedAt": "2026-10-18T06:13:57.472Z",
+      "providerEventId": "WH-2EM53369TC8582119-4KB58549SA013722Y",
+      "eventType": "PAYMENT.SALE.REFUNDED",
+      "rawBodySha256": "81ad5b04805817a1eec2c359862bb54acf5093376e13f2c105ce8267ff0b93bd",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200
+    }
+  ],
+  "promotedManifest": "packages/billing/src/paypal/fixtures/recorded/w3-provenance.json"
+}

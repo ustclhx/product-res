@@ -1,0 +1,32 @@
+{
+  "runId": "acceptance-2026-10-13g",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T09:56:48.464Z",
+  "data": {
+    "checkedAt": "2026-10-13T09:56:48.462Z",
+    "method": "Read-only model query using the same Docker psql path as acceptance",
+    "exitCode": 0,
+    "querySucceeded": true,
+    "mediaModelRows": [
+      {
+        "modelKey": "acceptance-fal-image",
+        "enabled": true
+      },
+      {
+        "modelKey": "acceptance-fal-video",
+        "enabled": true
+      },
+      {
+        "modelKey": "acceptance-workers-image",
+        "enabled": true
+      }
+    ],
+    "safeErrorCategories": {
+      "authentication": false,
+      "network": false,
+      "timeout": false,
+      "container": false,
+      "sql": false
+    }
+  }
+}

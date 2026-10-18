@@ -1,0 +1,21 @@
+{
+  "observedAt": "2026-10-18T05:44:42.657912+00:00",
+  "status": "blocked-paypal-buyer-login",
+  "browserReleased": true,
+  "browserReleaseAnnouncement": "浏览器已释放",
+  "completedTasks": ["1.1", "3.1"],
+  "pendingTasks": ["2.1", "3.2"],
+  "adminReplayAuditId": "01a14d88-cd77-764e-98c9-64b3250f8ffc",
+  "paypalLoginOrigin": "https://www.sandbox.paypal.com",
+  "paypalLoginPath": "/signin",
+  "credentialsEntered": false,
+  "paypalTransactionsCreated": false,
+  "receiverStarted": false,
+  "quickTunnelStarted": false,
+  "checks": {
+    "pnpm check": "passed",
+    "evidenceCredentialPatternScan": "passed",
+    "replaySnapshotAndAuditVerification": "passed"
+  },
+  "prReady": false
+}

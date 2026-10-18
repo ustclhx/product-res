@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["vite/client", "@cloudflare/workers-types", "@cloudflare/vitest-plugin/types"],
+    "jsx": "react-jsx",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"]
+  },
+  "include": [
+    "test",
+    "src/env.d.ts",
+    "e2e/staging-acceptance/local-media.ts",
+    "e2e/staging-acceptance/fault-local-media.ts",
+    "src/version.d.ts"
+  ],
+  "exclude": ["test/global-setup.ts"]
+}

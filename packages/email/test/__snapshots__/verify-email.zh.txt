@@ -1,0 +1,18 @@
+Acme
+
+
+验证你的邮箱
+
+Ada，你好：
+
+感谢注册 Acme。请点击下方按钮确认你的邮箱地址。
+
+验证邮箱 https://acme.test/api/auth/verify-email?token=tok_verify
+
+如果按钮无法点击，请将以下链接复制到浏览器中打开：
+
+https://acme.test/api/auth/verify-email?token=tok_verify
+
+----------------------------------------
+
+如果你没有注册 Acme 账号，请忽略这封邮件。

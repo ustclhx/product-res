@@ -1,0 +1,21 @@
+{
+  // 7.1 锁实测用的临时 Worker，部署 / 运行 / 清理见 README.md。
+  // 用完必须 `wrangler delete -c scripts/probes/71-locks/wrangler.jsonc` 删除。
+  "$schema": "../../../apps/web/node_modules/wrangler/config-schema.json",
+  "name": "probe-71-locks",
+  "main": "./worker.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": false,
+  // 本目录不是 workspace 包，借用 packages/db 安装的 postgres.js（与应用同一版本）。
+  // wrangler 以本配置所在目录解析别名路径；直接指向 workerd 入口。
+  "alias": {
+    "postgres": "../../../packages/db/node_modules/postgres/cf/src/index.js"
+  },
+  "hyperdrive": [
+    // product-res-staging（关缓存），连本机 PG 的 product_res_staging 库（docs/runbooks/hyperdrive-tunnel.md）
+    { "binding": "HYPERDRIVE", "id": "c4b28441aeaf49c3853a321a39cf8ec4" }
+  ]
+  // PROBE_TOKEN 在部署时用 --var 传入，不写进仓库
+}

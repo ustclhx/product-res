@@ -1,0 +1,7 @@
+{
+  "stage": "backup TLS fixture startup",
+  "observedError": "EACCES reading test helper",
+  "cause": "host harness source file mode0600/UID501 retained by tar; UID1000 container cannot read",
+  "correction": "set only non-secret bound test helpers to0644 in owned VM; secret files remain0600",
+  "publishedArtifactChanged": false
+}

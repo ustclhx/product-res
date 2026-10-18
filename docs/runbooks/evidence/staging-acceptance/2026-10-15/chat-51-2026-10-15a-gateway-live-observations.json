@@ -1,0 +1,137 @@
+{
+  "runId": "chat-51-2026-10-15a",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T20:34:51.688Z",
+  "data": {
+    "windowStart": "2026-10-14T20:30:30.834Z",
+    "pollIntervalMs": 15000,
+    "observations": [
+      {
+        "id": "01a13c1d-8251-75eb-8fe4-e747d81142c9",
+        "createdAt": "2026-10-14T20:32:10.781Z",
+        "provider": "deepseek",
+        "model": "deepseek/deepseek-flash",
+        "tokensIn": 17,
+        "tokensOut": 10,
+        "success": true,
+        "cached": false,
+        "statusCode": 200,
+        "durationMs": 845,
+        "firstObservedAt": "2026-10-14T20:32:27.269Z",
+        "lastObservedAt": "2026-10-14T20:34:51.688Z"
+      },
+      {
+        "id": "01a13c1e-6655-77a3-8a81-8910dde8c68e",
+        "createdAt": "2026-10-14T20:33:09.553Z",
+        "provider": "deepseek",
+        "model": "deepseek/deepseek-flash",
+        "tokensIn": 40,
+        "tokensOut": 343,
+        "success": true,
+        "cached": false,
+        "statusCode": 200,
+        "durationMs": 1520,
+        "firstObservedAt": "2026-10-14T20:33:15.464Z",
+        "lastObservedAt": "2026-10-14T20:34:51.688Z"
+      },
+      {
+        "id": "01a13c1e-dd85-7759-bbc9-0308e8b62665",
+        "createdAt": "2026-10-14T20:33:39.118Z",
+        "provider": "deepseek",
+        "model": "deepseek/deepseek-flash",
+        "tokensIn": 17,
+        "tokensOut": 9,
+        "success": true,
+        "cached": false,
+        "statusCode": 200,
+        "durationMs": 779,
+        "firstObservedAt": "2026-10-14T20:33:47.458Z",
+        "lastObservedAt": "2026-10-14T20:34:51.688Z"
+      },
+      {
+        "id": "01a13c1f-be81-71fd-bb7d-c050d5e25f46",
+        "createdAt": "2026-10-14T20:34:37.691Z",
+        "provider": "deepseek",
+        "model": "deepseek/deepseek-flash",
+        "tokensIn": 40,
+        "tokensOut": 343,
+        "success": true,
+        "cached": false,
+        "statusCode": 200,
+        "durationMs": 1829,
+        "firstObservedAt": "2026-10-14T20:34:51.688Z",
+        "lastObservedAt": "2026-10-14T20:34:51.688Z"
+      }
+    ],
+    "polls": [
+      {
+        "observedAt": "2026-10-14T20:32:11.263Z",
+        "http": 200,
+        "resultCount": 0,
+        "totalCount": 0
+      },
+      {
+        "observedAt": "2026-10-14T20:32:27.269Z",
+        "http": 200,
+        "resultCount": 1,
+        "totalCount": 1
+      },
+      {
+        "observedAt": "2026-10-14T20:32:43.506Z",
+        "http": 200,
+        "resultCount": 1,
+        "totalCount": 1
+      },
+      {
+        "observedAt": "2026-10-14T20:32:59.458Z",
+        "http": 200,
+        "resultCount": 1,
+        "totalCount": 1
+      },
+      {
+        "observedAt": "2026-10-14T20:33:15.464Z",
+        "http": 200,
+        "resultCount": 2,
+        "totalCount": 2
+      },
+      {
+        "observedAt": "2026-10-14T20:33:31.459Z",
+        "http": 200,
+        "resultCount": 2,
+        "totalCount": 2
+      },
+      {
+        "observedAt": "2026-10-14T20:33:47.458Z",
+        "http": 200,
+        "resultCount": 3,
+        "totalCount": 3
+      },
+      {
+        "observedAt": "2026-10-14T20:34:03.458Z",
+        "http": 200,
+        "resultCount": 3,
+        "totalCount": 3
+      },
+      {
+        "observedAt": "2026-10-14T20:34:19.613Z",
+        "http": 200,
+        "resultCount": 3,
+        "totalCount": 3
+      },
+      {
+        "observedAt": "2026-10-14T20:34:35.672Z",
+        "http": 200,
+        "resultCount": 3,
+        "totalCount": 3
+      },
+      {
+        "observedAt": "2026-10-14T20:34:51.688Z",
+        "http": 200,
+        "resultCount": 4,
+        "totalCount": 4
+      }
+    ],
+    "firstObservedLagIsUpperBound": true,
+    "allResponsesAllowlistedBeforePersistence": true
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "sha": "598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+  "image": "ghcr.io/ustclhx/product-res/jobs@sha256:8241f6426ae06e1b143ce6e3d3c919904bdc472f90645f06d0d201b088e7012d",
+  "pidMode": "",
+  "privatePidNamespaceVerified": true,
+  "hostPidUsed": false,
+  "businessSourceMounts": [],
+  "ownershipVolume": "selfhost-release-f46cdfcc1261_job_owners",
+  "hostIdentityReadOnly": true
+}

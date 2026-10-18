@@ -1,0 +1,110 @@
+{
+  "recordedAt": "2026-10-14T17:01:31.937610+00:00",
+  "source": "official GitHub API repository/release metadata; not a future support SLA",
+  "repositories": [
+    {
+      "full_name": "dbos-inc/dbos-transact-ts",
+      "html_url": "https://github.com/dbos-inc/dbos-transact-ts",
+      "created_at": "2023-07-12T16:43:49Z",
+      "updated_at": "2026-10-14T15:31:27Z",
+      "pushed_at": "2026-10-14T15:31:13Z",
+      "archived": false,
+      "open_issues_count": 7,
+      "license": "MIT",
+      "releases": [
+        {
+          "tag_name": "v5.2",
+          "published_at": "2026-09-29T15:42:14Z",
+          "html_url": "https://github.com/dbos-inc/dbos-transact-ts/releases/tag/v5.2"
+        },
+        {
+          "tag_name": "v5.1",
+          "published_at": "2026-09-24T18:01:18Z",
+          "html_url": "https://github.com/dbos-inc/dbos-transact-ts/releases/tag/v5.1"
+        },
+        {
+          "tag_name": "v5.0",
+          "published_at": "2026-09-16T17:20:23Z",
+          "html_url": "https://github.com/dbos-inc/dbos-transact-ts/releases/tag/v5.0"
+        },
+        {
+          "tag_name": "v4.27",
+          "published_at": "2026-08-25T15:37:38Z",
+          "html_url": "https://github.com/dbos-inc/dbos-transact-ts/releases/tag/v4.27"
+        },
+        {
+          "tag_name": "v4.26",
+          "published_at": "2026-08-18T15:14:21Z",
+          "html_url": "https://github.com/dbos-inc/dbos-transact-ts/releases/tag/v4.26"
+        },
+        {
+          "tag_name": "v4.25",
+          "published_at": "2026-07-30T15:04:00Z",
+          "html_url": "https://github.com/dbos-inc/dbos-transact-ts/releases/tag/v4.25"
+        },
+        {
+          "tag_name": "v4.24",
+          "published_at": "2026-07-21T15:22:23Z",
+          "html_url": "https://github.com/dbos-inc/dbos-transact-ts/releases/tag/v4.24"
+        },
+        {
+          "tag_name": "v4.23",
+          "published_at": "2026-06-30T15:38:26Z",
+          "html_url": "https://github.com/dbos-inc/dbos-transact-ts/releases/tag/v4.23"
+        }
+      ]
+    },
+    {
+      "full_name": "timgit/pg-boss",
+      "html_url": "https://github.com/timgit/pg-boss",
+      "created_at": "2016-02-27T22:55:12Z",
+      "updated_at": "2026-10-13T21:44:10Z",
+      "pushed_at": "2026-10-14T14:13:21Z",
+      "archived": false,
+      "open_issues_count": 8,
+      "license": "MIT",
+      "releases": [
+        {
+          "tag_name": "12.38.0",
+          "published_at": "2026-10-13T17:45:41Z",
+          "html_url": "https://github.com/timgit/pg-boss/releases/tag/12.38.0"
+        },
+        {
+          "tag_name": "proxy-1.12.0",
+          "published_at": "2026-10-14T13:44:39Z",
+          "html_url": "https://github.com/timgit/pg-boss/releases/tag/proxy-1.12.0"
+        },
+        {
+          "tag_name": "dashboard-1.12.0",
+          "published_at": "2026-10-14T13:46:15Z",
+          "html_url": "https://github.com/timgit/pg-boss/releases/tag/dashboard-1.12.0"
+        },
+        {
+          "tag_name": "proxy-1.11.0",
+          "published_at": "2026-10-09T14:10:28Z",
+          "html_url": "https://github.com/timgit/pg-boss/releases/tag/proxy-1.11.0"
+        },
+        {
+          "tag_name": "dashboard-1.11.0",
+          "published_at": "2026-10-09T14:07:21Z",
+          "html_url": "https://github.com/timgit/pg-boss/releases/tag/dashboard-1.11.0"
+        },
+        {
+          "tag_name": "12.37.1",
+          "published_at": "2026-10-08T15:55:51Z",
+          "html_url": "https://github.com/timgit/pg-boss/releases/tag/12.37.1"
+        },
+        {
+          "tag_name": "12.37.0",
+          "published_at": "2026-10-05T21:42:17Z",
+          "html_url": "https://github.com/timgit/pg-boss/releases/tag/12.37.0"
+        },
+        {
+          "tag_name": "12.36.0",
+          "published_at": "2026-10-02T20:51:52Z",
+          "html_url": "https://github.com/timgit/pg-boss/releases/tag/12.36.0"
+        }
+      ]
+    }
+  ]
+}

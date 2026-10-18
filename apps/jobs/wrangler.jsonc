@@ -1,0 +1,150 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "product-res-jobs",
+  "main": "./src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": { "SENTRY_ENVIRONMENT": "development", "PAYMENT_MODE": "test" },
+
+  "r2_buckets": [{ "binding": "FILES", "bucket_name": "product-res-files" }],
+  // 本地开发时 localConnectionString 指向主 checkout 的 product_res_dev；
+  // Orca worktree 中由 scripts/dev.mjs（或 web 的 vite.config.ts）从 .env.worktree 读取
+  // CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE(_CACHED) 覆盖。
+  // 顶层 id 为占位值，只用于本地开发；staging 见 env.staging（阶段一，docs/07 §0）。
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "00000000000000000000000000000000",
+      "localConnectionString": "postgres://app:app@localhost:5432/product_res_dev"
+    },
+    {
+      "binding": "HYPERDRIVE_CACHED",
+      "id": "00000000000000000000000000000000",
+      "localConnectionString": "postgres://app:app@localhost:5432/product_res_dev"
+    }
+  ],
+  // Workflow 定义在 jobs；apps/web 用同名 workflow + script_name: "jobs" 绑定
+
+  // web 投递业务事件，jobs 消费并从 Cron 投递对账告警。
+  // max_retries 与 src/queues/email.ts 的 EMAIL_MAX_ATTEMPTS（首次 + 5 次重试）一致；
+  // 不配置死信队列：最后一次投递仍失败时由消费者确认并记录 email.dropped（原因见该文件注释）。
+  "queues": {
+    "producers": [
+      { "queue": "product-res-email", "binding": "EMAIL_QUEUE" },
+      { "queue": "product-res-events", "binding": "EVENTS_QUEUE" }
+    ],
+    "consumers": [
+      {
+        "queue": "product-res-email",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 5
+      },
+      {
+        "queue": "product-res-events",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 5
+      }
+    ]
+  },
+  "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
+  "triggers": {
+    // 心跳：写 setting 表的 jobs.lastCronAt（src/cron/heartbeat.ts）
+    "crons": ["*/5 * * * *", "0 3 * * *", "0 * * * *", "*/10 * * * *", "0 4 * * *"]
+  },
+  // hyperdrive / workflows / queues 不会从顶层继承，每个环境都要重新声明。
+  // 资源名带 -staging 后缀，避免与以后的 production 冲突。
+  "env": {
+    "staging": {
+      "name": "product-res-jobs-staging",
+      "vars": {
+        "SENTRY_ENVIRONMENT": "staging",
+        "AI_FAULT_INJECTION": "enabled",
+        "PAYMENT_MODE": "test",
+        "CRON_PROFILE": "reduced"
+      },
+
+      "r2_buckets": [{ "binding": "FILES", "bucket_name": "product-res-files-staging" }],
+      // 计费 Cron 验收需要查询一小时内的完整日志，仅 staging 开启日志采集。
+      "observability": {
+        "enabled": true,
+        "head_sampling_rate": 1,
+        "traces": { "enabled": false }
+      },
+      "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
+      "hyperdrive": [
+        // Neon product_res_staging，app 非 pooled TLS 直连；分别关闭缓存与缓存 60 秒（docs/07 §2）
+        { "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000" },
+        { "binding": "HYPERDRIVE_CACHED", "id": "00000000000000000000000000000000" }
+      ],
+
+      "queues": {
+        "producers": [
+          { "queue": "product-res-email-staging", "binding": "EMAIL_QUEUE" },
+          { "queue": "product-res-events-staging", "binding": "EVENTS_QUEUE" }
+        ],
+        "consumers": [
+          {
+            "queue": "product-res-email-staging",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 5
+          },
+          {
+            "queue": "product-res-events-staging",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 5
+          }
+        ]
+      },
+      "triggers": {
+        // staging 每半小时合并心跳与维护；小时和每日任务重合，不增加唤醒时点。
+        "crons": ["*/30 * * * *", "0 3 * * *", "0 * * * *", "0 4 * * *"]
+      }
+    },
+    // add-cloud-production-neon 2.1：生产资源与 staging 一一对应（production runbook §8.B）。
+    // 测试期沿用 reduced Cron，对外开放注册前改回默认调度（design D7）；不设 PAYMENT_MODE / AI_FAULT_INJECTION。
+    "production": {
+      "name": "product-res-jobs-production",
+      "workers_dev": false,
+      "preview_urls": false,
+      "vars": {
+        "SENTRY_ENVIRONMENT": "production",
+        "CRON_PROFILE": "reduced"
+      },
+
+      "r2_buckets": [{ "binding": "FILES", "bucket_name": "product-res-files-production" }],
+      "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
+      "hyperdrive": [
+        { "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000" },
+        { "binding": "HYPERDRIVE_CACHED", "id": "00000000000000000000000000000000" }
+      ],
+
+      "queues": {
+        "producers": [
+          { "queue": "product-res-email-production", "binding": "EMAIL_QUEUE" },
+          { "queue": "product-res-events-production", "binding": "EVENTS_QUEUE" }
+        ],
+        "consumers": [
+          {
+            "queue": "product-res-email-production",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 5
+          },
+          {
+            "queue": "product-res-events-production",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 5
+          }
+        ]
+      },
+      "triggers": {
+        "crons": ["*/30 * * * *", "0 3 * * *", "0 * * * *", "0 4 * * *"]
+      }
+    }
+  }
+}

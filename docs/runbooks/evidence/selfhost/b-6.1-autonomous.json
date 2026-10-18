@@ -1,0 +1,112 @@
+{
+  "startedAt": "2026-10-14T12:08:41.756Z",
+  "scheduleId": "b-accept-autonomous-f0febab1-84a5-4664-a967-72228fd07aa2",
+  "runId": "12f7c27a-8825-4868-b488-76db8aacd022",
+  "definition": {
+    "id": "b-accept-autonomous-f0febab1-84a5-4664-a967-72228fd07aa2",
+    "cron": "*/2 * * * * *",
+    "timeZone": "Asia/Singapore",
+    "missedRun": "skip",
+    "holdMs": 3200
+  },
+  "control": "autonomous scheduler.start(); no tick or injected current date",
+  "snapshots": [
+    {
+      "label": "first-handler-started",
+      "at": "2026-10-14T12:08:48.651Z",
+      "runs": [
+        {
+          "id": "01a13a50-ad0c-7163-aa5f-c75a88d08785",
+          "schedule_id": "b-accept-autonomous-f0febab1-84a5-4664-a967-72228fd07aa2",
+          "scheduled_at": "2026-10-14T12:08:48.000Z",
+          "state": "running",
+          "executor_id": "b-accept-autonomous-2",
+          "started_at": "2026-10-14T12:08:48.358Z",
+          "finished_at": null
+        }
+      ],
+      "attempts": [
+        {
+          "run_id": "12f7c27a-8825-4868-b488-76db8aacd022",
+          "schedule_id": "b-accept-autonomous-f0febab1-84a5-4664-a967-72228fd07aa2",
+          "scheduled_at": "2026-10-14T12:08:48.000Z",
+          "workflow_id": "schedule-run:01a13a50-ad0c-7163-aa5f-c75a88d08785",
+          "executor_id": "b-accept-autonomous-2",
+          "started_at": "2026-10-14T12:08:48.468Z",
+          "finished_at": null
+        }
+      ],
+      "effects": []
+    },
+    {
+      "label": "crossed-next-slot-while-running",
+      "at": "2026-10-14T12:08:51.012Z",
+      "runs": [
+        {
+          "id": "01a13a50-ad0c-7163-aa5f-c75a88d08785",
+          "schedule_id": "b-accept-autonomous-f0febab1-84a5-4664-a967-72228fd07aa2",
+          "scheduled_at": "2026-10-14T12:08:48.000Z",
+          "state": "running",
+          "executor_id": "b-accept-autonomous-2",
+          "started_at": "2026-10-14T12:08:48.358Z",
+          "finished_at": null
+        }
+      ],
+      "attempts": [
+        {
+          "run_id": "12f7c27a-8825-4868-b488-76db8aacd022",
+          "schedule_id": "b-accept-autonomous-f0febab1-84a5-4664-a967-72228fd07aa2",
+          "scheduled_at": "2026-10-14T12:08:48.000Z",
+          "workflow_id": "schedule-run:01a13a50-ad0c-7163-aa5f-c75a88d08785",
+          "executor_id": "b-accept-autonomous-2",
+          "started_at": "2026-10-14T12:08:48.468Z",
+          "finished_at": null
+        }
+      ],
+      "effects": []
+    },
+    {
+      "label": "completed-after-stopping-new-receipts",
+      "at": "2026-10-14T12:08:52.118Z",
+      "runs": [
+        {
+          "id": "01a13a50-ad0c-7163-aa5f-c75a88d08785",
+          "schedule_id": "b-accept-autonomous-f0febab1-84a5-4664-a967-72228fd07aa2",
+          "scheduled_at": "2026-10-14T12:08:48.000Z",
+          "state": "completed",
+          "executor_id": "b-accept-autonomous-2",
+          "started_at": "2026-10-14T12:08:48.358Z",
+          "finished_at": "2026-10-14T12:08:52.029Z"
+        }
+      ],
+      "attempts": [
+        {
+          "run_id": "12f7c27a-8825-4868-b488-76db8aacd022",
+          "schedule_id": "b-accept-autonomous-f0febab1-84a5-4664-a967-72228fd07aa2",
+          "scheduled_at": "2026-10-14T12:08:48.000Z",
+          "workflow_id": "schedule-run:01a13a50-ad0c-7163-aa5f-c75a88d08785",
+          "executor_id": "b-accept-autonomous-2",
+          "started_at": "2026-10-14T12:08:48.468Z",
+          "finished_at": "2026-10-14T12:08:51.989Z"
+        }
+      ],
+      "effects": [
+        {
+          "run_id": "12f7c27a-8825-4868-b488-76db8aacd022",
+          "schedule_id": "b-accept-autonomous-f0febab1-84a5-4664-a967-72228fd07aa2",
+          "scheduled_at": "2026-10-14T12:08:48.000Z"
+        }
+      ]
+    }
+  ],
+  "startedMessage": {
+    "event": "handler-started",
+    "scheduleId": "b-accept-autonomous-f0febab1-84a5-4664-a967-72228fd07aa2",
+    "scheduledAt": "2026-10-14T12:08:48.000Z",
+    "date": true
+  },
+  "latenessMs": 468,
+  "durationMs": 3521,
+  "passed": true,
+  "finishedAt": "2026-10-14T12:08:52.215Z"
+}

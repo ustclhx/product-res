@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-09T11:13:30.824Z",
+  "payment": "pi_3UOYjIL3UTpBAoXo1gvunegg",
+  "refund": "re_3UOYjIL3UTpBAoXo1O6Tc6or",
+  "charge": "ch_3UOYjIL3UTpBAoXo11CkLYi7",
+  "amount": 200,
+  "currency": "usd",
+  "status": "succeeded",
+  "livemode": false
+}

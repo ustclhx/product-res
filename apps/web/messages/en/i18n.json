@@ -1,0 +1,9 @@
+{
+  "i18n_language": "Language",
+  "i18n_suggestion_label": "Language suggestion",
+  "i18n_suggestion": "Would you prefer to view this site in {language}?",
+  "i18n_switch": "Switch language",
+  "i18n_dismiss": "Keep current language",
+  "i18n_save_failed": "Unable to save your language. Please try again.",
+  "i18n_suggestion_failed": "Unable to load your language suggestion."
+}

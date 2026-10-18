@@ -1,0 +1,35 @@
+{
+  "runId": "acceptance-2026-10-13b",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T06:12:22.139Z",
+  "data": {
+    "taskId": "01a133e3-a44b-7406-8583-93df3e8f5d48",
+    "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+    "userId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+    "status": "succeeded",
+    "modelKey": "acceptance-workers-image",
+    "creditsCharged": 1,
+    "fileIds": ["01a133e3-c2a8-73d6-98c9-bcf71c82ae49"],
+    "reused": false,
+    "holdId": "01a133e3-a7d7-73b0-86f9-9d7c1b29c1ef",
+    "holdStatus": "captured",
+    "heldCredits": 1,
+    "capturedCredits": 1,
+    "ledger": [
+      {
+        "id": "01a133e3-cee1-7581-b414-15268afa0cd4",
+        "type": "consume",
+        "delta": -1
+      }
+    ],
+    "reconciliation": {
+      "ledgerTotal": 29,
+      "activeRemaining": 29,
+      "held": 0,
+      "debt": 0,
+      "expectedTotal": 29,
+      "difference": 0,
+      "consistent": true
+    }
+  }
+}

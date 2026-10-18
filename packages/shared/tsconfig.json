@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["src"],
+  "compilerOptions": {
+    // 测试用到 Request / Headers / console；源码不依赖这些全局类型（见 redact.ts、log.ts）
+    "lib": ["ES2023", "DOM", "DOM.Iterable"]
+  }
+}

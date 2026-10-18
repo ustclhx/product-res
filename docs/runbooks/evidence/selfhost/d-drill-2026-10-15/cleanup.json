@@ -1,0 +1,44 @@
+{
+  "passed": true,
+  "ownedContainersRemaining": [],
+  "ownedVolumesRemaining": [],
+  "ownedNetworksRemaining": [],
+  "unownedContainers": [
+    {
+      "before": {
+        "id": "fb0db8b5f27891f0fb07c6d0a3882c1e9ff7d2ff8af28cb6bf893197a4031cfa",
+        "name": "/product-res-pg",
+        "running": true,
+        "startedAt": "2026-10-03T14:02:56.775147301Z",
+        "volumes": ["product-res_pg-data"]
+      },
+      "after": {
+        "id": "fb0db8b5f27891f0fb07c6d0a3882c1e9ff7d2ff8af28cb6bf893197a4031cfa",
+        "name": "/product-res-pg",
+        "running": true,
+        "startedAt": "2026-10-03T14:02:56.775147301Z",
+        "volumes": ["product-res_pg-data"]
+      },
+      "unchanged": true
+    },
+    {
+      "before": {
+        "id": "8b81243efa78c586066bf37096d57259d1642d4f9cb8ff63007e933bd7743f8c",
+        "name": "/talent-labeler-eval-baseline-debug456",
+        "running": false,
+        "startedAt": "2026-01-02T10:25:28.644221594Z",
+        "volumes": []
+      },
+      "after": {
+        "id": "8b81243efa78c586066bf37096d57259d1642d4f9cb8ff63007e933bd7743f8c",
+        "name": "/talent-labeler-eval-baseline-debug456",
+        "running": false,
+        "startedAt": "2026-01-02T10:25:28.644221594Z",
+        "volumes": []
+      },
+      "unchanged": true
+    }
+  ],
+  "onlyOwnedProcessesStopped": true,
+  "originalResourceBaselineAt": "2026-10-14T22:02:07.461285+00:00"
+}

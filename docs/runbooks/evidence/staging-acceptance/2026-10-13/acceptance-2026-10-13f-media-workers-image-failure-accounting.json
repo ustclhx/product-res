@@ -1,0 +1,82 @@
+{
+  "runId": "acceptance-2026-10-13f",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T09:15:37.268Z",
+  "data": {
+    "taskId": "01a1348b-0055-7075-8394-c75dbbdbb93f",
+    "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+    "modelKey": "acceptance-workers-image",
+    "status": "failed",
+    "errorCode": "MEDIA_GENERATION_FAILED",
+    "genericErrorMessage": true,
+    "workflowInstanceId": "01a1348b-0055-7075-8394-c75dbbdbb93f",
+    "creditsCharged": 0,
+    "holdId": "01a1348b-01cb-76eb-9605-322a796ffdfd",
+    "holdStatus": "released",
+    "heldCredits": 1,
+    "capturedCredits": 0,
+    "overageDebited": 0,
+    "overageDebt": 0,
+    "overageAbsorbed": 0,
+    "ledger": [],
+    "ledgerTotal": 30,
+    "activeRemaining": 30,
+    "held": 0,
+    "debt": 0,
+    "reconciliationDifference": 0,
+    "noChargeAndHoldReleased": true,
+    "preparationCreditAdjustments": [
+      {
+        "auditId": "01a1348a-c346-7296-bfb7-7fcf6105b9e0",
+        "adjustmentId": "01a1348a-b64e-72c8-9b25-9942dbd060ca",
+        "amount": 3
+      }
+    ],
+    "workflow": {
+      "inspection": "read",
+      "knownMarkers": [],
+      "steps": [
+        {
+          "name": "load-task",
+          "success": true
+        },
+        {
+          "name": "submit",
+          "success": false
+        },
+        {
+          "name": "fail-and-notify",
+          "success": true
+        }
+      ],
+      "errors": [
+        {
+          "categories": {
+            "workflowStepConfiguration": false,
+            "permissionOrBinding": false,
+            "serialization": false,
+            "databaseOrNetwork": false,
+            "timeout": false,
+            "providerGeneration": true,
+            "invalidProviderResponse": false
+          }
+        }
+      ]
+    },
+    "diagnosis": {
+      "failureDiagnostic": "Failure diagnostic: unclassified",
+      "failureLocation": "apps/web/e2e/staging-acceptance/media.spec.ts:43",
+      "confirmedFailureStep": "submit",
+      "knownWorkflowErrorMessage": "Workers AI image generation failed",
+      "confirmedAdapterFailureBoundary": "Workers AI binding.run() threw; adapter catch replaces the original binding exception",
+      "underlyingProviderCause": "unknown; original upstream error not retained",
+      "codeReferences": [
+        "packages/ai/src/media/workers-ai.ts:86",
+        "packages/ai/src/media/workers-ai.ts:89"
+      ],
+      "versionBefore": "8782adb29efb40bc57140e76ef6d606b42f75148",
+      "versionAfter": "8782adb29efb40bc57140e76ef6d606b42f75148",
+      "rerunAfterFailure": false
+    }
+  }
+}

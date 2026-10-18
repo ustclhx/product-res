@@ -1,0 +1,277 @@
+---
+title: Public API
+description: Call {{appName}} models from your own code with an OpenAI-compatible API.
+section: API
+order: 10
+requires: publicApi
+---
+
+{{appName}} exposes OpenAI-compatible Chat Completions and asynchronous image/video tasks.
+Existing OpenAI SDKs work for chat by
+pointing their base URL at `{{appUrl}}/api/v1`. Calls are billed in credits exactly like chats in
+the app, against the workspace that owns the key.
+
+## Create an API key
+
+1. Sign in, open your workspace and go to **API keys**. Only workspace owners and admins can manage
+   keys, and the feature must be included in your plan.
+2. Create a key, optionally with an expiry date. The full key (`sk_…`) is shown **once**; store it
+   in a secret manager.
+3. Revoke a key at any time from the same page. Revoked or expired keys get `401` immediately.
+
+A key keeps working only while its creator is still an owner or admin of the workspace.
+
+## Authentication
+
+Send the key as a Bearer token. Cookies are never used for API authentication.
+
+```text
+Authorization: Bearer sk_your_key
+```
+
+## Create a chat completion
+
+`POST {{appUrl}}/api/v1/chat/completions`
+
+Request body:
+
+```json
+{
+  "model": "your-model-key",
+  "messages": [
+    { "role": "system", "content": "You are a helpful assistant." },
+    { "role": "user", "content": "Say hello in one sentence." }
+  ]
+}
+```
+
+- `model`: the model key shown in the model picker (set by your administrator).
+- `messages`: `system`, `user` and `assistant` messages with text content. The API is stateless:
+  send the whole conversation each time. At least one `user` message is required.
+- Optional: `stream`, `stream_options.include_usage`, `max_tokens` (or `max_completion_tokens`),
+  `temperature` (0–2), `n` (only `1`). Unknown fields are rejected with `400`.
+
+The response follows the OpenAI format (`object: "chat.completion"`, `choices[0].message.content`,
+`usage`). With `"stream": true` the response is Server-Sent Events of `chat.completion.chunk`
+objects ending with `data: [DONE]`; set `"stream_options": { "include_usage": true }` to receive a
+final chunk with token usage.
+
+### curl
+
+```bash
+curl {{appUrl}}/api/v1/chat/completions \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"your-model-key","messages":[{"role":"user","content":"Say hello in one sentence."}]}'
+```
+
+### Node.js (official OpenAI SDK)
+
+```ts
+import OpenAI from 'openai'
+
+const client = new OpenAI({ apiKey: process.env.API_KEY, baseURL: '{{appUrl}}/api/v1' })
+const completion = await client.chat.completions.create({
+  model: 'your-model-key',
+  messages: [{ role: 'user', content: 'Say hello in one sentence.' }],
+})
+console.log(completion.choices[0]?.message.content)
+```
+
+### Python (official OpenAI SDK)
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(api_key=os.environ["API_KEY"], base_url="{{appUrl}}/api/v1")
+completion = client.chat.completions.create(
+    model="your-model-key",
+    messages=[{"role": "user", "content": "Say hello in one sentence."}],
+)
+print(completion.choices[0].message.content)
+```
+
+## Create a media task
+
+`POST {{appUrl}}/api/v1/tasks`
+
+Submit an image or video model with its schema-defined parameters:
+
+```json
+{
+  "model": "your-image-model-key",
+  "params": { "prompt": "A red fox in a snowy forest" }
+}
+```
+
+- `model` is the configured model key, not the provider's model ID.
+- `params` must match that model's parameter schema, including required fields, types and limits.
+  The example uses a model that accepts `prompt`; add any other required parameters for your model.
+- Only `model` and `params` are accepted at the top level. The API key determines the workspace;
+  do not send a workspace ID.
+- Validation, model access, concurrent task limits, storage quota, credit reservation and settlement
+  follow the same rules as media generation in the app. Invalid parameters return
+  `400 INVALID_PARAMS` before any credits are reserved.
+
+A successful submission returns `202 Accepted`:
+
+```json
+{
+  "id": "01950000-0000-7000-8000-000000000001",
+  "object": "media.task",
+  "model": "your-image-model-key",
+  "status": "queued"
+}
+```
+
+## Query a media task
+
+`GET {{appUrl}}/api/v1/tasks/{id}`
+
+Use the same Bearer authentication. A task outside the key's workspace returns `404 NOT_FOUND`.
+The `200 OK` response contains:
+
+| Field | Meaning |
+|---|---|
+| `id`, `object`, `model` | Task ID, `"media.task"`, and configured model key |
+| `kind` | `image` or `video` |
+| `status` | `queued`, `running`, `succeeded`, `failed` or `canceled` |
+| `created`, `finished_at` | UTC Unix timestamps in seconds; `finished_at` is `null` until finished |
+| `credits_charged` | Integer credits charged so far |
+| `error` | `null` or `{ "code": "...", "message": "..." }` describing a task error |
+| `files` | Output files when `succeeded`; an empty array for other statuses |
+
+Each file contains `id`, `mime`, `size` (bytes), `width` and `height` (pixels),
+`duration` (seconds), `download_url` and `expires_at` (UTC Unix seconds).
+Unavailable dimensions or duration are `null`.
+
+`download_url` is a direct R2 presigned URL, usable without cookies or an API key for 5 minutes.
+Query the task again to refresh expired URLs. Treat these URLs as temporary secrets and avoid
+logging them.
+
+### curl: submit and query
+
+Set `API_KEY` securely in your environment and set `MEDIA_MODEL` to an available image model key.
+These commands require Python 3 to encode the request and select safe response fields:
+
+```bash
+TASK_ID=$(curl --fail-with-body --silent --show-error '{{appUrl}}/api/v1/tasks' \
+  -H "Authorization: Bearer $API_KEY" \
+  -H 'Content-Type: application/json' \
+  --data "$(python3 -c 'import json, os; print(json.dumps({"model": os.environ["MEDIA_MODEL"], "params": {"prompt": "A red fox in a snowy forest"}}))')" \
+  | python3 -c 'import json, sys; print(json.load(sys.stdin)["id"])')
+
+curl --fail-with-body --silent --show-error "{{appUrl}}/api/v1/tasks/$TASK_ID" \
+  -H "Authorization: Bearer $API_KEY" \
+  | python3 -c 'import json, sys; task = json.load(sys.stdin); print(task["id"], task["status"])'
+```
+
+Repeat the GET while the task is `queued` or `running`. Both endpoints are rate limited by key
+and workspace; on `429`, wait for `Retry-After` (currently 60 seconds) before retrying.
+
+### Python: submit, poll and download an image
+
+Save this as `media_task.py` and run `python3 media_task.py` with `API_KEY` and `MEDIA_MODEL`
+set as above. It uses only the standard library, polls every 2 seconds initially and increases to
+10 seconds, respects `429 Retry-After`, and stops after 15 minutes. It prints task status and the
+saved filename, without printing the key or signed URL. A client timeout does not cancel the task.
+
+```python
+import json
+import os
+import time
+from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+
+base = "{{appUrl}}/api/v1"
+key = os.environ["API_KEY"]
+model = os.environ["MEDIA_MODEL"]
+deadline = time.monotonic() + 15 * 60
+
+
+def remaining():
+    seconds = deadline - time.monotonic()
+    if seconds <= 0:
+        raise TimeoutError("Client deadline reached; query the task before resubmitting.")
+    return seconds
+
+
+def pause(seconds):
+    if seconds >= remaining():
+        raise TimeoutError("Client deadline reached; query the task before resubmitting.")
+    time.sleep(seconds)
+
+
+def request(url, body=None, authenticated=True):
+    data = None if body is None else json.dumps(body).encode()
+    headers = {"Content-Type": "application/json"} if data is not None else {}
+    if authenticated:
+        headers["Authorization"] = f"Bearer {key}"
+    while True:
+        try:
+            with urlopen(Request(url, data=data, headers=headers),
+                         timeout=min(60, remaining())) as response:
+                return response.read()
+        except HTTPError as error:
+            if error.code != 429:
+                raise RuntimeError(f"HTTP {error.code}; check the task before resubmitting.") from None
+            pause(float(error.headers.get("Retry-After", "60")))
+        except URLError:
+            raise RuntimeError("Network request failed; check the task before resubmitting.") from None
+
+
+try:
+    submitted = json.loads(request(base + "/tasks", {
+        "model": model,
+        "params": {"prompt": "A red fox in a snowy forest"},
+    }))
+    task_id = submitted["id"]
+    print("Task:", task_id)
+    interval = 2
+    while True:
+        pause(interval)
+        task = json.loads(request(base + "/tasks/" + task_id))
+        print("Status:", task["status"])
+        if task["status"] == "succeeded":
+            if not task["files"] or not task["files"][0]["mime"].startswith("image/"):
+                raise RuntimeError("The task did not return an image.")
+            file = task["files"][0]
+            extension = {"image/png": ".png", "image/jpeg": ".jpg",
+                         "image/webp": ".webp"}.get(file["mime"], ".bin")
+            path = Path("generated-image" + extension)
+            path.write_bytes(request(file["download_url"], authenticated=False))
+            print("Saved:", path)
+            break
+        if task["status"] in ("failed", "canceled"):
+            raise RuntimeError("Task ended with status: " + task["status"])
+        interval = min(10, interval + 2)
+except (RuntimeError, TimeoutError) as error:
+    raise SystemExit(str(error))
+```
+
+## Billing
+
+Each chat request reserves credits up front based on the model's pricing and your balance, then settles
+the actual usage when the reply finishes. The maximum output length is capped by what your balance
+can pay for. Closing the connection mid-stream does not cancel billing for the tokens generated.
+
+Media submissions reserve credits and settle when the task finishes. Querying task status does not
+reserve additional credits.
+
+## Errors
+
+Errors use the OpenAI error structure: `{ "error": { "message", "type", "code", "param" } }`.
+Every response includes an `x-request-id` header; quote it when contacting support.
+
+| Status | `code` | Meaning |
+|---|---|---|
+| 400 | `INVALID_REQUEST` | Malformed or unsupported request body |
+| 400 | `INVALID_PARAMS` | Media parameters do not match the model schema; no credits reserved |
+| 401 | `INVALID_API_KEY` | Missing, revoked or expired key |
+| 402 | `INSUFFICIENT_CREDITS` / `CREDIT_DEBT` | Not enough credits, or unpaid credit debt |
+| 403 | `UPGRADE_REQUIRED` | Your plan does not include the API or this model |
+| 404 | `MODEL_UNAVAILABLE` | Unknown or disabled model |
+| 404 | `NOT_FOUND` | Task missing or outside the key's workspace; also returned when public API is disabled |
+| 429 | `RATE_LIMITED` | Too many requests for this key or workspace; retry after `Retry-After` seconds |

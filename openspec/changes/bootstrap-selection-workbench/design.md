@@ -59,9 +59,11 @@ saas-template 已交付 `--target selfhost`：Node web/jobs、Postgres 17、Valk
 | 选品档案库 | `/app/$slug/archive` |
 | 算法验证 | `/app/$slug/validation` |
 | 数据中心 | `/app/$slug/data` |
-| 设置 | `/app/$slug/settings` |
+| 设置 | `/app/$slug/config`（模板已有的 `/app/$slug/settings` 是空间设置，保留不动） |
 
 占位页显示页面名称和“将在 Mx 提供”，不显示假数据。
+
+布局对照设计稿：左侧 200px 深色侧栏（`#001529`，选中项主色底）、白色顶栏（面包屑 + 账号）、内容区背景 `#f0f2f5`。模板原有的 AI 对话、空间设置、用量入口收进顶栏账号菜单；计费入口不展示。保留 `workspace-name`、`current-user` 测试标识。
 
 ## 风险与取舍
 

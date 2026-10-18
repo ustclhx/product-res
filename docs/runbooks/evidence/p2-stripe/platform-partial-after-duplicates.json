@@ -1,0 +1,109 @@
+{
+  "captured_at": "2026-10-09T11:14:58.417245+00:00",
+  "database": "product_res_staging",
+  "role": "readonly",
+  "workspace_id": "01a11fad-54ef-74b1-bb49-26232712dfa4",
+  "subscriptions": [],
+  "payments": [
+    {
+      "id": "01a11fad-b43a-7133-bca1-1d71977dcad4",
+      "provider_payment_id": "pi_3UOYjIL3UTpBAoXo1gvunegg",
+      "kind": "one_time",
+      "plan_price_id": "01a11bac-a47c-77ef-aa22-87cdc57a4339",
+      "amount": 1000,
+      "currency": "USD",
+      "refunded_amount": 600,
+      "status": "partially_refunded",
+      "period_start": null,
+      "period_end": null,
+      "paid_at": "2026-10-09T08:00:37+00:00"
+    }
+  ],
+  "payment_refunds": [
+    {
+      "payment_id": "01a11fad-b43a-7133-bca1-1d71977dcad4",
+      "provider_refund_id": "re_3UOYjIL3UTpBAoXo1O6Tc6or",
+      "amount": 200,
+      "currency": "USD"
+    },
+    {
+      "payment_id": "01a11fad-b43a-7133-bca1-1d71977dcad4",
+      "provider_refund_id": "re_3UOYjIL3UTpBAoXo1qqwZkZA",
+      "amount": 400,
+      "currency": "USD"
+    }
+  ],
+  "grants": [
+    {
+      "id": "01a11fad-b4d0-75f0-973c-254722747594",
+      "source": "purchase",
+      "source_ref": "01a11fad-b43a-7133-bca1-1d71977dcad4",
+      "payment_id": "01a11fad-b43a-7133-bca1-1d71977dcad4",
+      "amount": 1000,
+      "remaining": 0,
+      "status": "revoked",
+      "expires_at": "2027-10-09T08:00:37+00:00"
+    }
+  ],
+  "ledger": [
+    {
+      "id": "01a11fad-b50b-74d9-922b-1fd04b0da61d",
+      "type": "grant",
+      "delta": 1000,
+      "grant_id": "01a11fad-b4d0-75f0-973c-254722747594"
+    },
+    {
+      "id": "01a1205e-48af-76bd-9cd0-8578b1eab68b",
+      "type": "revoke",
+      "delta": -1000,
+      "grant_id": "01a11fad-b4d0-75f0-973c-254722747594"
+    }
+  ],
+  "refund_requests": [],
+  "events": [
+    {
+      "provider_event_id": "evt_1UOYjKL3UTpBAoXo6nn8x7at",
+      "type": "checkout.session.completed",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T08:00:40.233+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_3UOYjIL3UTpBAoXo1KA14f1c",
+      "type": "charge.refunded",
+      "status": "ignored",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T08:05:50.86+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_3UOYjIL3UTpBAoXo1APsl6Oi",
+      "type": "charge.refunded",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T11:13:32.809+00:00",
+      "api_version": "2026-09-30.endive"
+    }
+  ],
+  "ledger_total": 0,
+  "expected": 0,
+  "negative_grants": 0,
+  "audit": [
+    {
+      "action": "billing.payment_refunded",
+      "target_type": "payment",
+      "target_id": "01a11fad-b43a-7133-bca1-1d71977dcad4",
+      "created_at": "2026-10-09T11:13:31.939144+00:00"
+    },
+    {
+      "action": "billing.payment_refunded",
+      "target_type": "payment",
+      "target_id": "01a11fad-b43a-7133-bca1-1d71977dcad4",
+      "created_at": "2026-10-09T11:13:31.939144+00:00"
+    }
+  ]
+}

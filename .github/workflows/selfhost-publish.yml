@@ -1,0 +1,207 @@
+name: Publish selfhost images
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Full 40-character main commit SHA with successful CI
+        required: true
+        type: string
+      rollback_compatible_with:
+        description: Reviewed comma-separated previous full SHAs compatible with schema/DBOS handlers and drained tasks
+        required: false
+        default: ''
+        type: string
+      namespace:
+        description: Explicit lowercase OCI namespace (ghcr.io/owner/project)
+        required: true
+        type: string
+        default: ghcr.io/ustclhx/product-res
+      new_services:
+        description: Comma-separated catalog services whose GHCR package has never been published (first publish only)
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+# 所有正式写入共用 namespace 锁；不取消已开始的不可变发布。
+concurrency:
+  group: selfhost-publish-${{ inputs.namespace }}
+  cancel-in-progress: false
+
+jobs:
+  trust:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+      # 只读检查正式 tag；写权限只在 publish 作业。
+      packages: read
+    outputs:
+      sha: ${{ steps.trust.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Require main ancestry and successful source CI
+        id: trust
+        env:
+          SOURCE_SHA: ${{ inputs.sha }}
+          IMAGE_NAMESPACE: ${{ inputs.namespace }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict'
+          import { execFileSync } from 'node:child_process'
+          import { appendFileSync } from 'node:fs'
+          import { validateIdentity, hasTrustedCi } from './deploy/selfhost/images/policy.mjs'
+          const sha = process.env.SOURCE_SHA
+          validateIdentity(sha, process.env.IMAGE_NAMESPACE)
+          execFileSync('git', ['merge-base', '--is-ancestor', sha, 'origin/main'])
+          const runs = JSON.parse(execFileSync('gh', ['api', `repos/${process.env.GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${sha}&per_page=100`], { encoding: 'utf8' }))
+          assert(hasTrustedCi(runs.workflow_runs, sha, process.env.GITHUB_REPOSITORY), 'successful main push CI required for exact source SHA')
+          appendFileSync(process.env.GITHUB_OUTPUT, `sha=${sha}\n`)
+          NODE
+      # 使用 workflow 所在 main 的检查代码（旧源 SHA 可能没有此门），catalog 取自源 SHA。
+      - name: Reject existing immutable formal tags before any build
+        env:
+          SOURCE_SHA: ${{ steps.trust.outputs.sha }}
+          IMAGE_NAMESPACE: ${{ inputs.namespace }}
+          NEW_SERVICES: ${{ inputs.new_services }}
+          REGISTRY_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { execFileSync } from 'node:child_process'
+          import {
+            assertCompleteCatalog,
+            assertFormalTagsAbsent,
+            formalRepository,
+            parseNewServices,
+            validateIdentity,
+          } from './deploy/selfhost/images/policy.mjs'
+          import { formalTagState } from './deploy/selfhost/images/registry.mjs'
+          const sha = process.env.SOURCE_SHA
+          const namespace = process.env.IMAGE_NAMESPACE
+          validateIdentity(sha, namespace)
+          const catalog = JSON.parse(execFileSync('git', ['show', `${sha}:deploy/selfhost/images/catalog.json`], { encoding: 'utf8' }))
+          assertCompleteCatalog(catalog)
+          const newServices = parseNewServices(process.env.NEW_SERVICES, catalog)
+          const states = new Map()
+          for (const { name } of catalog.services) {
+            const state = await formalTagState(formalRepository(namespace, name), sha, {
+              username: process.env.GITHUB_ACTOR,
+              password: process.env.REGISTRY_TOKEN,
+            })
+            console.info(JSON.stringify({ event: 'selfhost.formal-tag.checked', service: name, state }))
+            states.set(name, state)
+          }
+          assertFormalTagsAbsent(states, newServices)
+          NODE
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.trust.outputs.sha }}
+          persist-credentials: false
+      - name: Fail closed until backup image is delivered
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs'
+          import { assertCompleteCatalog } from './deploy/selfhost/images/policy.mjs'
+          assertCompleteCatalog(JSON.parse(readFileSync('deploy/selfhost/images/catalog.json', 'utf8')))
+          NODE
+
+      - name: Validate runtime materials and rollback declarations before registry writes
+        env:
+          SOURCE_SHA: ${{ steps.trust.outputs.sha }}
+          ROLLBACK_COMPATIBLE_WITH: ${{ inputs.rollback_compatible_with }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python3 - <<'PYTHON'
+          import os
+          from pathlib import Path
+          from deploy.selfhost.release.bundle import RUNTIME_FILES, SHA, git_file
+          sha = os.environ['SOURCE_SHA']
+          for name in RUNTIME_FILES:
+              git_file(Path('.'), sha, name)
+          compatible = [value.strip() for value in os.environ['ROLLBACK_COMPATIBLE_WITH'].split(',') if value]
+          assert len(set(compatible)) == len(compatible) and all(SHA.fullmatch(value) for value in compatible), 'rollback declarations require distinct full SHAs'
+          PYTHON
+
+  verify:
+    needs: trust
+    permissions:
+      contents: read
+    uses: ./.github/workflows/selfhost-images.yml
+    with:
+      sha: ${{ needs.trust.outputs.sha }}
+
+  publish:
+    needs: [trust, verify]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.trust.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - uses: docker/setup-buildx-action@v4
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: selfhost-images-${{ needs.trust.outputs.sha }}-*
+          path: image-artifacts
+      - name: Authenticate only the registry writer
+        env:
+          REGISTRY_TOKEN: ${{ github.token }}
+        run: printf '%s' "$REGISTRY_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+      - name: Publish tested images and verify complete registry manifests
+        env:
+          SOURCE_SHA: ${{ needs.trust.outputs.sha }}
+          IMAGE_NAMESPACE: ${{ inputs.namespace }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node deploy/selfhost/images/publish.mjs "$SOURCE_SHA" "$IMAGE_NAMESPACE" image-artifacts image-set
+      - name: Upload successful image digest set for D 1.4
+        uses: actions/upload-artifact@v6
+        with:
+          name: selfhost-image-set-${{ needs.trust.outputs.sha }}
+          path: image-set/image-set.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Package runtime materials from the exact published source SHA
+        env:
+          SOURCE_SHA: ${{ needs.trust.outputs.sha }}
+          ROLLBACK_COMPATIBLE_WITH: ${{ inputs.rollback_compatible_with }}
+        run: |
+          python3 - <<'PYTHON'
+          import os
+          import subprocess
+          args = ['python3', 'deploy/selfhost/release/bundle.py', 'build',
+                  '--source', '.', '--sha', os.environ['SOURCE_SHA'],
+                  '--image-set', 'image-set/image-set.json', '--output', 'release-bundle']
+          for sha in filter(None, os.environ['ROLLBACK_COMPATIBLE_WITH'].split(',')):
+              args += ['--rollback-compatible-with', sha.strip()]
+          subprocess.run(args, check=True)
+          PYTHON
+          python3 deploy/selfhost/release/bundle.py compose-config release-bundle --sha "$SOURCE_SHA"
+          tar -C release-bundle -czf "selfhost-release-${SOURCE_SHA}.tar.gz" .
+      - name: Upload verified same-SHA release bundle
+        uses: actions/upload-artifact@v6
+        with:
+          name: selfhost-release-${{ needs.trust.outputs.sha }}
+          path: selfhost-release-${{ needs.trust.outputs.sha }}.tar.gz
+          if-no-files-found: error
+          retention-days: 30
+      - name: Remove registry login
+        if: always()
+        run: docker logout ghcr.io

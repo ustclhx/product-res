@@ -1,0 +1,18 @@
+# Orca 项目配置：每个任务一个 worktree / 分支，并行开发后合并回 main。
+# 约定与波次规划见 docs/09-parallel-plan.md。
+
+scripts:
+  # 新 worktree 创建后运行：安装依赖、建该 worktree 专属的本地数据库、分配端口。
+  setup: |
+    bash scripts/orca/setup.sh
+  # worktree 归档 / 删除前运行：删除该 worktree 专属的本地数据库。
+  archive: |
+    bash scripts/orca/archive.sh
+
+# 依赖与数据库就绪后再启动 agent，避免 agent 在 install 期间跑命令。
+setupAgentStartupPolicy: wait-for-setup
+
+worktree:
+  # 只共享可重建、内容寻址的缓存。不共享 node_modules：并行的分支会安装不同的依赖。
+  sharedDirectories:
+    - .turbo

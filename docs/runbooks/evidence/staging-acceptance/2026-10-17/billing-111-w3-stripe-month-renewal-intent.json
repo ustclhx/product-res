@@ -1,0 +1,177 @@
+{
+  "preflight": {
+    "observedAt": "2026-10-17T17:16:59.263Z",
+    "accountId": "acct_1UMwpCL3UTpBAoXo",
+    "mode": "test",
+    "health": {
+      "status": "ok",
+      "version": "a2381f875fbd8b1009e48f7024addcb25285aca9",
+      "db": {
+        "status": "up",
+        "latencyMs": 44
+      },
+      "jobs": {
+        "lastCronAt": "2026-10-17T17:00:32.503Z"
+      }
+    },
+    "mainHead": "a2381f875fbd8b1009e48f7024addcb25285aca9",
+    "database": {
+      "database": "product_res_staging",
+      "role": "readonly",
+      "read_only": "on"
+    }
+  },
+  "source": {
+    "clock": {
+      "id": "clock_1UOYeQL3UTpBAoXoq2VlSbJ7",
+      "livemode": false,
+      "status": "ready",
+      "frozen_time": 1794218086,
+      "created": 1791532534,
+      "deletes_after": 1794124534
+    },
+    "subscription": {
+      "id": "sub_1UOYdgL3UTpBAoXoZxQZO7Ti",
+      "livemode": false,
+      "status": "active",
+      "customer": "cus_VPNOl9hPPPmDPj",
+      "test_clock": "clock_1UOYeQL3UTpBAoXoq2VlSbJ7",
+      "cancel_at_period_end": false,
+      "metadata": {
+        "workspaceId": "01a11fa8-08da-71f1-9c8d-a0ab10568800",
+        "planPriceId": "01a11bac-8a18-7786-a6cf-d84dd209ef99"
+      },
+      "items": [
+        {
+          "priceId": "price_1UOSygL3UTpBAoXoQKRdSIBc",
+          "interval": "month",
+          "currentPeriodStart": 1794210886,
+          "currentPeriodEnd": 1796802886
+        }
+      ]
+    },
+    "checkoutSessions": [
+      {
+        "id": "cs_test_a1vVdkM7hrCGwxLrVDpP3h9H9w11T1THiiFzVpT6lxBtfw5GwwuMXEyjg8",
+        "livemode": false,
+        "status": "complete",
+        "mode": "subscription",
+        "subscription": "sub_1UOYdgL3UTpBAoXoZxQZO7Ti",
+        "customer": "cus_VPNOl9hPPPmDPj",
+        "payment_status": "paid",
+        "metadata": {
+          "workspaceId": "01a11fa8-08da-71f1-9c8d-a0ab10568800",
+          "planPriceId": "01a11bac-8a18-7786-a6cf-d84dd209ef99"
+        }
+      }
+    ],
+    "local": [
+      {
+        "id": "01a11fa8-6180-70c7-9d2e-a5c1571ee116",
+        "workspace_id": "01a11fa8-08da-71f1-9c8d-a0ab10568800",
+        "provider_subscription_id": "sub_1UOYdgL3UTpBAoXoZxQZO7Ti",
+        "status": "active",
+        "cancel_at_period_end": false,
+        "current_period_start": "2026-11-09T07:54:46.000Z",
+        "current_period_end": "2026-12-09T07:54:46.000Z",
+        "interval": "month"
+      }
+    ]
+  },
+  "expectedAmount": 1900,
+  "expectedCredits": 1000,
+  "before": {
+    "workspaceId": "01a11fa8-08da-71f1-9c8d-a0ab10568800",
+    "payments": [
+      {
+        "id": "01a11fa8-6553-7210-b496-97d5497dfc99",
+        "provider": "stripe",
+        "provider_payment_id": "pi_3UOYdfL3UTpBAoXo1TssRKHa",
+        "subscription_id": "01a11fa8-6180-70c7-9d2e-a5c1571ee116",
+        "kind": "initial",
+        "amount": 1900,
+        "currency": "USD",
+        "status": "succeeded",
+        "refunded_amount": 0,
+        "plan_price_id": "01a11bac-8a18-7786-a6cf-d84dd209ef99",
+        "period_start": "2026-10-09T07:54:46.000Z",
+        "period_end": "2026-11-09T07:54:46.000Z"
+      },
+      {
+        "id": "01a1205d-24d4-73a1-a1f7-a6e29c586a3c",
+        "provider": "stripe",
+        "provider_payment_id": "pi_3UOYf0L3UTpBAoXo0tcelvaV",
+        "subscription_id": "01a11fa8-6180-70c7-9d2e-a5c1571ee116",
+        "kind": "renewal",
+        "amount": 1900,
+        "currency": "USD",
+        "status": "succeeded",
+        "refunded_amount": 0,
+        "plan_price_id": "01a11bac-8a18-7786-a6cf-d84dd209ef99",
+        "period_start": "2026-11-09T07:54:46.000Z",
+        "period_end": "2026-12-09T07:54:46.000Z"
+      }
+    ],
+    "subscriptions": [
+      {
+        "id": "01a11fa8-6180-70c7-9d2e-a5c1571ee116",
+        "provider": "stripe",
+        "provider_subscription_id": "sub_1UOYdgL3UTpBAoXoZxQZO7Ti",
+        "status": "active",
+        "cancel_at_period_end": false,
+        "current_period_start": "2026-11-09T07:54:46.000Z",
+        "current_period_end": "2026-12-09T07:54:46.000Z"
+      }
+    ],
+    "grants": [
+      {
+        "id": "01a11fa8-6673-7178-9ebd-ae2ddd6c214d",
+        "source": "subscription",
+        "source_ref": "01a11fa8-6553-7210-b496-97d5497dfc99:0",
+        "payment_id": "01a11fa8-6553-7210-b496-97d5497dfc99",
+        "amount": 1000,
+        "remaining": 1000,
+        "status": "active",
+        "expires_at": "2026-11-10T07:54:46.000Z"
+      },
+      {
+        "id": "01a1205d-25db-7364-9b9c-de8156efd190",
+        "source": "subscription",
+        "source_ref": "01a1205d-24d4-73a1-a1f7-a6e29c586a3c:0",
+        "payment_id": "01a1205d-24d4-73a1-a1f7-a6e29c586a3c",
+        "amount": 1000,
+        "remaining": 1000,
+        "status": "active",
+        "expires_at": "2026-12-10T07:54:46.000Z"
+      }
+    ],
+    "ledger": [
+      {
+        "id": "01a11fa8-66a8-75f8-bd2f-61e35940b1a9",
+        "grant_id": "01a11fa8-6673-7178-9ebd-ae2ddd6c214d",
+        "type": "grant",
+        "delta": 1000
+      },
+      {
+        "id": "01a1205d-260b-7494-9e11-edc14f15d652",
+        "grant_id": "01a1205d-25db-7364-9b9c-de8156efd190",
+        "type": "grant",
+        "delta": 1000
+      }
+    ],
+    "refunds": [],
+    "reconciliation": {
+      "ledger": 2000,
+      "active_remaining": 2000,
+      "held": 0,
+      "debt": 0,
+      "negative_grants": 0,
+      "duplicate_grant_sources": 0,
+      "duplicate_payments": 0,
+      "expected": 2000,
+      "difference": 0
+    }
+  },
+  "clockTarget": 1796810086,
+  "note": "Advance existing app Checkout subscription one platform cycle using CLI test clock; application/PG/Cron time remains real."
+}

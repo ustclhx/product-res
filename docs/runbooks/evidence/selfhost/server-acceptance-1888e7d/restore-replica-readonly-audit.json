@@ -1,0 +1,13 @@
+{
+  "target": "replica",
+  "credentialMountNames": [
+    "selfhost-restore-replica-access-key.secret",
+    "selfhost-restore-replica-secret-key.secret"
+  ],
+  "onlySelectedReadonlyIdentityMounted": true,
+  "writerCredentialsMounted": false,
+  "mainCredentialsMounted": false,
+  "noHostPorts": true,
+  "unixSocketOnly": true,
+  "readOnlyPolicyVerifiedByS3": true
+}

@@ -1,0 +1,13 @@
+{
+  "baseSha": "598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+  "harnessFiles": {
+    "deploy/selfhost/test-vm.py": "cc506f55827a808fc36bb928ad68ceb5949fe99c359f2e50299c0627f69d5610",
+    "deploy/selfhost/test-vm-lifecycle.py": "8aaa96f86e5891d505af0de0d827eb51039b5198268281140462c93b21a3fb34",
+    "deploy/selfhost/vm-lifecycle.mts": "3b7d0fb41d92e14153f2a655cf1898be7bafd65985e9fc79b0f10712396e1adf",
+    "deploy/selfhost/test-release-compose.py": "db99c8bdf5146a945ab5e5f3fc09ff96e966fa8528160dfbbbf2b9013c09a474",
+    "deploy/selfhost/backup/acceptance-s3.mjs": "21a37f0b89f26e9a1d3e73a7ae2fcaaae7c3fb99096cf31963fe93cfe97e2eaa",
+    "deploy/selfhost/test-deploy-compose.py": "293955620dfa9695399e5efce732ded38e0ac7696bc775b781de42276d2b32e3"
+  },
+  "engineSourcePatchUsed": false,
+  "handlerFixtureOnly": true
+}

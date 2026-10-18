@@ -1,0 +1,7 @@
+{
+  "passed": false,
+  "stage": "first VM bundle transfer",
+  "reason": "macOS re-tar added Apple metadata files; exact-file verification refused before Docker pull or deployment",
+  "correction": "transfer original immutable Actions tar directly; package verifier passes",
+  "publishedArtifactChanged": false
+}

@@ -1,0 +1,57 @@
+{
+  "provenance": "待替换为录制：依据 fal 官方队列、webhook 与模型文档构造，非真实 API 调用。签名在测试中用临时密钥生成。",
+  "submit": {
+    "request_id": "job-fixture",
+    "response_url": "https://queue.fal.run/fal-ai/flux/requests/job-fixture",
+    "status_url": "https://queue.fal.run/fal-ai/flux/requests/job-fixture/status",
+    "cancel_url": "https://queue.fal.run/fal-ai/flux/requests/job-fixture/cancel",
+    "queue_position": 0
+  },
+  "queued": { "status": "IN_QUEUE", "request_id": "job-fixture", "queue_position": 1 },
+  "running": { "status": "IN_PROGRESS", "request_id": "job-fixture", "logs": [] },
+  "completed": {
+    "status": "COMPLETED",
+    "request_id": "job-fixture",
+    "metrics": { "inference_time": 1.5 }
+  },
+  "failed": {
+    "status": "COMPLETED",
+    "request_id": "job-fixture",
+    "error": "Generation failed",
+    "error_type": "internal_server_error"
+  },
+  "image": {
+    "images": [
+      {
+        "url": "https://v3.fal.media/files/fixture/image.png",
+        "content_type": "image/png",
+        "width": 512,
+        "height": 512
+      }
+    ],
+    "seed": 42
+  },
+  "video": {
+    "video": { "url": "https://v3.fal.media/files/fixture/video.mp4", "content_type": "video/mp4" },
+    "seed": 42
+  },
+  "cancel": { "status": "CANCELLATION_REQUESTED" },
+  "webhookError": {
+    "request_id": "job-fixture",
+    "gateway_request_id": "attempt-fixture",
+    "status": "ERROR",
+    "error": "Invalid status code: 422",
+    "payload": {
+      "detail": [
+        { "loc": ["body", "prompt"], "msg": "field required", "type": "value_error.missing" }
+      ]
+    }
+  },
+  "webhookPayloadError": {
+    "request_id": "job-fixture",
+    "gateway_request_id": "job-fixture",
+    "status": "OK",
+    "payload": null,
+    "payload_error": "Response payload is not JSON serializable"
+  }
+}

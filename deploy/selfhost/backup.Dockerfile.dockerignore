@@ -1,0 +1,8 @@
+**
+!deploy/
+!deploy/selfhost/
+!deploy/selfhost/install-walg.sh
+!deploy/selfhost/backup/
+!deploy/selfhost/backup/*.py
+deploy/selfhost/backup/*test*.py
+deploy/selfhost/backup/__pycache__/

@@ -1,0 +1,105 @@
+{
+  "scenario": "Existing PayPal Sandbox credit-pack capture event duplicate delivery",
+  "eventId": "WH-9B78516042013691A-0MM29302XS0143134",
+  "captureId": "821243239P5069342",
+  "orderId": "2A672877DY6250409",
+  "workspaceId": "01a11ec0-006f-76ef-803e-cd77d1e5f68a",
+  "endpoint": "https://web-staging.product-res-jobs.workers.dev/api/billing/webhooks/paypal",
+  "webhookId": "2Y038131HD900422W",
+  "officialDocumentation": [
+    "https://developer.paypal.com/api/webhooks/v1/webhooks-events-resend",
+    "https://developer.paypal.com/api/webhooks/v1/webhooks-events-get"
+  ],
+  "apiContract": {
+    "method": "POST",
+    "path": "/v1/notifications/webhooks-events/{event_id}/resend",
+    "body": {
+      "webhook_ids": ["2Y038131HD900422W"]
+    },
+    "acceptedStatus": 202,
+    "note": "202 confirms accepted resend request, not receiver HTTP status"
+  },
+  "beforeAt": "2026-10-11T05:54:49.325Z",
+  "afterAt": "2026-10-11T05:57:06.274Z",
+  "resends": [
+    {
+      "sequence": 1,
+      "startedAt": "2026-10-11T05:55:00.434Z",
+      "eventId": "WH-9B78516042013691A-0MM29302XS0143134",
+      "webhookId": "2Y038131HD900422W",
+      "endpoint": "https://web-staging.product-res-jobs.workers.dev/api/billing/webhooks/paypal",
+      "deliveries": [],
+      "tailErrors": ["wrangler reported error"],
+      "requestAt": "2026-10-11T05:55:08.441Z",
+      "resendHttpStatus": 202,
+      "responseEventId": "WH-9B78516042013691A-0MM29302XS0143134",
+      "responseEventType": "PAYMENT.CAPTURE.COMPLETED"
+    },
+    {
+      "sequence": 2,
+      "startedAt": "2026-10-11T05:55:50.924Z",
+      "eventId": "WH-9B78516042013691A-0MM29302XS0143134",
+      "webhookId": "2Y038131HD900422W",
+      "endpoint": "https://web-staging.product-res-jobs.workers.dev/api/billing/webhooks/paypal",
+      "deliveries": [
+        {
+          "eventTimestamp": 1791698163399,
+          "outcome": "ok",
+          "httpStatus": 200,
+          "method": "POST",
+          "url": "https://web-staging.product-res-jobs.workers.dev/api/billing/webhooks/paypal",
+          "scriptVersion": {
+            "id": "db95e7a0-7c2a-4e5b-a87b-576b919bb04d"
+          },
+          "logs": [
+            {
+              "level": "info",
+              "event": "billing.webhook_processed",
+              "requestId": "01a12988-5857-7114-a0eb-41f42ec29c07"
+            },
+            {
+              "level": "info",
+              "event": "http.request",
+              "requestId": "01a12988-5857-7114-a0eb-41f42ec29c07"
+            }
+          ],
+          "exceptionNames": []
+        }
+      ],
+      "tailErrors": [],
+      "requestAt": "2026-10-11T05:55:58.927Z",
+      "resendHttpStatus": 202,
+      "responseEventId": "WH-9B78516042013691A-0MM29302XS0143134",
+      "responseEventType": "PAYMENT.CAPTURE.COMPLETED",
+      "finishedAt": "2026-10-11T05:56:53.389Z"
+    }
+  ],
+  "captureUnchangedBySection": {
+    "purchase": true,
+    "payments": true,
+    "refunds": true,
+    "grants": true,
+    "ledger": true,
+    "webhooks": true
+  },
+  "invariants": [
+    {
+      "ledger_total": 2000,
+      "expected": 2000,
+      "negative_grants": 0,
+      "balance": 2000
+    }
+  ],
+  "concurrentActivity": "Supervisor submitted pending USD 4 refund request on this capture; no refund approval or money movement in this subtask. Request table not part of snapshot. Subscription checkout may proceed independently; at after snapshot no payments/grants/ledger changes were observed.",
+  "assessment": {
+    "twoResendRequestsAccepted": true,
+    "observedReceiverHttp200Count": 1,
+    "captureRecordsUnchanged": true,
+    "workspaceSnapshotUnchanged": true,
+    "fullTwoDeliveryHttpEvidenceComplete": false,
+    "firstMissingReason": "Tail worker name was incorrectly expanded to web-staging-staging. First resend API accepted 202, but endpoint HTTP status was not captured.",
+    "secondCorrelationLimit": "Captured expected PayPal endpoint POST HTTP 200 within the second resend window; retained logs identify billing.webhook_processed and requestId, but deliveryId was not retained by the whitelist.",
+    "thirdAttemptExecuted": false,
+    "thirdAttemptBlocked": "Automatic approval review rejected a third resend as exceeding original maximum two without explicit human authorization. No third request was executed."
+  }
+}

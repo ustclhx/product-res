@@ -1,0 +1,120 @@
+{
+  "captured_at": "2026-10-09T08:23:20.981444+00:00",
+  "database": "product_res_staging",
+  "role": "readonly",
+  "workspace_id": "01a11fa8-08da-71f1-9c8d-a0ab10568800",
+  "subscriptions": [
+    {
+      "id": "01a11fa8-6180-70c7-9d2e-a5c1571ee116",
+      "provider_subscription_id": "sub_1UOYdgL3UTpBAoXoZxQZO7Ti",
+      "plan_price_id": "01a11bac-8a18-7786-a6cf-d84dd209ef99",
+      "key": "pro",
+      "status": "active",
+      "cancel_at_period_end": false,
+      "current_period_start": "2026-11-09T07:54:46+00:00",
+      "current_period_end": "2026-12-09T07:54:46+00:00",
+      "last_event_at": "2026-10-09T07:56:05+00:00"
+    }
+  ],
+  "payments": [
+    {
+      "id": "01a11fa8-6553-7210-b496-97d5497dfc99",
+      "provider_payment_id": "pi_3UOYdfL3UTpBAoXo1TssRKHa",
+      "kind": "initial",
+      "plan_price_id": "01a11bac-8a18-7786-a6cf-d84dd209ef99",
+      "amount": 1900,
+      "currency": "USD",
+      "refunded_amount": 0,
+      "status": "succeeded",
+      "period_start": "2026-10-09T07:54:46+00:00",
+      "period_end": "2026-11-09T07:54:46+00:00",
+      "paid_at": "2026-10-09T07:54:47+00:00"
+    }
+  ],
+  "payment_refunds": [],
+  "grants": [
+    {
+      "id": "01a11fa8-6673-7178-9ebd-ae2ddd6c214d",
+      "source": "subscription",
+      "source_ref": "01a11fa8-6553-7210-b496-97d5497dfc99:0",
+      "payment_id": "01a11fa8-6553-7210-b496-97d5497dfc99",
+      "amount": 1000,
+      "remaining": 1000,
+      "status": "active",
+      "expires_at": "2026-11-10T07:54:46+00:00"
+    }
+  ],
+  "ledger": [
+    {
+      "id": "01a11fa8-66a8-75f8-bd2f-61e35940b1a9",
+      "type": "grant",
+      "delta": 1000,
+      "grant_id": "01a11fa8-6673-7178-9ebd-ae2ddd6c214d"
+    }
+  ],
+  "refund_requests": [],
+  "events": [
+    {
+      "provider_event_id": "evt_1UOYdiL3UTpBAoXoeczawzi7",
+      "type": "customer.subscription.created",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T07:54:51.396+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_1UOYdiL3UTpBAoXoWp9ZkGrd",
+      "type": "checkout.session.completed",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T07:54:51.807+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_1UOYdhL3UTpBAoXoDzgAEbGZ",
+      "type": "invoice.paid",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T07:54:52.511+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_1UOYevL3UTpBAoXoJ355PUQw",
+      "type": "customer.subscription.updated",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T07:56:06.261+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_1UOYf4L3UTpBAoXoqVeBpjfd",
+      "type": "invoice.paid",
+      "status": "failed",
+      "attempts": 2,
+      "error": "Subscription grant month is not due",
+      "processed_at": null,
+      "api_version": "2026-09-30.endive"
+    }
+  ],
+  "ledger_total": 1000,
+  "expected": 1000,
+  "negative_grants": 0,
+  "audit": [
+    {
+      "action": "billing.subscription_changed",
+      "target_type": "subscription",
+      "target_id": "01a11fa8-6180-70c7-9d2e-a5c1571ee116",
+      "created_at": "2026-10-09T07:54:50.848002+00:00"
+    },
+    {
+      "action": "billing.subscription_changed",
+      "target_type": "subscription",
+      "target_id": "01a11fa8-6180-70c7-9d2e-a5c1571ee116",
+      "created_at": "2026-10-09T07:56:05.83587+00:00"
+    }
+  ]
+}

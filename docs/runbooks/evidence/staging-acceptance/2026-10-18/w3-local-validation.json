@@ -1,0 +1,44 @@
+{
+  "observedAt": "2026-10-18T06:21:47.904185+00:00",
+  "runtime": "Node 22 via /opt/homebrew/opt/node@22/bin in PATH",
+  "checks": [
+    {
+      "command": "pnpm check",
+      "exitCode": 0,
+      "existingBiomeWarnings": 4
+    },
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "successfulTasks": 14,
+      "totalTasks": 14
+    },
+    {
+      "command": "NODE_OPTIONS=--no-experimental-webstorage pnpm --filter @product-res/billing test",
+      "exitCode": 0,
+      "passedFiles": 24,
+      "passedTests": 312,
+      "includesIsolatedWorktreePostgres": true
+    },
+    {
+      "command": "NODE_OPTIONS=--no-experimental-webstorage pnpm --filter @product-res/billing exec vitest run src/paypal/recorded.test.ts",
+      "exitCode": 0,
+      "passedFiles": 1,
+      "passedTests": 15
+    },
+    {
+      "command": "openspec validate add-cloud-acceptance-followups --strict",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "openSpecProgress": {
+    "total": 4,
+    "complete": 4,
+    "remaining": 0
+  },
+  "scope": "Local validation results, not substitutes for external transaction evidence"
+}

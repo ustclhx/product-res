@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "sha": "081305013b022f457c561eecf5828b1959e13908",
+  "namespace": "ghcr.io/ustclhx/product-res",
+  "platforms": ["linux/amd64", "linux/arm64"],
+  "images": [
+    {
+      "name": "web",
+      "reference": "ghcr.io/ustclhx/product-res/web@sha256:f8d86a97ef4ba8b81c70bdb2b2cfa73f506901ce39d5e31f493dd31bb6d72439",
+      "tag": "ghcr.io/ustclhx/product-res/web:081305013b022f457c561eecf5828b1959e13908",
+      "digest": "sha256:f8d86a97ef4ba8b81c70bdb2b2cfa73f506901ce39d5e31f493dd31bb6d72439"
+    },
+    {
+      "name": "jobs",
+      "reference": "ghcr.io/ustclhx/product-res/jobs@sha256:4807f09bc13d5b54fc64525ac1423e34abb0e5a0f82e4a0072d48a745e74a1e6",
+      "tag": "ghcr.io/ustclhx/product-res/jobs:081305013b022f457c561eecf5828b1959e13908",
+      "digest": "sha256:4807f09bc13d5b54fc64525ac1423e34abb0e5a0f82e4a0072d48a745e74a1e6"
+    },
+    {
+      "name": "migrate",
+      "reference": "ghcr.io/ustclhx/product-res/migrate@sha256:690c6b58d6e2f0c532a6b847dccfeddc6be02e8cd4e468c37cd7d1b1d62a0bc2",
+      "tag": "ghcr.io/ustclhx/product-res/migrate:081305013b022f457c561eecf5828b1959e13908",
+      "digest": "sha256:690c6b58d6e2f0c532a6b847dccfeddc6be02e8cd4e468c37cd7d1b1d62a0bc2"
+    },
+    {
+      "name": "postgres",
+      "reference": "ghcr.io/ustclhx/product-res/postgres@sha256:ff07d832395490626a1f69b5e608579751bc29682377b59ca5281873b8feb309",
+      "tag": "ghcr.io/ustclhx/product-res/postgres:081305013b022f457c561eecf5828b1959e13908",
+      "digest": "sha256:ff07d832395490626a1f69b5e608579751bc29682377b59ca5281873b8feb309"
+    },
+    {
+      "name": "valkey",
+      "reference": "ghcr.io/ustclhx/product-res/valkey@sha256:e97dc1ae1588d49469790c888d980d6fbf9e1b329864f7ffdda2535e2de4098f",
+      "tag": "ghcr.io/ustclhx/product-res/valkey:081305013b022f457c561eecf5828b1959e13908",
+      "digest": "sha256:e97dc1ae1588d49469790c888d980d6fbf9e1b329864f7ffdda2535e2de4098f"
+    },
+    {
+      "name": "caddy",
+      "reference": "ghcr.io/ustclhx/product-res/caddy@sha256:aec0926afc3f84f0efebb5423483990ca6173c1cff2bcc02cbc7efd317c58bb1",
+      "tag": "ghcr.io/ustclhx/product-res/caddy:081305013b022f457c561eecf5828b1959e13908",
+      "digest": "sha256:aec0926afc3f84f0efebb5423483990ca6173c1cff2bcc02cbc7efd317c58bb1"
+    },
+    {
+      "name": "object-storage",
+      "reference": "ghcr.io/ustclhx/product-res/object-storage@sha256:a7dc52b320ddeb4169530fea28c538089c70f418e22584f7c90fe7112cc946a7",
+      "tag": "ghcr.io/ustclhx/product-res/object-storage:081305013b022f457c561eecf5828b1959e13908",
+      "digest": "sha256:a7dc52b320ddeb4169530fea28c538089c70f418e22584f7c90fe7112cc946a7"
+    },
+    {
+      "name": "backup",
+      "reference": "ghcr.io/ustclhx/product-res/backup@sha256:7f28d63d5142fbb14c86d13c4f994e0f5eca5bf7ba41d180534bb5927b6069cd",
+      "tag": "ghcr.io/ustclhx/product-res/backup:081305013b022f457c561eecf5828b1959e13908",
+      "digest": "sha256:7f28d63d5142fbb14c86d13c4f994e0f5eca5bf7ba41d180534bb5927b6069cd"
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "preflight": {
+    "observedAt": "2026-10-17T17:19:18.011Z",
+    "accountId": "acct_1UMwpCL3UTpBAoXo",
+    "mode": "test",
+    "health": {
+      "status": "ok",
+      "version": "a2381f875fbd8b1009e48f7024addcb25285aca9",
+      "db": {
+        "status": "up",
+        "latencyMs": 95
+      },
+      "jobs": {
+        "lastCronAt": "2026-10-17T17:00:32.503Z"
+      }
+    },
+    "mainHead": "a2381f875fbd8b1009e48f7024addcb25285aca9",
+    "database": {
+      "database": "product_res_staging",
+      "role": "readonly",
+      "read_only": "on"
+    }
+  },
+  "eventId": "evt_1URbENL3UTpBAoXokSAeJyGB",
+  "endpointId": "we_1UO7wML3UTpBAoXo3N6XlJhF",
+  "requests": [
+    {
+      "index": 1,
+      "startedAt": "2026-10-17T17:19:20.982Z",
+      "acceptedAt": "2026-10-17T17:19:22.302Z",
+      "reply": {
+        "id": "evt_1URbENL3UTpBAoXokSAeJyGB",
+        "type": "invoice.paid",
+        "livemode": false,
+        "api_version": "2026-08-26.dahlia",
+        "pending_webhooks": 1
+      },
+      "observedDelivery": {
+        "observedAt": "2026-10-17T17:19:23.030964+00:00",
+        "eventTimestamp": 1792257562633,
+        "scriptName": "web-staging",
+        "scriptVersion": {
+          "id": "b9516fbb-13ff-476d-84ab-d9c86d9fb511"
+        },
+        "outcome": "ok",
+        "method": "POST",
+        "path": "/api/billing/webhooks/stripe",
+        "httpStatus": 200,
+        "logs": [
+          {
+            "event": "billing.webhook_processed",
+            "requestId": "01a14ae0-1809-7525-bd44-28999aff19ae",
+            "deliveryId": "01a14ade-29cb-70bb-82bf-3469756fcd66",
+            "provider": "stripe",
+            "status": "duplicate"
+          }
+        ]
+      }
+    },
+    {
+      "index": 2,
+      "startedAt": "2026-10-17T17:19:27.533Z",
+      "acceptedAt": "2026-10-17T17:19:28.846Z",
+      "reply": {
+        "id": "evt_1URbENL3UTpBAoXokSAeJyGB",
+        "type": "invoice.paid",
+        "livemode": false,
+        "api_version": "2026-08-26.dahlia",
+        "pending_webhooks": 1
+      }
+    }
+  ],
+  "note": "CLI response proves accepted resend only; independent Worker tail proves HTTP result."
+}

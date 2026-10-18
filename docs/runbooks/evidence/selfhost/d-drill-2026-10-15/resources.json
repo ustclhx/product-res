@@ -1,0 +1,144 @@
+{
+  "method": "Approximately one-second asynchronous cgroup/proc, SQL and df/du sampling; Docker operations and synchronous fixture steps add gaps. Maxima are per-service, not simultaneous host totals. RSS sums may double-count shared pages.",
+  "services": {
+    "postgres": {
+      "samples": 95,
+      "rssPeakBytes": 180232192,
+      "cgroupPeakBytes": 211111936,
+      "cpuUsec": 10525828,
+      "cpuPeakPercent": 15.802726602800295,
+      "maxConnections": 8,
+      "maxWalBytes": 100663660,
+      "maxPgDataBytes": 135835648,
+      "minFreeBytes": 781149736960
+    },
+    "replica-storage": {
+      "samples": 102,
+      "rssPeakBytes": 218038272,
+      "cgroupPeakBytes": 174710784,
+      "cpuUsec": 4752670,
+      "cpuPeakPercent": 2.6190098912455095,
+      "maxConnections": 0,
+      "maxWalBytes": 0,
+      "maxPgDataBytes": 0
+    },
+    "replica-tls": {
+      "samples": 101,
+      "rssPeakBytes": 92385280,
+      "cgroupPeakBytes": 54689792,
+      "cpuUsec": 2482031,
+      "cpuPeakPercent": 5.615488147342323,
+      "maxConnections": 0,
+      "maxWalBytes": 0,
+      "maxPgDataBytes": 0
+    },
+    "object-storage": {
+      "samples": 95,
+      "rssPeakBytes": 248750080,
+      "cgroupPeakBytes": 228012032,
+      "cpuUsec": 3980782,
+      "cpuPeakPercent": 6.701577287066246,
+      "maxConnections": 0,
+      "maxWalBytes": 0,
+      "maxPgDataBytes": 0
+    },
+    "tls": {
+      "samples": 93,
+      "rssPeakBytes": 91537408,
+      "cgroupPeakBytes": 49614848,
+      "cpuUsec": 2921350,
+      "cpuPeakPercent": 4.141737288135594,
+      "maxConnections": 0,
+      "maxWalBytes": 0,
+      "maxPgDataBytes": 0
+    },
+    "backup": {
+      "samples": 95,
+      "rssPeakBytes": 142802944,
+      "cgroupPeakBytes": 93872128,
+      "cpuUsec": 9436069,
+      "cpuPeakPercent": 20.71937394247039,
+      "maxConnections": 0,
+      "maxWalBytes": 0,
+      "maxPgDataBytes": 0
+    },
+    "restore": {
+      "samples": 88,
+      "rssPeakBytes": 122032128,
+      "cgroupPeakBytes": 166559744,
+      "cpuUsec": 3324711,
+      "cpuPeakPercent": 22.943282636248416,
+      "maxConnections": 6,
+      "maxWalBytes": 117440562,
+      "maxPgDataBytes": 135348224,
+      "minFreeBytes": 781149736960
+    },
+    "recovery:selfhost-restore-d-drill-f68ba296f50b": {
+      "samples": 34,
+      "rssPeakBytes": 76005376,
+      "cgroupPeakBytes": 174239744,
+      "cpuUsec": 2681811,
+      "cpuPeakPercent": 26.243606036536935,
+      "maxConnections": 6,
+      "maxWalBytes": 117440562,
+      "maxPgDataBytes": 152059904,
+      "minFreeBytes": 781101281280
+    },
+    "recovery:selfhost-restore-d-drill-72ac275557eb": {
+      "samples": 2,
+      "rssPeakBytes": 90284032,
+      "cgroupPeakBytes": 174419968,
+      "cpuUsec": 564245,
+      "cpuPeakPercent": 0,
+      "maxConnections": 4,
+      "maxWalBytes": 150994944,
+      "maxPgDataBytes": 185675776,
+      "minFreeBytes": 781353836544
+    },
+    "recovery:selfhost-restore-d-drill-6ba1cefaeb72": {
+      "samples": 3,
+      "rssPeakBytes": 121712640,
+      "cgroupPeakBytes": 146497536,
+      "cpuUsec": 562484,
+      "cpuPeakPercent": 19.372867025365103,
+      "maxConnections": 4,
+      "maxWalBytes": 100663296,
+      "maxPgDataBytes": 135270400,
+      "minFreeBytes": 781149736960
+    },
+    "recovery:selfhost-restore-d-drill-96487cc055ad": {
+      "samples": 4,
+      "rssPeakBytes": 84758528,
+      "cgroupPeakBytes": 146817024,
+      "cpuUsec": 759192,
+      "cpuPeakPercent": 20.477566225165564,
+      "maxConnections": 4,
+      "maxWalBytes": 100663296,
+      "maxPgDataBytes": 135270400,
+      "minFreeBytes": 781101281280
+    }
+  },
+  "disk": {
+    "freeBytes": 781237108736,
+    "walBytes": 100663660,
+    "pgDataBytes": 135154967
+  },
+  "databaseRestoreValidationRtoSeconds": {
+    "primary": 8.203,
+    "secondary": 7.837
+  },
+  "rpo": {
+    "method": "Conservative confirmed-chain lag observed immediately before stopping primary services; primary has at least the same copied chain. Not a production guarantee or a measured last-transaction loss.",
+    "confirmedThroughUtc": "2026-10-14 22:11:32.185425+00",
+    "observedAtUtc": "2026-10-14T22:12:19.798Z",
+    "primaryConservativeLagSeconds": 47.613,
+    "secondaryObservedLagSeconds": 47.613,
+    "replicaCopyCompletionLagSeconds": 46.391409,
+    "fixtureTargetLoss": 0
+  },
+  "targetTime": "2026-10-14T22:08:08.319539Z",
+  "actualReplayTime": null,
+  "replayLsn": "0/8002E80",
+  "sameReplayPosition": true,
+  "localOnly": true
+}

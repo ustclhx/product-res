@@ -1,0 +1,13 @@
+{
+  "app_workspace_not_found": "Workspace not found",
+  "app_workspace_no_access": "This workspace does not exist or you do not have access to it.",
+  "app_go_workspace": "Go to my workspace",
+  "app_personal_workspace": "Personal workspace",
+  "app_team_workspace": "Team workspace",
+  "app_role": "Your role: {role}",
+  "app_readonly": "Team features are disabled. This workspace is read-only.",
+  "app_chat": "Chat",
+  "app_workspace_settings": "Workspace settings",
+  "app_billing": "Billing",
+  "app_usage": "Usage"
+}

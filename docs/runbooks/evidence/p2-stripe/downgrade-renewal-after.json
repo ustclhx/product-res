@@ -1,0 +1,195 @@
+{
+  "captured_at": "2026-10-09T11:17:08.075799+00:00",
+  "database": "product_res_staging",
+  "role": "readonly",
+  "workspace_id": "01a11fcd-0b52-75db-bad6-3276f1fa0918",
+  "subscriptions": [
+    {
+      "id": "01a11fcd-55d0-72d3-bc78-9e1df9e645b9",
+      "provider_subscription_id": "sub_1UOZGkL3UTpBAoXov32keMjQ",
+      "plan_price_id": "01a11bac-8a18-7786-a6cf-d84dd209ef99",
+      "key": "pro",
+      "status": "active",
+      "cancel_at_period_end": false,
+      "current_period_start": "2026-11-09T08:35:09+00:00",
+      "current_period_end": "2026-12-09T08:35:09+00:00",
+      "last_event_at": "2026-10-09T11:16:44+00:00"
+    }
+  ],
+  "payments": [
+    {
+      "id": "01a11fcd-5970-77d1-ae85-b7170c2ee64c",
+      "provider_payment_id": "pi_3UOZGjL3UTpBAoXo0MpIzHHP",
+      "kind": "initial",
+      "plan_price_id": "01a11bac-8a18-7786-a6cf-d84dd209ef99",
+      "amount": 1900,
+      "currency": "USD",
+      "refunded_amount": 0,
+      "status": "succeeded",
+      "period_start": "2026-10-09T08:35:09+00:00",
+      "period_end": "2026-11-09T08:35:09+00:00",
+      "paid_at": "2026-10-09T08:35:09+00:00"
+    },
+    {
+      "id": "01a11fcd-a13e-71af-9f8d-69b4fd47c6f3",
+      "provider_payment_id": "pi_3UOZH2L3UTpBAoXo04TeSJAo",
+      "kind": "adjustment",
+      "plan_price_id": "01a11bac-974b-70c2-8606-cdc7dbe5768c",
+      "amount": 3000,
+      "currency": "USD",
+      "refunded_amount": 0,
+      "status": "succeeded",
+      "period_start": "2026-10-09T08:35:27+00:00",
+      "period_end": "2026-11-09T08:35:09+00:00",
+      "paid_at": "2026-10-09T08:35:29+00:00"
+    },
+    {
+      "id": "01a12061-40f4-70d1-8213-a028aca3de43",
+      "provider_payment_id": "pi_3UObn3L3UTpBAoXo17Ou3tME",
+      "kind": "renewal",
+      "plan_price_id": "01a11bac-8a18-7786-a6cf-d84dd209ef99",
+      "amount": 1900,
+      "currency": "USD",
+      "refunded_amount": 0,
+      "status": "succeeded",
+      "period_start": "2026-11-09T08:35:09+00:00",
+      "period_end": "2026-12-09T08:35:09+00:00",
+      "paid_at": "2026-11-09T09:35:09+00:00"
+    }
+  ],
+  "payment_refunds": [],
+  "grants": [
+    {
+      "id": "01a11fcd-5a95-71ab-a397-8edcba99b06d",
+      "source": "subscription",
+      "source_ref": "01a11fcd-5970-77d1-ae85-b7170c2ee64c:0",
+      "payment_id": "01a11fcd-5970-77d1-ae85-b7170c2ee64c",
+      "amount": 1000,
+      "remaining": 1000,
+      "status": "active",
+      "expires_at": "2026-11-10T08:35:09+00:00"
+    },
+    {
+      "id": "01a12061-4204-71c6-b251-3f81b691a0f5",
+      "source": "subscription",
+      "source_ref": "01a12061-40f4-70d1-8213-a028aca3de43:0",
+      "payment_id": "01a12061-40f4-70d1-8213-a028aca3de43",
+      "amount": 1000,
+      "remaining": 1000,
+      "status": "active",
+      "expires_at": "2026-12-10T08:35:09+00:00"
+    }
+  ],
+  "ledger": [
+    {
+      "id": "01a11fcd-5aca-7177-b136-bf394b954d8d",
+      "type": "grant",
+      "delta": 1000,
+      "grant_id": "01a11fcd-5a95-71ab-a397-8edcba99b06d"
+    },
+    {
+      "id": "01a12061-4235-73dc-8859-8f13a3033881",
+      "type": "grant",
+      "delta": 1000,
+      "grant_id": "01a12061-4204-71c6-b251-3f81b691a0f5"
+    }
+  ],
+  "refund_requests": [],
+  "events": [
+    {
+      "provider_event_id": "evt_1UOZGmL3UTpBAoXowjFvZbFI",
+      "type": "checkout.session.completed",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T08:35:13.186+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_1UOZGmL3UTpBAoXoAWb9FkfG",
+      "type": "customer.subscription.created",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T08:35:13.577+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_1UOZGmL3UTpBAoXoslzgCRaE",
+      "type": "invoice.paid",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T08:35:14.304+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_1UOZH4L3UTpBAoXohoJA1xGs",
+      "type": "customer.subscription.updated",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T08:35:31.664+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_1UOZH4L3UTpBAoXodvJMD7ze",
+      "type": "invoice.paid",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T08:35:32.337+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_1UOZHGL3UTpBAoXoFiATM5BW",
+      "type": "customer.subscription.updated",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T08:35:42.806+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_1UObn1L3UTpBAoXoK6RRby3i",
+      "type": "customer.subscription.updated",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T11:16:40.56+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_1UObn7L3UTpBAoXo3OBA8zTx",
+      "type": "invoice.paid",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T11:16:47.582+00:00",
+      "api_version": "2026-09-30.endive"
+    }
+  ],
+  "ledger_total": 2000,
+  "expected": 2000,
+  "negative_grants": 0,
+  "audit": [
+    {
+      "action": "billing.subscription_changed",
+      "target_type": "subscription",
+      "target_id": "01a11fcd-55d0-72d3-bc78-9e1df9e645b9",
+      "created_at": "2026-10-09T08:35:12.664082+00:00"
+    },
+    {
+      "action": "billing.subscription_changed",
+      "target_type": "subscription",
+      "target_id": "01a11fcd-55d0-72d3-bc78-9e1df9e645b9",
+      "created_at": "2026-10-09T08:35:30.360941+00:00"
+    },
+    {
+      "action": "billing.subscription_changed",
+      "target_type": "subscription",
+      "target_id": "01a11fcd-55d0-72d3-bc78-9e1df9e645b9",
+      "created_at": "2026-10-09T11:16:40.088169+00:00"
+    }
+  ]
+}

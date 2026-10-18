@@ -1,0 +1,28 @@
+{
+  "vm": "selfhost-d-vm2",
+  "os": "Debian12",
+  "arch": "arm64",
+  "cpus": 2,
+  "memoryGiB": 4,
+  "diskGiB": 24,
+  "initPassed": true,
+  "repeatPassed": true,
+  "limaDnsRulesInitiallyRejected": true,
+  "limaDnsRulesRemovedOnlyInOwnedVm": true,
+  "conflictingPortRejected": true,
+  "usedHostRejected": true,
+  "envAndSentinelPreserved": true,
+  "envSha256": "fd7149d627bfc0078efeeecb78022f822a4d4675919275bc21c67d0e1ec434d3",
+  "sentinelSha256": "599807d5e8571d2bfa5de2c43cebf67dd64191dcce30918b984e898f426fa17c",
+  "dockerVersion": "28.5.1",
+  "composeVersion": "2.40.3",
+  "dockerEnabled": true,
+  "firewallEnabled": true,
+  "dockerFirewallExternalCounters": {
+    "allowed80": 1,
+    "allowed443": 1,
+    "dropped": 5
+  },
+  "repeatWithFullStackPassed": true,
+  "repeatAfterRealRebootPassed": true
+}

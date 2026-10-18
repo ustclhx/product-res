@@ -1,0 +1,101 @@
+{
+  "observedAt": "2026-10-18T06:05:53.165Z",
+  "preflight": {
+    "observedAt": "2026-10-18T06:05:49.803Z",
+    "accountId": "acct_1UMwpCL3UTpBAoXo",
+    "mode": "test",
+    "health": {
+      "status": "ok",
+      "version": "a2381f875fbd8b1009e48f7024addcb25285aca9",
+      "db": {
+        "status": "up",
+        "latencyMs": 181
+      },
+      "jobs": {
+        "lastCronAt": "2026-10-18T06:00:36.367Z"
+      }
+    },
+    "mainHead": "a2381f875fbd8b1009e48f7024addcb25285aca9",
+    "database": {
+      "database": "product_res_staging",
+      "role": "readonly",
+      "read_only": "on"
+    }
+  },
+  "phase": "before",
+  "workspaceId": "01a12ef0-66cc-75e2-88d0-eac1f1904d3c",
+  "payments": [],
+  "subscriptions": [],
+  "grants": [
+    {
+      "id": "01a12ef0-6dd4-739a-b5cc-6b04407b3e0c",
+      "source": "signup",
+      "source_ref": "daa8e8e72cc9c9dcf86094bf9e368f17c5f07aebc5455a079276ebd332839415",
+      "payment_id": null,
+      "amount": 100,
+      "remaining": 90,
+      "status": "active",
+      "expires_at": null
+    }
+  ],
+  "ledger": [
+    {
+      "id": "01a12ef0-6e70-7210-a11c-8af7909b442f",
+      "grant_id": "01a12ef0-6dd4-739a-b5cc-6b04407b3e0c",
+      "type": "grant",
+      "delta": 100
+    },
+    {
+      "id": "01a1392b-be80-75bb-8919-f41d73212afb",
+      "grant_id": null,
+      "type": "consume",
+      "delta": -2
+    },
+    {
+      "id": "01a1392d-13de-7344-8362-f462954a84f8",
+      "grant_id": null,
+      "type": "consume",
+      "delta": -2
+    },
+    {
+      "id": "01a13932-dcf3-7696-851f-3647bf90ddcd",
+      "grant_id": null,
+      "type": "consume",
+      "delta": -1
+    },
+    {
+      "id": "01a13935-5990-7224-9a20-074b56096d95",
+      "grant_id": null,
+      "type": "consume",
+      "delta": -1
+    },
+    {
+      "id": "01a13936-b168-711e-a6fe-60bd5ae12038",
+      "grant_id": null,
+      "type": "consume",
+      "delta": -2
+    },
+    {
+      "id": "01a1396f-4c6d-779f-8326-1d5e551180a6",
+      "grant_id": null,
+      "type": "consume",
+      "delta": -2
+    }
+  ],
+  "refunds": [],
+  "reconciliation": {
+    "ledger": 90,
+    "active_remaining": 90,
+    "held": 0,
+    "debt": 0,
+    "negative_grants": 0,
+    "duplicate_grant_sources": 0,
+    "duplicate_payments": 0,
+    "expected": 90,
+    "difference": 0
+  },
+  "effectivePlan": {
+    "key": "free"
+  },
+  "events": []
+}

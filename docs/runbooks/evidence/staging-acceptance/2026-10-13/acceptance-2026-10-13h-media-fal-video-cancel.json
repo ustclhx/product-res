@@ -1,0 +1,29 @@
+{
+  "runId": "acceptance-2026-10-13h",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T10:23:54.214Z",
+  "data": {
+    "taskId": "01a134ca-1a0c-738c-898f-01c50c10e64d",
+    "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+    "userId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+    "status": "canceled",
+    "modelKey": "acceptance-fal-video",
+    "creditsCharged": 0,
+    "fileIds": [],
+    "reused": false,
+    "holdId": "01a134ca-1b89-70f5-8336-ea0470e695e0",
+    "holdStatus": "released",
+    "heldCredits": 3,
+    "capturedCredits": 0,
+    "ledger": [],
+    "reconciliation": {
+      "ledgerTotal": 27,
+      "activeRemaining": 27,
+      "held": 0,
+      "debt": 0,
+      "expectedTotal": 27,
+      "difference": 0,
+      "consistent": true
+    }
+  }
+}

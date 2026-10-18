@@ -1,0 +1,52 @@
+{
+  "runId": "admin-61-2026-10-15a",
+  "recordedAt": "2026-10-14T19:38:29.223Z",
+  "data": {
+    "workspace": {
+      "id": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+      "slug": "u-rpn3bjy4"
+    },
+    "purchaseCount": 0,
+    "paymentCount": 0,
+    "refundRequestCount": 0,
+    "stripeFailedEventCount": 0,
+    "candidatePayment": {
+      "id": "01a11f08-8359-71e9-813e-64beae2501f9",
+      "providerPaymentId": "pi_3UOVugL3UTpBAoXo0hPVnZJQ",
+      "status": "succeeded",
+      "amount": 1000,
+      "refundedAmount": 0
+    },
+    "readOnlyTransaction": true,
+    "expectedSlug": "u-rpn3bjy4",
+    "slugMatches": true,
+    "openingSnapshot": {
+      "ledgerTotal": 24,
+      "activeRemaining": 24,
+      "available": 24,
+      "held": 0,
+      "debt": 0,
+      "activeTasks": 0,
+      "storageBytes": 3044841,
+      "reconciliationDifference": 0
+    },
+    "closingSnapshot": {
+      "ledgerTotal": 24,
+      "activeRemaining": 24,
+      "available": 24,
+      "held": 0,
+      "debt": 0,
+      "activeTasks": 0,
+      "storageBytes": 3044841,
+      "reconciliationDifference": 0
+    },
+    "balanceUnchanged": true,
+    "noBusinessResourcesCreated": true,
+    "health": {
+      "version": "598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+      "matchesOpening": true,
+      "status": "ok",
+      "dbUp": true
+    }
+  }
+}

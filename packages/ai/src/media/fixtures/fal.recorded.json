@@ -1,0 +1,223 @@
+{
+  "metadata": {
+    "recordedAt": "2026-10-11T18:20:21.144Z",
+    "imageModel": "fal-ai/flux/schnell",
+    "videoModel": "fal-ai/wan/v2.2-a14b/text-to-video/turbo",
+    "imageInput": {
+      "prompt": "A red square on a plain white background",
+      "image_size": {
+        "width": 512,
+        "height": 512
+      },
+      "num_images": 1,
+      "num_inference_steps": 1,
+      "output_format": "png",
+      "seed": 42,
+      "enable_safety_checker": true
+    },
+    "videoInput": {
+      "prompt": "A red square on a plain white background",
+      "resolution": "480p",
+      "enable_prompt_expansion": false
+    },
+    "submissionCount": 3,
+    "idempotencyProbe": {
+      "header": "Idempotency-Key",
+      "sameHeaderAndBody": true,
+      "deduplicated": false
+    },
+    "costUsdUpperBound": 0.056,
+    "callbackReceiver": "temporary webhook.site receiver; no staging deployment",
+    "cancelRoundTripMs": 232,
+    "callbackRecorded": true,
+    "callbackRawBodySignatureVerified": true,
+    "recordedDateAsiaTaipei": "2026-10-12",
+    "videoCancellation": "PUT immediately after submit; 202 accepts cancellation, subsequent status still IN_PROGRESS; no video result fetched",
+    "redaction": "request_id and gateway_request_id aliased consistently; media paths replaced, host and extension retained; account ID, receiver URL, raw signature and credentials omitted",
+    "costBasis": "Two 512x512 FLUX schnell images at $0.003 each plus at most $0.05 for one 480p Wan turbo video; conservative price bound, not account billing reconciliation"
+  },
+  "imageSubmit": {
+    "httpStatus": 200,
+    "body": {
+      "status": "IN_QUEUE",
+      "request_id": "image-job-fixture",
+      "response_url": "https://queue.fal.run/fal-ai/flux/requests/image-job-fixture",
+      "status_url": "https://queue.fal.run/fal-ai/flux/requests/image-job-fixture/status",
+      "cancel_url": "https://queue.fal.run/fal-ai/flux/requests/image-job-fixture/cancel",
+      "logs": null,
+      "metrics": {},
+      "queue_position": 0,
+      "user_queue_position": 0,
+      "user_queued_count": 1
+    }
+  },
+  "imageInitialStatus": {
+    "httpStatus": 202,
+    "body": {
+      "status": "IN_PROGRESS",
+      "request_id": "image-job-fixture",
+      "response_url": "https://queue.fal.run/fal-ai/flux/requests/image-job-fixture",
+      "status_url": "https://queue.fal.run/fal-ai/flux/requests/image-job-fixture/status",
+      "cancel_url": "https://queue.fal.run/fal-ai/flux/requests/image-job-fixture/cancel",
+      "logs": null,
+      "metrics": {}
+    }
+  },
+  "duplicateSubmit": {
+    "httpStatus": 200,
+    "body": {
+      "status": "IN_QUEUE",
+      "request_id": "duplicate-job-fixture",
+      "response_url": "https://queue.fal.run/fal-ai/flux/requests/duplicate-job-fixture",
+      "status_url": "https://queue.fal.run/fal-ai/flux/requests/duplicate-job-fixture/status",
+      "cancel_url": "https://queue.fal.run/fal-ai/flux/requests/duplicate-job-fixture/cancel",
+      "logs": null,
+      "metrics": {},
+      "queue_position": 0,
+      "user_queue_position": 0,
+      "user_queued_count": 1
+    }
+  },
+  "imageStatus": {
+    "httpStatus": 200,
+    "body": {
+      "status": "COMPLETED",
+      "request_id": "image-job-fixture",
+      "response_url": "https://queue.fal.run/fal-ai/flux/requests/image-job-fixture",
+      "status_url": "https://queue.fal.run/fal-ai/flux/requests/image-job-fixture/status",
+      "cancel_url": "https://queue.fal.run/fal-ai/flux/requests/image-job-fixture/cancel",
+      "logs": null,
+      "metrics": {
+        "inference_time": 0.8650000095367432
+      }
+    }
+  },
+  "imageResult": {
+    "httpStatus": 200,
+    "body": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/fixture/image.png",
+          "width": 512,
+          "height": 512,
+          "content_type": "image/png"
+        }
+      ],
+      "timings": {
+        "inference": 0.3795737239997834
+      },
+      "seed": 42,
+      "has_nsfw_concepts": [false],
+      "prompt": "A red square on a plain white background"
+    }
+  },
+  "duplicateStatus": {
+    "httpStatus": 200,
+    "body": {
+      "status": "COMPLETED",
+      "request_id": "duplicate-job-fixture",
+      "response_url": "https://queue.fal.run/fal-ai/flux/requests/duplicate-job-fixture",
+      "status_url": "https://queue.fal.run/fal-ai/flux/requests/duplicate-job-fixture/status",
+      "cancel_url": "https://queue.fal.run/fal-ai/flux/requests/duplicate-job-fixture/cancel",
+      "logs": null,
+      "metrics": {
+        "inference_time": 1.1780002117156982
+      }
+    }
+  },
+  "duplicateIN_PROGRESS": {
+    "httpStatus": 202,
+    "body": {
+      "status": "IN_PROGRESS",
+      "request_id": "duplicate-job-fixture",
+      "response_url": "https://queue.fal.run/fal-ai/flux/requests/duplicate-job-fixture",
+      "status_url": "https://queue.fal.run/fal-ai/flux/requests/duplicate-job-fixture/status",
+      "cancel_url": "https://queue.fal.run/fal-ai/flux/requests/duplicate-job-fixture/cancel",
+      "logs": null,
+      "metrics": {}
+    }
+  },
+  "duplicateResult": {
+    "httpStatus": 200,
+    "body": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/fixture/image.png",
+          "width": 512,
+          "height": 512,
+          "content_type": "image/png"
+        }
+      ],
+      "timings": {
+        "inference": 0.49090684300063003
+      },
+      "seed": 42,
+      "has_nsfw_concepts": [false],
+      "prompt": "A red square on a plain white background"
+    }
+  },
+  "cancelCompleted": {
+    "httpStatus": 400,
+    "body": {
+      "status": "ALREADY_COMPLETED"
+    }
+  },
+  "videoSubmit": {
+    "httpStatus": 200,
+    "body": {
+      "status": "IN_QUEUE",
+      "request_id": "video-job-fixture",
+      "response_url": "https://queue.fal.run/fal-ai/wan/requests/video-job-fixture",
+      "status_url": "https://queue.fal.run/fal-ai/wan/requests/video-job-fixture/status",
+      "cancel_url": "https://queue.fal.run/fal-ai/wan/requests/video-job-fixture/cancel",
+      "logs": null,
+      "metrics": {},
+      "queue_position": 0,
+      "user_queue_position": 0,
+      "user_queued_count": 1
+    }
+  },
+  "videoCancel": {
+    "httpStatus": 202,
+    "body": {
+      "status": "CANCELLATION_REQUESTED"
+    }
+  },
+  "videoAfterCancelStatus": {
+    "httpStatus": 202,
+    "body": {
+      "status": "IN_PROGRESS",
+      "request_id": "video-job-fixture",
+      "response_url": "https://queue.fal.run/fal-ai/wan/requests/video-job-fixture",
+      "status_url": "https://queue.fal.run/fal-ai/wan/requests/video-job-fixture/status",
+      "cancel_url": "https://queue.fal.run/fal-ai/wan/requests/video-job-fixture/cancel",
+      "logs": null,
+      "metrics": {}
+    }
+  },
+  "imageWebhook": {
+    "httpStatus": 200,
+    "body": {
+      "error": null,
+      "gateway_request_id": "image-job-fixture",
+      "payload": {
+        "has_nsfw_concepts": [false],
+        "images": [
+          {
+            "content_type": "image/png",
+            "height": 512,
+            "url": "https://v3b.fal.media/files/fixture/image.png",
+            "width": 512
+          }
+        ],
+        "prompt": "A red square on a plain white background",
+        "seed": 42,
+        "timings": {
+          "inference": 0.3795737239997834
+        }
+      },
+      "request_id": "image-job-fixture",
+      "status": "OK"
+    }
+  }
+}

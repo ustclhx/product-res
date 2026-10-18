@@ -1,0 +1,22 @@
+{
+  "provenance": "公开 JWKS 真实录制，无 API key，无账号标识，非真实回调证据",
+  "recordedAt": "2026-10-09T07:59:44.876Z",
+  "source": "https://rest.fal.ai/.well-known/jwks.json",
+  "httpStatus": 200,
+  "keys": [
+    {
+      "kty": "OKP",
+      "crv": "Ed25519",
+      "kid": "Eyv1ENn6NyZnEorJHsWnEDHRQ45-hnGqP0Lb-yX7Itw",
+      "x": "Cghs6Ge6h5B3_vMIurJPYmN23Yk-VcTk-juiIEQ6zuY=",
+      "use": "sig"
+    },
+    {
+      "kty": "OKP",
+      "crv": "Ed25519",
+      "kid": "q_RdVYvPKoXPwp5YOM4bhSvtWynZeoAWGOyxQiXgsmQ",
+      "x": "TZE-E0LB1iT29Ai1LbAh9bam1YQJkK7fEGWAmmkRm_I=",
+      "use": "sig"
+    }
+  ]
+}

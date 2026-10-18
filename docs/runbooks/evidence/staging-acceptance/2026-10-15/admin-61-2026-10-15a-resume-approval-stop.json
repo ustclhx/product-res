@@ -1,0 +1,16 @@
+{
+  "runId": "admin-61-2026-10-15a",
+  "recordedAt": "2026-10-14T19:53:51.812Z",
+  "data": {
+    "status": "stopped",
+    "phase": "readonly refund callback and audit verification",
+    "requestId": "01a13bf8-60cd-73d0-8e72-a461eede4a18",
+    "paymentId": "01a13bf7-422f-734e-bf15-31eca9c442f7",
+    "errorClass": "Error",
+    "timeout": false,
+    "safeCode": "Refund or credit settlement mismatch",
+    "detailsWithheld": true,
+    "approvalSubmitted": true,
+    "refundApiRetries": 0
+  }
+}

@@ -1,0 +1,351 @@
+{
+  "verification": "admin-6.1-metrics-next-day",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T09:03:06.907Z",
+  "day": "2026-10-13",
+  "utcWindow": {
+    "startInclusive": "2026-10-13T00:00:00Z",
+    "endExclusive": "2026-10-14T00:00:00Z"
+  },
+  "result": "passed",
+  "dashboard": {
+    "observedAt": "2026-10-14T09:00:52.702Z",
+    "url": "https://web-staging.product-res-jobs.workers.dev/admin/metrics?from=2026-10-13&to=2026-10-13&offset=0",
+    "dedicatedChromeProfileVerified": true,
+    "readOnly": true,
+    "paragraphs": [
+      "Data through 2026-10-14T00:00:00.000Z (exclusive); last computed 2026-10-14T03:00:25.056Z.",
+      "1 daily summaries in this range. Paid conversion = paid workspaces / all active workspaces. MRR and workspace counts use the latest available daily snapshot. Success rate covers completed / (completed + failed + aborted) assistant text messages; media tasks are not included yet.",
+      "No platform overage in this range."
+    ],
+    "cards": [
+      {
+        "label": "Registrations",
+        "value": "19"
+      },
+      {
+        "label": "Paid workspaces",
+        "value": "10"
+      },
+      {
+        "label": "Paid conversion",
+        "value": "28.6%"
+      },
+      {
+        "label": "User credits consumed",
+        "value": "50"
+      },
+      {
+        "label": "Platform overage absorbed",
+        "value": "0"
+      },
+      {
+        "label": "Text success rate",
+        "value": "76.5% (17 attempts)"
+      }
+    ],
+    "dateInputs": [
+      {
+        "id": "metrics-from",
+        "value": "2026-10-13"
+      },
+      {
+        "id": "metrics-to",
+        "value": "2026-10-13"
+      }
+    ],
+    "mrr": ["USD: 239.00"],
+    "overageRows": []
+  },
+  "summaryRow": {
+    "day": "2026-10-13",
+    "registrations": 19,
+    "total_users": 101,
+    "total_workspaces": 35,
+    "paid_workspaces": 10,
+    "mrr_by_currency": {
+      "USD": 23900
+    },
+    "credits_consumed": 50,
+    "overage_absorbed": 0,
+    "overage_by_model": {},
+    "text_completed": 13,
+    "text_failed": 0,
+    "text_aborted": 4,
+    "media_succeeded": null,
+    "media_failed": null,
+    "data_through": "2026-10-14T00:00:00+00:00",
+    "computed_at": "2026-10-14T03:00:25.056662+00:00"
+  },
+  "rawReadOnlyVerification": {
+    "observedAt": "2026-10-14T09:02:11.776Z",
+    "day": "2026-10-13",
+    "startInclusive": "2026-10-13T00:00:00Z",
+    "endExclusive": "2026-10-14T00:00:00Z",
+    "querySha256": "6744edb852a769cb46d4dde31eb3a9293fa3dd429b96170e2704cf74d7c8634b",
+    "readOnlyTransaction": true,
+    "readonlyRoleCannotInsertMetrics": true,
+    "summary": {
+      "day": "2026-10-13",
+      "registrations": 19,
+      "total_users": 101,
+      "total_workspaces": 35,
+      "paid_workspaces": 10,
+      "mrr_by_currency": {
+        "USD": 23900
+      },
+      "credits_consumed": 50,
+      "overage_absorbed": 0,
+      "overage_by_model": {},
+      "text_completed": 13,
+      "text_failed": 0,
+      "text_aborted": 4,
+      "media_succeeded": null,
+      "media_failed": null,
+      "data_through": "2026-10-14T00:00:00+00:00",
+      "computed_at": "2026-10-14T03:00:25.056662+00:00"
+    },
+    "rawSnapshot": {
+      "registrations": 19,
+      "total_users": 101,
+      "total_workspaces": 35,
+      "paid_workspaces": 10,
+      "mrr_by_currency": {
+        "USD": 23900
+      },
+      "overage_absorbed": 0,
+      "overage_by_model": {}
+    },
+    "scopeAggregates": [
+      {
+        "scope": "global",
+        "workspace_id": null,
+        "credits_consumed": 50,
+        "admin_grants": 63,
+        "conversations_created": 17,
+        "text_terminals": {
+          "completed": 13,
+          "failed": 0,
+          "aborted": 4
+        },
+        "media_created": {
+          "total": 19,
+          "succeeded": 11,
+          "failed": 4,
+          "canceled": 4,
+          "queued": 0,
+          "running": 0,
+          "creditsCharged": 15
+        }
+      },
+      {
+        "scope": "13j-generation-workspace",
+        "workspace_id": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+        "credits_consumed": 50,
+        "admin_grants": 38,
+        "conversations_created": 17,
+        "text_terminals": {
+          "completed": 13,
+          "failed": 0,
+          "aborted": 4
+        },
+        "media_created": {
+          "total": 19,
+          "succeeded": 11,
+          "failed": 4,
+          "canceled": 4,
+          "queued": 0,
+          "running": 0,
+          "creditsCharged": 15
+        }
+      },
+      {
+        "scope": "13j-admin-dedicated-workspace",
+        "workspace_id": "01a134fd-cf19-7366-8567-c002d78f2637",
+        "credits_consumed": 0,
+        "admin_grants": 25,
+        "conversations_created": 0,
+        "text_terminals": {
+          "completed": 0,
+          "failed": 0,
+          "aborted": 0
+        },
+        "media_created": {
+          "total": 0,
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "queued": 0,
+          "running": 0,
+          "creditsCharged": 0
+        }
+      }
+    ],
+    "runTasks": [
+      {
+        "id": "01a13521-332a-70d4-acc7-23c1a359d70d",
+        "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+        "status": "succeeded",
+        "creditsCharged": 2,
+        "createdAt": "2026-10-13T11:58:50.019743+00:00",
+        "finishedAt": "2026-10-13T11:59:02.167946+00:00"
+      },
+      {
+        "id": "01a13520-beb2-7543-bc9f-35a5ea9591cc",
+        "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+        "status": "succeeded",
+        "creditsCharged": 1,
+        "createdAt": "2026-10-13T11:58:19.972023+00:00",
+        "finishedAt": "2026-10-13T11:58:27.960271+00:00"
+      },
+      {
+        "id": "01a13521-c9b0-70d3-a45a-aede3b712151",
+        "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+        "status": "canceled",
+        "creditsCharged": 0,
+        "createdAt": "2026-10-13T11:59:28.515261+00:00",
+        "finishedAt": "2026-10-13T11:59:31.043458+00:00"
+      }
+    ],
+    "runMessages": [
+      {
+        "id": "01a13522-488e-77ba-8b2b-632319651eab",
+        "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+        "conversationId": "01a13522-098a-7098-8708-c81c451913c4",
+        "status": "completed",
+        "credits": 1,
+        "updatedAt": "2026-10-13T12:00:04.414+00:00"
+      },
+      {
+        "id": "01a13522-c278-7586-8fa9-4e5f92e86438",
+        "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+        "conversationId": "01a13522-9274-7283-aa0c-e5384eb8c869",
+        "status": "aborted",
+        "credits": 1,
+        "updatedAt": "2026-10-13T12:00:35.325+00:00"
+      },
+      {
+        "id": "01a13523-c00f-76d8-9035-a58ea2aced4c",
+        "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+        "conversationId": "01a13523-90c2-7128-89b9-7a53e93a4d67",
+        "status": "completed",
+        "credits": 2,
+        "updatedAt": "2026-10-13T12:01:40.203+00:00"
+      },
+      {
+        "id": "01a13523-3825-7045-9cbc-1cac3818de52",
+        "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+        "conversationId": "01a13523-0583-7799-a1cd-cda3c78915fe",
+        "status": "completed",
+        "credits": 3,
+        "updatedAt": "2026-10-13T12:01:09.085+00:00"
+      },
+      {
+        "id": "01a13524-3876-737f-926f-00d946addbe7",
+        "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+        "conversationId": "01a13524-053f-7209-b84f-1e78e031cc49",
+        "status": "aborted",
+        "credits": 0,
+        "updatedAt": "2026-10-13T12:02:10.569+00:00"
+      },
+      {
+        "id": "01a13524-ab36-7366-8106-59d71cf0cd54",
+        "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+        "conversationId": "01a13524-7bdf-759a-a1b1-7d95304089ab",
+        "status": "completed",
+        "credits": 2,
+        "updatedAt": "2026-10-13T12:02:42.845+00:00"
+      }
+    ],
+    "adminTopup": {
+      "auditId": "01a13525-42e0-73ee-8223-16d2a25baa2e",
+      "auditExists": true,
+      "grant": {
+        "id": "01a13525-41a4-77c1-960d-0f955e2ee00d",
+        "workspaceId": "01a134fd-cf19-7366-8567-c002d78f2637",
+        "amount": 25,
+        "source": "admin",
+        "createdAt": "2026-10-13T12:03:15.860344+00:00"
+      },
+      "ledgerEntries": [
+        {
+          "id": "01a13525-4276-7616-9629-b41d94b38be0",
+          "type": "grant",
+          "delta": 25,
+          "createdAt": "2026-10-13T12:03:15.860344+00:00"
+        }
+      ]
+    }
+  },
+  "comparisons": {
+    "dateFilter": true,
+    "throughCoversFullUtcDay": true,
+    "computedOnNextUtcDay": true,
+    "uiThroughTimestamp": true,
+    "uiComputedTimestamp": true,
+    "uiRegistrations": true,
+    "uiPaidWorkspaces": true,
+    "uiPaidConversion": true,
+    "uiCreditsConsumed": true,
+    "uiOverageAbsorbed": true,
+    "uiTextSuccessRate": true,
+    "uiMrr": true,
+    "uiOverageByModel": true,
+    "rawCreditsConsumed": true,
+    "rawTextCompleted": true,
+    "rawTextFailed": true,
+    "rawTextAborted": true,
+    "rawOtherSnapshotFields": true,
+    "readonlyTransaction": true,
+    "readonlyRoleCannotInsertMetrics": true,
+    "adminTopupAudit": true,
+    "adminTopupGrantAndLedger": true,
+    "run13jResources": true,
+    "run13jChargeMatchesEvidence": true,
+    "mediaNotIncludedInDashboard": true
+  },
+  "run13jAttribution": {
+    "runId": "acceptance-2026-10-13j",
+    "generationWorkspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+    "adminDedicatedWorkspaceId": "01a134fd-cf19-7366-8567-c002d78f2637",
+    "adminTopupCredits": 25,
+    "runGenerationCreditsConsumed": 12,
+    "runMediaTasks": {
+      "succeeded": 2,
+      "canceled": 1,
+      "total": 3
+    },
+    "runTextMessages": {
+      "completed": 4,
+      "aborted": 2,
+      "total": 6
+    },
+    "runConversationCount": 6,
+    "fullDayIncludesOtherRuns": true,
+    "adminTopupExcludedFromConsumptionMetric": true
+  },
+  "statisticalDefinitions": {
+    "creditsConsumed": "-sum(credit_ledger.delta), type='consume', created_at in UTC day",
+    "textTerminals": "assistant messages with completed/failed/aborted status, updated_at in UTC day",
+    "mediaSupplement": "Raw media tasks created in UTC day; absent from current dashboard",
+    "conversationSupplement": "Raw conversations created in UTC day; absent from current dashboard",
+    "scope": "Dashboard aggregates all workspaces; workspace and 13j-resource counts are supplemental readonly queries",
+    "snapshotCaveat": "Subscription and workspace snapshots recalculated using current rows and the implemented UTC boundary predicates",
+    "sources": [
+      "apps/jobs/src/cron/metrics-daily.ts",
+      "apps/web/src/features/admin/metrics.ts",
+      "apps/web/src/routes/admin/metrics.tsx",
+      "docs/runbooks/evidence/staging-acceptance/2026-10-13/acceptance-2026-10-13j-execution-status.json"
+    ]
+  },
+  "constraints": {
+    "readOnly": true,
+    "settingsChanged": false,
+    "newGenerationTriggered": false,
+    "topupPerformed": false,
+    "defaultChromeUsed": false,
+    "tasksModified": false,
+    "evidenceCommitted": false,
+    "credentialScan": "passed"
+  }
+}

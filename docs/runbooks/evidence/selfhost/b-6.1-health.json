@@ -1,0 +1,793 @@
+{
+  "startedAt": "2026-10-14T12:05:34.605Z",
+  "sha": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+  "node": "v23.11.0",
+  "checkpoints": [
+    {
+      "event": "resumed-observation",
+      "at": "2026-10-14T12:05:35.746Z",
+      "health": {
+        "status": 200,
+        "cache": "no-store",
+        "body": {
+          "status": "ok",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 7
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "up",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      },
+      "jobsPids": [53722, 53723]
+    },
+    {
+      "event": "real-five-minute-success",
+      "at": "2026-10-14T12:05:35.770Z",
+      "health": {
+        "status": 200,
+        "cache": "no-store",
+        "body": {
+          "status": "ok",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 1
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "up",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      },
+      "ledger": [
+        {
+          "scheduled_at": "2026-10-14T12:00:00.000Z",
+          "state": "completed",
+          "started_at": "2026-10-14T12:00:00.173Z",
+          "finished_at": "2026-10-14T12:00:00.204Z",
+          "id": "01a13a48-9e95-763f-9066-2ea0d2381298",
+          "executor_id": "b-accept-scheduler-jobs-2"
+        }
+      ]
+    },
+    {
+      "event": "deletion-compensation-failure-armed",
+      "at": "2026-10-14T12:05:35.836Z"
+    },
+    {
+      "event": "failed-precondition-no-advance",
+      "at": "2026-10-14T12:10:00.343Z",
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 3
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "up",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      },
+      "ledger": [
+        {
+          "scheduled_at": "2026-10-14T12:10:00.000Z",
+          "state": "failed",
+          "started_at": "2026-10-14T12:10:00.246Z",
+          "finished_at": "2026-10-14T12:10:00.295Z",
+          "id": "01a13a51-c68a-7406-81e0-34160306dd5c",
+          "executor_id": "b-accept-scheduler-jobs-2"
+        },
+        {
+          "scheduled_at": "2026-10-14T12:00:00.000Z",
+          "state": "completed",
+          "started_at": "2026-10-14T12:00:00.173Z",
+          "finished_at": "2026-10-14T12:00:00.204Z",
+          "id": "01a13a48-9e95-763f-9066-2ea0d2381298",
+          "executor_id": "b-accept-scheduler-jobs-2"
+        }
+      ]
+    },
+    {
+      "event": "scheduler-stopped",
+      "at": "2026-10-14T12:10:00.446Z",
+      "paused": [
+        {
+          "event": "paused",
+          "at": "2026-10-14T12:10:00.445Z"
+        },
+        {
+          "event": "paused",
+          "at": "2026-10-14T12:10:00.445Z"
+        }
+      ],
+      "succeededAt": "2026-10-14T12:00:00.191Z"
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:10:30.480Z",
+      "elapsedMs": 30002,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 4
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:11:00.540Z",
+      "elapsedMs": 60037,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 6
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:11:30.620Z",
+      "elapsedMs": 90098,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 37
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:12:00.648Z",
+      "elapsedMs": 120176,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 2
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:12:30.679Z",
+      "elapsedMs": 150217,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 1
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:13:00.690Z",
+      "elapsedMs": 180234,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 1
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:13:30.767Z",
+      "elapsedMs": 210252,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 13
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:14:00.791Z",
+      "elapsedMs": 240323,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 1
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:14:30.823Z",
+      "elapsedMs": 270348,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 4
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:15:00.865Z",
+      "elapsedMs": 300382,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 2
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:15:30.938Z",
+      "elapsedMs": 330428,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 8
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:16:00.985Z",
+      "elapsedMs": 360494,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 3
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:16:31.000Z",
+      "elapsedMs": 390541,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 1
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:17:01.034Z",
+      "elapsedMs": 420557,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 3
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:17:31.097Z",
+      "elapsedMs": 450590,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 7
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:18:01.150Z",
+      "elapsedMs": 480665,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 10
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:18:31.283Z",
+      "elapsedMs": 510724,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 36
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:19:01.332Z",
+      "elapsedMs": 540846,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 2
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:19:31.373Z",
+      "elapsedMs": 570891,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 6
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-clock-observation",
+      "at": "2026-10-14T12:20:01.448Z",
+      "elapsedMs": 600943,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 3
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      }
+    },
+    {
+      "event": "stopped-over-ten-minutes-stale",
+      "at": "2026-10-14T12:20:01.479Z",
+      "stoppedElapsedMs": 601020,
+      "heartbeatAgeMs": 1201275,
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 1
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "down",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      },
+      "ledger": [
+        {
+          "scheduled_at": "2026-10-14T12:10:00.000Z",
+          "state": "failed",
+          "started_at": "2026-10-14T12:10:00.246Z",
+          "finished_at": "2026-10-14T12:10:00.295Z",
+          "id": "01a13a51-c68a-7406-81e0-34160306dd5c",
+          "executor_id": "b-accept-scheduler-jobs-2"
+        },
+        {
+          "scheduled_at": "2026-10-14T12:00:00.000Z",
+          "state": "completed",
+          "started_at": "2026-10-14T12:00:00.173Z",
+          "finished_at": "2026-10-14T12:00:00.204Z",
+          "id": "01a13a48-9e95-763f-9066-2ea0d2381298",
+          "executor_id": "b-accept-scheduler-jobs-2"
+        }
+      ]
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-14T12:20:01.658Z"
+}

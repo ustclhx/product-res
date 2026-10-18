@@ -1,0 +1,119 @@
+{
+  "status": "blocked_before_pull",
+  "date": "2026-10-16",
+  "publish": {
+    "runUrl": "https://github.com/ustclhx/product-res/actions/runs/38915732484",
+    "conclusion": "success",
+    "sha": "aaf82995a06454f2c96328da90da37f59e61a73d",
+    "namespace": "ghcr.io/ustclhx/product-res",
+    "fixture": false,
+    "platforms": ["linux/amd64", "linux/arm64"],
+    "services": [
+      "backup",
+      "caddy",
+      "jobs",
+      "migrate",
+      "object-storage",
+      "postgres",
+      "valkey",
+      "web"
+    ],
+    "bundleVerify": "passed",
+    "cleanComposeConfig": "passed",
+    "rollbackCompatibleWith": []
+  },
+  "deployment": {
+    "sshAlias": "product-res-ecs",
+    "directory": "/opt/product-res-selfhost",
+    "exitCode": 1,
+    "reason": "Compose file must belong to the verified bundle",
+    "cause": "digit 3 in compose.s3.yaml rejected by filename regex despite manifest membership",
+    "bundleImported": true,
+    "releaseStateExists": false,
+    "imagesPulled": false,
+    "containersCreated": false,
+    "migrationRun": false,
+    "acmeRun": false,
+    "rebootRun": false
+  },
+  "preparation": {
+    "dns": {
+      "name": "selfhost.ezarouter.cc",
+      "type": "A",
+      "content": "43.106.17.72",
+      "proxied": false,
+      "hostResolution": "43.106.17.72"
+    },
+    "r2Buckets": ["selfhost-files", "selfhost-backups", "selfhost-backups-replica"],
+    "independentTokenCount": 3,
+    "tokenScope": "each token object read/write on its one named selfhost bucket; no bucket management",
+    "s3ScopeEnforcementTested": false,
+    "credentialTransfer": "UI Copy to clipboard to mode0600 files; clipboard cleared; only S3 key pair saved",
+    "secretValuesPrinted": false,
+    "hostSecretsFiles": 18,
+    "deploymentDirectoryMode": "0700",
+    "envMode": "0600",
+    "pgTlsSan": "postgres",
+    "unconfiguredIntegrations": ["Google OAuth", "GitHub OAuth", "Turnstile"],
+    "emailTransport": "log",
+    "standaloneInitRun": false
+  },
+  "stoppedServices": {
+    "composeGroups": {
+      "sub2api-deploy": 3,
+      "new-api": 4,
+      "openclaw": 1
+    },
+    "recordedBeforeStop": true,
+    "containerRestartPolicy": "no",
+    "warpOriginalEnabled": "enabled",
+    "warpOriginalActive": "active",
+    "warpNowEnabled": "disabled",
+    "warpNowActive": "inactive",
+    "availableMemoryMiBAfterStop": 2779,
+    "deletedResources": false,
+    "mustRemainStopped": true
+  },
+  "validation": {
+    "deployPythonTests": {
+      "passed": 11
+    },
+    "bundlePythonTests": {
+      "passed": 8
+    },
+    "pnpmCheck": "passed; four existing warnings",
+    "pnpmTypecheck": "14/14 cached",
+    "localFixedSourceRealComposeCombinedPlan": "passed; no deployment",
+    "openspecDeliveryStrict": "passed",
+    "fullPnpmTestOrBuildRun": false
+  },
+  "remaining": {
+    "storage-observability": ["1.7"],
+    "delivery": ["7.1", "7.2", "7.3", "7.4"],
+    "foundation": ["7.4", "9.4"],
+    "job-engine": ["6.4"]
+  },
+  "next": "coordinator review and a new trusted official same-SHA image-set/bundle containing deploy.py fix; do not patch aaf8299 bundle",
+  "r2Readback": [
+    {
+      "command": "pnpm --filter @product-res/web exec wrangler r2 bucket cors list selfhost-files",
+      "output": "\n ⛅️ wrangler 4.146.0 (update available 4.151.1)\n───────────────────────────────────────────────\nListing CORS rules for bucket 'selfhost-files'...\nallowed_origins:  https://selfhost.ezarouter.cc\nallowed_methods:  PUT, GET, HEAD\nallowed_headers:  Content-Type, If-None-Match\nexposed_headers:  ETag, Content-Length, Content-Type, Content-Disposition\nmax_age_seconds:  300\n"
+    },
+    {
+      "command": "pnpm --filter @product-res/web exec wrangler r2 bucket lock list selfhost-backups",
+      "output": "\n ⛅️ wrangler 4.146.0 (update available 4.151.1)\n───────────────────────────────────────────────\nListing lock rules for bucket 'selfhost-backups'...\nname:       selfhost-physical-35d\nenabled:    Yes\nprefix:     acceptance-20261016/pg17/\ncondition:  after 35 days\n"
+    },
+    {
+      "command": "pnpm --filter @product-res/web exec wrangler r2 bucket lifecycle list selfhost-backups",
+      "output": "\n ⛅️ wrangler 4.146.0 (update available 4.151.1)\n───────────────────────────────────────────────\nListing lifecycle rules for bucket 'selfhost-backups'...\nname:     Default Multipart Abort Rule\nenabled:  Yes\nprefix:   (all prefixes)\naction:   Abort incomplete multipart uploads after 7 days\n"
+    },
+    {
+      "command": "pnpm --filter @product-res/web exec wrangler r2 bucket lock list selfhost-backups-replica",
+      "output": "\n ⛅️ wrangler 4.146.0 (update available 4.151.1)\n───────────────────────────────────────────────\nListing lock rules for bucket 'selfhost-backups-replica'...\nname:       selfhost-base-retain-all\nenabled:    Yes\nprefix:     acceptance-20261016/pg17/basebackups_005/\ncondition:  indefinitely\n\nname:       selfhost-logical-retain-all\nenabled:    Yes\nprefix:     acceptance-20261016/pg17/logical/\ncondition:  indefinitely\n\nname:       selfhost-wal-retain-all\nenabled:    Yes\nprefix:     acceptance-20261016/pg17/wal_005/\ncondition:  indefinitely\n"
+    },
+    {
+      "command": "pnpm --filter @product-res/web exec wrangler r2 bucket lifecycle list selfhost-backups-replica",
+      "output": "\n ⛅️ wrangler 4.146.0 (update available 4.151.1)\n───────────────────────────────────────────────\nListing lifecycle rules for bucket 'selfhost-backups-replica'...\nname:     Default Multipart Abort Rule\nenabled:  Yes\nprefix:   (all prefixes)\naction:   Abort incomplete multipart uploads after 7 days\n"
+    }
+  ]
+}

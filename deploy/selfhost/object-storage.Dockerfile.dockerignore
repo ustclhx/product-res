@@ -1,0 +1,6 @@
+**
+!deploy/
+!deploy/selfhost/
+!deploy/selfhost/object-storage-entrypoint.sh
+!deploy/selfhost/object-storage-health.sh
+!deploy/selfhost/object-storage-filer.toml

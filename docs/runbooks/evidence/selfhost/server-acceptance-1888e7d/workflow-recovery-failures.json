@@ -1,0 +1,48 @@
+{
+  "sha": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+  "hostCpuCount": 2,
+  "testAssertionsUnchanged": true,
+  "failures": [
+    {
+      "run": "workflow-r2",
+      "testContainerCpuLimit": 0.5,
+      "title": "Node durable workflows on real PostgreSQL drains gracefully with unfinished sleep retained, reuses successful checkpoints and retries a side effect before checkpoint idempotently",
+      "durationMs": 10286.895727000025,
+      "boundOverrunMs": 2161,
+      "messages": [
+        "AssertionError: expected 1792167128817 to be less than 1792167126656\n    at /src/packages/platform/test/node/workflow.integration.test.ts:438:24\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at file:///src/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20"
+      ]
+    },
+    {
+      "run": "recovery-r3",
+      "testContainerCpuLimit": 0.5,
+      "title": "Node durable workflows on real PostgreSQL drains gracefully with unfinished sleep retained, reuses successful checkpoints and retries a side effect before checkpoint idempotently",
+      "durationMs": 10197.189813,
+      "boundOverrunMs": 2121,
+      "messages": [
+        "AssertionError: expected 1792170977087 to be less than 1792170974966\n    at /src/packages/platform/test/node/workflow.integration.test.ts:438:24\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at file:///src/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20"
+      ]
+    },
+    {
+      "run": "recovery-r4",
+      "testContainerCpuLimit": 1.0,
+      "title": "Node durable workflows on real PostgreSQL drains gracefully with unfinished sleep retained, reuses successful checkpoints and retries a side effect before checkpoint idempotently",
+      "durationMs": 7331.60586,
+      "boundOverrunMs": 685,
+      "messages": [
+        "AssertionError: expected 1792171036728 to be less than 1792171036043\n    at /src/packages/platform/test/node/workflow.integration.test.ts:438:24\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at file:///src/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20"
+      ]
+    },
+    {
+      "run": "recovery-r5",
+      "testContainerCpuLimit": 2.0,
+      "title": "Node durable workflows on real PostgreSQL drains gracefully with unfinished sleep retained, reuses successful checkpoints and retries a side effect before checkpoint idempotently",
+      "durationMs": 6792.312752000001,
+      "boundOverrunMs": 297,
+      "messages": [
+        "AssertionError: expected 1792171123886 to be less than 1792171123589\n    at /src/packages/platform/test/node/workflow.integration.test.ts:438:24\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at file:///src/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20"
+      ]
+    }
+  ],
+  "rebootPerformed": false
+}

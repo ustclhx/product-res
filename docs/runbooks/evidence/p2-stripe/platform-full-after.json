@@ -1,0 +1,88 @@
+{
+  "captured_at": "2026-10-09T11:17:19.131111+00:00",
+  "database": "product_res_staging",
+  "role": "readonly",
+  "workspace_id": "01a11fbb-3dbe-7372-94d7-9d180ead531d",
+  "subscriptions": [],
+  "payments": [
+    {
+      "id": "01a11fbb-9a2b-70ee-8066-bd0f22edba8c",
+      "provider_payment_id": "pi_3UOYxzL3UTpBAoXo0kFoYJrn",
+      "kind": "one_time",
+      "plan_price_id": "01a11bac-a47c-77ef-aa22-87cdc57a4339",
+      "amount": 1000,
+      "currency": "USD",
+      "refunded_amount": 1000,
+      "status": "refunded",
+      "period_start": null,
+      "period_end": null,
+      "paid_at": "2026-10-09T08:15:48+00:00"
+    }
+  ],
+  "payment_refunds": [
+    {
+      "payment_id": "01a11fbb-9a2b-70ee-8066-bd0f22edba8c",
+      "provider_refund_id": "re_3UOYxzL3UTpBAoXo07mx1Eox",
+      "amount": 1000,
+      "currency": "USD"
+    }
+  ],
+  "grants": [
+    {
+      "id": "01a11fbb-9aa9-7217-9b8a-97b4f3159ed1",
+      "source": "purchase",
+      "source_ref": "01a11fbb-9a2b-70ee-8066-bd0f22edba8c",
+      "payment_id": "01a11fbb-9a2b-70ee-8066-bd0f22edba8c",
+      "amount": 1000,
+      "remaining": 0,
+      "status": "revoked",
+      "expires_at": "2027-10-09T08:15:48+00:00"
+    }
+  ],
+  "ledger": [
+    {
+      "id": "01a11fbb-9adc-735a-8572-2d6a6ba7c815",
+      "type": "grant",
+      "delta": 1000,
+      "grant_id": "01a11fbb-9aa9-7217-9b8a-97b4f3159ed1"
+    },
+    {
+      "id": "01a12061-7c69-7235-b926-71da2103976b",
+      "type": "revoke",
+      "delta": -1000,
+      "grant_id": "01a11fbb-9aa9-7217-9b8a-97b4f3159ed1"
+    }
+  ],
+  "refund_requests": [],
+  "events": [
+    {
+      "provider_event_id": "evt_1UOYy1L3UTpBAoXor4LjakGo",
+      "type": "checkout.session.completed",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T08:15:51.029+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_3UOYxzL3UTpBAoXo0y6M4huF",
+      "type": "charge.refunded",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T11:17:02.244+00:00",
+      "api_version": "2026-09-30.endive"
+    }
+  ],
+  "ledger_total": 0,
+  "expected": 0,
+  "negative_grants": 0,
+  "audit": [
+    {
+      "action": "billing.payment_refunded",
+      "target_type": "payment",
+      "target_id": "01a11fbb-9a2b-70ee-8066-bd0f22edba8c",
+      "created_at": "2026-10-09T11:17:01.763944+00:00"
+    }
+  ]
+}

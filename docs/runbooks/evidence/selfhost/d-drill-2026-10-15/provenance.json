@@ -1,0 +1,164 @@
+{
+  "sourceRevision": "598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+  "publishRun": "https://github.com/ustclhx/product-res/actions/runs/38624392597",
+  "conclusion": "success",
+  "namespace": "ghcr.io/ustclhx/product-res",
+  "fixture": false,
+  "imageSet": {
+    "schemaVersion": 1,
+    "sha": "598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+    "namespace": "ghcr.io/ustclhx/product-res",
+    "platforms": ["linux/amd64", "linux/arm64"],
+    "images": [
+      {
+        "name": "web",
+        "reference": "ghcr.io/ustclhx/product-res/web@sha256:2696ff833d692cddac8d510fe648b10f361ad41b66fa87aa5d0666c4e8fa6979",
+        "tag": "ghcr.io/ustclhx/product-res/web:598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+        "digest": "sha256:2696ff833d692cddac8d510fe648b10f361ad41b66fa87aa5d0666c4e8fa6979"
+      },
+      {
+        "name": "jobs",
+        "reference": "ghcr.io/ustclhx/product-res/jobs@sha256:8241f6426ae06e1b143ce6e3d3c919904bdc472f90645f06d0d201b088e7012d",
+        "tag": "ghcr.io/ustclhx/product-res/jobs:598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+        "digest": "sha256:8241f6426ae06e1b143ce6e3d3c919904bdc472f90645f06d0d201b088e7012d"
+      },
+      {
+        "name": "migrate",
+        "reference": "ghcr.io/ustclhx/product-res/migrate@sha256:77f0a708d07ef1f209b33153dfd7793c32446ce396525600c6279ca59d939e52",
+        "tag": "ghcr.io/ustclhx/product-res/migrate:598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+        "digest": "sha256:77f0a708d07ef1f209b33153dfd7793c32446ce396525600c6279ca59d939e52"
+      },
+      {
+        "name": "postgres",
+        "reference": "ghcr.io/ustclhx/product-res/postgres@sha256:69afef1287f173dd9596200529a95554b49f36bf8fe254331bb8a3ccc16f11ba",
+        "tag": "ghcr.io/ustclhx/product-res/postgres:598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+        "digest": "sha256:69afef1287f173dd9596200529a95554b49f36bf8fe254331bb8a3ccc16f11ba"
+      },
+      {
+        "name": "valkey",
+        "reference": "ghcr.io/ustclhx/product-res/valkey@sha256:5bab9fa251b160746e787bc2987aac9b1df24d19c56c56ce3413726ab6919c0a",
+        "tag": "ghcr.io/ustclhx/product-res/valkey:598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+        "digest": "sha256:5bab9fa251b160746e787bc2987aac9b1df24d19c56c56ce3413726ab6919c0a"
+      },
+      {
+        "name": "caddy",
+        "reference": "ghcr.io/ustclhx/product-res/caddy@sha256:bf16c6ffcd6d05980b927e932b8252487b722d5223222400e5d70b04784d1154",
+        "tag": "ghcr.io/ustclhx/product-res/caddy:598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+        "digest": "sha256:bf16c6ffcd6d05980b927e932b8252487b722d5223222400e5d70b04784d1154"
+      },
+      {
+        "name": "object-storage",
+        "reference": "ghcr.io/ustclhx/product-res/object-storage@sha256:be1727a37710debb38a01bd1b0c8e2df2cad8bcbb1c200c92b966fcb59337b17",
+        "tag": "ghcr.io/ustclhx/product-res/object-storage:598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+        "digest": "sha256:be1727a37710debb38a01bd1b0c8e2df2cad8bcbb1c200c92b966fcb59337b17"
+      },
+      {
+        "name": "backup",
+        "reference": "ghcr.io/ustclhx/product-res/backup@sha256:27197e1c7921e65b6d8bd9042d8acedd3c7bfdfcaedf6ceafcb7a7f45b79b3bb",
+        "tag": "ghcr.io/ustclhx/product-res/backup:598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+        "digest": "sha256:27197e1c7921e65b6d8bd9042d8acedd3c7bfdfcaedf6ceafcb7a7f45b79b3bb"
+      }
+    ]
+  },
+  "anonymousPulls": [
+    {
+      "name": "migrate",
+      "reference": "ghcr.io/ustclhx/product-res/migrate@sha256:77f0a708d07ef1f209b33153dfd7793c32446ce396525600c6279ca59d939e52",
+      "tag": "ghcr.io/ustclhx/product-res/migrate:598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+      "digest": "sha256:77f0a708d07ef1f209b33153dfd7793c32446ce396525600c6279ca59d939e52",
+      "revision": "598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+      "imageId": "sha256:77f0a708d07ef1f209b33153dfd7793c32446ce396525600c6279ca59d939e52",
+      "architecture": "arm64",
+      "repoDigests": [
+        "ghcr.io/ustclhx/product-res/migrate@sha256:77f0a708d07ef1f209b33153dfd7793c32446ce396525600c6279ca59d939e52"
+      ],
+      "elapsedSeconds": 50.98,
+      "anonymous": true
+    },
+    {
+      "name": "postgres",
+      "reference": "ghcr.io/ustclhx/product-res/postgres@sha256:69afef1287f173dd9596200529a95554b49f36bf8fe254331bb8a3ccc16f11ba",
+      "tag": "ghcr.io/ustclhx/product-res/postgres:598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+      "digest": "sha256:69afef1287f173dd9596200529a95554b49f36bf8fe254331bb8a3ccc16f11ba",
+      "revision": "598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+      "imageId": "sha256:69afef1287f173dd9596200529a95554b49f36bf8fe254331bb8a3ccc16f11ba",
+      "architecture": "arm64",
+      "repoDigests": [
+        "ghcr.io/ustclhx/product-res/postgres@sha256:69afef1287f173dd9596200529a95554b49f36bf8fe254331bb8a3ccc16f11ba"
+      ],
+      "elapsedSeconds": 9.01,
+      "anonymous": true
+    },
+    {
+      "name": "caddy",
+      "reference": "ghcr.io/ustclhx/product-res/caddy@sha256:bf16c6ffcd6d05980b927e932b8252487b722d5223222400e5d70b04784d1154",
+      "tag": "ghcr.io/ustclhx/product-res/caddy:598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+      "digest": "sha256:bf16c6ffcd6d05980b927e932b8252487b722d5223222400e5d70b04784d1154",
+      "revision": "598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+      "imageId": "sha256:bf16c6ffcd6d05980b927e932b8252487b722d5223222400e5d70b04784d1154",
+      "architecture": "arm64",
+      "repoDigests": [
+        "ghcr.io/ustclhx/product-res/caddy@sha256:bf16c6ffcd6d05980b927e932b8252487b722d5223222400e5d70b04784d1154"
+      ],
+      "elapsedSeconds": 7.14,
+      "anonymous": true
+    },
+    {
+      "name": "object-storage",
+      "reference": "ghcr.io/ustclhx/product-res/object-storage@sha256:be1727a37710debb38a01bd1b0c8e2df2cad8bcbb1c200c92b966fcb59337b17",
+      "tag": "ghcr.io/ustclhx/product-res/object-storage:598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+      "digest": "sha256:be1727a37710debb38a01bd1b0c8e2df2cad8bcbb1c200c92b966fcb59337b17",
+      "revision": "598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+      "imageId": "sha256:be1727a37710debb38a01bd1b0c8e2df2cad8bcbb1c200c92b966fcb59337b17",
+      "architecture": "arm64",
+      "repoDigests": [
+        "ghcr.io/ustclhx/product-res/object-storage@sha256:be1727a37710debb38a01bd1b0c8e2df2cad8bcbb1c200c92b966fcb59337b17"
+      ],
+      "elapsedSeconds": 5.59,
+      "anonymous": true
+    },
+    {
+      "name": "backup",
+      "reference": "ghcr.io/ustclhx/product-res/backup@sha256:27197e1c7921e65b6d8bd9042d8acedd3c7bfdfcaedf6ceafcb7a7f45b79b3bb",
+      "tag": "ghcr.io/ustclhx/product-res/backup:598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+      "digest": "sha256:27197e1c7921e65b6d8bd9042d8acedd3c7bfdfcaedf6ceafcb7a7f45b79b3bb",
+      "revision": "598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+      "imageId": "sha256:27197e1c7921e65b6d8bd9042d8acedd3c7bfdfcaedf6ceafcb7a7f45b79b3bb",
+      "architecture": "arm64",
+      "repoDigests": [
+        "ghcr.io/ustclhx/product-res/backup@sha256:27197e1c7921e65b6d8bd9042d8acedd3c7bfdfcaedf6ceafcb7a7f45b79b3bb"
+      ],
+      "elapsedSeconds": 6.97,
+      "anonymous": true
+    }
+  ],
+  "bundle": {
+    "artifactTarSha256": "150ce38d6b5666b26dde432d3561db255e38030340f1d38b5f9294e793feef64",
+    "verified": true,
+    "composeConfigVerified": true,
+    "materialCount": 27,
+    "consumedEntrypoints": ["restore.sh", "restore-drill.sh", "backup/restore.py"],
+    "checksums": {
+      "restore.sh": "390d643893bf1f993714c681cb9002509165166875a5e6b6f6c70a72e76d2c94",
+      "restore-drill.sh": "f7510bbea220d6e23ac32d5aed9a6e752c23a5e03744b57301c514bdb8a045dc",
+      "backup/restore.py": "e1cef8eff96ee9315efc0603540447862424c5f8d69deadf6eac29a1e8974adf"
+    }
+  },
+  "reviewSource": {
+    "pr": "https://github.com/ustclhx/product-res/pull/207",
+    "branch": "origin/ustclhx/integration-signoffs",
+    "signoffSha256": "1ebbe52142ee2c83d158db2fe67cd9a80dedccd949443df1d5cbfd95a6112b20",
+    "reason": "Prior sourceDirty mechanism run and separate weekly run lacked same-run formal release proof and resources/RTO/RPO."
+  },
+  "realProvidersVerified": false,
+  "task7_2Pending": true,
+  "harness": {
+    "revision": "8b1c3cf0c77c204aa0ebaf5284cbc6c06c03a0cd",
+    "sourceDirty": false,
+    "fileSha256": {
+      "deploy/selfhost/test-backup.mjs": "99a78c356d93d371268fc5cb09ff8a61e798bb198a0a3e650945e723b3260dbb",
+      "deploy/selfhost/backup/fixtures/restore-seed.sql": "43aadd9e3d237efb20affa7474de5e3c7439de5a3d0cdc136d8d49343a45989c",
+      "deploy/selfhost/backup/acceptance-s3.mjs": "21a37f0b89f26e9a1d3e73a7ae2fcaaae7c3fb99096cf31963fe93cfe97e2eaa"
+    }
+  }
+}

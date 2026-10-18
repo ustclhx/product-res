@@ -1,0 +1,123 @@
+{
+  "sha": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+  "checks": [
+    {
+      "command": "pnpm check",
+      "exitCode": 0,
+      "summary": ["Biome、积分/支付写入边界与工程脚本检查通过"]
+    },
+    {
+      "command": "pnpm check:deps",
+      "exitCode": 0,
+      "summary": ["依赖方向检查通过：12 个包，2 个应用"]
+    },
+    {
+      "command": "pnpm check:singletons",
+      "exitCode": 0,
+      "summary": ["单实例检查通过：drizzle-orm、react、react-dom 各只有一个实例"]
+    },
+    {
+      "command": "pnpm dedupe --check",
+      "exitCode": 0,
+      "summary": []
+    },
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "summary": [
+        "Tasks:    14 successful, 14 total",
+        "Cached:    14 cached, 14 total",
+        "Time:    113ms >>> FULL TURBO"
+      ]
+    },
+    {
+      "command": "pnpm test",
+      "exitCode": 0,
+      "summary": [
+        "Tasks:    26 successful, 26 total",
+        "Cached:    22 cached, 26 total",
+        "Time:    3m4.035s"
+      ]
+    },
+    {
+      "command": "pnpm build",
+      "exitCode": 0,
+      "summary": [
+        "Tasks:    2 successful, 2 total",
+        "Cached:    0 cached, 2 total",
+        "Time:    22.287s"
+      ]
+    },
+    {
+      "command": "pnpm build:node",
+      "exitCode": 0,
+      "summary": [
+        "Tasks:    2 successful, 2 total",
+        "Cached:    2 cached, 2 total",
+        "Time:    740ms >>> FULL TURBO"
+      ]
+    },
+    {
+      "command": "openspec validate add-selfhost-job-engine --strict",
+      "exitCode": 0,
+      "summary": ["Change 'add-selfhost-job-engine' is valid"]
+    }
+  ],
+  "scope": "Root requirements for this evidence PR; does not mark unassigned task 6.5 complete.",
+  "rebasedOnto": "a3973cfa90b29ca19c0cff9220347f1dfd5c994e",
+  "engineDbJobsAndHealthCodeChangedSinceLongRun": false,
+  "afterRebaseChecks": [
+    {
+      "command": "pnpm check",
+      "exitCode": 0,
+      "summary": ["Biome、积分/支付写入边界与工程脚本检查通过"]
+    },
+    {
+      "command": "pnpm check:deps",
+      "exitCode": 0,
+      "summary": ["依赖方向检查通过：12 个包，2 个应用"]
+    },
+    {
+      "command": "pnpm check:singletons",
+      "exitCode": 0,
+      "summary": ["单实例检查通过：drizzle-orm、react、react-dom 各只有一个实例"]
+    },
+    {
+      "command": "pnpm dedupe --check",
+      "exitCode": 0,
+      "summary": []
+    },
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "summary": [
+        "Tasks:    14 successful, 14 total",
+        "Cached:    14 cached, 14 total",
+        "Time:    82ms >>> FULL TURBO"
+      ]
+    },
+    {
+      "command": "pnpm test",
+      "exitCode": 0,
+      "summary": [
+        "Tasks:    26 successful, 26 total",
+        "Cached:    22 cached, 26 total",
+        "Time:    1m46.88s"
+      ]
+    },
+    {
+      "command": "pnpm build",
+      "exitCode": 0,
+      "summary": [
+        "Tasks:    2 successful, 2 total",
+        "Cached:    2 cached, 2 total",
+        "Time:    260ms >>> FULL TURBO"
+      ]
+    },
+    {
+      "command": "openspec validate add-selfhost-job-engine --strict",
+      "exitCode": 0,
+      "summary": ["Change 'add-selfhost-job-engine' is valid"]
+    }
+  ]
+}

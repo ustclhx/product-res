@@ -1,0 +1,6 @@
+{
+  "name": "platform-test",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "kv_namespaces": [{ "binding": "CACHE", "id": "platform-test" }]
+}

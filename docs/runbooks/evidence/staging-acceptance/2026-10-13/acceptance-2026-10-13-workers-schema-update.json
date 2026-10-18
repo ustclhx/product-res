@@ -1,0 +1,22 @@
+{
+  "runId": "acceptance-2026-10-13",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T05:13:47.190Z",
+  "data": {
+    "status": "passed",
+    "action": "ai.model_updated",
+    "modelId": "01a13191-f6dd-77a2-af4c-721b2e11ab02",
+    "modelKey": "acceptance-workers-image",
+    "renamedProperty": {
+      "before": "num_steps",
+      "after": "steps"
+    },
+    "fixtureMatches": true,
+    "otherFieldsUnchanged": true,
+    "auditId": "01a133ae-4449-7450-afcb-2ab2eabd8ab7",
+    "schemaHashes": {
+      "after": "1d95df94580a1db787b9c60c0806dad7a73c0fb0603824e30eaa66d7b58838af",
+      "before": "7cc0a82ff1e3703a2205fdff4e8313bc1a66fc933e73ab9eada883fedf75456e"
+    }
+  }
+}

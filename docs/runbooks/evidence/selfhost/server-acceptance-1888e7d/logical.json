@@ -1,0 +1,21 @@
+{
+  "createdAt": "2026-10-16T16:16:35.496834Z",
+  "pgMajor": 17,
+  "objects": [
+    {
+      "name": "database.dump",
+      "bytes": 181063,
+      "sha256": "ec6c611e0a9698d4bc34ca2c4cb9441db572e93bbe16f6012810a340eb775267",
+      "manifestMatches": true
+    },
+    {
+      "name": "roles.sql",
+      "bytes": 1444,
+      "sha256": "97c7b4096c47100a4ee88d72820550fb704106e90eac1c8d414aab0ff7fca83b",
+      "manifestMatches": true
+    }
+  ],
+  "pgRestoreList": true,
+  "rolesPresent": true,
+  "rawContentsReported": false
+}

@@ -1,0 +1,300 @@
+{
+  "preflight": {
+    "observedAt": "2026-10-17T17:19:11.627Z",
+    "accountId": "acct_1UMwpCL3UTpBAoXo",
+    "mode": "test",
+    "health": {
+      "status": "ok",
+      "version": "a2381f875fbd8b1009e48f7024addcb25285aca9",
+      "db": {
+        "status": "up",
+        "latencyMs": 102
+      },
+      "jobs": {
+        "lastCronAt": "2026-10-17T17:00:32.503Z"
+      }
+    },
+    "mainHead": "a2381f875fbd8b1009e48f7024addcb25285aca9",
+    "database": {
+      "database": "product_res_staging",
+      "role": "readonly",
+      "read_only": "on"
+    }
+  },
+  "observedAt": "2026-10-17T17:19:19.005Z",
+  "apiOrigin": "https://api-m.sandbox.paypal.com",
+  "oauthHttpStatus": 200,
+  "webhook": {
+    "id": "2Y038131HD900422W",
+    "url": "https://web-staging.product-res-jobs.workers.dev/api/billing/webhooks/paypal",
+    "event_types": [
+      {
+        "name": "BILLING.SUBSCRIPTION.ACTIVATED",
+        "description": "A billing agreement is activated.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "BILLING.SUBSCRIPTION.CANCELLED",
+        "description": "A billing agreement is canceled.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "BILLING.SUBSCRIPTION.EXPIRED",
+        "description": "A billing agreement is expired.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "BILLING.SUBSCRIPTION.UPDATED",
+        "description": "A billing agreement is updated.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "CHECKOUT.ORDER.APPROVED",
+        "description": "An order has been approved by buyer.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "CUSTOMER.DISPUTE.CREATED",
+        "description": "A customer dispute is created.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "PAYMENT.CAPTURE.COMPLETED",
+        "description": "A payment capture completes.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "PAYMENT.SALE.COMPLETED",
+        "description": "A sale completes.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "PAYMENT.SALE.REFUNDED",
+        "description": "A merchant refunds a sale.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "PAYMENT.CAPTURE.REFUNDED",
+        "description": "A merchant refunds a payment capture.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "BILLING.SUBSCRIPTION.PAYMENT.FAILED",
+        "description": "Subscription payment failure will trigger this webhook event.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "BILLING.SUBSCRIPTION.SUSPENDED",
+        "description": "A billing agreement is suspended.",
+        "status": "ENABLED"
+      }
+    ]
+  },
+  "plans": [
+    {
+      "price": {
+        "id": "01a11bac-8ffa-740a-b8e6-0624cd93c617",
+        "provider_price_id": "P-5DY311405E0178244NLEERUI",
+        "interval": "month",
+        "amount": 1900,
+        "currency": "USD",
+        "active": true
+      },
+      "plan": {
+        "id": "P-5DY311405E0178244NLEERUI",
+        "status": "ACTIVE",
+        "billingCycles": [
+          {
+            "frequency": {
+              "interval_unit": "MONTH",
+              "interval_count": 1
+            },
+            "tenure_type": "REGULAR",
+            "total_cycles": 0,
+            "fixed_price": {
+              "currency_code": "USD",
+              "value": "19.0"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "price": {
+        "id": "01a11bac-92e7-72b3-ba1f-0cdb155b8c69",
+        "provider_price_id": "P-18T48576JW846782KNLEERUY",
+        "interval": "year",
+        "amount": 19000,
+        "currency": "USD",
+        "active": true
+      },
+      "plan": {
+        "id": "P-18T48576JW846782KNLEERUY",
+        "status": "ACTIVE",
+        "billingCycles": [
+          {
+            "frequency": {
+              "interval_unit": "YEAR",
+              "interval_count": 1
+            },
+            "tenure_type": "REGULAR",
+            "total_cycles": 0,
+            "fixed_price": {
+              "currency_code": "USD",
+              "value": "190.0"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "price": {
+        "id": "01a11bac-9d27-71c5-9d9e-3437f0b3886e",
+        "provider_price_id": "P-4LD1389644835684FNLEERVI",
+        "interval": "month",
+        "amount": 4900,
+        "currency": "USD",
+        "active": true
+      },
+      "plan": {
+        "id": "P-4LD1389644835684FNLEERVI",
+        "status": "ACTIVE",
+        "billingCycles": [
+          {
+            "frequency": {
+              "interval_unit": "MONTH",
+              "interval_count": 1
+            },
+            "tenure_type": "REGULAR",
+            "total_cycles": 0,
+            "fixed_price": {
+              "currency_code": "USD",
+              "value": "49.0"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "price": {
+        "id": "01a11bac-a018-7367-8674-f78af86ce46a",
+        "provider_price_id": "P-5NR306415E2670818NLEGCUY",
+        "interval": "year",
+        "amount": 49000,
+        "currency": "USD",
+        "active": true
+      },
+      "plan": {
+        "id": "P-5NR306415E2670818NLEGCUY",
+        "status": "ACTIVE",
+        "billingCycles": [
+          {
+            "frequency": {
+              "interval_unit": "YEAR",
+              "interval_count": 1
+            },
+            "tenure_type": "REGULAR",
+            "total_cycles": 0,
+            "fixed_price": {
+              "currency_code": "USD",
+              "value": "490.0"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "protectedSubscriptions": [
+    {
+      "id": "01a129d6-22d0-7031-8006-7ba6f26e57db",
+      "workspace_id": "01a11ec0-006f-76ef-803e-cd77d1e5f68a",
+      "provider_subscription_id": "I-H2LE38AW7EU4",
+      "status": "active",
+      "cancel_at_period_end": false,
+      "current_period_start": "2026-10-11T07:20:36.000Z",
+      "current_period_end": "2026-11-11T10:00:00.000Z"
+    }
+  ],
+  "protectedPayments": [
+    {
+      "id": "01a12983-4129-701b-aa14-8e3001dd758e",
+      "workspace_id": "01a11ec0-006f-76ef-803e-cd77d1e5f68a",
+      "provider_payment_id": "821243239P5069342",
+      "subscription_id": null,
+      "amount": 1000,
+      "status": "succeeded",
+      "refunded_amount": 0
+    },
+    {
+      "id": "01a129d6-2372-71f8-8574-118c3a94c217",
+      "workspace_id": "01a11ec0-006f-76ef-803e-cd77d1e5f68a",
+      "provider_payment_id": "7WT17462SJ5165744",
+      "subscription_id": "01a129d6-22d0-7031-8006-7ba6f26e57db",
+      "amount": 1900,
+      "status": "succeeded",
+      "refunded_amount": 0
+    }
+  ],
+  "protectedRequests": [
+    {
+      "id": "01a12988-8881-750f-9fed-14b436844a4f",
+      "workspace_id": "01a11ec0-006f-76ef-803e-cd77d1e5f68a",
+      "payment_id": "01a12983-4129-701b-aa14-8e3001dd758e",
+      "status": "pending",
+      "requested_amount": null,
+      "approved_amount": null,
+      "provider_refund_id": null
+    }
+  ],
+  "eventSummary": [
+    {
+      "id": "WH-2VP98395RE5073433-7B321684F76048538",
+      "event_type": "PAYMENT.CAPTURE.COMPLETED",
+      "create_time": "2026-10-14T17:08:44.800Z",
+      "resource_type": "capture"
+    },
+    {
+      "id": "WH-2XG45013EA714245K-4R502993J1656043F",
+      "event_type": "PAYMENT.CAPTURE.REFUNDED",
+      "create_time": "2026-10-14T17:08:47.648Z",
+      "resource_type": "refund"
+    },
+    {
+      "id": "WH-9UJ67496C53596114-85T37183PB8684930",
+      "event_type": "BILLING.SUBSCRIPTION.ACTIVATED",
+      "create_time": "2026-10-11T07:23:17.278Z",
+      "resource_type": "subscription"
+    },
+    {
+      "id": "WH-05S0917996421501N-8V949424T6795563Y",
+      "event_type": "BILLING.SUBSCRIPTION.SUSPENDED",
+      "create_time": "2026-10-11T07:22:21.153Z",
+      "resource_type": "subscription"
+    },
+    {
+      "id": "WH-8PT65307RJ3759523-2WS09555HA557983L",
+      "event_type": "PAYMENT.SALE.COMPLETED",
+      "create_time": "2026-10-11T07:20:41.968Z",
+      "resource_type": "sale"
+    },
+    {
+      "id": "WH-07667423AJ883562N-7CY31389BG3261138",
+      "event_type": "BILLING.SUBSCRIPTION.ACTIVATED",
+      "create_time": "2026-10-11T07:20:42.194Z",
+      "resource_type": "subscription"
+    },
+    {
+      "id": "WH-9B78516042013691A-0MM29302XS0143134",
+      "event_type": "PAYMENT.CAPTURE.COMPLETED",
+      "create_time": "2026-10-11T05:50:12.702Z",
+      "resource_type": "capture"
+    },
+    {
+      "id": "WH-9YP757102E461941A-25A01287X46669021",
+      "event_type": "CHECKOUT.ORDER.APPROVED",
+      "create_time": "2026-10-11T05:44:22.110Z",
+      "resource_type": "checkout-order"
+    }
+  ],
+  "note": "Read-only API/DB baseline. Existing payments and pending refunds are protected; Sale refund recordings require newly approved independent sandbox subscriptions."
+}

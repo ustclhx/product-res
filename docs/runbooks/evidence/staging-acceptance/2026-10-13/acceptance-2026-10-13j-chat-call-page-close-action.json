@@ -1,0 +1,10 @@
+{
+  "runId": "acceptance-2026-10-13j",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T12:02:39.667Z",
+  "data": {
+    "messageId": "01a13524-ab36-7366-8106-59d71cf0cd54",
+    "status": "closed-during-generation",
+    "closedAt": 1791892959667
+  }
+}

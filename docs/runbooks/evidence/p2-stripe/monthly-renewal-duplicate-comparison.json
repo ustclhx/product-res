@@ -1,0 +1,21 @@
+{
+  "scenario": "monthly-renewal",
+  "before": "monthly-renewal-after-recovery",
+  "after": "monthly-renewal-after-duplicates",
+  "capturedBefore": "2026-10-09T11:12:27.454843+00:00",
+  "capturedAfter": "2026-10-09T11:12:58.237431+00:00",
+  "unchanged": {
+    "subscriptions": true,
+    "payments": true,
+    "payment_refunds": true,
+    "refund_requests": true,
+    "grants": true,
+    "ledger": true,
+    "ledger_total": true,
+    "expected": true,
+    "negative_grants": true
+  },
+  "ledgerTotal": 2000,
+  "expected": 2000,
+  "negativeGrants": 0
+}

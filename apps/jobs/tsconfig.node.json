@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "lib": ["ES2022", "DOM"],
+    "jsx": "react-jsx"
+  },
+  "include": [
+    "src/index.node.ts",
+    "src/node/**/*.ts",
+    "vitest.unit.config.ts",
+    "vitest.node-integration.config.ts",
+    "scripts"
+  ]
+}

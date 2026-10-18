@@ -1,0 +1,10 @@
+{
+  "runId": "acceptance-2026-10-13j",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T12:02:54.453Z",
+  "data": {
+    "userId": "01a134fd-cf19-7366-8567-c002d78f2637",
+    "workspaceId": "01a134fd-cf19-7366-8567-c002d78f2637",
+    "status": "verified-dedicated-user"
+  }
+}

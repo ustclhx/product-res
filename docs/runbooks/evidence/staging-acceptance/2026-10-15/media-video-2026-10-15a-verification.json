@@ -1,0 +1,184 @@
+{
+  "runId": "media-video-2026-10-15a",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T17:26:36.209Z",
+  "data": {
+    "taskId": "01a13b69-615d-7016-a3fc-d2d15fb8a389",
+    "observationStartedAt": "2026-10-14T17:25:28.562Z",
+    "observedMs": 67647,
+    "terminalChecks": {
+      "readOnly": true,
+      "taskSucceeded": true,
+      "oneHold": true,
+      "holdMatches": true,
+      "holdCaptured": true,
+      "noOverage": true,
+      "chargeMatches": true,
+      "oneConsume": true,
+      "consumeDelta": true,
+      "ledgerDelta": true,
+      "oneOutputFile": true,
+      "fileReadyInR2": true,
+      "oneSuccessNotification": true,
+      "sameSnapshotReconciles": true,
+      "noRemainingHoldOrDebt": true
+    },
+    "firstChecks": {
+      "readOnly": true,
+      "taskSucceeded": true,
+      "oneHold": true,
+      "holdMatches": true,
+      "holdCaptured": true,
+      "noOverage": true,
+      "chargeMatches": true,
+      "oneConsume": true,
+      "consumeDelta": true,
+      "ledgerDelta": true,
+      "oneOutputFile": true,
+      "fileReadyInR2": true,
+      "oneSuccessNotification": true,
+      "sameSnapshotReconciles": true,
+      "noRemainingHoldOrDebt": true
+    },
+    "observedChecks": {
+      "readOnly": true,
+      "taskSucceeded": true,
+      "oneHold": true,
+      "holdMatches": true,
+      "holdCaptured": true,
+      "noOverage": true,
+      "chargeMatches": true,
+      "oneConsume": true,
+      "consumeDelta": true,
+      "ledgerDelta": true,
+      "oneOutputFile": true,
+      "fileReadyInR2": true,
+      "oneSuccessNotification": true,
+      "sameSnapshotReconciles": true,
+      "noRemainingHoldOrDebt": true
+    },
+    "stableSameTaskAndSettlement": true,
+    "openingSnapshot": {
+      "ledgerTotal": 27,
+      "activeRemaining": 27,
+      "available": 27,
+      "held": 0,
+      "debt": 0,
+      "activeTasks": 0,
+      "storageBytes": 2577860,
+      "reconciliationDifference": 0
+    },
+    "closingSnapshot": {
+      "ledgerTotal": 24,
+      "activeRemaining": 24,
+      "available": 24,
+      "held": 0,
+      "debt": 0,
+      "activeTasks": 0,
+      "storageBytes": 3044841,
+      "reconciliationDifference": 0
+    },
+    "closingLedgerMatches": true,
+    "healthAfter": {
+      "version": "7e7c99cec99396e8b469222b3b489a56d73769df",
+      "dbUp": true,
+      "versionMatchesExpected": true,
+      "noStore": true
+    },
+    "state": {
+      "readOnlyTransaction": true,
+      "readonlyRoleCannotInsert": true,
+      "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+      "snapshot": {
+        "ledgerTotal": 24,
+        "activeRemaining": 24,
+        "available": 24,
+        "held": 0,
+        "debt": 0,
+        "activeTasks": 0,
+        "storageBytes": 3044841,
+        "reconciliationDifference": 0
+      },
+      "task": {
+        "id": "01a13b69-615d-7016-a3fc-d2d15fb8a389",
+        "userId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+        "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+        "kind": "video",
+        "modelKey": "acceptance-fal-video",
+        "provider": "fal",
+        "status": "succeeded",
+        "pricing": {
+          "mode": "per_call",
+          "credits": 3,
+          "chargeOn": "success"
+        },
+        "creditsCharged": 3,
+        "holdId": "01a13b69-6759-756e-a865-45be7b546a3f",
+        "providerJobId": "01a13b69-8961-7ab0-ad67-80a565483e5f",
+        "workflowInstanceId": "01a13b69-615d-7016-a3fc-d2d15fb8a389",
+        "createdAt": "2026-10-14T17:15:21.82829+00:00",
+        "startedAt": "2026-10-14T17:15:35.54+00:00",
+        "finishedAt": "2026-10-14T17:21:08.618516+00:00",
+        "deadlineAt": "2026-10-14T19:15:24.381+00:00",
+        "updatedAt": "2026-10-14T17:21:08.618516+00:00",
+        "errorCode": null,
+        "callbackReceived": true,
+        "resolution": "480p",
+        "promptExpansion": false,
+        "outputFileCount": 1
+      },
+      "holds": [
+        {
+          "id": "01a13b69-6759-756e-a865-45be7b546a3f",
+          "refType": "ai_task",
+          "refId": "01a13b69-615d-7016-a3fc-d2d15fb8a389",
+          "amount": 3,
+          "status": "captured",
+          "capturedAmount": 3,
+          "overageAbsorbed": 0,
+          "overageDebited": 0,
+          "overageDebt": 0,
+          "updatedAt": "2026-10-14T17:21:08.618516+00:00"
+        }
+      ],
+      "ledger": [
+        {
+          "id": "01a13b6e-ac63-736c-83fc-55399bcd897f",
+          "type": "consume",
+          "delta": -3,
+          "grantId": null,
+          "refType": "ai_task",
+          "refId": "01a13b69-615d-7016-a3fc-d2d15fb8a389",
+          "createdAt": "2026-10-14T17:21:08.618516+00:00"
+        }
+      ],
+      "files": [
+        {
+          "id": "01a13b6e-8a5d-76c1-947d-0e73101f1ffc",
+          "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+          "userId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+          "sourceTaskId": "01a13b69-615d-7016-a3fc-d2d15fb8a389",
+          "purpose": "ai_output",
+          "status": "ready",
+          "mime": "video/mp4",
+          "size": 466981,
+          "width": null,
+          "height": null,
+          "duration": null,
+          "r2KeyPresent": true,
+          "deleted": false,
+          "createdAt": "2026-10-14T17:21:02.557+00:00"
+        }
+      ],
+      "notifications": [
+        {
+          "id": "01a13b6e-b0b0-775a-8cc7-0c31b8990a1c",
+          "type": "ai_task.succeeded",
+          "createdAt": "2026-10-14T17:21:08.618516+00:00"
+        }
+      ]
+    },
+    "readOnly": true,
+    "noGenerationRequestsMade": true
+  }
+}

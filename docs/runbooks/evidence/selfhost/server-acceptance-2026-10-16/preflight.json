@@ -1,0 +1,109 @@
+{
+  "date": "2026-10-16",
+  "status": "blocked_before_deployment",
+  "sourceCommit": "6b0a872e10c7f056f84d0ed1d78c2bb58a9ce2fb",
+  "publish": {
+    "runUrl": "https://github.com/ustclhx/product-res/actions/runs/38624392597",
+    "conclusion": "success",
+    "sha": "598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+    "fixture": false,
+    "namespace": "ghcr.io/ustclhx/product-res",
+    "services": [
+      "backup",
+      "caddy",
+      "jobs",
+      "migrate",
+      "object-storage",
+      "postgres",
+      "valkey",
+      "web"
+    ],
+    "platforms": ["linux/amd64", "linux/arm64"],
+    "bundleVerify": "passed",
+    "cleanComposeConfig": "passed"
+  },
+  "hostReadOnlyPreflight": {
+    "sshAlias": "product-res-ecs",
+    "publicIp": "43.106.17.72",
+    "os": "Ubuntu 22.04.5 LTS",
+    "architecture": "x86_64",
+    "vcpus": 2,
+    "memoryMiB": {
+      "total": 3495,
+      "used": 1950,
+      "available": 1230
+    },
+    "swapMiB": {
+      "total": 2047,
+      "used": 315
+    },
+    "diskGiB": {
+      "total": 59,
+      "used": 43,
+      "available": 14
+    },
+    "docker": "29.6.2",
+    "compose": "5.3.1",
+    "dockerEnabled": true,
+    "ports80And443Listening": false,
+    "selfhostTargetExists": false,
+    "existingServicesStoppedByThisWorker": false,
+    "sampleIsAcceptanceResourceBudget": false
+  },
+  "externalS3Assembly": {
+    "web": {
+      "s3EnvironmentKeys": [],
+      "s3Secrets": []
+    },
+    "jobs": {
+      "s3EnvironmentKeys": [],
+      "s3Secrets": []
+    },
+    "availableComposeFiles": [
+      "compose.backup.yaml",
+      "compose.object-storage.yaml",
+      "compose.proxy.yaml",
+      "compose.replica.yaml",
+      "compose.yaml"
+    ],
+    "objectStorageOverrideRequiresLocalInitializer": true,
+    "arbitraryLocalComposeRejected": true,
+    "evidenceFiles": {
+      "compose.yaml": {
+        "sha256": "091214cc429d729f36f3d38ae2f8c3b2fc603a3adfff8afc45e05e725dd61f9e"
+      },
+      "compose.object-storage.yaml": {
+        "sha256": "e418497b187d216ed4a8de7030ae4f77c2adf3b13dfee2eaf012eac6a17afc25"
+      },
+      "deploy.py": {
+        "sha256": "f997ba0539178e854d5ec728a2d6c79d45b92dab7ed65a18f5f71ad489f96f2c"
+      },
+      "release/bundle.py": {
+        "sha256": "e1272021ce55c975319593a0fb40e3791d8b34a7ab05a2fd91f1931d318b74c0"
+      }
+    }
+  },
+  "authorization": {
+    "existingServicesStopApprovedForBudget": true,
+    "stopProtocol": "append original restart policies to /root/selfhost-prep TSV; restart=no; docker stop; record warp-svc enabled state then systemctl stop; delete nothing",
+    "rebootApproved": true,
+    "rebootPreconditions": ["delivery 7.1", "foundation 7.4", "job-engine 6.4", "delivery 7.2"],
+    "nonSelfhostStoppedServicesMustRemainStoppedAfterReboot": true
+  },
+  "mutations": {
+    "remoteHost": false,
+    "cloudflareDns": false,
+    "r2BucketsOrTokens": false,
+    "imagePublish": false,
+    "deployment": false,
+    "reboot": false,
+    "productionOrStaging": false
+  },
+  "remaining": {
+    "storage-observability": ["1.7"],
+    "delivery": ["7.1", "7.2", "7.3", "7.4"],
+    "foundation": ["7.4", "9.4"],
+    "job-engine": ["6.4"]
+  },
+  "unblock": "release owner must assemble external S3 configuration and file secrets in reviewed runtime materials, validate and publish a new trusted same-SHA image-set/bundle; do not edit 598d1f6 bundle or trigger publish without authorization"
+}

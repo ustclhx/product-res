@@ -1,0 +1,182 @@
+{
+  "observedAt": "2026-10-18T06:13:36.909Z",
+  "mode": "annual-full",
+  "payment": {
+    "id": "01a14da1-c344-76bb-9c0a-114f8f262353",
+    "provider_payment_id": "5ST08785RL1551152",
+    "amount": 49000,
+    "refunded_amount": 0,
+    "status": "succeeded",
+    "plan_price_id": "01a11bac-a018-7367-8674-f78af86ce46a"
+  },
+  "refundAmountMinor": 49000,
+  "before": {
+    "workspaceId": "01a12ef0-66cc-75e2-88d0-eac1f1904d3c",
+    "payments": [
+      {
+        "id": "01a14d9e-e442-7342-80d6-6be343044743",
+        "provider": "paypal",
+        "provider_payment_id": "71D187337X5761003",
+        "subscription_id": "01a14d9e-e344-727b-b44f-e2da61162c31",
+        "kind": "initial",
+        "amount": 1900,
+        "currency": "USD",
+        "status": "partially_refunded",
+        "refunded_amount": 400,
+        "plan_price_id": "01a11bac-8ffa-740a-b8e6-0624cd93c617",
+        "period_start": "2026-10-18T06:06:16.000Z",
+        "period_end": "2026-11-18T10:00:00.000Z"
+      },
+      {
+        "id": "01a14da1-c344-76bb-9c0a-114f8f262353",
+        "provider": "paypal",
+        "provider_payment_id": "5ST08785RL1551152",
+        "subscription_id": "01a14da1-9e3c-73af-813e-94b48f47bab2",
+        "kind": "initial",
+        "amount": 49000,
+        "currency": "USD",
+        "status": "succeeded",
+        "refunded_amount": 0,
+        "plan_price_id": "01a11bac-a018-7367-8674-f78af86ce46a",
+        "period_start": "2026-10-18T06:09:14.000Z",
+        "period_end": "2027-10-18T10:00:00.000Z"
+      }
+    ],
+    "subscriptions": [
+      {
+        "id": "01a14d9e-e344-727b-b44f-e2da61162c31",
+        "provider": "paypal",
+        "provider_subscription_id": "I-PE4VWXLXB1XP",
+        "status": "canceled",
+        "cancel_at_period_end": true,
+        "current_period_start": "2026-10-18T06:06:41.000Z",
+        "current_period_end": "2026-11-18T10:00:00.000Z"
+      },
+      {
+        "id": "01a14da1-9e3c-73af-813e-94b48f47bab2",
+        "provider": "paypal",
+        "provider_subscription_id": "I-TKG3FMFU9BEN",
+        "status": "canceled",
+        "cancel_at_period_end": true,
+        "current_period_start": "2026-10-18T06:09:39.000Z",
+        "current_period_end": "2027-10-18T10:00:00.000Z"
+      }
+    ],
+    "grants": [
+      {
+        "id": "01a12ef0-6dd4-739a-b5cc-6b04407b3e0c",
+        "source": "signup",
+        "source_ref": "daa8e8e72cc9c9dcf86094bf9e368f17c5f07aebc5455a079276ebd332839415",
+        "payment_id": null,
+        "amount": 100,
+        "remaining": 90,
+        "status": "active",
+        "expires_at": null
+      },
+      {
+        "id": "01a14d9e-e7b2-773d-a5c6-2eef246b3ec6",
+        "source": "subscription",
+        "source_ref": "01a14d9e-e442-7342-80d6-6be343044743:0",
+        "payment_id": "01a14d9e-e442-7342-80d6-6be343044743",
+        "amount": 1000,
+        "remaining": 789,
+        "status": "active",
+        "expires_at": "2026-11-19T10:00:00.000Z"
+      },
+      {
+        "id": "01a14da1-c66c-731d-b0e6-3092fa340521",
+        "source": "subscription",
+        "source_ref": "01a14da1-c344-76bb-9c0a-114f8f262353:0",
+        "payment_id": "01a14da1-c344-76bb-9c0a-114f8f262353",
+        "amount": 5000,
+        "remaining": 5000,
+        "status": "active",
+        "expires_at": "2026-11-19T06:09:14.000Z"
+      }
+    ],
+    "ledger": [
+      {
+        "id": "01a12ef0-6e70-7210-a11c-8af7909b442f",
+        "grant_id": "01a12ef0-6dd4-739a-b5cc-6b04407b3e0c",
+        "type": "grant",
+        "delta": 100
+      },
+      {
+        "id": "01a1392b-be80-75bb-8919-f41d73212afb",
+        "grant_id": null,
+        "type": "consume",
+        "delta": -2
+      },
+      {
+        "id": "01a1392d-13de-7344-8362-f462954a84f8",
+        "grant_id": null,
+        "type": "consume",
+        "delta": -2
+      },
+      {
+        "id": "01a13932-dcf3-7696-851f-3647bf90ddcd",
+        "grant_id": null,
+        "type": "consume",
+        "delta": -1
+      },
+      {
+        "id": "01a13935-5990-7224-9a20-074b56096d95",
+        "grant_id": null,
+        "type": "consume",
+        "delta": -1
+      },
+      {
+        "id": "01a13936-b168-711e-a6fe-60bd5ae12038",
+        "grant_id": null,
+        "type": "consume",
+        "delta": -2
+      },
+      {
+        "id": "01a1396f-4c6d-779f-8326-1d5e551180a6",
+        "grant_id": null,
+        "type": "consume",
+        "delta": -2
+      },
+      {
+        "id": "01a14d9e-e859-74c6-a05f-901e8edcaa09",
+        "grant_id": "01a14d9e-e7b2-773d-a5c6-2eef246b3ec6",
+        "type": "grant",
+        "delta": 1000
+      },
+      {
+        "id": "01a14da1-c720-72b6-a87d-fbd1ba65d07c",
+        "grant_id": "01a14da1-c66c-731d-b0e6-3092fa340521",
+        "type": "grant",
+        "delta": 5000
+      },
+      {
+        "id": "01a14da3-70ec-71ba-a585-6574e6891f7a",
+        "grant_id": "01a14d9e-e7b2-773d-a5c6-2eef246b3ec6",
+        "type": "revoke",
+        "delta": -211
+      }
+    ],
+    "refunds": [
+      {
+        "payment_id": "01a14d9e-e442-7342-80d6-6be343044743",
+        "provider": "paypal",
+        "provider_refund_id": "95R03124HK508535V",
+        "amount": 400,
+        "currency": "USD"
+      }
+    ],
+    "reconciliation": {
+      "ledger": 5879,
+      "active_remaining": 5879,
+      "held": 0,
+      "debt": 0,
+      "negative_grants": 0,
+      "duplicate_grant_sources": 0,
+      "duplicate_payments": 0,
+      "expected": 5879,
+      "difference": 0
+    }
+  },
+  "originalAcceptancePaymentsProtected": true,
+  "apiOrigin": "https://api-m.sandbox.paypal.com"
+}

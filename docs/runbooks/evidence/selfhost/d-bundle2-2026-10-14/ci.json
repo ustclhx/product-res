@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "acceptance": {
+    "conclusion": "success",
+    "databaseId": 38596482116,
+    "headSha": "9f2ab4e6d62bf6aadc36b575f54f74589a088f4b",
+    "status": "completed",
+    "url": "https://github.com/ustclhx/product-res/actions/runs/38596482116",
+    "workflowName": "Selfhost released bundle acceptance"
+  },
+  "firstAcceptance": {
+    "conclusion": "success",
+    "databaseId": 38594557246,
+    "headSha": "41d5cdeef9365e4cc05c4332cdf376408f4b55ed",
+    "status": "completed",
+    "url": "https://github.com/ustclhx/product-res/actions/runs/38594557246",
+    "workflowName": "Selfhost released bundle acceptance",
+    "downloadedDirectoryArtifactMissingExamples": [
+      ".env.example",
+      ".env.backup.example",
+      ".env.object-storage.example",
+      ".env.replica.example"
+    ],
+    "correctiveAction": "upload a tar archive that preserves hidden examples and executable modes"
+  },
+  "runs": [
+    {
+      "conclusion": "success",
+      "databaseId": 38596481613,
+      "headSha": "9f2ab4e6d62bf6aadc36b575f54f74589a088f4b",
+      "status": "completed",
+      "url": "https://github.com/ustclhx/product-res/actions/runs/38596481613",
+      "workflowName": "Selfhost deployment gates"
+    },
+    {
+      "conclusion": "",
+      "databaseId": 38596482067,
+      "headSha": "9f2ab4e6d62bf6aadc36b575f54f74589a088f4b",
+      "status": "in_progress",
+      "url": "https://github.com/ustclhx/product-res/actions/runs/38596482067",
+      "workflowName": "Selfhost images"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38596481919,
+      "headSha": "9f2ab4e6d62bf6aadc36b575f54f74589a088f4b",
+      "status": "completed",
+      "url": "https://github.com/ustclhx/product-res/actions/runs/38596481919",
+      "workflowName": "CI"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38596482096,
+      "headSha": "9f2ab4e6d62bf6aadc36b575f54f74589a088f4b",
+      "status": "completed",
+      "url": "https://github.com/ustclhx/product-res/actions/runs/38596482096",
+      "workflowName": "Selfhost disabled features"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38596482116,
+      "headSha": "9f2ab4e6d62bf6aadc36b575f54f74589a088f4b",
+      "status": "completed",
+      "url": "https://github.com/ustclhx/product-res/actions/runs/38596482116",
+      "workflowName": "Selfhost released bundle acceptance"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38594557063,
+      "headSha": "41d5cdeef9365e4cc05c4332cdf376408f4b55ed",
+      "status": "completed",
+      "url": "https://github.com/ustclhx/product-res/actions/runs/38594557063",
+      "workflowName": "Selfhost deployment gates"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38594556975,
+      "headSha": "41d5cdeef9365e4cc05c4332cdf376408f4b55ed",
+      "status": "completed",
+      "url": "https://github.com/ustclhx/product-res/actions/runs/38594556975",
+      "workflowName": "CI"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38594557062,
+      "headSha": "41d5cdeef9365e4cc05c4332cdf376408f4b55ed",
+      "status": "completed",
+      "url": "https://github.com/ustclhx/product-res/actions/runs/38594557062",
+      "workflowName": "Selfhost disabled features"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38594557246,
+      "headSha": "41d5cdeef9365e4cc05c4332cdf376408f4b55ed",
+      "status": "completed",
+      "url": "https://github.com/ustclhx/product-res/actions/runs/38594557246",
+      "workflowName": "Selfhost released bundle acceptance"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38594557089,
+      "headSha": "41d5cdeef9365e4cc05c4332cdf376408f4b55ed",
+      "status": "completed",
+      "url": "https://github.com/ustclhx/product-res/actions/runs/38594557089",
+      "workflowName": "Selfhost images"
+    }
+  ]
+}

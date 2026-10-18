@@ -1,0 +1,60 @@
+{
+  "mode": "workflow",
+  "sha": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+  "exitCode": 1,
+  "success": false,
+  "startedAt": "2026-10-16T17:17:07.292Z",
+  "tests": 11,
+  "passed": 0,
+  "failed": 1,
+  "pending": 10,
+  "endedAt": "2026-10-16T17:17:16.871Z",
+  "results": [
+    {
+      "title": "Node durable workflows on real PostgreSQL recovers a JSON-null event committed to the wait journal before the native checkpoint without consuming twice",
+      "status": "skipped"
+    },
+    {
+      "title": "Node durable workflows on real PostgreSQL keeps retry attempts and their original wakeup across restart and runs the media submit/persist retry policies in real milliseconds",
+      "status": "skipped"
+    },
+    {
+      "title": "Node durable workflows on real PostgreSQL preserves arbitrary business IDs and duplicate identity without repeating effects; engine success stays independent of business failure",
+      "status": "skipped"
+    },
+    {
+      "title": "Node durable workflows on real PostgreSQL rejects non-JSON params, event payloads, step results and workflow outputs at persistence boundaries",
+      "status": "skipped"
+    },
+    {
+      "title": "Node durable workflows on real PostgreSQL buffers queued and sleeping events by type FIFO, consumes once, and restores Date timestamps after restart",
+      "status": "skipped"
+    },
+    {
+      "title": "Node durable workflows on real PostgreSQL keeps the original wait deadline and refuses an event arriving after it while the executor is stopped",
+      "status": "skipped"
+    },
+    {
+      "title": "Node durable workflows on real PostgreSQL persists retry attempts and exact linear/constant/exponential delay policy; limit excludes the first attempt",
+      "status": "skipped"
+    },
+    {
+      "title": "Node durable workflows on real PostgreSQL allows NonRetryable failure settlement once and reports timeout safely while an uncooperative callback can still finish",
+      "status": "skipped"
+    },
+    {
+      "title": "Node durable workflows on real PostgreSQL drains gracefully with unfinished sleep retained, reuses successful checkpoints and retries a side effect before checkpoint idempotently",
+      "status": "failed",
+      "durationMs": 7331.60586
+    },
+    {
+      "title": "Node durable workflows on real PostgreSQL restricts readonly access and only removes terminal event data after the minimum 60-minute retention",
+      "status": "skipped"
+    },
+    {
+      "title": "Node durable workflows on real PostgreSQL runs a real 61-minute collection pipeline with same-version sleep/wait restarts and a 60+minute early event",
+      "status": "skipped"
+    }
+  ],
+  "events": []
+}

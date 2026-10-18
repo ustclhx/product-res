@@ -1,0 +1,7 @@
+{
+  "check": "linux-ownership",
+  "passed": true,
+  "statistics": ["Test Files  1 passed (1)", "Tests  15 passed (15)"],
+  "source": "patched B source mounted in official migration image",
+  "officialSha": "081305013b022f457c561eecf5828b1959e13908"
+}

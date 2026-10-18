@@ -1,0 +1,50 @@
+{
+  "collectedAt": "2026-10-14T12:20:37.222692+00:00",
+  "native": [
+    {
+      "workflow_uuid": "schedule-run:01a13a48-9e95-763f-9066-2ea0d2381298",
+      "status": "SUCCESS",
+      "name": "product-res-schedule-run:v1",
+      "executor_id": "b-accept-scheduler-jobs-2",
+      "application_version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+      "recovery_attempts": 1
+    },
+    {
+      "workflow_uuid": "schedule-run:01a13a48-9eb6-75a8-add9-e4e6abb00757",
+      "status": "SUCCESS",
+      "name": "product-res-schedule-run:v1",
+      "executor_id": "b-accept-scheduler-jobs-2",
+      "application_version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+      "recovery_attempts": 1
+    },
+    {
+      "workflow_uuid": "schedule-run:01a13a48-9ed3-7353-80e6-c2c82028fa75",
+      "status": "SUCCESS",
+      "name": "product-res-schedule-run:v1",
+      "executor_id": "b-accept-scheduler-jobs-2",
+      "application_version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+      "recovery_attempts": 1
+    },
+    {
+      "workflow_uuid": "schedule-run:01a13a51-c68a-7406-81e0-34160306dd5c",
+      "status": "SUCCESS",
+      "name": "product-res-schedule-run:v1",
+      "executor_id": "b-accept-scheduler-jobs-2",
+      "application_version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+      "recovery_attempts": 1
+    },
+    {
+      "workflow_uuid": "schedule-run:01a13a51-c6af-76d6-8680-3d2b5e0bf450",
+      "status": "SUCCESS",
+      "name": "product-res-schedule-run:v1",
+      "executor_id": "b-accept-scheduler-jobs-2",
+      "application_version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+      "recovery_attempts": 1
+    }
+  ],
+  "permissions": {
+    "appCreateDatabase": false,
+    "appCreatePublic": false,
+    "appCreateJobEngine": false
+  }
+}

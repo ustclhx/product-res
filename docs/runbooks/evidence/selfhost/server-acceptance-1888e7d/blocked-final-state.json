@@ -1,0 +1,84 @@
+{
+  "at": "2026-10-16T17:34:16.376086+00:00",
+  "sha": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+  "web": {
+    "status": "ok",
+    "version": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+    "db": {
+      "status": "up",
+      "latencyMs": 1
+    },
+    "cache": {
+      "status": "up"
+    },
+    "queue": {
+      "status": "up"
+    },
+    "scheduler": {
+      "status": "up",
+      "lastCronAt": "2026-10-16T17:30:00.230Z"
+    },
+    "jobs": {
+      "lastCronAt": "2026-10-16T17:30:00.230Z"
+    }
+  },
+  "services": [
+    {
+      "name": "product-res-selfhost-postgres-1",
+      "status": "running",
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "product-res-selfhost-valkey-1",
+      "status": "running",
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "product-res-selfhost-web-1",
+      "status": "running",
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "product-res-selfhost-jobs-1",
+      "status": "running",
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "product-res-selfhost-caddy-1",
+      "status": "running",
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "product-res-selfhost-backup-1",
+      "status": "running",
+      "health": "healthy",
+      "oomKilled": false
+    }
+  ],
+  "rebootPerformed": false,
+  "rebootCommandMarkerExists": false,
+  "temporaryProbeAndSecondJobsStopped": true,
+  "existingDataVolumesAndImagesDeleted": false,
+  "nonSelfhost": {
+    "count": 15,
+    "allStopped": true,
+    "allRestartNo": true,
+    "baseline": "15 existing containers recorded in protected deployment precheck; archived pilot removal records excluded"
+  },
+  "warp": {
+    "active": "inactive",
+    "enabled": "disabled"
+  },
+  "jobs": {
+    "http": 200,
+    "status": "ok",
+    "version": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+    "lastCronAt": "2026-10-16T17:30:00.230Z"
+  },
+  "finalSafetyCheckedAt": "2026-10-16T17:34:16.376086+00:00"
+}

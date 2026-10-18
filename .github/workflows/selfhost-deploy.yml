@@ -1,0 +1,51 @@
+name: Selfhost deployment gates
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - 'openspec/**'
+      - '**/*.md'
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'openspec/**'
+      - '**/*.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: selfhost-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  local-delivery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Check bounded health, failure gates, bundle and initialization boundaries
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python3 -m unittest discover -s deploy/selfhost -p 'test_deploy.py'
+          python3 -m unittest discover -s deploy/selfhost/release -p 'test_*.py'
+          python3 deploy/selfhost/test-init-server.py
+          bash -n deploy/selfhost/deploy.sh deploy/selfhost/init-server.sh deploy/selfhost/init-firewall.sh
+      - name: Exercise real local registry and isolated Compose upgrade and rollback
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 deploy/selfhost/test-deploy-compose.py
+      - name: Build the pinned non-root proxy wrapper
+        run: docker build -f deploy/selfhost/caddy.Dockerfile -t selfhost-proxy-fixture .
+      - name: Validate plain and external proxy rendering, TLS, forged XFF and UID
+        env:
+          SELFHOST_PROXY_CADDY_IMAGE: selfhost-proxy-fixture
+        run: node deploy/selfhost/test-proxy.mjs

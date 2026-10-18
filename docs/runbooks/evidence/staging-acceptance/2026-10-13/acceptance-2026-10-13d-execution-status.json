@@ -1,0 +1,134 @@
+{
+  "runId": "acceptance-2026-10-13d",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T08:13:01.967258+00:00",
+  "phase": "acceptance-run-failed-and-stopped",
+  "deployedVersion": "f56e80bc11a8901bd50eab21b472b9677691d542",
+  "mainHead": "f56e80bc11a8901bd50eab21b472b9677691d542",
+  "preflight": {
+    "status": "passed",
+    "allFiveModelsEnabled": true,
+    "allFiveModelsMatchFixture": true,
+    "evidenceFile": "acceptance-2026-10-13d-model-preflight-comparison.json"
+  },
+  "authorizedScope": "Coordinator relayed user authorization for full rerun including paid generation calls",
+  "suite": {
+    "status": "failed",
+    "exitCode": 1,
+    "passed": 0,
+    "failed": 1,
+    "skipped": 13,
+    "retriesConfigured": 0,
+    "rerunAfterFailure": false
+  },
+  "evidenceCommitted": false,
+  "deployedVersionAfter": "f56e80bc11a8901bd50eab21b472b9677691d542",
+  "blocker": {
+    "step": "configure or verify text acceptance models",
+    "failureLocation": "apps/web/e2e/staging-acceptance/support.ts:252",
+    "operation": "page.goto staging /login before CDP administrator login",
+    "originalExceptionAvailable": false,
+    "underlyingCause": "Unknown: original page-access exception was not retained by safe reporter",
+    "readOnlyFollowup": "Separate read-only GET probe reached /login with HTTP 200 and visible Google sign-in button; authentication not submitted"
+  },
+  "creditAccounting": {
+    "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+    "snapshot": {
+      "ledgerTotal": 29,
+      "activeRemaining": 29,
+      "held": 0,
+      "debt": 0,
+      "reconciliationDifference": 0
+    },
+    "preparationCreditAdjustments": [],
+    "generationTaskCount": 0,
+    "chargeableAcceptanceStepsReached": false
+  },
+  "generationSubmissionAttempts": 0,
+  "cdpAdministratorLoginReached": false,
+  "paidGenerationFixValidated": false,
+  "acceptanceItems": [
+    {
+      "item": "configure or verify text acceptance models",
+      "status": "fail",
+      "reason": "Initial /login page.goto failed before administrator authentication"
+    },
+    {
+      "item": "configure or verify media acceptance models",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "media-workers-image",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "media-fal-image",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "media-fal-video-cancel",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "media-workers-provider-failure",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite",
+      "manualValidationRequirement": "Script always skips this item; runbook requires manual fault injection; not executed"
+    },
+    {
+      "item": "Chat token: normal",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Chat token: stop",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Chat token: page-close",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Chat call: normal",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Chat call: stop",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Chat call: page-close",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Admin 6.1 dedicated-user actions",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Sentry 1.2 test exception",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    }
+  ],
+  "preExistingUnrelatedWorkingTreeFileUnchanged": true,
+  "evidenceFiles": [
+    "acceptance-2026-10-13d-accounting-readonly.json",
+    "acceptance-2026-10-13d-execution-status.json",
+    "acceptance-2026-10-13d-login-access-readonly.json",
+    "acceptance-2026-10-13d-model-preflight-comparison.json",
+    "acceptance-2026-10-13d-no-generation-tasks.json"
+  ],
+  "credentialScan": "passed",
+  "oldRunEvidenceUnchanged": true,
+  "priorEvidenceFilesVerified": 46
+}

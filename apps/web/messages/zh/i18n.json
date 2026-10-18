@@ -1,0 +1,9 @@
+{
+  "i18n_language": "语言",
+  "i18n_suggestion_label": "语言建议",
+  "i18n_suggestion": "要使用{language}浏览本站吗？",
+  "i18n_switch": "切换语言",
+  "i18n_dismiss": "保留当前语言",
+  "i18n_save_failed": "无法保存语言设置，请重试。",
+  "i18n_suggestion_failed": "无法加载语言建议。"
+}

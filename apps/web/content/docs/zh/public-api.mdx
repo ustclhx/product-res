@@ -1,0 +1,265 @@
+---
+title: 公开 API
+description: 用兼容 OpenAI 的接口在自己的代码中调用 {{appName}} 的模型。
+section: API
+order: 10
+requires: publicApi
+---
+
+{{appName}} 提供兼容 OpenAI 的 Chat Completions 接口与异步图片 / 视频任务。使用现有 OpenAI SDK
+调用对话时，只需把 base URL 指向
+`{{appUrl}}/api/v1` 即可使用。调用按积分计费，规则与应用内对话相同，从密钥所属空间扣除。
+
+## 创建 API Key
+
+1. 登录后进入空间的 **API keys** 页面。只有空间 owner 与 admin 可以管理密钥，且当前套餐需包含该功能。
+2. 创建密钥时可设置到期时间。完整密钥（`sk_…`）**只显示一次**，请保存到密钥管理工具中。
+3. 可随时在同一页面撤销。被撤销或过期的密钥会立即返回 `401`。
+
+只有当创建者仍是该空间的 owner 或 admin 时，密钥才继续有效。
+
+## 鉴权
+
+以 Bearer 令牌发送密钥。API 鉴权不使用 Cookie。
+
+```text
+Authorization: Bearer sk_your_key
+```
+
+## 创建对话补全
+
+`POST {{appUrl}}/api/v1/chat/completions`
+
+请求体：
+
+```json
+{
+  "model": "your-model-key",
+  "messages": [
+    { "role": "system", "content": "You are a helpful assistant." },
+    { "role": "user", "content": "Say hello in one sentence." }
+  ]
+}
+```
+
+- `model`：模型选择器中显示的模型 key（由管理员配置）。
+- `messages`：`system`、`user`、`assistant` 三种角色的文本消息。接口无状态，每次需发送完整对话，且至少包含一条 `user` 消息。
+- 可选：`stream`、`stream_options.include_usage`、`max_tokens`（或 `max_completion_tokens`）、`temperature`（0–2）、`n`（仅支持 `1`）。未知字段返回 `400`。
+
+响应遵循 OpenAI 格式（`object: "chat.completion"`、`choices[0].message.content`、`usage`）。设置
+`"stream": true` 时以 Server-Sent Events 返回 `chat.completion.chunk`，以 `data: [DONE]` 结束；设置
+`"stream_options": { "include_usage": true }` 可在最后收到包含 token 用量的数据块。
+
+### curl
+
+```bash
+curl {{appUrl}}/api/v1/chat/completions \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"your-model-key","messages":[{"role":"user","content":"Say hello in one sentence."}]}'
+```
+
+### Node.js（OpenAI 官方 SDK）
+
+```ts
+import OpenAI from 'openai'
+
+const client = new OpenAI({ apiKey: process.env.API_KEY, baseURL: '{{appUrl}}/api/v1' })
+const completion = await client.chat.completions.create({
+  model: 'your-model-key',
+  messages: [{ role: 'user', content: 'Say hello in one sentence.' }],
+})
+console.log(completion.choices[0]?.message.content)
+```
+
+### Python（OpenAI 官方 SDK）
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(api_key=os.environ["API_KEY"], base_url="{{appUrl}}/api/v1")
+completion = client.chat.completions.create(
+    model="your-model-key",
+    messages=[{"role": "user", "content": "Say hello in one sentence."}],
+)
+print(completion.choices[0].message.content)
+```
+
+## 创建媒体任务
+
+`POST {{appUrl}}/api/v1/tasks`
+
+提交图片或视频模型，以及符合该模型参数 schema 的参数：
+
+```json
+{
+  "model": "your-image-model-key",
+  "params": { "prompt": "A red fox in a snowy forest" }
+}
+```
+
+- `model` 是本站配置的模型 key，不是服务商的模型 ID。
+- `params` 必须符合该模型参数 schema 中的必填字段、类型与范围。示例使用接受
+  `prompt` 的模型；请按所选模型补充其他必填参数。
+- 顶层只接受 `model` 和 `params`。空间由 API Key 决定，请勿传入空间 ID。
+- 参数校验、模型权益、任务并发上限、存储配额、积分预扣与结算均遵循站内媒体生成的规则。
+  参数非法时返回 `400 INVALID_PARAMS`，且不会预扣积分。
+
+提交成功返回 `202 Accepted`：
+
+```json
+{
+  "id": "01950000-0000-7000-8000-000000000001",
+  "object": "media.task",
+  "model": "your-image-model-key",
+  "status": "queued"
+}
+```
+
+## 查询媒体任务
+
+`GET {{appUrl}}/api/v1/tasks/{id}`
+
+使用相同的 Bearer 鉴权。查询密钥所属空间之外的任务返回 `404 NOT_FOUND`。
+`200 OK` 响应包含：
+
+| 字段 | 含义 |
+|---|---|
+| `id`、`object`、`model` | 任务 ID、`"media.task"`、本站配置的模型 key |
+| `kind` | `image` 或 `video` |
+| `status` | `queued`、`running`、`succeeded`、`failed` 或 `canceled` |
+| `created`、`finished_at` | UTC Unix 秒数；任务结束前 `finished_at` 为 `null` |
+| `credits_charged` | 当前已扣除的整数积分 |
+| `error` | `null`，或描述任务错误的 `{ "code": "...", "message": "..." }` |
+| `files` | `succeeded` 时的产出文件；其他状态为空数组 |
+
+每个文件包含 `id`、`mime`、`size`（字节）、`width` 和 `height`（像素）、
+`duration`（秒）、`download_url` 和 `expires_at`（UTC Unix 秒数）。
+未提供的尺寸或时长为 `null`。
+
+`download_url` 是可直接访问的 R2 预签名地址，有效期为 5 分钟，下载无需 Cookie 或 API Key。
+地址过期后重新查询任务即可刷新。请把这些地址视为临时密钥，避免写入日志。
+
+### curl：提交并查询
+
+在环境中安全设置 `API_KEY`，并将 `MEDIA_MODEL` 设为可用的图片模型 key。
+以下命令使用 Python 3 编码请求并仅输出安全的响应字段：
+
+```bash
+TASK_ID=$(curl --fail-with-body --silent --show-error '{{appUrl}}/api/v1/tasks' \
+  -H "Authorization: Bearer $API_KEY" \
+  -H 'Content-Type: application/json' \
+  --data "$(python3 -c 'import json, os; print(json.dumps({"model": os.environ["MEDIA_MODEL"], "params": {"prompt": "A red fox in a snowy forest"}}))')" \
+  | python3 -c 'import json, sys; print(json.load(sys.stdin)["id"])')
+
+curl --fail-with-body --silent --show-error "{{appUrl}}/api/v1/tasks/$TASK_ID" \
+  -H "Authorization: Bearer $API_KEY" \
+  | python3 -c 'import json, sys; task = json.load(sys.stdin); print(task["id"], task["status"])'
+```
+
+任务为 `queued` 或 `running` 时重复 GET。两个接口均按密钥和空间限流；
+遇到 `429` 时按 `Retry-After`（当前为 60 秒）等待后重试。
+
+### Python：提交、轮询并下载图片
+
+将以下内容保存为 `media_task.py`，按上述方式设置 `API_KEY` 和 `MEDIA_MODEL` 后运行
+`python3 media_task.py`。脚本只使用标准库，初始每 2 秒轮询一次，逐渐增加到 10 秒，
+遵循 `429 Retry-After`，并在 15 分钟后停止。只输出任务状态与保存的文件名，
+不输出密钥或签名地址。客户端超时不会取消任务。
+
+```python
+import json
+import os
+import time
+from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+
+base = "{{appUrl}}/api/v1"
+key = os.environ["API_KEY"]
+model = os.environ["MEDIA_MODEL"]
+deadline = time.monotonic() + 15 * 60
+
+
+def remaining():
+    seconds = deadline - time.monotonic()
+    if seconds <= 0:
+        raise TimeoutError("Client deadline reached; query the task before resubmitting.")
+    return seconds
+
+
+def pause(seconds):
+    if seconds >= remaining():
+        raise TimeoutError("Client deadline reached; query the task before resubmitting.")
+    time.sleep(seconds)
+
+
+def request(url, body=None, authenticated=True):
+    data = None if body is None else json.dumps(body).encode()
+    headers = {"Content-Type": "application/json"} if data is not None else {}
+    if authenticated:
+        headers["Authorization"] = f"Bearer {key}"
+    while True:
+        try:
+            with urlopen(Request(url, data=data, headers=headers),
+                         timeout=min(60, remaining())) as response:
+                return response.read()
+        except HTTPError as error:
+            if error.code != 429:
+                raise RuntimeError(f"HTTP {error.code}; check the task before resubmitting.") from None
+            pause(float(error.headers.get("Retry-After", "60")))
+        except URLError:
+            raise RuntimeError("Network request failed; check the task before resubmitting.") from None
+
+
+try:
+    submitted = json.loads(request(base + "/tasks", {
+        "model": model,
+        "params": {"prompt": "A red fox in a snowy forest"},
+    }))
+    task_id = submitted["id"]
+    print("Task:", task_id)
+    interval = 2
+    while True:
+        pause(interval)
+        task = json.loads(request(base + "/tasks/" + task_id))
+        print("Status:", task["status"])
+        if task["status"] == "succeeded":
+            if not task["files"] or not task["files"][0]["mime"].startswith("image/"):
+                raise RuntimeError("The task did not return an image.")
+            file = task["files"][0]
+            extension = {"image/png": ".png", "image/jpeg": ".jpg",
+                         "image/webp": ".webp"}.get(file["mime"], ".bin")
+            path = Path("generated-image" + extension)
+            path.write_bytes(request(file["download_url"], authenticated=False))
+            print("Saved:", path)
+            break
+        if task["status"] in ("failed", "canceled"):
+            raise RuntimeError("Task ended with status: " + task["status"])
+        interval = min(10, interval + 2)
+except (RuntimeError, TimeoutError) as error:
+    raise SystemExit(str(error))
+```
+
+## 计费
+
+每次对话请求先按模型计费方式与余额预扣积分，回复结束后按实际用量结算；最大输出长度受余额限制。流式输出中途断开连接不会取消已生成部分的计费。
+
+媒体任务提交时预扣积分，任务结束时结算；查询任务状态不会额外预扣积分。
+
+## 错误
+
+错误采用 OpenAI 的错误结构：`{ "error": { "message", "type", "code", "param" } }`。每个响应都带
+`x-request-id` 头，联系支持时请提供。
+
+| 状态码 | `code` | 含义 |
+|---|---|---|
+| 400 | `INVALID_REQUEST` | 请求体格式错误或不受支持 |
+| 400 | `INVALID_PARAMS` | 媒体参数不符合模型 schema，不预扣积分 |
+| 401 | `INVALID_API_KEY` | 缺少密钥，或密钥已撤销 / 过期 |
+| 402 | `INSUFFICIENT_CREDITS` / `CREDIT_DEBT` | 积分不足，或存在未偿还的欠费 |
+| 403 | `UPGRADE_REQUIRED` | 当前套餐不包含 API 或该模型 |
+| 404 | `MODEL_UNAVAILABLE` | 模型不存在或已停用 |
+| 404 | `NOT_FOUND` | 任务不存在或不属于密钥所属空间；公开 API 关闭时也返回此错误 |
+| 429 | `RATE_LIMITED` | 该密钥或空间请求过多，按 `Retry-After` 秒数后重试 |

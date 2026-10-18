@@ -1,0 +1,72 @@
+{
+  "runId": "fault-2026-10-14a",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T06:46:26.079Z",
+  "data": {
+    "resourceId": "01a13928-65fe-7034-a8db-038e9d00d2f7",
+    "reused": false,
+    "version": "d6a9a3f467f44432e6059fd72a563c9a9818247d",
+    "mode": "workers-error",
+    "id": "01a13928-65fe-7034-a8db-038e9d00d2f7",
+    "status": "failed",
+    "modelKey": "acceptance-fault-workers-error",
+    "pricing": {
+      "mode": "per_call",
+      "credits": 1,
+      "chargeOn": "success"
+    },
+    "credits": 0,
+    "providerJobId": null,
+    "callbackPresent": false,
+    "deadlineAt": "2026-10-14T07:05:11.294+00:00",
+    "finishedAt": "2026-10-14T06:45:16.724626+00:00",
+    "errorCode": "MEDIA_GENERATION_FAILED",
+    "holdId": "01a13928-67aa-7449-a2e2-d11bc88c4db4",
+    "holdStatus": "released",
+    "held": 1,
+    "captured": 0,
+    "debited": 0,
+    "debt": 0,
+    "absorbed": 0,
+    "proof": {
+      "mode": "workers-error",
+      "policyVersion": 1,
+      "injected": true,
+      "realProviderCalled": false,
+      "injectedAt": "2026-10-14T06:45:16.111Z",
+      "submitAttempts": 0,
+      "pollCount": 0,
+      "realRequestId": null,
+      "callbackStoredAt": null,
+      "callbackCheckedAt": null,
+      "cancellation": null
+    },
+    "fileIds": [],
+    "visibleFileIds": [],
+    "outputCount": 0,
+    "outputFileIds": [],
+    "notificationIds": ["01a13928-7e3a-7239-9afa-069cdeb1050d"],
+    "ledger": [],
+    "releasedCredits": 1,
+    "reconciliation": {
+      "ledgerTotal": 100,
+      "activeRemaining": 100,
+      "held": 0,
+      "debt": 0,
+      "difference": 0,
+      "consistent": true
+    },
+    "observation": {
+      "observedMs": 62241,
+      "lateReplayStatus": "observed-only",
+      "reconciliation": {
+        "ledgerTotal": 100,
+        "activeRemaining": 100,
+        "held": 0,
+        "debt": 0,
+        "difference": 0,
+        "consistent": true
+      }
+    }
+  }
+}

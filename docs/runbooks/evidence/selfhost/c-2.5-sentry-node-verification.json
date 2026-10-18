@@ -1,0 +1,335 @@
+{
+  "verification": "selfhost-C-2.5-node-sentry",
+  "status": "failed",
+  "recordedAt": "2026-10-14T10:43:40.913Z",
+  "release": "65c0413794f408259682c9c6afdf2c4364fbfdac",
+  "environment": "smoke",
+  "triggerEvidence": "docs/runbooks/evidence/selfhost/c-2.5-sentry-node-trigger.json",
+  "triggerPr": 175,
+  "dedicatedChromeProfileVerified": true,
+  "sourceMapUploadStatusFromTrigger": "completed-before-trigger",
+  "web": {
+    "status": "failed",
+    "triggeredAt": "2026-10-14T09:48:02.298Z",
+    "query": {
+      "queryUrl": "https://product-res.sentry.io/issues/?project=4512238756626432&query=environment%3Asmoke+release%3A65c0413794f408259682c9c6afdf2c4364fbfdac+dist%3Aweb-node+requestId%3A01a139cf-cd7b-77df-8b29-0c4b88c4156d&sort=date",
+      "querySucceeded": true,
+      "issueIds": ["7791750170"],
+      "allIssuesEnumerated": true
+    },
+    "eventCount": 1,
+    "eventEnumeration": [
+      {
+        "issueId": "7791750170",
+        "displayedEventCount": 1,
+        "allDisplayedEventsEnumerated": true,
+        "eventListResponses": [
+          {
+            "rowCount": 1,
+            "query": "issue:NODE-CLOUDFLARE-WORKERS-B (release:65c0413794f408259682c9c6afdf2c4364fbfdac dist:web-node requestId:01a139cf-cd7b-77df-8b29-0c4b88c4156d)",
+            "hasPaginationHeader": true,
+            "nextPagePresent": false
+          },
+          {
+            "rowCount": 1,
+            "query": "issue:NODE-CLOUDFLARE-WORKERS-B (release:65c0413794f408259682c9c6afdf2c4364fbfdac dist:web-node requestId:01a139cf-cd7b-77df-8b29-0c4b88c4156d)",
+            "hasPaginationHeader": true,
+            "nextPagePresent": false
+          },
+          {
+            "rowCount": 1,
+            "query": "issue:NODE-CLOUDFLARE-WORKERS-B (release:65c0413794f408259682c9c6afdf2c4364fbfdac dist:web-node requestId:01a139cf-cd7b-77df-8b29-0c4b88c4156d)",
+            "hasPaginationHeader": true,
+            "nextPagePresent": false
+          }
+        ]
+      }
+    ],
+    "duplicateVerification": {
+      "queryUrl": "https://product-res.sentry.io/issues/?project=4512238756626432&query=environment%3Asmoke+release%3A65c0413794f408259682c9c6afdf2c4364fbfdac+requestId%3A01a139cf-cd7b-77df-8b29-0c4b88c4156d&sort=date",
+      "scope": "Same environment, release, requestId across all dists in specified project",
+      "issueIds": ["7791750170"],
+      "eventIds": ["6f7906abb5aa4642a52be0e8a6433cab"],
+      "eventCount": 1,
+      "allIssuesEnumerated": true,
+      "allEventsEnumerated": true,
+      "duplicateReportObserved": false,
+      "noDuplicateReportVerified": true
+    },
+    "events": [
+      {
+        "target": "web",
+        "issueId": "7791750170",
+        "eventId": "6f7906abb5aa4642a52be0e8a6433cab",
+        "eventUrl": "https://product-res.sentry.io/issues/7791750170/events/6f7906abb5aa4642a52be0e8a6433cab/",
+        "release": "65c0413794f408259682c9c6afdf2c4364fbfdac",
+        "releaseMatchesExpected": true,
+        "dist": "web-node",
+        "distMatchesExpected": true,
+        "environment": "smoke",
+        "environmentMatchesExpected": true,
+        "requestId": "01a139cf-cd7b-77df-8b29-0c4b88c4156d",
+        "requestIdMatchesExpected": true,
+        "inboxId": null,
+        "inboxIdTag": null,
+        "mechanisms": ["generic"],
+        "expectedSource": "apps/web/src/server/sentry-test.ts",
+        "expectedSourceMapped": false,
+        "expectedSourceContextReadable": false,
+        "sourceFrames": [
+          {
+            "file": "../../src/node/http.ts",
+            "function": "fetch",
+            "line": 37,
+            "column": 12,
+            "typeScriptSource": true,
+            "sourceContextReadable": false
+          },
+          {
+            "file": "../../../../packages/platform/src/node/request.ts",
+            "function": "<anonymous>",
+            "line": 64,
+            "column": 22,
+            "typeScriptSource": true,
+            "sourceContextReadable": false
+          },
+          {
+            "file": "../../src/node/http.ts",
+            "function": "<anonymous>",
+            "line": 57,
+            "column": 18,
+            "typeScriptSource": true,
+            "sourceContextReadable": false
+          }
+        ],
+        "sourceMappingErrorCodes": [
+          "js_invalid_sourcemap_location",
+          "js_invalid_sourcemap_location",
+          "js_invalid_sourcemap_location",
+          "js_missing_sources_content",
+          "js_missing_sources_content"
+        ],
+        "sourceMappingErrorsAbsent": false,
+        "debugImages": [
+          {
+            "debugId": "464c7706-a738-5cf5-8731-cd3ae63109a1",
+            "codeFileBasename": "application.mjs",
+            "type": "sourcemap"
+          },
+          {
+            "debugId": "c070872f-77df-5c1d-afb8-69fc493add7b",
+            "codeFileBasename": "unctx.mjs",
+            "type": "sourcemap"
+          },
+          {
+            "debugId": "5f92eb4a-9c63-5a63-9701-2f3bc4b0942f",
+            "codeFileBasename": "ssr.mjs",
+            "type": "sourcemap"
+          }
+        ],
+        "rawEventJsonInspected": true,
+        "credentialsAbsent": true,
+        "emailAbsent": true,
+        "conversationContentAbsent": true,
+        "mailBodyAndOtpFieldsAbsent": true,
+        "formattedStacktraceRepresentationExcludedFromBodyFieldClassification": true,
+        "formattedRepresentationCheckedForCredentialsAndEmail": true,
+        "dsnAbsent": true,
+        "requestUrlCredentialsAbsent": true,
+        "readOnly": true,
+        "inboxIdMatchesExpected": null,
+        "passed": false
+      }
+    ]
+  },
+  "jobs": {
+    "status": "passed",
+    "triggeredAt": "2026-10-14T09:48:02.432Z",
+    "query": {
+      "queryUrl": "https://product-res.sentry.io/issues/?project=4512238756626432&query=environment%3Asmoke+release%3A65c0413794f408259682c9c6afdf2c4364fbfdac+dist%3Ajobs-node+requestId%3A01a139cf-ce00-748f-b743-1865fb7b0d5a&sort=date",
+      "querySucceeded": true,
+      "issueIds": ["7791750302"],
+      "allIssuesEnumerated": true
+    },
+    "eventCount": 1,
+    "eventEnumeration": [
+      {
+        "issueId": "7791750302",
+        "displayedEventCount": 1,
+        "allDisplayedEventsEnumerated": true,
+        "eventListResponses": [
+          {
+            "rowCount": 1,
+            "query": "issue:NODE-CLOUDFLARE-WORKERS-C (release:65c0413794f408259682c9c6afdf2c4364fbfdac dist:jobs-node requestId:01a139cf-ce00-748f-b743-1865fb7b0d5a)",
+            "hasPaginationHeader": true,
+            "nextPagePresent": false
+          },
+          {
+            "rowCount": 1,
+            "query": "issue:NODE-CLOUDFLARE-WORKERS-C (release:65c0413794f408259682c9c6afdf2c4364fbfdac dist:jobs-node requestId:01a139cf-ce00-748f-b743-1865fb7b0d5a)",
+            "hasPaginationHeader": true,
+            "nextPagePresent": false
+          },
+          {
+            "rowCount": 1,
+            "query": "issue:NODE-CLOUDFLARE-WORKERS-C (release:65c0413794f408259682c9c6afdf2c4364fbfdac dist:jobs-node requestId:01a139cf-ce00-748f-b743-1865fb7b0d5a)",
+            "hasPaginationHeader": true,
+            "nextPagePresent": false
+          }
+        ]
+      }
+    ],
+    "duplicateVerification": {
+      "queryUrl": "https://product-res.sentry.io/issues/?project=4512238756626432&query=environment%3Asmoke+release%3A65c0413794f408259682c9c6afdf2c4364fbfdac+requestId%3A01a139cf-ce00-748f-b743-1865fb7b0d5a&sort=date",
+      "scope": "Same environment, release, requestId across all dists in specified project",
+      "issueIds": ["7791750302"],
+      "eventIds": ["0364375828df4ce7bf85efcb847c9594"],
+      "eventCount": 1,
+      "allIssuesEnumerated": true,
+      "allEventsEnumerated": true,
+      "duplicateReportObserved": false,
+      "noDuplicateReportVerified": true
+    },
+    "events": [
+      {
+        "target": "jobs",
+        "issueId": "7791750302",
+        "eventId": "0364375828df4ce7bf85efcb847c9594",
+        "eventUrl": "https://product-res.sentry.io/issues/7791750302/events/0364375828df4ce7bf85efcb847c9594/",
+        "release": "65c0413794f408259682c9c6afdf2c4364fbfdac",
+        "releaseMatchesExpected": true,
+        "dist": "jobs-node",
+        "distMatchesExpected": true,
+        "environment": "smoke",
+        "environmentMatchesExpected": true,
+        "requestId": "01a139cf-ce00-748f-b743-1865fb7b0d5a",
+        "requestIdMatchesExpected": true,
+        "inboxId": "01a139cf-ce00-748f-b743-2228509f073b",
+        "inboxIdTag": null,
+        "mechanisms": ["generic"],
+        "expectedSource": "packages/email/src/node/smtp.ts",
+        "expectedSourceMapped": true,
+        "expectedSourceContextReadable": true,
+        "sourceFrames": [
+          {
+            "file": "../../src/observer.ts",
+            "function": "run",
+            "line": 23,
+            "column": 14,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "../../src/queues/email.ts",
+            "function": "handleEmailBatch",
+            "line": 113,
+            "column": 19,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "../../src/queues/email.ts",
+            "function": "handleMessage",
+            "line": 135,
+            "column": 3,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "../../src/observer.ts",
+            "function": "run",
+            "line": 23,
+            "column": 14,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "../../src/queues/email.ts",
+            "function": "deliverMessage",
+            "line": 153,
+            "column": 24,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "../../src/queues/email.ts",
+            "function": "<anonymous>",
+            "line": 81,
+            "column": 20,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "../../../../packages/email/src/node/smtp.ts",
+            "function": "<object>.send",
+            "line": 130,
+            "column": 15,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "../../../../packages/email/src/node/smtp.ts",
+            "function": "safeSmtpError",
+            "line": 165,
+            "column": 12,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          }
+        ],
+        "sourceMappingErrorCodes": [],
+        "sourceMappingErrorsAbsent": true,
+        "debugImages": [
+          {
+            "debugId": "880131db-9812-5d7f-9ca0-c862ed55d311",
+            "codeFileBasename": "runtime-DXYIH4FE.mjs",
+            "type": "sourcemap"
+          },
+          {
+            "debugId": "b77b6518-72ae-5697-bfc5-94f5bd826290",
+            "codeFileBasename": "node-ZQ5WV4F5.mjs",
+            "type": "sourcemap"
+          }
+        ],
+        "rawEventJsonInspected": true,
+        "credentialsAbsent": true,
+        "emailAbsent": true,
+        "conversationContentAbsent": true,
+        "mailBodyAndOtpFieldsAbsent": true,
+        "formattedStacktraceRepresentationExcludedFromBodyFieldClassification": true,
+        "formattedRepresentationCheckedForCredentialsAndEmail": true,
+        "dsnAbsent": true,
+        "requestUrlCredentialsAbsent": true,
+        "readOnly": true,
+        "passed": true,
+        "queueJobId": "01a139cf-e20a-7397-84de-76036917da50",
+        "inboxIdFromTrigger": "01a139cf-ce00-748f-b743-2228509f073b",
+        "inboxIdDirectlyObservedInSentry": false,
+        "inboxCorrelationBasis": "Trigger evidence inbox message ID linked to exact Sentry requestId; Sentry jobId is a separate execution ID",
+        "inboxRequestIdAssociationVerified": true
+      }
+    ]
+  },
+  "conclusion": {
+    "webSourceMappingPassed": false,
+    "jobsSourceMappingPassed": true,
+    "bothEventsExist": true,
+    "releaseDistRequestIdMatched": true,
+    "privacyPassed": true,
+    "duplicatesAbsent": true,
+    "acceptanceC25Complete": false,
+    "webFailure": "Expected apps/web/src/server/sentry-test.ts was not mapped; js_invalid_sourcemap_location and js_missing_sources_content observed",
+    "remediationPerformed": false
+  },
+  "constraints": {
+    "readOnly": true,
+    "settingsChanged": false,
+    "tokenCreated": false,
+    "newExceptionTriggered": false,
+    "defaultChromeUsed": false,
+    "eventBodiesPersisted": false,
+    "sourceContextsPersisted": false,
+    "evidenceCommitted": false,
+    "tasksModified": false,
+    "credentialScan": "passed"
+  }
+}

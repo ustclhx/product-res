@@ -1,0 +1,82 @@
+{
+  "scenario": "credit-pack-refund-pending",
+  "capturedAt": "2026-10-09T08:19:47.120Z",
+  "workspaceId": "01a11fbe-9660-75a3-8bcd-8a217b9a626c",
+  "userId": "01a11fbe-9660-75a3-8bcd-8a217b9a626c",
+  "customers": [
+    {
+      "id": "01a11fbe-f54e-7405-8f81-8786f08049c4",
+      "provider_customer_id": "cus_VPNno5XDJHvtet"
+    }
+  ],
+  "payments": [
+    {
+      "id": "01a11fbe-f69c-72f1-aee4-3b79fc59fe53",
+      "provider_payment_id": "pi_3UOZ1XL3UTpBAoXo1OK1iI8e",
+      "subscription_id": null,
+      "purchase_id": "01a11fbe-f4df-7032-bd51-75d04c653d51",
+      "kind": "one_time",
+      "amount": 1000,
+      "currency": "USD",
+      "status": "succeeded",
+      "refunded_amount": 0,
+      "plan_price_id": "01a11bac-a47c-77ef-aa22-87cdc57a4339",
+      "period_start": null,
+      "period_end": null
+    }
+  ],
+  "subscriptions": [],
+  "purchases": [
+    {
+      "id": "01a11fbe-f4df-7032-bd51-75d04c653d51",
+      "provider_order_id": "cs_test_a1CWC58Ib8yjnHuj0AXgzKhCyMtCEntkA1POtkqhylo31Ngvlk9O3dVQUT",
+      "status": "paid",
+      "amount": 1000,
+      "currency": "USD"
+    }
+  ],
+  "grants": [
+    {
+      "id": "01a11fbe-f728-7723-ae51-720c426a85bc",
+      "source": "purchase",
+      "payment_id": "01a11fbe-f69c-72f1-aee4-3b79fc59fe53",
+      "amount": 1000,
+      "remaining": 1000,
+      "status": "active",
+      "expires_at": "2027-10-09T08:19:28.000Z"
+    }
+  ],
+  "ledger": [
+    {
+      "id": "01a11fbe-f760-7347-b27b-329ca9c7e7e1",
+      "grant_id": "01a11fbe-f728-7723-ae51-720c426a85bc",
+      "type": "grant",
+      "delta": 1000
+    }
+  ],
+  "refunds": [
+    {
+      "id": "01a11fbf-2197-709c-aa24-e81fe8400354",
+      "payment_id": "01a11fbe-f69c-72f1-aee4-3b79fc59fe53",
+      "status": "pending",
+      "requested_amount": null,
+      "approved_amount": null,
+      "provider_refund_id": null
+    }
+  ],
+  "events": [
+    {
+      "id": "01a11fbe-f1ed-77ae-bf52-4a26841e9ee0",
+      "provider_event_id": "evt_1UOZ1ZL3UTpBAoXoBiUsr5F7",
+      "type": "checkout.session.completed",
+      "status": "processed",
+      "attempts": 1
+    }
+  ],
+  "balance": {
+    "available": 1000,
+    "held": 0,
+    "debt": 0,
+    "ledger_total": 1000
+  }
+}

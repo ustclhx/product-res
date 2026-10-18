@@ -1,0 +1,231 @@
+{
+  "runId": "admin-61-2026-10-15a",
+  "recordedAt": "2026-10-14T19:55:32.109Z",
+  "data": {
+    "state": {
+      "readOnlyTransaction": true,
+      "roleCannotWritePayment": true,
+      "snapshot": {
+        "ledgerTotal": 24,
+        "activeRemaining": 24,
+        "held": 0,
+        "debt": 0,
+        "negativeGrants": 0,
+        "reconciliationDifference": 0
+      },
+      "purchases": [
+        {
+          "id": "01a13bf7-4015-7381-ad26-d8f0be16989b",
+          "status": "refunded",
+          "provider": "stripe",
+          "amount": 1000,
+          "currency": "USD",
+          "paidAt": "2026-10-14T19:50:18+00:00"
+        }
+      ],
+      "payments": [
+        {
+          "id": "01a13bf7-422f-734e-bf15-31eca9c442f7",
+          "purchaseId": "01a13bf7-4015-7381-ad26-d8f0be16989b",
+          "provider": "stripe",
+          "providerPaymentId": "pi_3UQYBqL3UTpBAoXo0b56s9ef",
+          "status": "partially_refunded",
+          "amount": 1000,
+          "currency": "USD",
+          "refundedAmount": 500,
+          "paidAt": "2026-10-14T19:50:18+00:00"
+        }
+      ],
+      "grants": [
+        {
+          "id": "01a13bf7-42da-74c7-a544-f6ca524d5bbb",
+          "paymentId": "01a13bf7-422f-734e-bf15-31eca9c442f7",
+          "source": "purchase",
+          "sourceRef": "01a13bf7-422f-734e-bf15-31eca9c442f7",
+          "amount": 1000,
+          "remaining": 0,
+          "status": "revoked"
+        }
+      ],
+      "ledger": [
+        {
+          "id": "01a13bf7-4324-77ad-955d-977da6edd9f2",
+          "type": "grant",
+          "delta": 1000,
+          "grantId": "01a13bf7-42da-74c7-a544-f6ca524d5bbb",
+          "refType": "purchase",
+          "refId": "01a13bf7-422f-734e-bf15-31eca9c442f7",
+          "createdAt": "2026-10-14T19:50:21.690919+00:00"
+        },
+        {
+          "id": "01a13bfa-4ba0-717b-b279-116fece3b49f",
+          "type": "revoke",
+          "delta": -1000,
+          "grantId": "01a13bf7-42da-74c7-a544-f6ca524d5bbb",
+          "refType": null,
+          "refId": null,
+          "createdAt": "2026-10-14T19:53:41.220016+00:00"
+        }
+      ],
+      "refundRequests": [
+        {
+          "id": "01a13bf8-60cd-73d0-8e72-a461eede4a18",
+          "paymentId": "01a13bf7-422f-734e-bf15-31eca9c442f7",
+          "status": "refunded",
+          "requestedAmount": null,
+          "approvedAmount": 500,
+          "providerRefundId": "re_3UQYBqL3UTpBAoXo0CduMnsp",
+          "reviewerId": "01a12ef0-66cc-75e2-88d0-eac1f1904d3c",
+          "createdAt": "2026-10-14T19:51:35.363684+00:00",
+          "reviewedAt": "2026-10-14T19:53:38.317+00:00"
+        }
+      ],
+      "refunds": [
+        {
+          "id": "01a13bfa-4aa4-7367-a7a7-87ea71f35fe7",
+          "paymentId": "01a13bf7-422f-734e-bf15-31eca9c442f7",
+          "provider": "stripe",
+          "providerRefundId": "re_3UQYBqL3UTpBAoXo0CduMnsp",
+          "amount": 500,
+          "currency": "USD",
+          "createdAt": "2026-10-14T19:53:41.220016+00:00"
+        }
+      ],
+      "webhooks": [
+        {
+          "id": "01a13bf7-3ca0-70ea-80c3-80be9dc44018",
+          "providerEventId": "evt_1UQYBsL3UTpBAoXo5fkhPqcE",
+          "type": "checkout.session.completed",
+          "status": "processed",
+          "attempts": 1,
+          "testMode": true,
+          "apiVersion": "2026-09-30.endive",
+          "receivedAt": "2026-10-14T19:50:21.113938+00:00",
+          "processedAt": "2026-10-14T19:50:22.79+00:00",
+          "hasError": false
+        },
+        {
+          "id": "01a13bfa-49c8-711d-9da8-a6dd4cdb2dbe",
+          "providerEventId": "evt_3UQYBqL3UTpBAoXo0quzzSqO",
+          "type": "charge.refunded",
+          "status": "processed",
+          "attempts": 1,
+          "testMode": true,
+          "apiVersion": "2026-09-30.endive",
+          "receivedAt": "2026-10-14T19:53:41.124883+00:00",
+          "processedAt": "2026-10-14T19:53:41.591+00:00",
+          "hasError": false
+        }
+      ],
+      "audits": [
+        {
+          "id": "01a13bf7-5d7e-73d4-ab5c-104e3943988a",
+          "action": "billing.webhook_postprocessed",
+          "actorUserId": null,
+          "targetType": "webhook_event",
+          "targetId": "01a13bf7-3ca0-70ea-80c3-80be9dc44018",
+          "createdAt": "2026-10-14T19:50:29.55502+00:00"
+        },
+        {
+          "id": "01a13bfa-3f57-7359-bc73-3d3365392eb4",
+          "action": "billing.refund_approved",
+          "actorUserId": "01a12ef0-66cc-75e2-88d0-eac1f1904d3c",
+          "targetType": "refund_request",
+          "targetId": "01a13bf8-60cd-73d0-8e72-a461eede4a18",
+          "createdAt": "2026-10-14T19:53:37.808267+00:00"
+        },
+        {
+          "id": "01a13bfa-47e2-75e7-a224-4c540a2d5de1",
+          "action": "billing.refund_api_acknowledged",
+          "actorUserId": "01a12ef0-66cc-75e2-88d0-eac1f1904d3c",
+          "targetType": "refund_request",
+          "targetId": "01a13bf8-60cd-73d0-8e72-a461eede4a18",
+          "createdAt": "2026-10-14T19:53:39.99628+00:00"
+        },
+        {
+          "id": "01a13bfa-4bbb-743e-8972-d157400d6b9d",
+          "action": "billing.payment_refunded",
+          "actorUserId": null,
+          "targetType": "payment",
+          "targetId": "01a13bf7-422f-734e-bf15-31eca9c442f7",
+          "createdAt": "2026-10-14T19:53:41.220016+00:00"
+        },
+        {
+          "id": "01a13bfa-4bcb-704e-8a9a-7dc864541443",
+          "action": "billing.refund_email.approved.queued",
+          "actorUserId": null,
+          "targetType": "refund_request",
+          "targetId": "01a13bf8-60cd-73d0-8e72-a461eede4a18",
+          "createdAt": "2026-10-14T19:53:41.607577+00:00"
+        },
+        {
+          "id": "01a13bfa-655c-725a-9961-5245c92a28c6",
+          "action": "billing.refund_email.refunded.queued",
+          "actorUserId": null,
+          "targetType": "refund_request",
+          "targetId": "01a13bf8-60cd-73d0-8e72-a461eede4a18",
+          "createdAt": "2026-10-14T19:53:48.174166+00:00"
+        },
+        {
+          "id": "01a13bfa-6638-77e4-a0bb-9350808df776",
+          "action": "billing.webhook_postprocessed",
+          "actorUserId": null,
+          "targetType": "webhook_event",
+          "targetId": "01a13bfa-49c8-711d-9da8-a6dd4cdb2dbe",
+          "createdAt": "2026-10-14T19:53:48.393998+00:00"
+        }
+      ],
+      "untouchedPaypalPaymentDigest": "0ac6a8406de25505f1fbec53bfb26d14",
+      "untouchedPaypalRefundDigest": "d751713988987e9331980363e24189ce",
+      "untouchedOtherRefundRequestDigest": "cb2c2abeea9e7e44099109bcbbb18993"
+    },
+    "provider": {
+      "providerRefundId": "re_3UQYBqL3UTpBAoXo0CduMnsp",
+      "providerPaymentId": "pi_3UQYBqL3UTpBAoXo0b56s9ef",
+      "status": "succeeded",
+      "amount": 500,
+      "currency": "usd",
+      "refundHasLivemodeField": false,
+      "parentPaymentIntentLivemode": false,
+      "testModeVerifiedFromParent": true,
+      "testKeyPrefixVerified": true,
+      "providerRefundCount": 1,
+      "createdAt": "2026-10-14T19:53:38.000Z"
+    },
+    "checks": {
+      "onePurchase": true,
+      "onePayment": true,
+      "onePaymentGrant": true,
+      "oneGrantLedger": true,
+      "oneRevokeLedger": true,
+      "remainingPaymentCreditsRevoked": true,
+      "requestSettled": true,
+      "oneLocalRefund": true,
+      "paymentPartiallyRefunded": true,
+      "providerRefundSucceeded": true,
+      "refundTestModeVerifiedFromParent": true,
+      "providerPaymentSucceeded": true,
+      "oneProviderRefund": true,
+      "refundWebhookProcessed": true,
+      "oneApprovalAudit": true,
+      "oneApiAcknowledgmentAudit": true,
+      "onePaymentRefundAudit": true,
+      "refundPostprocessed": true,
+      "creditsReturnToOpening": true,
+      "sameSnapshotReconciles": true,
+      "noNegativeGrants": true,
+      "noHoldOrDebt": true,
+      "paypalPaymentsUnchanged": true,
+      "paypalRefundsUnchanged": true,
+      "otherRefundRequestsUnchanged": true
+    },
+    "requestSubmissionCount": 1,
+    "approvalCount": 1,
+    "refundApiRetries": 0,
+    "creditsRevoked": 1000,
+    "partialMoneyRefundDoesNotProrateCreditReclaim": true,
+    "helperValidationFailureCorrectedReadOnly": true,
+    "helperFailureCause": "Refund object has no livemode field; verify test mode through the linked PaymentIntent and test-key scope.",
+    "helperFailureEvidence": "admin-61-2026-10-15a-resume-approval-stop.json"
+  }
+}

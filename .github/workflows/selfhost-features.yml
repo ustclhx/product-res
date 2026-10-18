@@ -1,0 +1,46 @@
+name: Selfhost disabled features
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - 'openspec/**'
+      - '**/*.md'
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'openspec/**'
+      - '**/*.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - uses: docker/setup-buildx-action@v4
+      - name: Install locked browser test dependencies
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+          pnpm --filter @product-res/web exec playwright install --with-deps chromium
+      - name: Generate, build and accept the disabled-feature project on fresh Compose volumes
+        run: node scripts/selfhost-features.mjs feature-artifacts
+      # 只上传固定字段的验收报告，不上传副本、邮件、运行日志或临时凭据。
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: selfhost-disabled-features
+          path: feature-artifacts/report.json
+          if-no-files-found: error
+          retention-days: 3

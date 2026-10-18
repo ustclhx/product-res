@@ -1,0 +1,32 @@
+{
+  "task": "3.4",
+  "head": "9595209bef42c9882f4b3dbd847c529fa836b66a",
+  "startedAt": "2026-10-14T09:55:52.925Z",
+  "completedAt": "2026-10-14T09:57:15.100Z",
+  "target": "real Node HTTP / source composition / persistent inbox / DBOS / Docker SMTP",
+  "command": "node apps/web/test/node/run-auth-smtp.mjs",
+  "registration": {
+    "requestId": "01a139d6-fce2-73a5-8f64-70a45746ffb7",
+    "inboxId": "01a139d6-fd3f-77e7-9b1e-05f2ed643b35",
+    "messageId": "<ff354fca87529caf69fbfc78a08965af0f4d0594b2e886708dffbd17f4b66f8e@smtp.saas.invalid>",
+    "attempts": 2,
+    "status": "acked",
+    "httpStatus": 200,
+    "verifiedByDeliveredLink": true
+  },
+  "passwordReset": {
+    "requestId": "01a139d7-9d20-743d-b3aa-236ee571ddf5",
+    "inboxId": "01a139d7-9d3b-7157-aed9-6bc50572cbb2",
+    "messageId": "<cb8d808093f6bf8a4feccdb59da377f3af6f6d63580ff1b5ff9a8177358ad179@smtp.saas.invalid>",
+    "receiptCount": 2,
+    "acceptedAt": ["2026-10-14T09:56:39.531Z", "2026-10-14T09:57:14.731Z"],
+    "attempts": 2,
+    "status": "acked",
+    "httpStatus": 200,
+    "resetByDeliveredLink": true,
+    "originalSessionRevoked": true
+  },
+  "fault": "SMTP server retained full DATA then disconnected before final 250",
+  "resendCalls": 0,
+  "warning": "SMTP permits duplicate delivery; stable Message-ID is identity, not idempotence or exactly-once"
+}

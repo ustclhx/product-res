@@ -1,0 +1,10 @@
+{
+  "passed": false,
+  "stage": "first snapshot after fixture initial deployment",
+  "observed": "command failed: docker run; raw output withheld",
+  "failureLog": "mechanism failed before initial deployment checkpoint",
+  "diagnosticRetry": "same code subsequently completed all eight cases without production changes",
+  "fixtureReadinessFinding": "postgres fixture probe unconditionally exited0 before proving persistent marker exists",
+  "correction": "health predicate now requires /state/task before dependent deployment stages; assertions unchanged",
+  "productionBundleChanged": false
+}

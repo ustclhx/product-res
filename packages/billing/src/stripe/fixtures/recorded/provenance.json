@@ -1,0 +1,355 @@
+{
+  "monthly-initial-event": {
+    "source": "staging verified webhook_event JSONB; canonical hash is not original HTTP-byte hash",
+    "recordedAt": "2026-10-09T08:02:04.331Z",
+    "event": "evt_1UOYdhL3UTpBAoXoDzgAEbGZ",
+    "apiVersion": "2026-09-30.endive",
+    "status": "processed",
+    "sha256": "01b9b5ac530f93679cac6ef6504e3bd0c0c83a8ed4423d6bfd7680f95b33f9a8",
+    "fixture": "monthly-initial-event.json"
+  },
+  "monthly-initial-invoice-payments": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/invoice_payments",
+    "query": {
+      "invoice": "in_1UOYdeL3UTpBAoXoBFsFpO0W",
+      "status": "paid",
+      "limit": "2"
+    },
+    "recordedAt": "2026-10-09T07:57:30.603Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "8dac6b883963888eed4e1e8842ad6603df00f4e5a41dc2cf70b15adf606b2ee7",
+    "fixture": "monthly-initial-invoice-payments.json"
+  },
+  "monthly-initial-intent": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/payment_intents/pi_3UOYdfL3UTpBAoXo1TssRKHa",
+    "query": {
+      "expand[]": "latest_charge"
+    },
+    "recordedAt": "2026-10-09T07:57:31.046Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "4f26c1b1135e7d4ae8687da7aaa93a915a8965f6892f11eebdf9af09ca354043",
+    "fixture": "monthly-initial-intent.json"
+  },
+  "monthly-initial-intent-invoices": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/invoice_payments",
+    "query": {
+      "payment[type]": "payment_intent",
+      "payment[payment_intent]": "pi_3UOYdfL3UTpBAoXo1TssRKHa",
+      "status": "paid",
+      "limit": "2"
+    },
+    "recordedAt": "2026-10-09T07:57:31.286Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "8dac6b883963888eed4e1e8842ad6603df00f4e5a41dc2cf70b15adf606b2ee7",
+    "fixture": "monthly-initial-intent-invoices.json"
+  },
+  "monthly-initial-invoice": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/invoices/in_1UOYdeL3UTpBAoXoBFsFpO0W",
+    "query": {},
+    "recordedAt": "2026-10-09T07:57:31.596Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "eab81109366e2b39b74d7584c68fed8ea52b4b52e3b7425d2c6109f4a2810aa3",
+    "fixture": "monthly-initial-invoice.json"
+  },
+  "monthly-renewal-event": {
+    "source": "staging verified webhook_event JSONB; canonical hash is not original HTTP-byte hash",
+    "recordedAt": "2026-10-09T08:02:04.334Z",
+    "event": "evt_1UOYf4L3UTpBAoXoqVeBpjfd",
+    "apiVersion": "2026-09-30.endive",
+    "status": "failed",
+    "sha256": "51fefb6c98c683a75066c99a4126fdaa503a85537890094e76be3f9c06d91ac2",
+    "fixture": "monthly-renewal-event.json"
+  },
+  "monthly-renewal-invoice-payments": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/invoice_payments",
+    "query": {
+      "invoice": "in_1UOYeuL3UTpBAoXoFow1TDQx",
+      "status": "paid",
+      "limit": "2"
+    },
+    "recordedAt": "2026-10-09T07:57:32.154Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "548d2e5cb600d4a84218c6fd191ef17f898756477d9c94afcc1a0496d89a54e6",
+    "fixture": "monthly-renewal-invoice-payments.json"
+  },
+  "monthly-renewal-intent": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/payment_intents/pi_3UOYf0L3UTpBAoXo0tcelvaV",
+    "query": {
+      "expand[]": "latest_charge"
+    },
+    "recordedAt": "2026-10-09T07:57:32.487Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "376af2218b8db846ba228a05718f8ac2b9c1e4be22b7c20a12a8b58d794f6490",
+    "fixture": "monthly-renewal-intent.json"
+  },
+  "monthly-renewal-intent-invoices": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/invoice_payments",
+    "query": {
+      "payment[type]": "payment_intent",
+      "payment[payment_intent]": "pi_3UOYf0L3UTpBAoXo0tcelvaV",
+      "status": "paid",
+      "limit": "2"
+    },
+    "recordedAt": "2026-10-09T07:57:32.739Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "ae40c48caa3a8a8a8b07104461a6027374867acbd1bf9e3f83202830e56f0e6f",
+    "fixture": "monthly-renewal-intent-invoices.json"
+  },
+  "monthly-renewal-invoice": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/invoices/in_1UOYeuL3UTpBAoXoFow1TDQx",
+    "query": {},
+    "recordedAt": "2026-10-09T07:57:33.058Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "2bddded51aa7bc4f2b62a7b11a2b65c08e02576b12b8b54d350796c1fec9045d",
+    "fixture": "monthly-renewal-invoice.json"
+  },
+  "one-time-intent": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/payment_intents/pi_3UOYjIL3UTpBAoXo1gvunegg",
+    "query": {
+      "expand[]": "latest_charge"
+    },
+    "recordedAt": "2026-10-09T08:01:27.894Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "d7402357d5f90fea2b31db62e849510a62542396efa661c966eb809e69f91a2d",
+    "fixture": "one-time-intent.json"
+  },
+  "one-time-intent-invoices": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/invoice_payments",
+    "query": {
+      "payment[type]": "payment_intent",
+      "payment[payment_intent]": "pi_3UOYjIL3UTpBAoXo1gvunegg",
+      "status": "paid",
+      "limit": "2"
+    },
+    "recordedAt": "2026-10-09T08:01:28.135Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "2d6bd96fe26a19f5247a049dd6d65ec75b77e8943a9b7ae886f4214aabba3823",
+    "fixture": "one-time-intent-invoices.json"
+  },
+  "one-time-checkout": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/checkout/sessions",
+    "query": {
+      "payment_intent": "pi_3UOYjIL3UTpBAoXo1gvunegg",
+      "limit": "2"
+    },
+    "recordedAt": "2026-10-09T08:05:09.680Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "cf4a1d6e406e01a4af366588bf7d1ce0e6b49c03475839aac4fb3e9715674b1c",
+    "fixture": "one-time-checkout.json"
+  },
+  "one-time-event": {
+    "event": "evt_1UOYjKL3UTpBAoXo6nn8x7at",
+    "type": "checkout.session.completed",
+    "apiVersion": "2026-09-30.endive",
+    "receivedAt": "2026-10-09T08:00:38.175Z",
+    "source": "Stripe CLI --latest signed local mirror of actual test-platform event; staging receives independently",
+    "rawSha256": "a7f28ad0ef87d26ab243b50c2d4df117d4e63ca7c3b7a6e84aabb59854c4e2c8",
+    "signatureSha256": "10e91964ad9435f1a8a798ab3c140e723e2a0eb93b65009a1bb50d0e94e45e1a",
+    "signatureVerified": true,
+    "httpStatus": 200,
+    "bytes": 4599,
+    "fixture": "one-time-event.json"
+  },
+  "platform-partial-refund-charge": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/charges/ch_3UOYjIL3UTpBAoXo11CkLYi7",
+    "query": {
+      "expand[]": "refunds"
+    },
+    "recordedAt": "2026-10-09T08:09:09.505Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "df24153f1743197d178e2c5aca9b8958d0978655fc512a04906a6ebb2277fb79",
+    "fixture": "platform-partial-refund-charge.json"
+  },
+  "platform-partial-refunds": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/refunds",
+    "query": {
+      "charge": "ch_3UOYjIL3UTpBAoXo11CkLYi7",
+      "limit": "100"
+    },
+    "recordedAt": "2026-10-09T08:09:10.400Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "60aaf2c8f87ea1be6695a91b29a8bcd3f489f7fc038f0e5e2d3d62bf2a7ac6c3",
+    "fixture": "platform-partial-refunds.json"
+  },
+  "platform-partial-refund-event": {
+    "event": "evt_3UOYjIL3UTpBAoXo1KA14f1c",
+    "type": "charge.refunded",
+    "apiVersion": "2026-09-30.endive",
+    "receivedAt": "2026-10-09T08:05:50.587Z",
+    "source": "Stripe CLI --latest signed local mirror of actual test-platform event; staging receives independently",
+    "rawSha256": "2c166ff52f8ab45212d93edb68d5cc57e91f86807bd4318b95674c0ab3b6394e",
+    "signatureSha256": "74f393e2e03ee9d3c58b7249151015bc06758ade34fbb8c73e26696217f48e49",
+    "signatureVerified": true,
+    "httpStatus": 200,
+    "bytes": 4347,
+    "fixture": "platform-partial-refund-event.json"
+  },
+  "platform-partial-recovery-refunds": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/refunds",
+    "query": {
+      "charge": "ch_3UOYjIL3UTpBAoXo11CkLYi7",
+      "limit": "100"
+    },
+    "recordedAt": "2026-10-09T11:13:56.819Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "f8b2bbdc9784990b4ed04e8443d5f3daed1114a552921d9d8c37666f76d6cc6a",
+    "fixture": "platform-partial-recovery-refunds.json"
+  },
+  "yearly-renewal-event": {
+    "event": "evt_1UObl2L3UTpBAoXoIhWrCL6T",
+    "type": "invoice.paid",
+    "apiVersion": "2026-09-30.endive",
+    "receivedAt": "2026-10-09T11:14:37.648Z",
+    "source": "Stripe CLI --latest signed local mirror of actual test-platform event; staging receives independently",
+    "rawSha256": "846fd7f53f17db3741e478e86d61ad2059d1119855fbd24a1428143f4e67d853",
+    "signatureSha256": "a59921da761a21f12ab881d31c86a516e32bec6c146274318ad31b775979f5da",
+    "signatureVerified": true,
+    "httpStatus": 200,
+    "bytes": 6316,
+    "fixture": "yearly-renewal-event.json"
+  },
+  "platform-partial-recovery-event": {
+    "event": "evt_3UOYjIL3UTpBAoXo1APsl6Oi",
+    "type": "charge.refunded",
+    "apiVersion": "2026-09-30.endive",
+    "receivedAt": "2026-10-09T11:13:31.385Z",
+    "source": "Stripe CLI --latest signed local mirror of actual test-platform event; staging receives independently",
+    "rawSha256": "8c9487b0224276038ae08a06d52458938cd9b7df74016cba99351bd8f985d828",
+    "signatureSha256": "42be9be5376c528d9044cdf3711641df9ee13d245e38f6687f400fd49fae2210",
+    "signatureVerified": true,
+    "httpStatus": 200,
+    "bytes": 4326,
+    "fixture": "platform-partial-recovery-event.json"
+  },
+  "yearly-renewal-invoice-payments": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/invoice_payments",
+    "query": {
+      "invoice": "in_1UObkvL3UTpBAoXobV0VR57D",
+      "status": "paid",
+      "limit": "2"
+    },
+    "recordedAt": "2026-10-09T11:15:49.474Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "dc37c14fdd5f26b97c81ec942c766aba4177630aea1b733ff30231c04bc3eefd",
+    "fixture": "yearly-renewal-invoice-payments.json"
+  },
+  "yearly-renewal-intent": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/payment_intents/pi_3UObkxL3UTpBAoXo0sXqeehl",
+    "query": {
+      "expand[]": "latest_charge"
+    },
+    "recordedAt": "2026-10-09T11:15:52.508Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "7e45645429af960859d20b5a193e6fbcdba52c9819aac29074092d1f74406528",
+    "fixture": "yearly-renewal-intent.json"
+  },
+  "yearly-renewal-intent-invoices": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/invoice_payments",
+    "query": {
+      "payment[type]": "payment_intent",
+      "payment[payment_intent]": "pi_3UObkxL3UTpBAoXo0sXqeehl",
+      "status": "paid",
+      "limit": "2"
+    },
+    "recordedAt": "2026-10-09T11:15:52.793Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "a694f3f368a47ea8b3be1bc9461f4bf7e4a8802a8eef7ec7884b95ee42e6e258",
+    "fixture": "yearly-renewal-intent-invoices.json"
+  },
+  "yearly-renewal-invoice": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/invoices/in_1UObkvL3UTpBAoXobV0VR57D",
+    "query": {},
+    "recordedAt": "2026-10-09T11:15:53.756Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "0bc768916442e1c426b257aa27785baa64d73e247726766685cd3b76045d3faa",
+    "fixture": "yearly-renewal-invoice.json"
+  },
+  "platform-full-refunds": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/refunds",
+    "query": {
+      "charge": "ch_3UOYxzL3UTpBAoXo0ttfyeCc",
+      "limit": "100"
+    },
+    "recordedAt": "2026-10-09T11:17:02.002Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "f976e07933f6c4528ba3219fb7ccd04e8c89ac4e3ff351ec73cb7fb12a1666db",
+    "fixture": "platform-full-refunds.json"
+  },
+  "platform-full-event": {
+    "event": "evt_3UOYxzL3UTpBAoXo0y6M4huF",
+    "type": "charge.refunded",
+    "apiVersion": "2026-09-30.endive",
+    "receivedAt": "2026-10-09T11:17:01.326Z",
+    "source": "Stripe CLI --latest signed local mirror of actual test-platform event; staging receives independently",
+    "rawSha256": "30f87e30afb5370d4cc9a1082cd02debdba657ca8b56a0ccb50c899a9edbeafd",
+    "signatureSha256": "c5b1d0cfd11227fee63565d58ee268dd80790e182ed615d632cd27aca65eae2d",
+    "signatureVerified": true,
+    "httpStatus": 200,
+    "bytes": 4347,
+    "fixture": "platform-full-event.json"
+  },
+  "resumed-renewal-event": {
+    "event": "evt_1UObm1L3UTpBAoXoS3GRbNMi",
+    "type": "invoice.paid",
+    "apiVersion": "2026-09-30.endive",
+    "receivedAt": "2026-10-09T11:15:37.701Z",
+    "source": "Stripe CLI --latest signed local mirror of actual test-platform event; staging receives independently",
+    "rawSha256": "0922f77612e15db464f5f3eae7f58a193ed4f23e24a526e5341a5663872d7981",
+    "signatureSha256": "afee08a238e0c691fbed4061d210dc6898f3d139680acddc577d1a85d3b8a6d8",
+    "signatureVerified": true,
+    "httpStatus": 200,
+    "bytes": 6307,
+    "fixture": "resumed-renewal-event.json"
+  },
+  "downgrade-renewal-event": {
+    "event": "evt_1UObn7L3UTpBAoXo3OBA8zTx",
+    "type": "invoice.paid",
+    "apiVersion": "2026-09-30.endive",
+    "receivedAt": "2026-10-09T11:16:45.815Z",
+    "source": "Stripe CLI --latest signed local mirror of actual test-platform event; staging receives independently",
+    "rawSha256": "e715b48a2925dac27f5e0db7c3cc37ef72c7443aef27640d1788c3acc1c4accf",
+    "signatureSha256": "9728e4f6f49f2493c047be2a5ff3a0a0c3d5002d983ced708cb1bc25e5241cd0",
+    "signatureVerified": true,
+    "httpStatus": 200,
+    "bytes": 6308,
+    "fixture": "downgrade-renewal-event.json"
+  }
+}

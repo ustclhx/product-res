@@ -1,0 +1,85 @@
+{
+  "captured_at": "2026-10-09T11:24:17.821073+00:00",
+  "role": "readonly",
+  "source": "staging readonly SQL, final independent hold/debt and uniqueness check; not a backfilled historical snapshot",
+  "workspaces": [
+    {
+      "workspace_id": "01a11fa8-08da-71f1-9c8d-a0ab10568800",
+      "available": 2000,
+      "held": 0,
+      "debt": 0,
+      "ledger_total": 2000,
+      "active_remaining": 2000,
+      "negative_grants": 0,
+      "duplicate_payments": 0,
+      "duplicate_refunds": 0,
+      "duplicate_grants": 0,
+      "expected": 2000
+    },
+    {
+      "workspace_id": "01a11fac-af11-72da-ad52-0869ceb1c9c9",
+      "available": 2000,
+      "held": 0,
+      "debt": 0,
+      "ledger_total": 2000,
+      "active_remaining": 2000,
+      "negative_grants": 0,
+      "duplicate_payments": 0,
+      "duplicate_refunds": 0,
+      "duplicate_grants": 0,
+      "expected": 2000
+    },
+    {
+      "workspace_id": "01a11fad-54ef-74b1-bb49-26232712dfa4",
+      "available": 0,
+      "held": 0,
+      "debt": 0,
+      "ledger_total": 0,
+      "active_remaining": 0,
+      "negative_grants": 0,
+      "duplicate_payments": 0,
+      "duplicate_refunds": 0,
+      "duplicate_grants": 0,
+      "expected": 0
+    },
+    {
+      "workspace_id": "01a11fbb-3dbe-7372-94d7-9d180ead531d",
+      "available": 0,
+      "held": 0,
+      "debt": 0,
+      "ledger_total": 0,
+      "active_remaining": 0,
+      "negative_grants": 0,
+      "duplicate_payments": 0,
+      "duplicate_refunds": 0,
+      "duplicate_grants": 0,
+      "expected": 0
+    },
+    {
+      "workspace_id": "01a11fca-f8b5-71ac-91cb-2e556301a8e5",
+      "available": 2000,
+      "held": 0,
+      "debt": 0,
+      "ledger_total": 2000,
+      "active_remaining": 2000,
+      "negative_grants": 0,
+      "duplicate_payments": 0,
+      "duplicate_refunds": 0,
+      "duplicate_grants": 0,
+      "expected": 2000
+    },
+    {
+      "workspace_id": "01a11fcd-0b52-75db-bad6-3276f1fa0918",
+      "available": 2000,
+      "held": 0,
+      "debt": 0,
+      "ledger_total": 2000,
+      "active_remaining": 2000,
+      "negative_grants": 0,
+      "duplicate_payments": 0,
+      "duplicate_refunds": 0,
+      "duplicate_grants": 0,
+      "expected": 2000
+    }
+  ]
+}

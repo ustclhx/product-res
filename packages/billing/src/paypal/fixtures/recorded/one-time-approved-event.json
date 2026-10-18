@@ -1,0 +1,66 @@
+{
+  "id": "WH-9YP757102E461941A-25A01287X46669021",
+  "event_version": "1.0",
+  "create_time": "2026-10-11T05:44:22.110Z",
+  "resource_type": "checkout-order",
+  "resource_version": "2.0",
+  "event_type": "CHECKOUT.ORDER.APPROVED",
+  "resource": {
+    "create_time": "2026-10-11T05:14:39Z",
+    "purchase_units": [
+      {
+        "reference_id": "default",
+        "amount": {
+          "currency_code": "USD",
+          "value": "10.00",
+          "breakdown": {}
+        },
+        "payee": {
+          "merchant_id": "MERCHANTRECORDED"
+        },
+        "custom_id": "[1,\"424520ab-ba36-59b8-916e-78c50a2ba378\",\"2bed5525-91cb-5064-91ce-f9e6dafdbe7f\",\"424520ab-ba36-59b8-916e-78c50a2ba378\"]"
+      }
+    ],
+    "links": [
+      {
+        "href": "https://api.sandbox.paypal.com/v2/checkout/orders/2A672877DY6250409",
+        "rel": "self",
+        "method": "GET"
+      },
+      {
+        "href": "https://api.sandbox.paypal.com/v2/checkout/orders/2A672877DY6250409",
+        "rel": "update",
+        "method": "PATCH"
+      },
+      {
+        "href": "https://api.sandbox.paypal.com/v2/checkout/orders/2A672877DY6250409/capture",
+        "rel": "capture",
+        "method": "POST"
+      }
+    ],
+    "id": "2A672877DY6250409",
+    "payment_source": {
+      "paypal": {
+        "account_id": "PAYERRECORDED",
+        "account_status": "VERIFIED"
+      }
+    },
+    "intent": "CAPTURE",
+    "payer": {
+      "payer_id": "PAYERRECORDED"
+    },
+    "status": "APPROVED"
+  },
+  "links": [
+    {
+      "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-9YP757102E461941A-25A01287X46669021",
+      "rel": "self",
+      "method": "GET"
+    },
+    {
+      "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-9YP757102E461941A-25A01287X46669021/resend",
+      "rel": "resend",
+      "method": "POST"
+    }
+  ]
+}

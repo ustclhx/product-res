@@ -1,0 +1,20 @@
+---
+title: 用 MDX 写文章
+summary: frontmatter 字段、草稿与定时发布。
+date: 2026-09-20
+tags: [guide]
+---
+
+每篇文章以 frontmatter 开头：
+
+```yaml
+title: 我的文章
+summary: 在列表中显示的一句话
+date: 2026-10-01
+tags: [guide]
+draft: false
+```
+
+- **草稿**（`draft: true`）在本地开发时可见，生产构建中不包含。
+- **定时发布**：`date` 设为未来时间，到期前不显示；列表是预渲染的，下次部署后出现在列表中。
+- **翻译**是可选的：文章没有当前语言的版本时，显示默认语言的版本。

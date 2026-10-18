@@ -1,0 +1,24 @@
+{
+  "name": "@product-res/credits",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@product-res/config": "workspace:*",
+    "@product-res/db": "workspace:*",
+    "drizzle-orm": "^0.45.3"
+  },
+  "devDependencies": {
+    "@product-res/shared": "workspace:*",
+    "@types/node": "^22.20.5",
+    "postgres": "^3.4.9",
+    "vitest": "^4.1.11"
+  }
+}

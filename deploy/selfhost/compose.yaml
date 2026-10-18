@@ -1,0 +1,204 @@
+name: ${COMPOSE_PROJECT_NAME:-product-res-selfhost}
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: ${LOG_MAX_SIZE:-10m}
+    max-file: ${LOG_MAX_FILE:-3}
+
+x-service: &service
+  restart: unless-stopped
+  logging: *logging
+  stop_grace_period: 45s
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+
+x-app-env: &app-env
+  APP_URL: ${APP_URL:?Set the public HTTPS URL}
+  DATABASE_URL_FILE: /run/secrets/app_database_url
+  VALKEY_URL_FILE: /run/secrets/valkey_url
+  BETTER_AUTH_SECRET_FILE: /run/secrets/auth_secret
+  NODE_EXTRA_CA_CERTS: /run/certs/ca.crt
+  CACHE_NAMESPACE: ${CACHE_NAMESPACE:-product-res-production}
+  DB_POOL_MAX: ${DB_POOL_MAX:-10}
+  SHUTDOWN_TIMEOUT_MS: ${SHUTDOWN_TIMEOUT_MS:-30000}
+  EMAIL_TRANSPORT: ${EMAIL_TRANSPORT:-log}
+
+x-app-secrets: &app-secrets
+  - app_database_url
+  - valkey_url
+  - auth_secret
+
+services:
+  postgres:
+    <<: *service
+    image: ${POSTGRES_IMAGE:?Use a prebuilt selfhost postgres image}
+    user: '999:999'
+    mem_limit: 1g
+    cpus: 0.5
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-product_res_production}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      APP_DB_PASSWORD_FILE: /run/secrets/app_db_password
+      MIGRATOR_DB_PASSWORD_FILE: /run/secrets/migrator_db_password
+      READONLY_DB_PASSWORD_FILE: /run/secrets/readonly_db_password
+    secrets: [postgres_password, app_db_password, migrator_db_password, readonly_db_password]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ${PG_TLS_DIR:-./certs/postgres}:/etc/postgresql/tls-src:ro
+    networks: [data]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U postgres -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 30s
+
+  valkey:
+    <<: *service
+    image: ${VALKEY_IMAGE:?Use a prebuilt selfhost valkey image}
+    user: '999:999'
+    mem_limit: 384m
+    cpus: 0.2
+    environment:
+      VALKEY_PASSWORD_FILE: /run/secrets/valkey_password
+    secrets: [valkey_password]
+    volumes: [valkey_data:/data]
+    tmpfs: ['/tmp:uid=999,gid=999,mode=0700']
+    networks: [data]
+    healthcheck:
+      test: [CMD, /usr/local/bin/valkey-health]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    <<: *service
+    image: ${MIGRATE_IMAGE:?Use a full SHA migration image}
+    user: '1000:1000'
+    restart: 'no'
+    mem_limit: 512m
+    cpus: 0.3
+    environment:
+      MIGRATION_DATABASE_URL_FILE: /run/secrets/migrator_database_url
+      NODE_EXTRA_CA_CERTS: /run/certs/ca.crt
+      DBOS_APPLICATION_ROLE: app
+      DBOS_READONLY_ROLE: readonly
+    secrets: [migrator_database_url]
+    volumes: ['${CA_FILE:-./certs/ca.crt}:/run/certs/ca.crt:ro']
+    networks: [data]
+    depends_on:
+      postgres: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, node, -e, "process.exit(require('node:fs').existsSync('/tmp/migrate-completed')?0:1)"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  web:
+    <<: *service
+    image: ${WEB_IMAGE:?Use a full SHA web image}
+    user: '1000:1000'
+    mem_limit: 1g
+    cpus: 0.5
+    environment:
+      <<: *app-env
+      PORT: '3000'
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS-172.30.77.2/32}
+    secrets: *app-secrets
+    volumes: ['${CA_FILE:-./certs/ca.crt}:/run/certs/ca.crt:ro']
+    networks:
+      data: {}
+      ingress:
+        ipv4_address: 172.30.77.3
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      valkey: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/internal/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+
+  jobs:
+    <<: *service
+    image: ${JOBS_IMAGE:?Use a full SHA jobs image}
+    hostname: ${JOB_EXECUTOR_ID:-jobs-1}
+    # 退出证明来自 job_owners 卷上由进程持有到退出的内核 flock，不共享宿主 PID namespace。
+    user: '1000:1000'
+    mem_limit: 768m
+    cpus: 0.3
+    environment:
+      <<: *app-env
+      PORT: '3001'
+      JOB_EXECUTOR_ID: ${JOB_EXECUTOR_ID:-jobs-1}
+      JOB_OWNERSHIP_DIRECTORY: /app/.data/job-owners
+      JOB_HOST_ID_FILE: /run/job-host/machine-id
+      TRUSTED_PROXY_CIDRS: ''
+    secrets: *app-secrets
+    volumes:
+      - '${CA_FILE:-./certs/ca.crt}:/run/certs/ca.crt:ro'
+      - job_owners:/app/.data/job-owners
+      - /etc/machine-id:/run/job-host/machine-id:ro
+    networks: [data]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      valkey: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3001/internal/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+
+  caddy:
+    <<: *service
+    profiles: [caddy]
+    image: ${CADDY_IMAGE:?Use a prebuilt selfhost caddy image}
+    user: '10001:10001'
+    mem_limit: 128m
+    cpus: 0.2
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Set the public domain without scheme}
+      ACME_EMAIL: ${ACME_EMAIL:-admin@example.com}
+      CADDY_TLS_MODE: ${CADDY_TLS_MODE:-acme}
+    ports: ['80:8080', '443:8443']
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+      - ${CADDY_CERT_DIR:-./certs/caddy}:/certs:ro
+    networks:
+      ingress:
+        ipv4_address: 172.30.77.2
+    depends_on:
+      web: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, 'http://127.0.0.1:2019/config/']
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+networks:
+  data: {}
+  ingress:
+    ipam:
+      config: [{subnet: 172.30.77.0/28}]
+
+volumes:
+  postgres_data: {}
+  valkey_data: {}
+  caddy_data: {}
+  caddy_config: {}
+  job_owners: {}
+
+secrets:
+  postgres_password: {file: '${SECRETS_DIR:-./secrets}/postgres_password'}
+  app_db_password: {file: '${SECRETS_DIR:-./secrets}/app_db_password'}
+  migrator_db_password: {file: '${SECRETS_DIR:-./secrets}/migrator_db_password'}
+  readonly_db_password: {file: '${SECRETS_DIR:-./secrets}/readonly_db_password'}
+  migrator_database_url: {file: '${SECRETS_DIR:-./secrets}/migrator_database_url'}
+  app_database_url: {file: '${SECRETS_DIR:-./secrets}/app_database_url'}
+  valkey_password: {file: '${SECRETS_DIR:-./secrets}/valkey_password'}
+  valkey_url: {file: '${SECRETS_DIR:-./secrets}/valkey_url'}
+  auth_secret: {file: '${SECRETS_DIR:-./secrets}/auth_secret'}

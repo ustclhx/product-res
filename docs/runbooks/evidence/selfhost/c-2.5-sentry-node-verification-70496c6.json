@@ -1,0 +1,318 @@
+{
+  "verification": "selfhost-C-2.5-node-sentry-recheck",
+  "status": "passed",
+  "recordedAt": "2026-10-14T11:44:26.163Z",
+  "release": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+  "environment": "smoke",
+  "trigger": {
+    "source": "Coordinator-provided trigger information in task",
+    "triggeredAt": "2026-10-14T11:29:52Z",
+    "sourceMapFixPr": 179,
+    "webRequestId": "01a13a2d-10b4-713d-a381-7d03d0ed1553",
+    "jobsRequestId": "01a13a2d-10ef-759d-9be3-aaead996a26f",
+    "jobsInboxMessageId": "01a13a2d-10ef-759d-9be3-b092be5c1693"
+  },
+  "dedicatedChromeProfileVerified": true,
+  "web": {
+    "status": "passed",
+    "query": {
+      "queryUrl": "https://product-res.sentry.io/issues/?project=4512238756626432&query=environment%3Asmoke+release%3A70496c6496ca7f2b89ea75a49f1a6629836fe628+dist%3Aweb-node+requestId%3A01a13a2d-10b4-713d-a381-7d03d0ed1553&sort=date",
+      "querySucceeded": true,
+      "issueIds": ["7791895081"],
+      "allIssuesEnumerated": true
+    },
+    "eventCount": 1,
+    "eventEnumeration": [
+      {
+        "issueId": "7791895081",
+        "displayedEventCount": 1,
+        "allDisplayedEventsEnumerated": true,
+        "queryPaginationVerified": true
+      }
+    ],
+    "duplicateVerification": {
+      "queryUrl": "https://product-res.sentry.io/issues/?project=4512238756626432&query=environment%3Asmoke+release%3A70496c6496ca7f2b89ea75a49f1a6629836fe628+requestId%3A01a13a2d-10b4-713d-a381-7d03d0ed1553&sort=date",
+      "scope": "Exact environment, release and requestId across all dists in specified project",
+      "issueIds": ["7791895081"],
+      "eventIds": ["446405e5ccc24c05955a8f4c7be97ebc"],
+      "eventCount": 1,
+      "allIssuesAndEventsEnumerated": true,
+      "duplicateReportObserved": false,
+      "noDuplicateReportVerified": true
+    },
+    "events": [
+      {
+        "target": "web",
+        "issueId": "7791895081",
+        "eventId": "446405e5ccc24c05955a8f4c7be97ebc",
+        "eventUrl": "https://product-res.sentry.io/issues/7791895081/events/446405e5ccc24c05955a8f4c7be97ebc/",
+        "release": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+        "releaseMatchesExpected": true,
+        "dist": "web-node",
+        "distMatchesExpected": true,
+        "environment": "smoke",
+        "environmentMatchesExpected": true,
+        "requestId": "01a13a2d-10b4-713d-a381-7d03d0ed1553",
+        "requestIdMatchesExpected": true,
+        "inboxId": null,
+        "queueJobId": null,
+        "inboxIdDirectlyObservedInSentry": false,
+        "inboxCorrelationBasis": "Exact requestId linked to inbox message ID in coordinator trigger evidence",
+        "mechanisms": ["generic"],
+        "expectedSource": "apps/web/src/server/sentry-test.ts",
+        "expectedSourceMapped": true,
+        "expectedSourceContextReadable": true,
+        "sourceFrames": [
+          {
+            "file": "../../src/node/http.ts",
+            "function": "fetch",
+            "line": 37,
+            "column": 12,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "../../../../packages/platform/src/node/request.ts",
+            "function": "<anonymous>",
+            "line": 64,
+            "column": 22,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "../../src/node/http.ts",
+            "function": "<anonymous>",
+            "line": 57,
+            "column": 18,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "../../../src/server.node.ts",
+            "function": "<anonymous>",
+            "line": 36,
+            "column": 51,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "../../../src/server/sentry-test.ts",
+            "function": "sentryTest",
+            "line": 30,
+            "column": 9,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          }
+        ],
+        "sourceMappingErrorCodes": [],
+        "sourceMappingErrorsAbsent": true,
+        "debugImages": [
+          {
+            "debugId": "4e327a3c-3f12-5c2a-940f-0d8fa7acc3bd",
+            "codeFileBasename": "application.mjs",
+            "type": "sourcemap"
+          },
+          {
+            "debugId": "c5088d65-6700-51e6-9cd5-78af5970dc33",
+            "codeFileBasename": "unctx.mjs",
+            "type": "sourcemap"
+          },
+          {
+            "debugId": "f6f7e8d5-699c-5497-a60d-9d5ad696d3d1",
+            "codeFileBasename": "ssr.mjs",
+            "type": "sourcemap"
+          }
+        ],
+        "rawEventJsonInspected": true,
+        "credentialsAbsent": true,
+        "emailAbsent": true,
+        "conversationContentAbsent": true,
+        "mailBodyAndOtpFieldsAbsent": true,
+        "formattedStacktraceRepresentationExcludedFromBodyFieldClassification": true,
+        "formattedRepresentationCheckedForCredentialsAndEmail": true,
+        "dsnAbsent": true,
+        "requestUrlCredentialsAbsent": true,
+        "readOnly": true,
+        "topFrame": {
+          "file": "../../../src/server/sentry-test.ts",
+          "function": "sentryTest",
+          "line": 30,
+          "column": 9,
+          "typeScriptSource": true,
+          "sourceContextReadable": true
+        },
+        "topFrameMatchesExpected": true,
+        "httpFramesReadable": true,
+        "requestFramesReadable": true,
+        "passed": true
+      }
+    ]
+  },
+  "jobs": {
+    "status": "passed",
+    "query": {
+      "queryUrl": "https://product-res.sentry.io/issues/?project=4512238756626432&query=environment%3Asmoke+release%3A70496c6496ca7f2b89ea75a49f1a6629836fe628+dist%3Ajobs-node+requestId%3A01a13a2d-10ef-759d-9be3-aaead996a26f&sort=date",
+      "querySucceeded": true,
+      "issueIds": ["7791750302"],
+      "allIssuesEnumerated": true
+    },
+    "eventCount": 1,
+    "eventEnumeration": [
+      {
+        "issueId": "7791750302",
+        "displayedEventCount": 1,
+        "allDisplayedEventsEnumerated": true,
+        "queryPaginationVerified": true
+      }
+    ],
+    "duplicateVerification": {
+      "queryUrl": "https://product-res.sentry.io/issues/?project=4512238756626432&query=environment%3Asmoke+release%3A70496c6496ca7f2b89ea75a49f1a6629836fe628+requestId%3A01a13a2d-10ef-759d-9be3-aaead996a26f&sort=date",
+      "scope": "Exact environment, release and requestId across all dists in specified project",
+      "issueIds": ["7791750302"],
+      "eventIds": ["085b435ac81c440a84ce66db875bdbed"],
+      "eventCount": 1,
+      "allIssuesAndEventsEnumerated": true,
+      "duplicateReportObserved": false,
+      "noDuplicateReportVerified": true
+    },
+    "events": [
+      {
+        "target": "jobs",
+        "issueId": "7791750302",
+        "eventId": "085b435ac81c440a84ce66db875bdbed",
+        "eventUrl": "https://product-res.sentry.io/issues/7791750302/events/085b435ac81c440a84ce66db875bdbed/",
+        "release": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+        "releaseMatchesExpected": true,
+        "dist": "jobs-node",
+        "distMatchesExpected": true,
+        "environment": "smoke",
+        "environmentMatchesExpected": true,
+        "requestId": "01a13a2d-10ef-759d-9be3-aaead996a26f",
+        "requestIdMatchesExpected": true,
+        "inboxId": "01a13a2d-10ef-759d-9be3-b092be5c1693",
+        "queueJobId": "01a13a2d-2527-77d4-a107-24a944a3a382",
+        "inboxIdDirectlyObservedInSentry": false,
+        "inboxCorrelationBasis": "Exact requestId linked to inbox message ID in coordinator trigger evidence",
+        "mechanisms": ["generic"],
+        "expectedSource": "packages/email/src/node/smtp.ts",
+        "expectedSourceMapped": true,
+        "expectedSourceContextReadable": true,
+        "sourceFrames": [
+          {
+            "file": "../../src/observer.ts",
+            "function": "run",
+            "line": 23,
+            "column": 14,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "../../src/queues/email.ts",
+            "function": "handleEmailBatch",
+            "line": 113,
+            "column": 19,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "../../src/queues/email.ts",
+            "function": "handleMessage",
+            "line": 135,
+            "column": 3,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "../../src/observer.ts",
+            "function": "run",
+            "line": 23,
+            "column": 14,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "../../src/queues/email.ts",
+            "function": "deliverMessage",
+            "line": 153,
+            "column": 24,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "../../src/queues/email.ts",
+            "function": "<anonymous>",
+            "line": 81,
+            "column": 20,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "../../../../packages/email/src/node/smtp.ts",
+            "function": "<object>.send",
+            "line": 130,
+            "column": 15,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "../../../../packages/email/src/node/smtp.ts",
+            "function": "safeSmtpError",
+            "line": 165,
+            "column": 12,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          }
+        ],
+        "sourceMappingErrorCodes": [],
+        "sourceMappingErrorsAbsent": true,
+        "debugImages": [
+          {
+            "debugId": "43197478-02b3-5d84-9bca-25a87d4b556a",
+            "codeFileBasename": "runtime-R72ZQHGT.mjs",
+            "type": "sourcemap"
+          },
+          {
+            "debugId": "b77b6518-72ae-5697-bfc5-94f5bd826290",
+            "codeFileBasename": "node-ZQ5WV4F5.mjs",
+            "type": "sourcemap"
+          }
+        ],
+        "rawEventJsonInspected": true,
+        "credentialsAbsent": true,
+        "emailAbsent": true,
+        "conversationContentAbsent": true,
+        "mailBodyAndOtpFieldsAbsent": true,
+        "formattedStacktraceRepresentationExcludedFromBodyFieldClassification": true,
+        "formattedRepresentationCheckedForCredentialsAndEmail": true,
+        "dsnAbsent": true,
+        "requestUrlCredentialsAbsent": true,
+        "readOnly": true,
+        "passed": true
+      }
+    ]
+  },
+  "conclusion": {
+    "bothEventsExist": true,
+    "releaseDistEnvironmentRequestIdMatched": true,
+    "webTopFrameAtSentryTestLine30": true,
+    "webHttpAndRequestSourceContextsReadable": true,
+    "jobsExpectedSourceMappedAndReadable": true,
+    "sourceMappingErrorsAbsent": true,
+    "privacyPassed": true,
+    "duplicatesAbsent": true,
+    "previousTriggerAndFailedVerificationEvidenceUnchanged": true,
+    "previousEvidenceFilesVerified": 2
+  },
+  "constraints": {
+    "readOnly": true,
+    "settingsChanged": false,
+    "tokenCreated": false,
+    "newExceptionTriggered": false,
+    "defaultChromeUsed": false,
+    "eventBodiesPersisted": false,
+    "sourceContextsPersisted": false,
+    "evidenceCommitted": false,
+    "tasksModified": false,
+    "credentialScan": "passed"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": [
+    "vite.config.ts",
+    "vitest.config.ts",
+    "vitest.billing.node.config.ts",
+    "vitest.public.node.config.ts",
+    "vitest.files.node.config.ts",
+    "playwright.config.ts",
+    "playwright.smoke.config.ts",
+    "playwright.disconnect.config.ts",
+    "playwright.stripe.config.ts",
+    "scripts",
+    "test/global-setup.ts",
+    "e2e",
+    "e2e-live",
+    "vite.node.config.ts",
+    "vitest.node.config.ts",
+    "vitest.production.node.config.ts",
+    "vitest.storage.node.config.ts"
+  ],
+  "exclude": [
+    "e2e/staging-acceptance/local-media.ts",
+    "e2e/staging-acceptance/fault-local-media.ts"
+  ]
+}

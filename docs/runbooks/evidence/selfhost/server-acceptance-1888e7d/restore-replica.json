@@ -1,0 +1,78 @@
+{
+  "project": "selfhost-restore-server-replica-1888",
+  "backupId": "base_000000010000000000000004",
+  "targetTime": "2026-10-16T16:13:44.140506Z",
+  "clusterId": "7697296676033146915",
+  "pgMajor": 17,
+  "actualReplayTime": "2026-10-16T16:13:44.131461+00:00",
+  "replayLsn": "0/1005AC40",
+  "elapsedSeconds": 36.645,
+  "checks": [
+    {
+      "name": "pg17",
+      "ok": true
+    },
+    {
+      "name": "schemas",
+      "ok": true
+    },
+    {
+      "name": "business_tables",
+      "ok": true
+    },
+    {
+      "name": "engine_tables",
+      "ok": true
+    },
+    {
+      "name": "constraints",
+      "ok": true
+    },
+    {
+      "name": "roles",
+      "ok": true
+    },
+    {
+      "name": "role_permissions",
+      "ok": true
+    },
+    {
+      "name": "credits_balance",
+      "ok": true
+    },
+    {
+      "name": "before_marker",
+      "ok": true
+    },
+    {
+      "name": "after_marker_absent",
+      "ok": true
+    },
+    {
+      "name": "real_native_workflow",
+      "ok": true
+    },
+    {
+      "name": "real_native_checkpoint",
+      "ok": true
+    },
+    {
+      "name": "real_wait_journal",
+      "ok": true
+    },
+    {
+      "name": "real_successful_schedule",
+      "ok": true
+    },
+    {
+      "name": "real_storage_ready",
+      "ok": true
+    }
+  ],
+  "status": "validated_paused",
+  "phase": "validated",
+  "error": null,
+  "errorType": null,
+  "errorLine": null,
+  "cleaned": true
+}

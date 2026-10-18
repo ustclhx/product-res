@@ -1,0 +1,159 @@
+{
+  "runId": "acceptance-2026-10-13h",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T10:32:15.874096+00:00",
+  "phase": "acceptance-run-failed-and-stopped",
+  "deployedVersion": "5c901145d83b559319bd0befe0cac6e8190335b6",
+  "mainHead": "5c901145d83b559319bd0befe0cac6e8190335b6",
+  "preflight": {
+    "status": "passed",
+    "allFiveModelsEnabled": true,
+    "allFiveModelsMatchFixture": true,
+    "evidenceFile": "acceptance-2026-10-13h-model-preflight-comparison.json"
+  },
+  "authorizedScope": "Coordinator relayed continuing user authorization for full runs including paid generation calls and scripted 8007 retries; stop after diagnosis on suite failure",
+  "suite": {
+    "status": "failed",
+    "exitCode": 1,
+    "passed": 6,
+    "failed": 1,
+    "skipped": 7,
+    "playwrightRetriesConfigured": 0,
+    "readonlyQueryTotalAttemptsLimit": 3,
+    "workers8007ExtraTaskAttemptsLimit": 2,
+    "workers8007ExtraTaskAttemptsExecuted": 0,
+    "rerunAfterFailure": false
+  },
+  "evidenceCommitted": false,
+  "deployedVersionAfter": "5c901145d83b559319bd0befe0cac6e8190335b6",
+  "failureDiagnostics": ["Failure diagnostic: unclassified"],
+  "blocker": {
+    "scenario": "Chat token: stop",
+    "conversationId": "01a134cb-34e8-7426-953d-f7c27ee35c95",
+    "messageId": "01a134cb-6bde-708e-bd3b-509e230d747c",
+    "failureLocation": "apps/web/e2e/staging-acceptance/chat.spec.ts:201",
+    "failedAssertion": "Assistant paragraph expected non-whitespace output",
+    "stopActionPerformed": false,
+    "databaseMessageStatus": "completed",
+    "persistedReplyTextLength": 1036,
+    "underlyingFrontendCause": "unknown: original live UI state and transport diagnostics not retained"
+  },
+  "failedGenerationTasks": [],
+  "failedStepErrorCodeAndMessage": {
+    "errorCode": null,
+    "errorMessage": null,
+    "note": "ai_message has no persisted errorCode/errorMessage columns; this reply completed; acceptance failed at frontend first-output assertion before Stop action"
+  },
+  "creditAccounting": {
+    "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+    "preparationCreditAdjustments": [],
+    "workersImageCharged": 1,
+    "workersImageConsumeEntries": 1,
+    "falImageCharged": 2,
+    "falImageConsumeEntries": 1,
+    "falVideoCharged": 0,
+    "falVideoHoldReleased": 3,
+    "falVideoConsumeEntries": 0,
+    "chatTokenNormalCharged": 1,
+    "chatTokenNormalConsumeEntries": 1,
+    "chatTokenStopScenarioCharged": 3,
+    "chatTokenStopScenarioConsumeEntries": 1,
+    "chatTokenStopActualOutcome": "completed",
+    "totalCharged": 7,
+    "ledgerTotal": 23,
+    "activeRemaining": 23,
+    "held": 0,
+    "debt": 0,
+    "reconciliationDifference": 0
+  },
+  "acceptanceItems": [
+    {
+      "item": "configure or verify text acceptance models",
+      "status": "pass"
+    },
+    {
+      "item": "configure or verify media acceptance models",
+      "status": "pass"
+    },
+    {
+      "item": "media-workers-image",
+      "status": "pass"
+    },
+    {
+      "item": "media-fal-image",
+      "status": "pass"
+    },
+    {
+      "item": "media-fal-video-cancel",
+      "status": "pass"
+    },
+    {
+      "item": "media-workers-provider-failure",
+      "status": "skip",
+      "reason": "Script always skips this item; runbook requires manual fault injection; not executed"
+    },
+    {
+      "item": "Chat token: normal",
+      "status": "pass"
+    },
+    {
+      "item": "Chat token: stop",
+      "status": "fail",
+      "reason": "Frontend first-output assertion failed before Stop click; server reply completed and settled"
+    },
+    {
+      "item": "Chat token: page-close",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Chat call: normal",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Chat call: stop",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Chat call: page-close",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Admin 6.1 dedicated-user actions",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Sentry 1.2 test exception",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    }
+  ],
+  "mediaGenerationTaskCount": 3,
+  "chatAssistantMessageCount": 2,
+  "workersImageTerminalAttempt": 1,
+  "evidenceFiles": [
+    "acceptance-2026-10-13h-accounting-readonly.json",
+    "acceptance-2026-10-13h-chat-token-normal.json",
+    "acceptance-2026-10-13h-chat-token-stop-readonly.json",
+    "acceptance-2026-10-13h-execution-status.json",
+    "acceptance-2026-10-13h-media-fal-image-terminal.json",
+    "acceptance-2026-10-13h-media-fal-image.json",
+    "acceptance-2026-10-13h-media-fal-video-cancel-response.json",
+    "acceptance-2026-10-13h-media-fal-video-cancel.json",
+    "acceptance-2026-10-13h-media-workers-image-terminal.json",
+    "acceptance-2026-10-13h-media-workers-image.json",
+    "acceptance-2026-10-13h-model-acceptance-deepseek-call.json",
+    "acceptance-2026-10-13h-model-acceptance-deepseek-token.json",
+    "acceptance-2026-10-13h-model-acceptance-fal-image.json",
+    "acceptance-2026-10-13h-model-acceptance-fal-video.json",
+    "acceptance-2026-10-13h-model-acceptance-workers-image.json",
+    "acceptance-2026-10-13h-model-preflight-comparison.json"
+  ],
+  "credentialScan": "passed",
+  "oldRunEvidenceUnchanged": true,
+  "priorEvidenceFilesVerified": 80
+}

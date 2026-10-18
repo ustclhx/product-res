@@ -1,0 +1,78 @@
+{
+  "runId": "fault-2026-10-14a",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T06:50:03.469Z",
+  "data": {
+    "resourceId": "01a1392b-8df6-7599-ab49-9ba9fbdbfa9f",
+    "reused": false,
+    "version": "d6a9a3f467f44432e6059fd72a563c9a9818247d",
+    "mode": "fal-callback-lost",
+    "id": "01a1392b-8df6-7599-ab49-9ba9fbdbfa9f",
+    "status": "succeeded",
+    "modelKey": "acceptance-fault-fal-callback-lost",
+    "pricing": {
+      "mode": "per_call",
+      "credits": 2,
+      "chargeOn": "success"
+    },
+    "credits": 2,
+    "providerJobId": "01a1392b-9923-71f2-ad2e-fc3971696ada",
+    "callbackPresent": false,
+    "deadlineAt": "2026-10-14T07:08:38.134+00:00",
+    "finishedAt": "2026-10-14T06:48:50.189598+00:00",
+    "errorCode": null,
+    "holdId": "01a1392b-8f2f-7180-a885-d898aa2ce4b5",
+    "holdStatus": "captured",
+    "held": 2,
+    "captured": 2,
+    "debited": 0,
+    "debt": 0,
+    "absorbed": 0,
+    "proof": {
+      "mode": "fal-callback-lost",
+      "policyVersion": 1,
+      "injected": true,
+      "realProviderCalled": true,
+      "injectedAt": "2026-10-14T06:48:41.209Z",
+      "submitAttempts": 1,
+      "pollCount": 1,
+      "realRequestId": "01a1392b-9923-71f2-ad2e-fc3971696ada",
+      "callbackStoredAt": null,
+      "callbackCheckedAt": "2026-10-14T06:48:47.341Z",
+      "cancellation": null
+    },
+    "fileIds": ["01a1392b-b74d-77b7-945a-ecc87c20f0ac"],
+    "visibleFileIds": ["01a1392b-b74d-77b7-945a-ecc87c20f0ac"],
+    "outputCount": 1,
+    "outputFileIds": ["01a1392b-b74d-77b7-945a-ecc87c20f0ac"],
+    "notificationIds": ["01a1392b-bf37-7251-94d2-c45a8fcf7d46"],
+    "ledger": [
+      {
+        "id": "01a1392b-be80-75bb-8919-f41d73212afb",
+        "type": "consume",
+        "delta": -2
+      }
+    ],
+    "releasedCredits": 0,
+    "reconciliation": {
+      "ledgerTotal": 98,
+      "activeRemaining": 98,
+      "held": 0,
+      "debt": 0,
+      "difference": 0,
+      "consistent": true
+    },
+    "observation": {
+      "observedMs": 62431,
+      "lateReplayStatus": "observed-only",
+      "reconciliation": {
+        "ledgerTotal": 98,
+        "activeRemaining": 98,
+        "held": 0,
+        "debt": 0,
+        "difference": 0,
+        "consistent": true
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "bootId": "a50b491c-020b-47de-a35e-f4289f93f39d",
+  "uptimeAtReconnectSeconds": 4.83,
+  "coreResidentServicesRunning": ["postgres", "valkey", "web", "jobs", "caddy", "backup"],
+  "migrateRunning": false,
+  "fullAcceptancePassed": false,
+  "reason": "Debian cleared /tmp test helper mounts and result files; S3 TLS fixture and task probes did not restart",
+  "correction": "all scripts, bundle, patched source and result files moved to /opt; new isolated project and second real reboot required",
+  "oldOwnedProjectsRemoved": true
+}

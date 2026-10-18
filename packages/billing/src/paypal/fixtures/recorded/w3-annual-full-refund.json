@@ -1,0 +1,42 @@
+{
+  "id": "6JW466111B6808810",
+  "state": "completed",
+  "amount": {
+    "total": "490.00",
+    "currency": "USD"
+  },
+  "refund_from_received_amount": {
+    "value": "490.00",
+    "currency": "USD"
+  },
+  "refund_from_transaction_fee": {
+    "value": "0.00",
+    "currency": "USD"
+  },
+  "total_refunded_amount": {
+    "value": "490.00",
+    "currency": "USD"
+  },
+  "refund_to_payer": {
+    "value": "490.00",
+    "currency": "USD"
+  },
+  "invoice_number": "",
+  "custom": "[1,\"01a12ef0-66cc-75e2-88d0-eac1f1904d3c\",\"01a11bac-a018-7367-8674-f78af86ce46a\",\"01a12ef0-66cc-75e2-88d0-eac1f1904d3c\"]",
+  "sale_id": "5ST08785RL1551152",
+  "create_time": "2026-10-18T06:13:38Z",
+  "update_time": "2026-10-18T06:13:38Z",
+  "links": [
+    {
+      "href": "https://api.sandbox.paypal.com/v1/payments/refund/6JW466111B6808810",
+      "rel": "self",
+      "method": "GET"
+    },
+    {
+      "href": "https://api.sandbox.paypal.com/v1/payments/sale/5ST08785RL1551152",
+      "rel": "sale",
+      "method": "GET"
+    }
+  ],
+  "refund_reason_code": "REFUND"
+}

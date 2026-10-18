@@ -1,0 +1,72 @@
+{
+  "status": "ACTIVE",
+  "status_update_time": "2026-10-18T06:06:41Z",
+  "id": "I-PE4VWXLXB1XP",
+  "plan_id": "P-5DY311405E0178244NLEERUI",
+  "start_time": "2026-10-18T06:06:16Z",
+  "quantity": "1",
+  "shipping_amount": {
+    "currency_code": "USD",
+    "value": "0.0"
+  },
+  "subscriber": {
+    "payer_id": "PAYER_W3_RECORDED"
+  },
+  "billing_info": {
+    "outstanding_balance": {
+      "currency_code": "USD",
+      "value": "0.0"
+    },
+    "current_cycle_sequence": 1,
+    "cycle_executions": [
+      {
+        "tenure_type": "REGULAR",
+        "sequence": 1,
+        "cycles_completed": 1,
+        "cycles_remaining": 0,
+        "current_pricing_scheme_version": 1,
+        "total_cycles": 0
+      }
+    ],
+    "last_payment": {
+      "amount": {
+        "currency_code": "USD",
+        "value": "19.0"
+      },
+      "time": "2026-10-18T06:06:41Z"
+    },
+    "next_billing_time": "2026-11-18T10:00:00Z",
+    "failed_payments_count": 0
+  },
+  "create_time": "2026-10-18T06:06:40Z",
+  "update_time": "2026-10-18T06:06:41Z",
+  "custom_id": "[1,\"01a12ef0-66cc-75e2-88d0-eac1f1904d3c\",\"01a11bac-8ffa-740a-b8e6-0624cd93c617\",\"01a12ef0-66cc-75e2-88d0-eac1f1904d3c\"]",
+  "plan_overridden": false,
+  "links": [
+    {
+      "href": "https://api.sandbox.paypal.com/v1/billing/subscriptions/I-PE4VWXLXB1XP/cancel",
+      "rel": "cancel",
+      "method": "POST"
+    },
+    {
+      "href": "https://api.sandbox.paypal.com/v1/billing/subscriptions/I-PE4VWXLXB1XP",
+      "rel": "edit",
+      "method": "PATCH"
+    },
+    {
+      "href": "https://api.sandbox.paypal.com/v1/billing/subscriptions/I-PE4VWXLXB1XP",
+      "rel": "self",
+      "method": "GET"
+    },
+    {
+      "href": "https://api.sandbox.paypal.com/v1/billing/subscriptions/I-PE4VWXLXB1XP/suspend",
+      "rel": "suspend",
+      "method": "POST"
+    },
+    {
+      "href": "https://api.sandbox.paypal.com/v1/billing/subscriptions/I-PE4VWXLXB1XP/capture",
+      "rel": "capture",
+      "method": "POST"
+    }
+  ]
+}

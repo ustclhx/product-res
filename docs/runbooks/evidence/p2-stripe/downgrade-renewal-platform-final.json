@@ -1,0 +1,52 @@
+{
+  "at": "2026-10-09T11:19:35.085Z",
+  "source": "Authenticated Stripe test API GET; selected whitelist, not full raw response",
+  "apiVersion": "2026-09-30.endive",
+  "livemode": false,
+  "clock": {
+    "id": "clock_1UOZJ3L3UTpBAoXoLRkK3r9T",
+    "status": "ready",
+    "frozenTime": 1794220509
+  },
+  "subscription": {
+    "id": "sub_1UOZGkL3UTpBAoXov32keMjQ",
+    "status": "active",
+    "cancelAtPeriodEnd": false,
+    "schedule": "sub_sched_1UOZHFL3UTpBAoXoNT1sOZA4",
+    "items": [
+      {
+        "price": "price_1UOSygL3UTpBAoXoQKRdSIBc",
+        "amount": 1900,
+        "interval": "month",
+        "periodStart": 1794213309,
+        "periodEnd": 1796805309
+      }
+    ]
+  },
+  "invoices": [
+    {
+      "id": "in_1UObn0L3UTpBAoXociLtCGbI",
+      "reason": "subscription_cycle",
+      "status": "paid",
+      "amountPaid": 1900,
+      "currency": "usd",
+      "paidAt": 1794216909
+    },
+    {
+      "id": "in_1UOZH2L3UTpBAoXokARnC4UR",
+      "reason": "subscription_update",
+      "status": "paid",
+      "amountPaid": 3000,
+      "currency": "usd",
+      "paidAt": 1791534927
+    },
+    {
+      "id": "in_1UOZGjL3UTpBAoXoewZ2RLqN",
+      "reason": "subscription_create",
+      "status": "paid",
+      "amountPaid": 1900,
+      "currency": "usd",
+      "paidAt": 1791534909
+    }
+  ]
+}

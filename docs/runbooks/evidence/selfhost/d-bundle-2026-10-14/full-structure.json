@@ -1,0 +1,23 @@
+{
+  "sourceSha": "363960c03f3a55c21e8a4a1ca375ef0f45d87b5d",
+  "fixture": true,
+  "scope": "actual committed runtime structure, not a new published image set",
+  "runtimeFiles": 24,
+  "imagesFromGhcrSha": "80983d29f83cb5b57563fc8360119793cf8c12be",
+  "sameShaImageRuntimeVerified": false,
+  "baseConfig": true,
+  "allOptionalOverlaysConfig": true,
+  "services": [
+    "backup",
+    "caddy",
+    "jobs",
+    "migrate",
+    "object-storage",
+    "object-storage-init",
+    "postgres",
+    "valkey",
+    "web"
+  ],
+  "serverBuildOrSourceRequired": false,
+  "restoreEntryPresent": true
+}

@@ -1,0 +1,7 @@
+#!/usr/bin/env node
+import { main } from './create-project.mjs'
+
+main().catch((error) => {
+  console.error(`创建失败：${error.message}`)
+  process.exitCode = 1
+})

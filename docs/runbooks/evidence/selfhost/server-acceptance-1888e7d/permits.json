@@ -1,0 +1,26 @@
+{
+  "sha": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+  "scope": "one unchanged original permits test, new isolated database, verbose reporter",
+  "success": true,
+  "exitCode": 0,
+  "events": [
+    {
+      "event": "test.job_queue.global_permits",
+      "workers": 2,
+      "maxActive": 2,
+      "starts": [
+        "2026-10-16T16:32:41.861Z",
+        "2026-10-16T16:32:41.861Z",
+        "2026-10-16T16:32:51.961Z",
+        "2026-10-16T16:32:51.961Z",
+        "2026-10-16T16:33:01.965Z",
+        "2026-10-16T16:33:01.965Z",
+        "2026-10-16T16:33:12.060Z",
+        "2026-10-16T16:33:12.060Z",
+        "2026-10-16T16:33:18.517Z"
+      ],
+      "independentStarts": ["2026-10-16T16:32:41.933Z", "2026-10-16T16:32:41.933Z"]
+    }
+  ],
+  "endedAt": "2026-10-16T16:33:20.337Z"
+}

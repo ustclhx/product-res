@@ -1,0 +1,104 @@
+{
+  "observedAt": "2026-10-17T17:24:47.329Z",
+  "preflight": {
+    "observedAt": "2026-10-17T17:24:39.405Z",
+    "accountId": "acct_1UMwpCL3UTpBAoXo",
+    "mode": "test",
+    "health": {
+      "status": "ok",
+      "version": "a2381f875fbd8b1009e48f7024addcb25285aca9",
+      "db": {
+        "status": "up",
+        "latencyMs": 53
+      },
+      "jobs": {
+        "lastCronAt": "2026-10-17T17:00:32.503Z"
+      }
+    },
+    "mainHead": "a2381f875fbd8b1009e48f7024addcb25285aca9",
+    "database": {
+      "database": "product_res_staging",
+      "role": "readonly",
+      "read_only": "on"
+    }
+  },
+  "customerId": "cus_VSWOYrXBjTWvEf",
+  "subscriptionId": "sub_1URbLbL3UTpBAoXo884KYavn",
+  "invoice": {
+    "id": "in_1URbLbL3UTpBAoXoG2ftwMCg",
+    "livemode": false,
+    "status": "paid",
+    "amount_due": 0,
+    "amount_paid": 0,
+    "currency": "usd"
+  },
+  "events": [
+    {
+      "id": "01a14ae5-035b-77c0-b03b-4aa9075d5aa9",
+      "provider_event_id": "evt_1URbLcL3UTpBAoXoPo2JjN1L",
+      "type": "customer.subscription.created",
+      "status": "failed",
+      "attempts": 1,
+      "processed_at": null,
+      "expected_metadata_error": true,
+      "livemode": "false",
+      "api_version": "2026-09-30.endive"
+    }
+  ],
+  "before": {
+    "payment": {
+      "count": 32,
+      "business_fields_md5": "a8d3dfffe0fb28aebbedd3eec8660f7a"
+    },
+    "subscription": {
+      "count": 17,
+      "business_fields_md5": "048214d999445bdae6787c14d939a451"
+    },
+    "credit_grant": {
+      "count": 42,
+      "business_fields_md5": "d51f70ba179b551ab527fb1c9b1ff9f2"
+    },
+    "credit_ledger": {
+      "count": 92,
+      "business_fields_md5": "7e6da01bcdf4b413a74f38ab5fbad142"
+    },
+    "payment_refund": {
+      "count": 4,
+      "business_fields_md5": "207ef709c252043440ae6a2fe5928468"
+    },
+    "billing_compensation": {
+      "count": 0,
+      "business_fields_md5": "d41d8cd98f00b204e9800998ecf8427e"
+    }
+  },
+  "afterCreate": {
+    "payment": {
+      "count": 32,
+      "business_fields_md5": "a8d3dfffe0fb28aebbedd3eec8660f7a"
+    },
+    "subscription": {
+      "count": 17,
+      "business_fields_md5": "048214d999445bdae6787c14d939a451"
+    },
+    "credit_grant": {
+      "count": 42,
+      "business_fields_md5": "d51f70ba179b551ab527fb1c9b1ff9f2"
+    },
+    "credit_ledger": {
+      "count": 92,
+      "business_fields_md5": "7e6da01bcdf4b413a74f38ab5fbad142"
+    },
+    "payment_refund": {
+      "count": 4,
+      "business_fields_md5": "207ef709c252043440ae6a2fe5928468"
+    },
+    "billing_compensation": {
+      "count": 0,
+      "business_fields_md5": "d41d8cd98f00b204e9800998ecf8427e"
+    }
+  },
+  "accountingUnchanged": true,
+  "source": "Stripe platform-generated controlled Sandbox trial without application metadata",
+  "adminReplayExecuted": false,
+  "taskComplete": false
+}

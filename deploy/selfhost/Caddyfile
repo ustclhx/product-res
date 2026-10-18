@@ -1,0 +1,19 @@
+{
+	http_port 8080
+	https_port 8443
+	email {$ACME_EMAIL}
+	# 仅发布 TCP 80/443，不广告未映射的 HTTP/3 高端口。
+	servers {
+		protocols h1 h2
+	}
+}
+
+{$APP_DOMAIN} {
+	import /etc/caddy/tls-{$CADDY_TLS_MODE}.caddy
+	reverse_proxy web:3000 {
+		# 边缘入口覆盖不可信客户端链，web 只信任本代理固定地址。
+		header_up X-Forwarded-For {http.request.remote.host}
+		header_up -CF-Connecting-IP
+		header_up -Forwarded
+	}
+}

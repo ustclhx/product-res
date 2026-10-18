@@ -1,0 +1,15 @@
+{
+  "runId": "admin-61-2026-10-15a",
+  "recordedAt": "2026-10-14T19:38:00.810Z",
+  "data": {
+    "phase": "inspect payment method",
+    "errorClass": "Error",
+    "strictLocatorViolation": false,
+    "disabledControl": false,
+    "selectionMismatch": false,
+    "networkErrorCode": null,
+    "timeout": true,
+    "checkoutClicked": false,
+    "paymentSubmitted": false
+  }
+}

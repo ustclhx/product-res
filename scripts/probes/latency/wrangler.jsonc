@@ -1,0 +1,38 @@
+{
+  "$schema": "../../../apps/web/node_modules/wrangler/config-schema.json",
+  // 7.4 延迟基线的临时 Worker（README.md）。每个环境部署为一个独立的 probe-74-* Worker，
+  // 只在放置方式上不同；用完即删。
+  "name": "probe-74-latency-off",
+  "main": "./worker.js",
+  "compatibility_date": "2026-10-01",
+  // global_fetch_strictly_public：/relay 访问同账号的 workers.dev 时走公网，否则报 1042
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  // scripts/ 不是 workspace 包，postgres 从 packages/db 的依赖中解析（与 createDb 同一版本）
+  "alias": { "postgres": "../../../packages/db/node_modules/postgres" },
+  "workers_dev": true,
+  "placement": { "mode": "off" },
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "c4b28441aeaf49c3853a321a39cf8ec4" }],
+  "vars": { "PROBE_NAME": "probe-74-latency-off" },
+  "env": {
+    // Smart Placement：由平台根据子请求延迟决定是否把 Worker 移到数据库附近
+    "smart": {
+      "name": "probe-74-latency-smart",
+      "placement": { "mode": "smart" },
+      "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "c4b28441aeaf49c3853a321a39cf8ec4" }],
+      "vars": { "PROBE_NAME": "probe-74-latency-smart" }
+    },
+    // 显式放置到其他地区，模拟远离数据库的执行位置
+    "eu": {
+      "name": "probe-74-latency-eu",
+      "placement": { "mode": "targeted", "region": "aws:eu-central-1" },
+      "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "c4b28441aeaf49c3853a321a39cf8ec4" }],
+      "vars": { "PROBE_NAME": "probe-74-latency-eu" }
+    },
+    "ap": {
+      "name": "probe-74-latency-ap",
+      "placement": { "mode": "targeted", "region": "aws:ap-northeast-1" },
+      "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "c4b28441aeaf49c3853a321a39cf8ec4" }],
+      "vars": { "PROBE_NAME": "probe-74-latency-ap" }
+    }
+  }
+}

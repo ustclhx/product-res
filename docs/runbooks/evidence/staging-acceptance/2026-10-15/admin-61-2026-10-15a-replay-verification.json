@@ -1,0 +1,37 @@
+{
+  "runId": "admin-61-2026-10-15a",
+  "recordedAt": "2026-10-14T19:38:29.222Z",
+  "data": {
+    "status": "blocked",
+    "noFailedStripeEventsAvailable": true,
+    "failedEventCount": 0,
+    "processedCandidate": {
+      "id": "01a11f08-7de4-70ae-a6a3-b6816ba08426",
+      "providerEventId": "evt_1UOVuiL3UTpBAoXom7S1Ate2",
+      "type": "checkout.session.completed",
+      "status": "processed",
+      "attempts": 1,
+      "testMode": true,
+      "processedAt": "2026-10-09T05:00:14.299+00:00",
+      "providerPaymentId": "pi_3UOVugL3UTpBAoXo0hPVnZJQ"
+    },
+    "payment": {
+      "id": "01a11f08-8359-71e9-813e-64beae2501f9",
+      "providerPaymentId": "pi_3UOVugL3UTpBAoXo0hPVnZJQ",
+      "status": "succeeded",
+      "amount": 1000,
+      "refundedAmount": 0
+    },
+    "adminUiProcessedReplayRestricted": true,
+    "serverRejectsProcessedEvents": true,
+    "sourceLocations": [
+      "apps/web/src/routes/admin/billing/webhooks.tsx:64",
+      "apps/web/src/features/billing/admin.functions.ts:159"
+    ],
+    "replayAttempted": false,
+    "platformResendAttempted": false,
+    "auditIds": [],
+    "noFailedEventStatement": "无失败事件可重放",
+    "idempotencyVerifiedByThisRun": false
+  }
+}

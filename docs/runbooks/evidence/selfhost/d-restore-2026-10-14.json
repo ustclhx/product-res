@@ -1,0 +1,257 @@
+{
+  "sourceRevision": "1fe53d2eaeaa5fc649ef2c9bce3851dc0a8b03e6",
+  "sourceDirty": true,
+  "architecture": "arm64",
+  "runtime": "image-contained backup runtime; host restore entrypoint",
+  "passed": true,
+  "cleaned": true,
+  "sameReplayPosition": true,
+  "realProvidersVerified": false,
+  "events": [
+    {
+      "event": "backup.fixture",
+      "mode": "restore",
+      "project": "selfhost-d-restore-21666c31ff1e",
+      "noPublishedPorts": true,
+      "internalOnly": true
+    },
+    {
+      "event": "backup.production_schemas",
+      "businessSql": true,
+      "dbosMigrate": true
+    },
+    {
+      "event": "backup.configuration",
+      "fileSecretsNonRoot": true,
+      "missingFileRejected": true,
+      "fileValueConflictRejected": true,
+      "invalidTlsRejected": true,
+      "selfSignedCaVerified": true
+    },
+    {
+      "event": "backup.real_cycle",
+      "baseCount": 1,
+      "walArchived": true,
+      "dumpUploaded": true,
+      "scheduleSlot": "2026-10-14T12:34:00Z",
+      "runtimeUid": 999,
+      "healthy": true
+    },
+    {
+      "event": "backup.logical_restore",
+      "customFormatList": true,
+      "marker": 17,
+      "job": "pending",
+      "dbos": "pending",
+      "appDml": true,
+      "readonlySelect": true,
+      "readonlyWrite": false,
+      "appSuper": false,
+      "appCreate": false,
+      "migratorCreate": true,
+      "roleMaterial": true,
+      "databaseAcl": true,
+      "productionSchemas": true
+    },
+    {
+      "event": "backup.schedule_restart",
+      "successfulSlotPreserved": true,
+      "noDuplicateBase": true
+    },
+    {
+      "event": "restore.primary",
+      "report": {
+        "project": "selfhost-restore-d-restore-cc71927efdee",
+        "backupId": "base_000000010000000000000003",
+        "targetTime": "2026-10-14T12:36:02.353457Z",
+        "clusterId": "7696501193090547747",
+        "pgMajor": 17,
+        "actualReplayTime": "2026-10-14T12:35:49.235842+00:00",
+        "replayLsn": "0/6085880",
+        "elapsedSeconds": 8.099,
+        "checks": [
+          {
+            "name": "pg17",
+            "ok": true
+          },
+          {
+            "name": "schemas",
+            "ok": true
+          },
+          {
+            "name": "business_tables",
+            "ok": true
+          },
+          {
+            "name": "engine_tables",
+            "ok": true
+          },
+          {
+            "name": "constraints",
+            "ok": true
+          },
+          {
+            "name": "roles",
+            "ok": true
+          },
+          {
+            "name": "role_permissions",
+            "ok": true
+          },
+          {
+            "name": "credits_balance",
+            "ok": true
+          },
+          {
+            "name": "markers",
+            "ok": true
+          },
+          {
+            "name": "schemas",
+            "ok": true
+          },
+          {
+            "name": "database-acl",
+            "ok": true
+          },
+          {
+            "name": "task-state",
+            "ok": true
+          },
+          {
+            "name": "credit-snapshot",
+            "ok": true
+          }
+        ],
+        "status": "validated_paused",
+        "phase": "validated",
+        "error": null,
+        "errorType": null,
+        "errorLine": null,
+        "cleaned": null
+      },
+      "target": "2026-10-14T12:36:02.353457Z",
+      "beforePresent": true,
+      "afterAbsent": true
+    },
+    {
+      "event": "restore.promote",
+      "explicit": true,
+      "isolated": true
+    },
+    {
+      "event": "restore.boundaries",
+      "existingPathRejected": true,
+      "missingWalRejected": true,
+      "beyondUpperBoundRejected": true
+    },
+    {
+      "event": "restore.failed_drill",
+      "nonzero": true,
+      "diagnosisRetained": true,
+      "volumeRetainedUntilExplicitCleanup": true
+    },
+    {
+      "event": "replica.sync",
+      "complete": true,
+      "repeated": true,
+      "interruptedResumed": true,
+      "independentCredentials": true,
+      "dump": true,
+      "continuousUntil": "2026-10-14 12:36:04.251292+00",
+      "lagSeconds": 40.219808
+    },
+    {
+      "event": "replica.failure",
+      "nonzero": true,
+      "primaryArchiveIndependent": true,
+      "recovered": true
+    },
+    {
+      "event": "replica.source_delete",
+      "deletionNotPropagated": true
+    },
+    {
+      "event": "restore.secondary",
+      "report": {
+        "project": "selfhost-restore-d-restore-bb9c62185059",
+        "backupId": "base_000000010000000000000003",
+        "targetTime": "2026-10-14T12:36:02.353457Z",
+        "clusterId": "7696501193090547747",
+        "pgMajor": 17,
+        "actualReplayTime": "2026-10-14T12:35:49.235842+00:00",
+        "replayLsn": "0/6085880",
+        "elapsedSeconds": 8.888,
+        "checks": [
+          {
+            "name": "pg17",
+            "ok": true
+          },
+          {
+            "name": "schemas",
+            "ok": true
+          },
+          {
+            "name": "business_tables",
+            "ok": true
+          },
+          {
+            "name": "engine_tables",
+            "ok": true
+          },
+          {
+            "name": "constraints",
+            "ok": true
+          },
+          {
+            "name": "roles",
+            "ok": true
+          },
+          {
+            "name": "role_permissions",
+            "ok": true
+          },
+          {
+            "name": "credits_balance",
+            "ok": true
+          },
+          {
+            "name": "markers",
+            "ok": true
+          },
+          {
+            "name": "schemas",
+            "ok": true
+          },
+          {
+            "name": "database-acl",
+            "ok": true
+          },
+          {
+            "name": "task-state",
+            "ok": true
+          },
+          {
+            "name": "credit-snapshot",
+            "ok": true
+          }
+        ],
+        "status": "validated_paused",
+        "phase": "validated",
+        "error": null,
+        "errorType": null,
+        "errorLine": null,
+        "cleaned": true
+      },
+      "target": "2026-10-14T12:36:02.353457Z",
+      "primaryStopped": true,
+      "independentCredentials": true,
+      "beforePresent": true,
+      "afterAbsent": true
+    },
+    {
+      "event": "backup.passed",
+      "full": false
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+# 追加在compose.backup.yaml之后；第二身份只分配给backup，不交给postgres/web/jobs。
+services:
+  backup:
+    environment:
+      BACKUP_REPLICA_ENABLED: 'true'
+      BACKUP_REPLICA_S3_ENDPOINT: ${BACKUP_REPLICA_S3_ENDPOINT:?Set independent second S3 HTTPS endpoint}
+      BACKUP_REPLICA_S3_REGION: ${BACKUP_REPLICA_S3_REGION:-us-east-1}
+      BACKUP_REPLICA_S3_PREFIX: ${BACKUP_REPLICA_S3_PREFIX:?Set a unique independent s3 prefix}
+      BACKUP_REPLICA_S3_FORCE_PATH_STYLE: ${BACKUP_REPLICA_S3_FORCE_PATH_STYLE:-true}
+      BACKUP_REPLICA_S3_ACCESS_KEY_ID_FILE: /run/secrets/replica_s3_access_key_id
+      BACKUP_REPLICA_S3_SECRET_ACCESS_KEY_FILE: /run/secrets/replica_s3_secret_access_key
+      BACKUP_REPLICA_S3_CA_FILE: /run/certs/replica-ca.crt
+      BACKUP_REPLICA_NETWORK_RATE_LIMIT: ${BACKUP_REPLICA_NETWORK_RATE_LIMIT:-10485760}
+      BACKUP_REPLICA_INTERVAL_SECONDS: ${BACKUP_REPLICA_INTERVAL_SECONDS:-300}
+      BACKUP_REPLICA_MAX_AGE_SECONDS: ${BACKUP_REPLICA_MAX_AGE_SECONDS:-3600}
+    secrets: [replica_s3_access_key_id, replica_s3_secret_access_key]
+    volumes:
+      - '${BACKUP_REPLICA_CA_FILE:-./certs/replica-ca.crt}:/run/certs/replica-ca.crt:ro'
+
+secrets:
+  replica_s3_access_key_id: {file: '${SECRETS_DIR:-./secrets}/replica_s3_access_key_id'}
+  replica_s3_secret_access_key: {file: '${SECRETS_DIR:-./secrets}/replica_s3_secret_access_key'}

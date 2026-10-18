@@ -1,0 +1,145 @@
+{
+  "mode": "sandbox",
+  "recordedOn": "2026-10-18",
+  "recordingMethod": "New application Checkout subscriptions; actual callbacks verified online by own local HTTP receiver through Docker cloudflare/cloudflared:2026.9.3 quick tunnel. Temporary additional webhook; original staging webhook unchanged. No simulator.",
+  "rawBodiesPersisted": false,
+  "redaction": "Personal/contact/payment-source data removed; payer/account identities consistently aliased; event summaries removed; URL query/fragment removed. No tokens, passwords, signing/transmission headers or tunnel URL saved. Raw hashes describe originals before redaction; fixture hashes describe sanitized offline mapping inputs.",
+  "events": {
+    "w3-monthly-initial-event": {
+      "receivedAt": "2026-10-18T06:07:31.720Z",
+      "providerEventId": "WH-06795432VE1603914-568340816M101843Y",
+      "eventType": "PAYMENT.SALE.COMPLETED",
+      "rawBodySha256": "9221cf3464fc2ad1f5c58131fe7ce7df6a7c4079b8cc9b109d5d9c359fe1e92e",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200,
+      "fixture": "w3-monthly-initial-event.json",
+      "fixtureSha256": "81640f9aaf96f211b20363b22b3e25a77b5c4227f50125280e77caf240260dca"
+    },
+    "w3-annual-initial-event": {
+      "receivedAt": "2026-10-18T06:10:07.026Z",
+      "providerEventId": "WH-3LK2667568219715H-8FH43325L09479807",
+      "eventType": "PAYMENT.SALE.COMPLETED",
+      "rawBodySha256": "caf5e0d985d5d3c38bc1c61d121344b512dcbfaea271cd0a58f788e866e89b3e",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200,
+      "fixture": "w3-annual-initial-event.json",
+      "fixtureSha256": "bcf332dfbc59525cf4f8893a5b008bfec64ca5cce7e61918b41e0163a9dded36"
+    },
+    "w3-monthly-partial-refund-event": {
+      "receivedAt": "2026-10-18T06:11:57.255Z",
+      "providerEventId": "WH-2SA46682YS500962V-3HD30640FY995753X",
+      "eventType": "PAYMENT.SALE.REFUNDED",
+      "rawBodySha256": "bc81c79483193b132f98843f31a712bc8f2ad391c7ff0946f771a9db07e6dfbf",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200,
+      "fixture": "w3-monthly-partial-refund-event.json",
+      "fixtureSha256": "914243b56fbcc36e1497821fceafc96e5b88a5a9613772e4682968190e89bbf0"
+    },
+    "w3-annual-full-refund-event": {
+      "receivedAt": "2026-10-18T06:13:57.472Z",
+      "providerEventId": "WH-2EM53369TC8582119-4KB58549SA013722Y",
+      "eventType": "PAYMENT.SALE.REFUNDED",
+      "rawBodySha256": "81ad5b04805817a1eec2c359862bb54acf5093376e13f2c105ce8267ff0b93bd",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200,
+      "fixture": "w3-annual-full-refund-event.json",
+      "fixtureSha256": "9d7df30d2fcd33a1c457f07578ad6b6ed7c21b9e321891d72afdc1732907f0b6"
+    }
+  },
+  "snapshots": {
+    "w3-monthly-initial-sale": {
+      "method": "GET",
+      "path": "/v1/payments/sale/71D187337X5761003",
+      "status": 200,
+      "recordedAt": "2026-10-18T06:07:41.884Z",
+      "rawResponseSha256": "3fed9b757ff62e6afb90c7b479d8c153225c8b13378d1aa548f6e2812c7929f2",
+      "fixture": "w3-monthly-initial-sale.json",
+      "fixtureSha256": "99e80d23f3efd53b6f974141c7e707c71a026007e5031384d652a8a4d2b9cf51"
+    },
+    "w3-monthly-subscription": {
+      "method": "GET",
+      "path": "/v1/billing/subscriptions/I-PE4VWXLXB1XP",
+      "status": 200,
+      "recordedAt": "2026-10-18T06:06:56.360Z",
+      "rawResponseSha256": "68a04cc5eed4e9cfbdd04bf1c738a90618b7270a1f5255ca208112fdec08f224",
+      "fixture": "w3-monthly-subscription.json",
+      "fixtureSha256": "1c4b86d8c02c3268f76e268974450e75ac6f65bc146c7d7dc9f56b43960a5d42"
+    },
+    "w3-monthly-initial-transactions": {
+      "method": "GET",
+      "path": "/v1/billing/subscriptions/I-PE4VWXLXB1XP/transactions?start_time=2026-10-18T06%3A06%3A16.000Z&end_time=2026-10-18T06%3A06%3A41.000Z",
+      "status": 200,
+      "recordedAt": "2026-10-18T06:08:38.582Z",
+      "rawResponseSha256": "40006f889c3c17f55b5a661f4c4f4e7563945af6262838a3515af45422307b4c",
+      "fixture": "w3-monthly-initial-transactions.json",
+      "fixtureSha256": "4492b2f923ec6115e803140bf574100051f5694377c10fe797486e3a78be2279"
+    },
+    "w3-pro-month-plan": {
+      "method": "GET",
+      "path": "/v1/billing/plans/P-5DY311405E0178244NLEERUI",
+      "status": 200,
+      "recordedAt": "2026-10-18T06:06:56.304Z",
+      "rawResponseSha256": "bbfc054b64e06bda383305478a2d2a95b2b85bfc89a4a2fc4a697b7549b9c2f6",
+      "fixture": "w3-pro-month-plan.json",
+      "fixtureSha256": "ab926d1ec2a870c4e3f58ba3f5c801c519130b212ecd4abce60196525c765aa4"
+    },
+    "w3-annual-initial-sale": {
+      "method": "GET",
+      "path": "/v1/payments/sale/5ST08785RL1551152",
+      "status": 200,
+      "recordedAt": "2026-10-18T06:10:31.118Z",
+      "rawResponseSha256": "b64620e63c31d32ddb8262f884baf356706eeda414e98bf335b19e8a9b214082",
+      "fixture": "w3-annual-initial-sale.json",
+      "fixtureSha256": "9113cac4c1161e7b031de23ef889a2907fdb019da50eb6e8b1fc629b644923ca"
+    },
+    "w3-annual-subscription": {
+      "method": "GET",
+      "path": "/v1/billing/subscriptions/I-TKG3FMFU9BEN",
+      "status": 200,
+      "recordedAt": "2026-10-18T06:09:54.838Z",
+      "rawResponseSha256": "ba389ab21e5c92c2d75bc62e246c79fe401c8ae70f0c2f7a06f1c75dd1d82c90",
+      "fixture": "w3-annual-subscription.json",
+      "fixtureSha256": "ad8bc70f38ca2419d9ee6cdb986a1c53f653e1c13b344136c349865036379f10"
+    },
+    "w3-annual-initial-transactions": {
+      "method": "GET",
+      "path": "/v1/billing/subscriptions/I-TKG3FMFU9BEN/transactions?start_time=2026-10-18T06%3A09%3A14.000Z&end_time=2026-10-18T06%3A09%3A39.000Z",
+      "status": 200,
+      "recordedAt": "2026-10-18T06:11:08.548Z",
+      "rawResponseSha256": "0db65e22d619465439b4725b384f943470fc8c010c8571e5783310f86376c286",
+      "fixture": "w3-annual-initial-transactions.json",
+      "fixtureSha256": "6514d0eb17bded26eb2add80adf0ee48b1263a97d414d6d6cc54501565dd97a6"
+    },
+    "w3-team-year-plan": {
+      "method": "GET",
+      "path": "/v1/billing/plans/P-5NR306415E2670818NLEGCUY",
+      "status": 200,
+      "recordedAt": "2026-10-18T06:06:56.211Z",
+      "rawResponseSha256": "77a23eda4c68535bf01cd82ad895b962e9a9a73103f426886a7aca9779b5fa82",
+      "fixture": "w3-team-year-plan.json",
+      "fixtureSha256": "49941411d323f7e421fcf4362f9032022ee995d30e8e9064f7f4462b3afb2616"
+    },
+    "w3-monthly-partial-refund": {
+      "method": "GET",
+      "path": "/v1/payments/refund/95R03124HK508535V",
+      "status": 200,
+      "recordedAt": "2026-10-18T06:11:42.585Z",
+      "rawResponseSha256": "ed3f5e1f0789d990575259e0b3e895c1dbf2f388a5befff222aaf7dbfde39ec3",
+      "fixture": "w3-monthly-partial-refund.json",
+      "fixtureSha256": "50641ecf3598eab0d7cc7997e9c2ee3338a511b6bb70c0cbb61c3cc5e240ace4"
+    },
+    "w3-annual-full-refund": {
+      "method": "GET",
+      "path": "/v1/payments/refund/6JW466111B6808810",
+      "status": 200,
+      "recordedAt": "2026-10-18T06:13:40.405Z",
+      "rawResponseSha256": "8361a11809a6a8be25fca5d06f8b71501591104a4a3cfea34c8ce00210b6aba7",
+      "fixture": "w3-annual-full-refund.json",
+      "fixtureSha256": "0cda630e2b77acded23691a7a68a1c46051fbfbc0b55421ad1db0b51daa94304"
+    }
+  },
+  "originalWebhookUnchanged": true,
+  "temporaryWebhookDeleted": true,
+  "receiverStopped": true,
+  "quickTunnelStopped": true
+}

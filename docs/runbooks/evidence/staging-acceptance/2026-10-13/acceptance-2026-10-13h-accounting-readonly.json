@@ -1,0 +1,16 @@
+{
+  "runId": "acceptance-2026-10-13h",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T10:31:16.524Z",
+  "data": {
+    "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+    "snapshot": {
+      "ledgerTotal": 23,
+      "activeRemaining": 23,
+      "held": 0,
+      "debt": 0,
+      "reconciliationDifference": 0
+    },
+    "preparationCreditAdjustments": []
+  }
+}

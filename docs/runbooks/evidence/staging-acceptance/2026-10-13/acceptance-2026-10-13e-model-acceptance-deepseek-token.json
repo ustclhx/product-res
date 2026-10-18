@@ -1,0 +1,18 @@
+{
+  "runId": "acceptance-2026-10-13e",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T08:34:55.534Z",
+  "data": {
+    "modelId": "01a13191-7551-7500-9d9b-1f8546e30dbd",
+    "modelKey": "acceptance-deepseek-token",
+    "status": "verified-existing",
+    "pricing": {
+      "mode": "token",
+      "inputPer1k": 1,
+      "outputPer1k": 2,
+      "minCharge": 1
+    },
+    "auditIds": ["01a13191-7573-7661-9f53-b42c19013de0"],
+    "parameterSchemaStatus": "configured"
+  }
+}

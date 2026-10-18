@@ -1,0 +1,21 @@
+{
+  "scenario": "platform-full",
+  "before": "platform-full-after",
+  "after": "platform-full-after-duplicates",
+  "capturedBefore": "2026-10-09T11:17:19.131111+00:00",
+  "capturedAfter": "2026-10-09T11:18:35.658517+00:00",
+  "unchanged": {
+    "subscriptions": true,
+    "payments": true,
+    "payment_refunds": true,
+    "refund_requests": true,
+    "grants": true,
+    "ledger": true,
+    "ledger_total": true,
+    "expected": true,
+    "negative_grants": true
+  },
+  "ledgerTotal": 0,
+  "expected": 0,
+  "negativeGrants": 0
+}

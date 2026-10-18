@@ -1,0 +1,30 @@
+{
+  "name": "@product-res/billing",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "seed": "node --env-file-if-exists=../../.env.local --experimental-strip-types scripts/seed.ts",
+    "sync": "node --env-file-if-exists=../../.env.local --experimental-strip-types scripts/sync.ts"
+  },
+  "dependencies": {
+    "@product-res/db": "workspace:*",
+    "@product-res/platform": "workspace:*",
+    "stripe": "23.0.0",
+    "drizzle-orm": "^0.45.3",
+    "@product-res/credits": "workspace:*",
+    "@product-res/config": "workspace:*",
+    "@product-res/shared": "workspace:*",
+    "@product-res/entitlements": "workspace:*",
+    "@product-res/auth": "workspace:*",
+    "@product-res/email": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.11"
+  }
+}

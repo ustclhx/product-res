@@ -1,0 +1,201 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    # 集成测试（@product-res/db、@product-res/web、@product-res/jobs 的 vitest-plugin 项目）使用的本地 Postgres，
+    # 账号与权限按 infra/local/initdb 的约定在下面的步骤中初始化。
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: product_res_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d product_res_ci"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+
+    env:
+      # 设置后各包的 vitest.config.ts 才会运行集成测试（CI 中缺省时跳过）
+      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: postgres://app:app@localhost:5432/product_res_ci
+      MIGRATION_DATABASE_URL: postgres://migrator:migrator@localhost:5432/product_res_ci
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # 与 infra/local/docker-compose.yml 的容器初始化相同：集群级账号 + 单库权限
+      - name: Initialize database roles
+        env:
+          PGURL: postgres://postgres:postgres@localhost:5432/product_res_ci
+        run: |
+          psql "$PGURL" -v ON_ERROR_STOP=1 -f infra/local/initdb/01-roles.sql
+          psql "$PGURL" -v ON_ERROR_STOP=1 -f infra/local/initdb/02-db-grants.sql
+
+      # 版本取自根 package.json 的 packageManager
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      # lockfile 必须已去重，且 drizzle-orm / react 只有一个实例（scripts/check-singletons.mjs 说明了原因）
+      - run: pnpm dedupe --check
+      - run: pnpm check:singletons
+      - run: pnpm check:deps
+      - run: pnpm check
+      - run: pnpm typecheck
+      - run: pnpm test
+      # turbo run build：没有 build 脚本的包会被跳过
+      - run: pnpm build
+
+  node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    # 与 CF job 完全独立的临时数据服务，不读取 staging secrets 或执行部署。
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: product_res_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d product_res_ci"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+      valkey:
+        image: valkey/valkey:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "valkey-cli ping"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: postgres://app:app@localhost:5432/product_res_ci
+      MIGRATION_DATABASE_URL: postgres://migrator:migrator@localhost:5432/product_res_ci
+      TEST_VALKEY_URL: redis://localhost:6379
+      APP_VERSION: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Initialize database roles
+        env:
+          PGURL: postgres://postgres:postgres@localhost:5432/product_res_ci
+        run: |
+          psql "$PGURL" -v ON_ERROR_STOP=1 -f infra/local/initdb/01-roles.sql
+          psql "$PGURL" -v ON_ERROR_STOP=1 -f infra/local/initdb/02-db-grants.sql
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Run Node unit and isolated business integration tests
+        run: pnpm --filter @product-res/web test:node
+      - name: Run Node jobs tests
+        run: pnpm --filter @product-res/jobs test:node
+      - name: Smoke Node jobs production entry
+        run: pnpm --filter @product-res/jobs test:node:integration
+      - name: Build Node production outputs
+        run: pnpm build:node
+      - name: Smoke Node production HTTP server
+        run: pnpm --filter @product-res/web test:node:production
+
+  e2e-smoke:
+    runs-on: ubuntu-latest
+    # 正常约 2–3 分钟；留出 apt 镜像偶发缓慢的余量，单步再设上限避免挂死占满整个 job。
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: product_res_ci_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d product_res_ci_e2e"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: postgres://app:app@localhost:5432/product_res_ci_e2e
+      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE_CACHED: postgres://app:app@localhost:5432/product_res_ci_e2e
+      MIGRATION_DATABASE_URL: postgres://migrator:migrator@localhost:5432/product_res_ci_e2e
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v7
+      - name: Initialize database roles
+        env:
+          PGURL: postgres://postgres:postgres@localhost:5432/product_res_ci_e2e
+        run: |
+          psql "$PGURL" -v ON_ERROR_STOP=1 -f infra/local/initdb/01-roles.sql
+          psql "$PGURL" -v ON_ERROR_STOP=1 -f infra/local/initdb/02-db-grants.sql
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Get Playwright version
+        id: playwright
+        working-directory: apps/web
+        run: node -p "'version=' + require('@playwright/test/package.json').version" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v5
+        id: browsers
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright.outputs.version }}-chromium-shell
+      - name: Install Chromium
+        if: steps.browsers.outputs.cache-hit != 'true'
+        run: pnpm --filter @product-res/web exec playwright install --with-deps --only-shell chromium
+      - name: Install Chromium system dependencies
+        if: steps.browsers.outputs.cache-hit == 'true'
+        timeout-minutes: 5
+        run: pnpm --filter @product-res/web exec playwright install-deps chromium
+      - name: Prepare local authentication and migrate
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs'
+          import { randomBytes } from 'node:crypto'
+          const vars = readFileSync('apps/web/.dev.vars.example', 'utf8')
+            .replace(/^BETTER_AUTH_SECRET=.*$/m, `BETTER_AUTH_SECRET=${randomBytes(32).toString('base64')}`)
+          writeFileSync('apps/web/.dev.vars', vars, { mode: 0o600 })
+          NODE
+          pnpm --filter @product-res/db db:migrate
+      - name: Run local e2e smoke
+        run: pnpm --filter @product-res/web test:e2e:smoke
+      # 只上传 HTML report；冒烟配置禁用 trace、video 和 screenshot，不上传服务器日志。
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: playwright-smoke-report
+          path: apps/web/playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore

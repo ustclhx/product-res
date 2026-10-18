@@ -1,0 +1,28 @@
+{
+  "runtimeSha": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+  "accepted": true,
+  "uniqueCases": 11,
+  "singleAllGreenSuiteRun": false,
+  "initialSuite": {
+    "file": "workflow-first.json",
+    "passed": 10,
+    "failed": 1,
+    "pending": 0
+  },
+  "unchangedLongCase": {
+    "file": "workflow-first.json",
+    "title": "Node durable workflows on real PostgreSQL runs a real 61-minute collection pipeline with same-version sleep/wait restarts and a 60+minute early event",
+    "status": "passed",
+    "durationMs": 3675357.646284
+  },
+  "approvedFixtureFastSuite": {
+    "file": "workflow-approved-fast.json",
+    "fixtureCommit": "e5cdd87",
+    "passed": 10,
+    "failed": 0,
+    "pendingLong": 1
+  },
+  "allOriginalAssertionsPreserved": true,
+  "businessRuntimeUnchanged": true,
+  "newOfficialImagePublished": false
+}

@@ -1,0 +1,37 @@
+{
+	http_port 8080
+	https_port 443
+	email {$ACME_EMAIL}
+	servers {
+		protocols h1 h2
+	}
+}
+
+{$APP_DOMAIN} {
+	import /etc/caddy/tls-{$CADDY_TLS_MODE}.caddy
+	reverse_proxy web:3000 {
+		header_up X-Forwarded-For {http.request.remote.host}
+		header_up -CF-Connecting-IP
+		header_up -Forwarded
+	}
+}
+
+{$S3_PUBLIC_DOMAIN} {
+	import /etc/caddy/tls-{$CADDY_TLS_MODE}.caddy
+	# 4.48 的 bucket Write 也允许改 CORS/生命周期；管理写入只走内部 bootstrap。
+	@bucket_write {
+		path_regexp bucket_write ^/[^/]+/?$
+		method PUT POST DELETE
+	}
+	respond @bucket_write 403
+	# 代理故障由固定响应处理，避免 Caddy 默认 error log 记录带签名的 request URI。
+	handle_errors {
+		respond "Object storage is unavailable" 503
+	}
+	# 不启用 access log，避免预签名 query 落日志；默认保留原 Host、路径和查询。
+	reverse_proxy object-storage:8333 {
+		header_up X-Forwarded-For {http.request.remote.host}
+		header_up -CF-Connecting-IP
+		header_up -Forwarded
+	}
+}

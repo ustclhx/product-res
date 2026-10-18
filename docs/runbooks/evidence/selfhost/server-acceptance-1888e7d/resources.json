@@ -1,0 +1,195 @@
+{
+  "sha": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+  "sampleStart": "2026-10-16T16:00:16.285512+00:00",
+  "sampleEnd": "2026-10-16T17:57:39.703420+00:00",
+  "samples": 785,
+  "samplingGapsOver30Seconds": [
+    {
+      "from": "2026-10-16T17:21:25.661216+00:00",
+      "to": "2026-10-16T17:42:54.728829+00:00",
+      "seconds": 1289.068
+    },
+    {
+      "from": "2026-10-16T17:48:10.742554+00:00",
+      "to": "2026-10-16T17:48:59.430294+00:00",
+      "seconds": 48.688
+    }
+  ],
+  "cpuCounterResets": 1,
+  "rawSha256": "0479c4e17d39876fcf9ff3c43fedf01aa09548cadc99571929eab8e86f7896a2",
+  "hostPhysicalMemoryMiB": 3495.140625,
+  "minAvailableMemoryMiB": 1392.742,
+  "maxOwnedContainerWorkingSetMiB": 1456.86,
+  "minFreeDiskGiB": 7.7639,
+  "hostCpuPercent": {
+    "max": 99.106,
+    "p95": 66.891,
+    "tickWeightedMean": 28.205
+  },
+  "postgres": {
+    "connections": {
+      "first": 7,
+      "last": 14,
+      "max": 44
+    },
+    "idleInTransaction": {
+      "first": 0,
+      "last": 0,
+      "max": 2
+    },
+    "databaseBytes": {
+      "first": 7714483,
+      "last": 11425459,
+      "max": 11425459
+    },
+    "walBytes": {
+      "first": 33554432,
+      "last": 218104174,
+      "max": 234881390
+    },
+    "engineBytes": {
+      "first": 0,
+      "last": 1122304,
+      "max": 1122304
+    }
+  },
+  "swapKiB": {
+    "initialUsed": 69272,
+    "finalUsed": 0,
+    "maxUsed": 69272
+  },
+  "containers": {
+    "product-res-selfhost-postgres-1": {
+      "maxWorkingSetMiB": 476.6,
+      "maxDockerCpuPercent": 44.96
+    },
+    "product-res-selfhost-valkey-1": {
+      "maxWorkingSetMiB": 18.05,
+      "maxDockerCpuPercent": 7.19
+    },
+    "product-res-selfhost-migrate-1": {
+      "maxWorkingSetMiB": 98.67,
+      "maxDockerCpuPercent": 30.43
+    },
+    "product-res-selfhost-web-1": {
+      "maxWorkingSetMiB": 142.1,
+      "maxDockerCpuPercent": 31.26
+    },
+    "product-res-selfhost-jobs-1": {
+      "maxWorkingSetMiB": 124.1,
+      "maxDockerCpuPercent": 30.09
+    },
+    "product-res-selfhost-backup-1": {
+      "maxWorkingSetMiB": 171.2,
+      "maxDockerCpuPercent": 21.46
+    },
+    "product-res-selfhost-caddy-1": {
+      "maxWorkingSetMiB": 38.91,
+      "maxDockerCpuPercent": 3.77
+    },
+    "selfhost-accept-storage": {
+      "maxWorkingSetMiB": 107.2,
+      "maxDockerCpuPercent": 47.88
+    },
+    "selfhost-accept-scheduler": {
+      "maxWorkingSetMiB": 273.5,
+      "maxDockerCpuPercent": 51.8
+    },
+    "selfhost-accept-queue": {
+      "maxWorkingSetMiB": 157.6,
+      "maxDockerCpuPercent": 32.44
+    },
+    "selfhost-accept-workflow": {
+      "maxWorkingSetMiB": 211.1,
+      "maxDockerCpuPercent": 52.19
+    },
+    "selfhost-accept-jobs2": {
+      "maxWorkingSetMiB": 116.6,
+      "maxDockerCpuPercent": 29.36
+    },
+    "selfhost-accept-acme": {
+      "maxWorkingSetMiB": 16.26,
+      "maxDockerCpuPercent": 0.23
+    },
+    "selfhost-accept-scheduler-r2": {
+      "maxWorkingSetMiB": 251.6,
+      "maxDockerCpuPercent": 52.13
+    },
+    "selfhost-accept-queue-r2": {
+      "maxWorkingSetMiB": 284.6,
+      "maxDockerCpuPercent": 50.57
+    },
+    "selfhost-accept-workflow-r2": {
+      "maxWorkingSetMiB": 236.1,
+      "maxDockerCpuPercent": 52.42
+    },
+    "selfhost-accept-probe": {
+      "maxWorkingSetMiB": 96.13,
+      "maxDockerCpuPercent": 20.15
+    },
+    "selfhost-restore-server-main-1888-postgres-run-12dd10f4d9c2": {
+      "maxWorkingSetMiB": 0,
+      "maxDockerCpuPercent": 0
+    },
+    "selfhost-restore-server-main-1888-postgres-run-e4b48aafa212": {
+      "maxWorkingSetMiB": 54.41,
+      "maxDockerCpuPercent": 9.67
+    },
+    "selfhost-restore-server-main-1888-postgres": {
+      "maxWorkingSetMiB": 130.3,
+      "maxDockerCpuPercent": 47.85
+    },
+    "selfhost-restore-server-replica-1888-postgres-run-c6cb6eee0765": {
+      "maxWorkingSetMiB": 47.88,
+      "maxDockerCpuPercent": 9.93
+    },
+    "selfhost-restore-server-replica-1888-postgres": {
+      "maxWorkingSetMiB": 107.5,
+      "maxDockerCpuPercent": 31.77
+    },
+    "selfhost-accept-permits-r3": {
+      "maxWorkingSetMiB": 281.5,
+      "maxDockerCpuPercent": 51.96
+    },
+    "selfhost-restore-server-main-ro-1888-postgres-run-fbda050df264": {
+      "maxWorkingSetMiB": 41.29,
+      "maxDockerCpuPercent": 10.83
+    },
+    "selfhost-restore-server-main-ro-1888-postgres": {
+      "maxWorkingSetMiB": 138.4,
+      "maxDockerCpuPercent": 43.35
+    },
+    "selfhost-restore-server-replica-ro-1888-postgres-run-70a77fbb9902": {
+      "maxWorkingSetMiB": 0,
+      "maxDockerCpuPercent": 0
+    },
+    "selfhost-restore-server-replica-ro-1888-postgres": {
+      "maxWorkingSetMiB": 116.0,
+      "maxDockerCpuPercent": 34.67
+    },
+    "selfhost-accept-recovery-r3": {
+      "maxWorkingSetMiB": 216.4,
+      "maxDockerCpuPercent": 50.22
+    },
+    "selfhost-accept-recovery-r4": {
+      "maxWorkingSetMiB": 184.5,
+      "maxDockerCpuPercent": 101.78
+    },
+    "selfhost-accept-recovery-r5": {
+      "maxWorkingSetMiB": 192.1,
+      "maxDockerCpuPercent": 114.87
+    },
+    "selfhost-accept-recovery-r6": {
+      "maxWorkingSetMiB": 235.7,
+      "maxDockerCpuPercent": 111.57
+    }
+  },
+  "notes": [
+    "Host CPU 100% means both vCPUs. Derived from Linux /proc/stat deltas, excludes idle and iowait; guest fields excluded from total to avoid double-counting.",
+    "Docker CPU 100% means one core. Memory is Docker working set, not exact RSS; cgroup peaks and OOM counters are separate evidence.",
+    "CPU excludes intervals over 30s and reset counters; sampler intentionally stopped while awaiting approval, and host reboot interrupts sampling. Gaps are reported, not presented as continuous coverage. Nominal sleep 5s plus collection time; actual intervals are preserved. Sampling boundaries are explicit; recorded deployment/migration activity, manual full backup, restores and all long tests are included.",
+    "PG connections/WAL are cluster-wide; databaseBytes/engineBytes cover main product_res_production only; engine-footprints records isolated suite databases separately.",
+    "Transient idle-in-transaction is expected during caller-transaction visibility/rollback tests; report final value separately.",
+    "Limits are per-service ceilings, not reserved memory. Official resident limits total 3712MiB with backup, 4480MiB with second jobs; simultaneous saturation exceeds this host. Results apply to measured fixture workload, not arbitrary production concurrency."
+  ]
+}

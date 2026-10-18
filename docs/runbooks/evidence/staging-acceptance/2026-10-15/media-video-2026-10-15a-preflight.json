@@ -1,0 +1,43 @@
+{
+  "runId": "media-video-2026-10-15a",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T17:15:16.086Z",
+  "data": {
+    "version": "7e7c99cec99396e8b469222b3b489a56d73769df",
+    "dbUp": true,
+    "noStore": true,
+    "dedicatedProfileVerified": true,
+    "ordinaryUserId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+    "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+    "modelId": "01a13192-5f47-70c8-b7de-c46926b54e99",
+    "modelKey": "acceptance-fal-video",
+    "providerModelId": "fal-ai/wan/v2.2-a14b/text-to-video/turbo",
+    "enabledVideoModelCount": 1,
+    "modelAllowed": true,
+    "appCredits": 3,
+    "parameters": {
+      "resolution": "480p",
+      "enablePromptExpansion": false,
+      "durationConfigurable": false
+    },
+    "providerPricingReference": "https://fal.ai/models/fal-ai/wan/v2.2-a14b/text-to-video/turbo",
+    "listedProviderPriceUsd": 0.05,
+    "providerChargeVerified": false,
+    "minimumResolution": "480p",
+    "openingSnapshot": {
+      "ledgerTotal": 27,
+      "activeRemaining": 27,
+      "available": 27,
+      "held": 0,
+      "debt": 0,
+      "activeTasks": 0,
+      "storageBytes": 2577860,
+      "reconciliationDifference": 0
+    },
+    "readOnlyTransaction": true,
+    "readonlyRoleCannotInsert": true,
+    "creditTopupPerformed": false,
+    "paidSubmissions": 0,
+    "markerIdentity": "d69d43cb3c85eb6f7011"
+  }
+}

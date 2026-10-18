@@ -1,0 +1,11 @@
+{
+  "runId": "billing-111-2026-10-15a",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T21:35:26.869Z",
+  "data": {
+    "subscriptionId": "01a13c56-9ecc-707a-9aff-c1259ccf7db8",
+    "providerSubscriptionId": "sub_1UQZodL3UTpBAoXoyKOB4Fgo",
+    "action": "cancel",
+    "clickPlanned": 1
+  }
+}

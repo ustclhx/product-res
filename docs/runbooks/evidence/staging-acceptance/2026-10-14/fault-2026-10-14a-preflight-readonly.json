@@ -1,0 +1,32 @@
+{
+  "runId": "fault-2026-10-14a",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T06:43:03.638Z",
+  "data": {
+    "adminUserId": "01a12ef0-66cc-75e2-88d0-eac1f1904d3c",
+    "workspaceId": "01a12ef0-66cc-75e2-88d0-eac1f1904d3c",
+    "slug": "u-1rgeuqof",
+    "version": "d6a9a3f467f44432e6059fd72a563c9a9818247d",
+    "dedicatedProfileVerified": true,
+    "administratorIsOwner": true,
+    "readOnlyTransactionVerified": true,
+    "readOnlyRoleVerified": true,
+    "modelCount": 11,
+    "existingFaultModels": [],
+    "preconditions": {
+      "missingModelKeys": [],
+      "balance": 100,
+      "minimumCredits": 30,
+      "debt": 0,
+      "activeTasks": 0,
+      "maxConcurrentTasks": 3,
+      "remainingStorageBytes": 5368709120,
+      "minimumStorageBytes": 10485760,
+      "modelConfigurationConflicts": []
+    },
+    "blocked": false,
+    "creditTopupRequired": false,
+    "readinessPassed": true,
+    "paidGenerationCallsPerformed": 0
+  }
+}

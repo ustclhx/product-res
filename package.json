@@ -1,0 +1,34 @@
+{
+  "name": "product-res",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.8.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "check": "biome check . && node scripts/check-credit-writes.mjs && node scripts/check-payment-runtime.mjs && node --test scripts/check-payment-runtime.test.mjs scripts/local-payment-env.test.mjs && node --test scripts/staging/staging.test.mjs scripts/production/production.test.mjs",
+    "check:fix": "biome check --write .",
+    "check:deps": "node scripts/check-deps.mjs && node --test scripts/check-deps.test.mjs",
+    "check:singletons": "node scripts/check-singletons.mjs",
+    "billing:seed": "pnpm --filter @product-res/billing seed",
+    "billing:sync": "pnpm --filter @product-res/billing sync",
+    "create-project": "node scripts/create-project",
+    "test:create-project": "node --test scripts/create-project.test.mjs",
+    "test:create-project:verify": "node --test scripts/create-project.verify.test.mjs",
+    "staging:check-secrets": "node scripts/staging/check-secrets.mjs",
+    "build:node": "node apps/web/scripts/build-node.mjs"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@product-res/config": "workspace:*",
+    "@sentry/cli": "^3.8.0",
+    "source-map": "0.7.6",
+    "turbo": "^2.11.7",
+    "typescript": "^7.0.2"
+  }
+}

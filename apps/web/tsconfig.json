@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["vite/client", "@cloudflare/workers-types"],
+    // content-collections 的生成目录（vite.config.ts 中的插件配置同名别名）
+    "paths": { "content-collections": ["./.content-collections/generated"] }
+  },
+  "include": ["src"]
+}

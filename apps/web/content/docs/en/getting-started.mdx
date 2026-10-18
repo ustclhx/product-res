@@ -1,0 +1,21 @@
+---
+title: Getting started
+description: Run the template locally in a few minutes.
+section: Basics
+order: 1
+---
+
+## Requirements
+
+- Node.js 22 or later and pnpm
+- Docker, for the local Postgres database
+
+## Run it
+
+```bash
+pnpm install
+pnpm --filter @product-res/db db:migrate
+pnpm dev
+```
+
+Open the address printed in the terminal to see the marketing site.

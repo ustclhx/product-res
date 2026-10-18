@@ -1,0 +1,6 @@
+**
+!deploy/
+!deploy/selfhost/
+!deploy/selfhost/*.sh
+!deploy/selfhost/Caddyfile
+!deploy/selfhost/tls-*.caddy

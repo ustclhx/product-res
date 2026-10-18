@@ -1,0 +1,46 @@
+{
+  "scope": "official migration image engine; controlled handler fixture",
+  "officialSha": "081305013b022f457c561eecf5828b1959e13908",
+  "patched": false,
+  "checks": [
+    {
+      "check": "unfinished task persisted before host reboot",
+      "passed": true,
+      "callbackCount": 1,
+      "originalDeadline": "2026-10-14T17:36:22.78369+00:00"
+    },
+    {
+      "check": "host reboot resumes original task without repeating successful step",
+      "passed": true,
+      "taskIdentityPreserved": true,
+      "originalDeadlinePreserved": true,
+      "preparedCallbacks": 1,
+      "completedCallbacks": 1
+    },
+    {
+      "check": "container recreate recovers task with owner history retained",
+      "passed": true,
+      "originalDeadlinePreserved": true,
+      "successfulCallbacksNotRepeated": true,
+      "ownershipVolumePreserved": true
+    },
+    {
+      "check": "official release unsafe namespace reuse reproduced",
+      "passed": true,
+      "oldProcessAlive": true,
+      "unsafeReuseObserved": true,
+      "acceptanceFailure": true
+    },
+    {
+      "check": "same executor starts after verified real exit",
+      "passed": true,
+      "ownershipVolumePreserved": true
+    },
+    {
+      "check": "probe resources cleaned",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "acceptancePassed": false
+}

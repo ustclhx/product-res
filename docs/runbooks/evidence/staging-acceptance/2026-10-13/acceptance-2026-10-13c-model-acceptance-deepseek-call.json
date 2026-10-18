@@ -1,0 +1,21 @@
+{
+  "runId": "acceptance-2026-10-13c",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T06:53:11.421Z",
+  "data": {
+    "modelId": "01a13191-a5d9-71f2-bc42-a5481bcd2111",
+    "modelKey": "acceptance-deepseek-call",
+    "status": "verified-existing",
+    "pricing": {
+      "mode": "per_call",
+      "credits": 2,
+      "chargeOn": "any_output",
+      "limits": {
+        "maxInputTokens": 4096,
+        "maxOutputTokens": 1024
+      }
+    },
+    "auditIds": ["01a13191-a5f7-7401-86c7-ac8db0f01fdd"],
+    "parameterSchemaStatus": "configured"
+  }
+}

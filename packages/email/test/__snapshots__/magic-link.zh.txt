@@ -1,0 +1,18 @@
+Acme
+
+
+登录 Acme
+
+你好：
+
+点击下方按钮即可登录。链接 5 分钟内有效，且只能使用一次。
+
+登录 https://acme.test/api/auth/magic-link/verify?token=tok_magic
+
+如果按钮无法点击，请将以下链接复制到浏览器中打开：
+
+https://acme.test/api/auth/magic-link/verify?token=tok_magic
+
+----------------------------------------
+
+如果这不是你本人的操作，请忽略这封邮件。

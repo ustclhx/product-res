@@ -1,0 +1,10 @@
+{
+  "runId": "acceptance-2026-10-13j",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T12:03:34.496Z",
+  "data": {
+    "status": 500,
+    "requestId": "01a13525-86e8-732f-98e5-9444d2cc6953",
+    "state": "sentry-event-pending-manual-verification"
+  }
+}

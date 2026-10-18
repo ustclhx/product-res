@@ -1,0 +1,65 @@
+{
+  "mode": "scheduler",
+  "sha": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+  "exitCode": 0,
+  "success": true,
+  "startedAt": "2026-10-16T16:09:36.691Z",
+  "tests": 10,
+  "passed": 10,
+  "failed": 0,
+  "pending": 0,
+  "endedAt": "2026-10-16T16:21:20.059Z",
+  "results": [
+    {
+      "title": "persistent Node scheduler on PostgreSQL delivers Singapore 02:00 as the preceding UTC 18:00 Date and rejects invalid startup parameters",
+      "status": "passed",
+      "durationMs": 14130.312536000001
+    },
+    {
+      "title": "persistent Node scheduler on PostgreSQL deduplicates a slot across two jobs and never overlaps a long run across subsequent slots",
+      "status": "passed",
+      "durationMs": 10937.577654
+    },
+    {
+      "title": "persistent Node scheduler on PostgreSQL really misses multiple second slots during downtime, skips them or merges only the latest once across two restarts",
+      "status": "passed",
+      "durationMs": 14729.434394
+    },
+    {
+      "title": "persistent Node scheduler on PostgreSQL restores a started skip run across two live jobs after SIGKILL with its stable identity and one business effect",
+      "status": "passed",
+      "durationMs": 11745.937037999996
+    },
+    {
+      "title": "persistent Node scheduler on PostgreSQL recovers a persisted claimed run killed before publish across two live jobs with one business effect",
+      "status": "passed",
+      "durationMs": 10540.008603999995
+    },
+    {
+      "title": "persistent Node scheduler on PostgreSQL recovers native ERROR after a successful handler checkpoint without repeating its callback",
+      "status": "passed",
+      "durationMs": 4484.489560000002
+    },
+    {
+      "title": "persistent Node scheduler on PostgreSQL loses an owner connection without taking over the still live worker or accepting its late completion",
+      "status": "passed",
+      "durationMs": 8138.008627999996
+    },
+    {
+      "title": "persistent Node scheduler on PostgreSQL stops receiving on SIGTERM while preserving an unfinished run for restart",
+      "status": "passed",
+      "durationMs": 8852.277064000009
+    },
+    {
+      "title": "persistent Node scheduler on PostgreSQL serves uncached HTTP health from actual successful heartbeat and preserves it after a failed precondition",
+      "status": "passed",
+      "durationMs": 9575.568289999996
+    },
+    {
+      "title": "persistent Node scheduler on PostgreSQL keeps a real heartbeat stale after stopping jobs for more than ten minutes",
+      "status": "passed",
+      "durationMs": 605347.463428
+    }
+  ],
+  "events": []
+}

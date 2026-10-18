@@ -1,0 +1,30 @@
+{
+  "releasedBundle": {
+    "run": "https://github.com/ustclhx/product-res/actions/runs/38583108140",
+    "conclusion": "success",
+    "artifact": "selfhost-released-bundle-acceptance-38583108140"
+  },
+  "initialAttempt": {
+    "run": "https://github.com/ustclhx/product-res/actions/runs/38580237120",
+    "conclusion": "failure",
+    "cause": "runner ordinary-user bind preflight for 80/443",
+    "applicationStarted": false
+  },
+  "otherChecks": {
+    "localDelivery": "passed",
+    "rootCheck": "passed",
+    "node": "passed",
+    "e2eSmoke": "passed",
+    "disabledFeaturesCompose": "passed"
+  },
+  "imageSmoke": {
+    "run": "https://github.com/ustclhx/product-res/actions/runs/38583108113",
+    "arm64": "failed at test-backup.mjs; wrapper withheld details; backup code unchanged",
+    "amd64": "pending when recorded",
+    "firstPublishedSourceRun": "https://github.com/ustclhx/product-res/actions/runs/38573156122",
+    "firstPublishedSourceBothArchitectures": "success",
+    "previousRun": "https://github.com/ustclhx/product-res/actions/runs/38580845303"
+  },
+  "noPublishOrRealServerAccess": true,
+  "previousPassedBundleRun": "https://github.com/ustclhx/product-res/actions/runs/38580845250"
+}

@@ -1,0 +1,17 @@
+{
+  // 7.2 临时探针：通过 script_name 绑定 probe-72-workflow 中的 Workflow（模拟 apps/web → apps/jobs）。
+  // PROBE_TOKEN 在部署时用 --var 传入，不写入仓库。实测完成后 wrangler delete，见 ../README.md
+  "$schema": "../../../../apps/jobs/node_modules/wrangler/config-schema.json",
+  "name": "probe-72-caller",
+  "main": "./index.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "workflows": [
+    {
+      "name": "probe-72-wf",
+      "binding": "PROBE_WF",
+      "class_name": "ProbeWorkflow",
+      "script_name": "probe-72-workflow"
+    }
+  ]
+}

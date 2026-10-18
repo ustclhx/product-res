@@ -1,0 +1,42 @@
+{
+  "sha": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+  "scope": "Docker PG capped at 2 CPU/1GiB; host Node worker uncapped. Fast workflow suite used another database on the same PG cluster. Not a whole-machine 2CPU/4GiB acceptance.",
+  "samplingStart": "2026-10-14T11:56:20.255635+00:00",
+  "samplingEnd": "2026-10-14T12:56:49.360164+00:00",
+  "samples": 60,
+  "samplingErrors": [],
+  "pgMaxDockerCpuPercent": 6.4,
+  "pgMaxWorkingSetMiB": 72.04,
+  "pgKernelMemoryPeakBytes": 140591104,
+  "pgMemoryEvents": {
+    "low": "0",
+    "high": "0",
+    "max": "0",
+    "oom": "0",
+    "oom_kill": "0",
+    "oom_group_kill": "0"
+  },
+  "pgOOMKilled": false,
+  "longDatabaseMaxConnections": 6,
+  "longWorkerPid": 29691,
+  "longWorkerMaxRssKiB": 113840,
+  "longWorkerMaxLifetimeAverageCpuPercent": 4.0,
+  "clusterWalGrowthDuringSamplingBytes": 7246480,
+  "longDatabaseGrowthDuringSamplingBytes": 106496,
+  "finalStorage": {
+    "journalTableBytes": 950272,
+    "databaseBytes": 11048627,
+    "walPosition": "0/22B70D8",
+    "connections": 1
+  },
+  "postgresImageDigests": [
+    "postgres@sha256:d74eeac9a635390a49bc21bd49fccd973de707e2a53a76ac49b552b8712ec46f"
+  ],
+  "rawSamplingSha256": "6953ef044e13ffe62b22899091fe08811cfb25a8774687336ed0758f70e1f2f8",
+  "metricNotes": [
+    "Docker CPU 100% represents one core. ps CPU is lifetime average, not instantaneous.",
+    "journalRelationFootprintSumBytes sums all schema relations and double-counts indexes; retained as a trend metric only. finalStorage.journalTableBytes filters regular/materialized tables and counts their indexes once.",
+    "hostWorkflowWorkers matches fixture process names; summary isolates verified long-worker PID29691 rather than attributing every matching process to this run.",
+    "WAL is cluster-wide and includes fast suite/migrations; growth excludes time before first sample."
+  ]
+}

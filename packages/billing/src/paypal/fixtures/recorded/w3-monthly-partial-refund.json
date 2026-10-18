@@ -1,0 +1,42 @@
+{
+  "id": "95R03124HK508535V",
+  "state": "completed",
+  "amount": {
+    "total": "4.00",
+    "currency": "USD"
+  },
+  "refund_from_received_amount": {
+    "value": "4.00",
+    "currency": "USD"
+  },
+  "refund_from_transaction_fee": {
+    "value": "0.00",
+    "currency": "USD"
+  },
+  "total_refunded_amount": {
+    "value": "4.00",
+    "currency": "USD"
+  },
+  "refund_to_payer": {
+    "value": "4.00",
+    "currency": "USD"
+  },
+  "invoice_number": "",
+  "custom": "[1,\"01a12ef0-66cc-75e2-88d0-eac1f1904d3c\",\"01a11bac-8ffa-740a-b8e6-0624cd93c617\",\"01a12ef0-66cc-75e2-88d0-eac1f1904d3c\"]",
+  "sale_id": "71D187337X5761003",
+  "create_time": "2026-10-18T06:11:41Z",
+  "update_time": "2026-10-18T06:11:41Z",
+  "links": [
+    {
+      "href": "https://api.sandbox.paypal.com/v1/payments/refund/95R03124HK508535V",
+      "rel": "self",
+      "method": "GET"
+    },
+    {
+      "href": "https://api.sandbox.paypal.com/v1/payments/sale/71D187337X5761003",
+      "rel": "sale",
+      "method": "GET"
+    }
+  ],
+  "refund_reason_code": "REFUND"
+}

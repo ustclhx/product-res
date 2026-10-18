@@ -1,0 +1,465 @@
+{
+  "collectedAt": "2026-10-14T11:59:37.051582+00:00",
+  "runs": [
+    {
+      "id": "01a13a46-b129-71da-8b44-185a0973dd6c",
+      "schedule_id": "schedule-50ab87fc-134e-4f38-8d6b-1429fda9529d",
+      "scheduled_at": "2026-10-14T00:00:00+00:00",
+      "state": "completed",
+      "executor_id": "5263ba2d-3256-4214-aa55-087802623907",
+      "started_at": "2026-10-14T11:57:53.86+00:00",
+      "finished_at": "2026-10-14T11:57:53.884+00:00"
+    },
+    {
+      "id": "01a13a46-5c80-7744-b9d6-e82878566176",
+      "schedule_id": "schedule-b240b853-0576-4214-80e8-2f49ffd819e3",
+      "scheduled_at": "2026-10-14T11:57:31+00:00",
+      "state": "completed",
+      "executor_id": "8590cdc3-8057-4775-9982-398fe21a824e",
+      "started_at": "2026-10-14T11:57:32.186+00:00",
+      "finished_at": "2026-10-14T11:57:35.412+00:00"
+    },
+    {
+      "id": "01a13a46-7b7e-70cd-800f-553528eb28c4",
+      "schedule_id": "schedule-1cc87347-0bb7-4d72-b01c-058287d168ef",
+      "scheduled_at": "2026-10-14T11:57:40+00:00",
+      "state": "completed",
+      "executor_id": "0fda4ad1-8431-4dbb-ab0d-f076b24f02f3",
+      "started_at": "2026-10-14T11:57:40.12+00:00",
+      "finished_at": "2026-10-14T11:57:40.139+00:00"
+    },
+    {
+      "id": "01a13a46-7f21-7504-a57f-241733f73a4d",
+      "schedule_id": "schedule-af294598-6220-454f-bd9e-50f5e7014075",
+      "scheduled_at": "2026-10-14T11:57:41+00:00",
+      "state": "completed",
+      "executor_id": "0fda4ad1-8431-4dbb-ab0d-f076b24f02f3",
+      "started_at": "2026-10-14T11:57:41.045+00:00",
+      "finished_at": "2026-10-14T11:57:41.06+00:00"
+    },
+    {
+      "id": "01a13a46-7f40-77bd-9835-60981eac8e3d",
+      "schedule_id": "schedule-1cc87347-0bb7-4d72-b01c-058287d168ef",
+      "scheduled_at": "2026-10-14T11:57:41+00:00",
+      "state": "claimed",
+      "executor_id": "04309f75-db85-4345-a3b8-f7b1d33842f9",
+      "started_at": null,
+      "finished_at": null
+    },
+    {
+      "id": "01a13a46-826e-7547-81b7-116fccd36fb3",
+      "schedule_id": "schedule-77914ac5-fa79-45d4-9ec7-4d5caf0738ea",
+      "scheduled_at": "2026-10-14T11:57:42+00:00",
+      "state": "completed",
+      "executor_id": "09bbd6a4-7d89-455d-8781-ca923a27893a",
+      "started_at": "2026-10-14T11:57:41.891+00:00",
+      "finished_at": "2026-10-14T11:57:43.591+00:00"
+    },
+    {
+      "id": "01a13a46-8b40-76cc-b639-cccc3b0da357",
+      "schedule_id": "schedule-8b6cb2cb-2084-497e-991c-9518351197c9",
+      "scheduled_at": "2026-10-14T11:57:44+00:00",
+      "state": "completed",
+      "executor_id": "69606439-2aa9-4d84-96f3-08611d52f2bf",
+      "started_at": "2026-10-14T11:57:44.852+00:00",
+      "finished_at": "2026-10-14T11:57:44.872+00:00"
+    },
+    {
+      "id": "01a13a46-90b2-761a-a736-56d4f0fe0386",
+      "schedule_id": "schedule-c24192ed-7e73-4b7d-92bc-cc9a77f6d268",
+      "scheduled_at": "2026-10-14T11:57:45+00:00",
+      "state": "completed",
+      "executor_id": "640745af-d199-4aee-afd8-ecd0331913ee",
+      "started_at": "2026-10-14T11:57:45.545+00:00",
+      "finished_at": "2026-10-14T11:57:46.519+00:00"
+    },
+    {
+      "id": "01a13a46-9695-70bd-bdb8-c5500bb6a8bf",
+      "schedule_id": "schedule-c43e8c5a-39c5-4658-b9c4-341ef45e4454",
+      "scheduled_at": "2026-10-14T11:57:47+00:00",
+      "state": "completed",
+      "executor_id": "a66cc99c-32e4-47ef-87f9-5ef2d15c130f",
+      "started_at": "2026-10-14T11:57:47.065+00:00",
+      "finished_at": "2026-10-14T11:57:48.698+00:00"
+    },
+    {
+      "id": "01a13a46-9f69-7410-95fb-e98173910264",
+      "schedule_id": "schedule-bef5fe1a-60e8-48ac-b965-da36b64d7ba9",
+      "scheduled_at": "2026-10-14T11:57:49+00:00",
+      "state": "completed",
+      "executor_id": "9517b205-d475-4813-a93f-a0baa82db8fc",
+      "started_at": "2026-10-14T11:57:49.311+00:00",
+      "finished_at": "2026-10-14T11:57:52.271+00:00"
+    },
+    {
+      "id": "01a13a46-ae25-77a7-9529-6550c98f09b1",
+      "schedule_id": "schedule-eb96c382-83b4-409d-a3ea-ebdca9ca5fc4",
+      "scheduled_at": "2026-10-14T11:57:53+00:00",
+      "state": "claimed",
+      "executor_id": null,
+      "started_at": null,
+      "finished_at": null
+    },
+    {
+      "id": "01a13a46-b19f-725a-b109-21b8f2e3f6d1",
+      "schedule_id": "schedule-50ab87fc-134e-4f38-8d6b-1429fda9529d",
+      "scheduled_at": "2026-10-15T00:00:00+00:00",
+      "state": "failed",
+      "executor_id": "5263ba2d-3256-4214-aa55-087802623907",
+      "started_at": "2026-10-14T11:57:53.979+00:00",
+      "finished_at": "2026-10-14T11:57:53.987+00:00"
+    },
+    {
+      "id": "01a13a46-5073-76e1-9300-bb6547d4d2e0",
+      "schedule_id": "schedule-0f80e754-c265-42d1-9260-af210cb2933a",
+      "scheduled_at": "2030-01-01T18:00:00+00:00",
+      "state": "completed",
+      "executor_id": "269a6870-9962-4db7-a466-da7264ec827d",
+      "started_at": "2026-10-14T11:57:29.099+00:00",
+      "finished_at": "2026-10-14T11:57:29.115+00:00"
+    }
+  ],
+  "attempts": [
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-0f80e754-c265-42d1-9260-af210cb2933a",
+      "scheduled_at": "2030-01-01T18:00:00+00:00",
+      "workflow_id": "schedule-run:01a13a46-5073-76e1-9300-bb6547d4d2e0",
+      "executor_id": "269a6870-9962-4db7-a466-da7264ec827d",
+      "started_at": "2026-10-14T11:57:29.105304+00:00",
+      "finished_at": "2026-10-14T11:57:29.108003+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-b240b853-0576-4214-80e8-2f49ffd819e3",
+      "scheduled_at": "2026-10-14T11:57:31+00:00",
+      "workflow_id": "schedule-run:01a13a46-5c80-7744-b9d6-e82878566176",
+      "executor_id": "8590cdc3-8057-4775-9982-398fe21a824e",
+      "started_at": "2026-10-14T11:57:32.193954+00:00",
+      "finished_at": "2026-10-14T11:57:35.398804+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-1cc87347-0bb7-4d72-b01c-058287d168ef",
+      "scheduled_at": "2026-10-14T11:57:40+00:00",
+      "workflow_id": "schedule-run:01a13a46-7b7e-70cd-800f-553528eb28c4",
+      "executor_id": "0fda4ad1-8431-4dbb-ab0d-f076b24f02f3",
+      "started_at": "2026-10-14T11:57:40.128682+00:00",
+      "finished_at": "2026-10-14T11:57:40.130679+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-af294598-6220-454f-bd9e-50f5e7014075",
+      "scheduled_at": "2026-10-14T11:57:41+00:00",
+      "workflow_id": "schedule-run:01a13a46-7f21-7504-a57f-241733f73a4d",
+      "executor_id": "0fda4ad1-8431-4dbb-ab0d-f076b24f02f3",
+      "started_at": "2026-10-14T11:57:41.051684+00:00",
+      "finished_at": "2026-10-14T11:57:41.053283+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-77914ac5-fa79-45d4-9ec7-4d5caf0738ea",
+      "scheduled_at": "2026-10-14T11:57:42+00:00",
+      "workflow_id": "schedule-run:01a13a46-826e-7547-81b7-116fccd36fb3",
+      "executor_id": "4160240c-f3e7-416d-a303-e4f80d037456",
+      "started_at": "2026-10-14T11:57:41.896958+00:00",
+      "finished_at": null
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-77914ac5-fa79-45d4-9ec7-4d5caf0738ea",
+      "scheduled_at": "2026-10-14T11:57:42+00:00",
+      "workflow_id": "schedule-run:01a13a46-826e-7547-81b7-116fccd36fb3",
+      "executor_id": "09bbd6a4-7d89-455d-8781-ca923a27893a",
+      "started_at": "2026-10-14T11:57:43.583014+00:00",
+      "finished_at": "2026-10-14T11:57:43.584645+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-8b6cb2cb-2084-497e-991c-9518351197c9",
+      "scheduled_at": "2026-10-14T11:57:44+00:00",
+      "workflow_id": "schedule-run:01a13a46-8b40-76cc-b639-cccc3b0da357",
+      "executor_id": "69606439-2aa9-4d84-96f3-08611d52f2bf",
+      "started_at": "2026-10-14T11:57:44.861704+00:00",
+      "finished_at": "2026-10-14T11:57:44.863605+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-c24192ed-7e73-4b7d-92bc-cc9a77f6d268",
+      "scheduled_at": "2026-10-14T11:57:45+00:00",
+      "workflow_id": "schedule-run:01a13a46-90b2-761a-a736-56d4f0fe0386",
+      "executor_id": "640745af-d199-4aee-afd8-ecd0331913ee",
+      "started_at": "2026-10-14T11:57:45.553599+00:00",
+      "finished_at": "2026-10-14T11:57:45.556817+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-c43e8c5a-39c5-4658-b9c4-341ef45e4454",
+      "scheduled_at": "2026-10-14T11:57:47+00:00",
+      "workflow_id": "schedule-run:01a13a46-9695-70bd-bdb8-c5500bb6a8bf",
+      "executor_id": "owner-fabd1230-9f5c-4a91-a133-0bb3d1e9f8f9",
+      "started_at": "2026-10-14T11:57:47.074918+00:00",
+      "finished_at": "2026-10-14T11:57:47.18236+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-c43e8c5a-39c5-4658-b9c4-341ef45e4454",
+      "scheduled_at": "2026-10-14T11:57:47+00:00",
+      "workflow_id": "schedule-run:01a13a46-9695-70bd-bdb8-c5500bb6a8bf",
+      "executor_id": "a66cc99c-32e4-47ef-87f9-5ef2d15c130f",
+      "started_at": "2026-10-14T11:57:48.686797+00:00",
+      "finished_at": "2026-10-14T11:57:48.689623+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-bef5fe1a-60e8-48ac-b965-da36b64d7ba9",
+      "scheduled_at": "2026-10-14T11:57:49+00:00",
+      "workflow_id": "schedule-run:01a13a46-9f69-7410-95fb-e98173910264",
+      "executor_id": "48be6f2e-8ba6-4f48-b822-4a755f13ad3a",
+      "started_at": "2026-10-14T11:57:49.317856+00:00",
+      "finished_at": null
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-bef5fe1a-60e8-48ac-b965-da36b64d7ba9",
+      "scheduled_at": "2026-10-14T11:57:49+00:00",
+      "workflow_id": "schedule-run:01a13a46-9f69-7410-95fb-e98173910264",
+      "executor_id": "9517b205-d475-4813-a93f-a0baa82db8fc",
+      "started_at": "2026-10-14T11:57:52.26138+00:00",
+      "finished_at": "2026-10-14T11:57:52.263471+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-50ab87fc-134e-4f38-8d6b-1429fda9529d",
+      "scheduled_at": "2026-10-14T00:00:00+00:00",
+      "workflow_id": "schedule-run:01a13a46-b129-71da-8b44-185a0973dd6c",
+      "executor_id": "5263ba2d-3256-4214-aa55-087802623907",
+      "started_at": "2026-10-14T11:57:53.869308+00:00",
+      "finished_at": "2026-10-14T11:57:53.871952+00:00"
+    }
+  ],
+  "effects": [
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-0f80e754-c265-42d1-9260-af210cb2933a",
+      "scheduled_at": "2030-01-01T18:00:00+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-b240b853-0576-4214-80e8-2f49ffd819e3",
+      "scheduled_at": "2026-10-14T11:57:31+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-1cc87347-0bb7-4d72-b01c-058287d168ef",
+      "scheduled_at": "2026-10-14T11:57:40+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-af294598-6220-454f-bd9e-50f5e7014075",
+      "scheduled_at": "2026-10-14T11:57:41+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-77914ac5-fa79-45d4-9ec7-4d5caf0738ea",
+      "scheduled_at": "2026-10-14T11:57:42+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-8b6cb2cb-2084-497e-991c-9518351197c9",
+      "scheduled_at": "2026-10-14T11:57:44+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-c24192ed-7e73-4b7d-92bc-cc9a77f6d268",
+      "scheduled_at": "2026-10-14T11:57:45+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-c43e8c5a-39c5-4658-b9c4-341ef45e4454",
+      "scheduled_at": "2026-10-14T11:57:47+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-bef5fe1a-60e8-48ac-b965-da36b64d7ba9",
+      "scheduled_at": "2026-10-14T11:57:49+00:00"
+    },
+    {
+      "run_id": "822822c1-b21d-402a-8044-3bade8eb26bd",
+      "schedule_id": "schedule-50ab87fc-134e-4f38-8d6b-1429fda9529d",
+      "scheduled_at": "2026-10-14T00:00:00+00:00"
+    }
+  ],
+  "definitions": [
+    {
+      "id": "schedule-0f80e754-c265-42d1-9260-af210cb2933a",
+      "cron": "0 2 * * *",
+      "time_zone": "Asia/Singapore",
+      "missed_run": "once",
+      "next_scheduled_at": "2030-01-02T18:00:00+00:00"
+    },
+    {
+      "id": "schedule-4554f7a9-d379-476f-8941-83e239968429",
+      "cron": "0 2 * * *",
+      "time_zone": "UTC",
+      "missed_run": "skip",
+      "next_scheduled_at": "2026-10-15T02:00:00+00:00"
+    },
+    {
+      "id": "schedule-b240b853-0576-4214-80e8-2f49ffd819e3",
+      "cron": "* * * * * *",
+      "time_zone": "UTC",
+      "missed_run": "skip",
+      "next_scheduled_at": "2026-10-14T11:57:36+00:00"
+    },
+    {
+      "id": "schedule-1cc87347-0bb7-4d72-b01c-058287d168ef",
+      "cron": "* * * * * *",
+      "time_zone": "UTC",
+      "missed_run": "once",
+      "next_scheduled_at": "2026-10-14T11:57:42+00:00"
+    },
+    {
+      "id": "schedule-af294598-6220-454f-bd9e-50f5e7014075",
+      "cron": "* * * * * *",
+      "time_zone": "UTC",
+      "missed_run": "skip",
+      "next_scheduled_at": "2026-10-14T11:57:42+00:00"
+    },
+    {
+      "id": "schedule-77914ac5-fa79-45d4-9ec7-4d5caf0738ea",
+      "cron": "* * * * * *",
+      "time_zone": "UTC",
+      "missed_run": "skip",
+      "next_scheduled_at": "2026-10-14T11:57:44+00:00"
+    },
+    {
+      "id": "schedule-8b6cb2cb-2084-497e-991c-9518351197c9",
+      "cron": "* * * * * *",
+      "time_zone": "UTC",
+      "missed_run": "skip",
+      "next_scheduled_at": "2026-10-14T11:57:45+00:00"
+    },
+    {
+      "id": "schedule-c24192ed-7e73-4b7d-92bc-cc9a77f6d268",
+      "cron": "* * * * * *",
+      "time_zone": "UTC",
+      "missed_run": "skip",
+      "next_scheduled_at": "2026-10-14T11:57:47+00:00"
+    },
+    {
+      "id": "schedule-c43e8c5a-39c5-4658-b9c4-341ef45e4454",
+      "cron": "* * * * * *",
+      "time_zone": "UTC",
+      "missed_run": "skip",
+      "next_scheduled_at": "2026-10-14T11:57:49+00:00"
+    },
+    {
+      "id": "schedule-bef5fe1a-60e8-48ac-b965-da36b64d7ba9",
+      "cron": "* * * * * *",
+      "time_zone": "UTC",
+      "missed_run": "skip",
+      "next_scheduled_at": "2026-10-14T11:57:53+00:00"
+    },
+    {
+      "id": "schedule-eb96c382-83b4-409d-a3ea-ebdca9ca5fc4",
+      "cron": "* * * * * *",
+      "time_zone": "UTC",
+      "missed_run": "once",
+      "next_scheduled_at": "2026-10-14T11:57:54+00:00"
+    },
+    {
+      "id": "schedule-50ab87fc-134e-4f38-8d6b-1429fda9529d",
+      "cron": "0 0 * * *",
+      "time_zone": "UTC",
+      "missed_run": "once",
+      "next_scheduled_at": "2026-10-16T00:00:00+00:00"
+    }
+  ],
+  "native": [
+    {
+      "workflow_uuid": "schedule-run:01a13a46-5073-76e1-9300-bb6547d4d2e0",
+      "status": "SUCCESS",
+      "executor_id": "269a6870-9962-4db7-a466-da7264ec827d",
+      "application_version": "scheduler-integration-v1",
+      "recovery_attempts": 1
+    },
+    {
+      "workflow_uuid": "schedule-run:01a13a46-5c80-7744-b9d6-e82878566176",
+      "status": "SUCCESS",
+      "executor_id": "8590cdc3-8057-4775-9982-398fe21a824e",
+      "application_version": "scheduler-integration-v1",
+      "recovery_attempts": 1
+    },
+    {
+      "workflow_uuid": "schedule-run:01a13a46-7b7e-70cd-800f-553528eb28c4",
+      "status": "SUCCESS",
+      "executor_id": "0fda4ad1-8431-4dbb-ab0d-f076b24f02f3",
+      "application_version": "scheduler-integration-v1",
+      "recovery_attempts": 1
+    },
+    {
+      "workflow_uuid": "schedule-run:01a13a46-7f21-7504-a57f-241733f73a4d",
+      "status": "SUCCESS",
+      "executor_id": "0fda4ad1-8431-4dbb-ab0d-f076b24f02f3",
+      "application_version": "scheduler-integration-v1",
+      "recovery_attempts": 1
+    },
+    {
+      "workflow_uuid": "schedule-run:01a13a46-7f40-77bd-9835-60981eac8e3d",
+      "status": "ERROR",
+      "executor_id": "04309f75-db85-4345-a3b8-f7b1d33842f9",
+      "application_version": "scheduler-integration-v1",
+      "recovery_attempts": 1
+    },
+    {
+      "workflow_uuid": "schedule-run:01a13a46-826e-7547-81b7-116fccd36fb3",
+      "status": "SUCCESS",
+      "executor_id": "09bbd6a4-7d89-455d-8781-ca923a27893a",
+      "application_version": "scheduler-integration-v1",
+      "recovery_attempts": 1
+    },
+    {
+      "workflow_uuid": "schedule-run:01a13a46-8b40-76cc-b639-cccc3b0da357",
+      "status": "SUCCESS",
+      "executor_id": "69606439-2aa9-4d84-96f3-08611d52f2bf",
+      "application_version": "scheduler-integration-v1",
+      "recovery_attempts": 1
+    },
+    {
+      "workflow_uuid": "schedule-run:01a13a46-90b2-761a-a736-56d4f0fe0386",
+      "status": "SUCCESS",
+      "executor_id": "640745af-d199-4aee-afd8-ecd0331913ee",
+      "application_version": "scheduler-integration-v1",
+      "recovery_attempts": 1
+    },
+    {
+      "workflow_uuid": "schedule-run:01a13a46-9695-70bd-bdb8-c5500bb6a8bf",
+      "status": "SUCCESS",
+      "executor_id": "a66cc99c-32e4-47ef-87f9-5ef2d15c130f",
+      "application_version": "scheduler-integration-v1",
+      "recovery_attempts": 1
+    },
+    {
+      "workflow_uuid": "schedule-run:01a13a46-9f69-7410-95fb-e98173910264",
+      "status": "SUCCESS",
+      "executor_id": "9517b205-d475-4813-a93f-a0baa82db8fc",
+      "application_version": "scheduler-integration-v1",
+      "recovery_attempts": 1
+    },
+    {
+      "workflow_uuid": "schedule-run:01a13a46-b129-71da-8b44-185a0973dd6c",
+      "status": "SUCCESS",
+      "executor_id": "5263ba2d-3256-4214-aa55-087802623907",
+      "application_version": "scheduler-integration-v1",
+      "recovery_attempts": 1
+    },
+    {
+      "workflow_uuid": "schedule-run:01a13a46-b19f-725a-b109-21b8f2e3f6d1",
+      "status": "SUCCESS",
+      "executor_id": "5263ba2d-3256-4214-aa55-087802623907",
+      "application_version": "scheduler-integration-v1",
+      "recovery_attempts": 1
+    }
+  ]
+}

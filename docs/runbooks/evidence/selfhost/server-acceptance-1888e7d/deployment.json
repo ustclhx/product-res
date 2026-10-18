@@ -1,0 +1,138 @@
+{
+  "at": "2026-10-16T16:17:17.431399+00:00",
+  "sha": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+  "namespace": "ghcr.io/ustclhx/product-res",
+  "publishRun": 38924583361,
+  "host": {
+    "architecture": "x86_64",
+    "cpuCount": 2,
+    "docker": "Docker version 29.6.2, build dfc4efb",
+    "compose": "5.3.1",
+    "memoryKiB": 3579024
+  },
+  "services": [
+    {
+      "service": "postgres",
+      "image": "ghcr.io/ustclhx/product-res/postgres@sha256:d36e8e9329673bea7c4058d9bbb28bad6c898a717c979e378e8f21f3a114fda8",
+      "user": "999:999",
+      "status": "running",
+      "healthy": "healthy",
+      "oomKilled": false,
+      "memoryLimitBytes": 1073741824,
+      "nanoCpus": 500000000,
+      "restart": "unless-stopped",
+      "publishedPorts": {},
+      "noNewPrivileges": true
+    },
+    {
+      "service": "valkey",
+      "image": "ghcr.io/ustclhx/product-res/valkey@sha256:5c219cd7658c508f134128311b5d8dbe5b46893ce7450dd2cd6a8adca66f4a2d",
+      "user": "999:999",
+      "status": "running",
+      "healthy": "healthy",
+      "oomKilled": false,
+      "memoryLimitBytes": 402653184,
+      "nanoCpus": 200000000,
+      "restart": "unless-stopped",
+      "publishedPorts": {},
+      "noNewPrivileges": true
+    },
+    {
+      "service": "migrate",
+      "image": "ghcr.io/ustclhx/product-res/migrate@sha256:2ca5b291e254d3092968f13704a240f04c1f9fac4cce5b5bab551f82cf9973ee",
+      "user": "1000:1000",
+      "status": "exited",
+      "healthy": "unhealthy",
+      "oomKilled": false,
+      "memoryLimitBytes": 536870912,
+      "nanoCpus": 300000000,
+      "restart": "no",
+      "publishedPorts": {},
+      "noNewPrivileges": true,
+      "exitCode": 0,
+      "restartCount": 0,
+      "expectedLifecycle": "one-shot exited 0; inherited health status is not a readiness gate"
+    },
+    {
+      "service": "web",
+      "image": "ghcr.io/ustclhx/product-res/web@sha256:aed1a849124c9153150e2a5e301e6d9fcdd597621fcda1d56bdeb2e0ae0a32f7",
+      "user": "1000:1000",
+      "status": "running",
+      "healthy": "healthy",
+      "oomKilled": false,
+      "memoryLimitBytes": 1073741824,
+      "nanoCpus": 500000000,
+      "restart": "unless-stopped",
+      "publishedPorts": {},
+      "noNewPrivileges": true
+    },
+    {
+      "service": "jobs",
+      "image": "ghcr.io/ustclhx/product-res/jobs@sha256:d7609fc050717be07b5727111e8d09df6757d017c5e6a757c3f81e30379b1b7b",
+      "user": "1000:1000",
+      "status": "running",
+      "healthy": "healthy",
+      "oomKilled": false,
+      "memoryLimitBytes": 805306368,
+      "nanoCpus": 300000000,
+      "restart": "unless-stopped",
+      "publishedPorts": {},
+      "noNewPrivileges": true
+    },
+    {
+      "service": "caddy",
+      "image": "ghcr.io/ustclhx/product-res/caddy@sha256:fdbac30f65349ea7de9d98be1e93ae80442a45cda5b83ef9d82744319272f6b6",
+      "user": "10001:10001",
+      "status": "running",
+      "healthy": "healthy",
+      "oomKilled": false,
+      "memoryLimitBytes": 134217728,
+      "nanoCpus": 200000000,
+      "restart": "unless-stopped",
+      "publishedPorts": {
+        "8080/tcp": [
+          {
+            "port": "80"
+          },
+          {
+            "port": "80"
+          }
+        ],
+        "8443/tcp": [
+          {
+            "port": "443"
+          },
+          {
+            "port": "443"
+          }
+        ]
+      },
+      "noNewPrivileges": true
+    },
+    {
+      "service": "backup",
+      "image": "ghcr.io/ustclhx/product-res/backup@sha256:a8d18a504a09d583c0a5b9ff7b19091a1b3eeb9244d0285bbfbe8a6da0586832",
+      "user": "999:999",
+      "status": "running",
+      "healthy": "healthy",
+      "oomKilled": false,
+      "memoryLimitBytes": 402653184,
+      "nanoCpus": 200000000,
+      "restart": "unless-stopped",
+      "publishedPorts": {},
+      "noNewPrivileges": true
+    }
+  ],
+  "nonSelfhost": {
+    "stoppedCount": 15,
+    "allExited": true,
+    "allRestartNo": true,
+    "originalPolicyRecords": "protected /root/selfhost-prep/stopped-containers-*.tsv"
+  },
+  "warp": {
+    "active": "inactive",
+    "enabled": "disabled"
+  },
+  "bundleVerified": true,
+  "serverBuild": false
+}

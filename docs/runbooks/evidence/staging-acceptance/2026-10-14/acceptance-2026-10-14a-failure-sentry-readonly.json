@@ -1,0 +1,60 @@
+{
+  "runId": "acceptance-2026-10-14a",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T10:18:31.445Z",
+  "data": {
+    "events": [
+      {
+        "taskId": "01a139e8-e9c1-7758-bdf1-99cb2741ab36",
+        "issueId": "7791591972",
+        "eventId": "8e9fd9629eae49bbba7a25446a24acd9",
+        "eventUrl": "https://product-res.sentry.io/issues/7791591972/events/8e9fd9629eae49bbba7a25446a24acd9/",
+        "release": "a7c6f15cbf078e51fe688b92e1bce0e42cc3a7dd",
+        "distIsJobs": true,
+        "traceId": "01a139e8e9c17758bdf199cb2741ab36",
+        "requestId": "01a139e9-0292-75f9-ae6b-97332a60fb45",
+        "correlationVerified": true,
+        "exceptions": [
+          {
+            "type": "NonRetryableError",
+            "workersGenerationFailure": true,
+            "upstreamName": "AiError",
+            "upstreamCode": 8007,
+            "safeSummary": "Workers AI image generation failed (AiError 8007)",
+            "summaryWithheld": false
+          }
+        ],
+        "mechanisms": ["generic"],
+        "sourceFrames": [
+          {
+            "file": "dist/../src/sentry.ts",
+            "function": "args[callbackIndex]",
+            "line": 86,
+            "column": 20,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "dist/../../../packages/platform/src/cloudflare/workflow.ts",
+            "function": "run",
+            "line": 92,
+            "column": 53,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          }
+        ],
+        "sourceMappingErrorsAbsent": true,
+        "privacy": {
+          "credentialsAbsent": true,
+          "emailAbsent": true,
+          "conversationContentFieldsAbsent": true,
+          "requestUrlCredentialsAbsent": true,
+          "runtimeFieldsChecked": true
+        },
+        "readOnly": true
+      }
+    ],
+    "newExceptionTriggered": false,
+    "readOnly": true
+  }
+}

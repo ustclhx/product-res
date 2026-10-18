@@ -1,0 +1,34 @@
+{
+  "name": "@product-res/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts",
+    "./test/global-setup": "./test/global-setup.ts",
+    "./worktree-env": "./worktree-env.ts",
+    "./test/postgres-socket-rejection": "./test/postgres-socket-rejection.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json && tsc -p tsconfig.node.json",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "test:node": "vitest run --config vitest.node.config.ts"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.3.5",
+    "@cloudflare/workers-types": "^5.20261002.1",
+    "@types/node": "^22.20.5",
+    "drizzle-kit": "^0.31.11",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.146.0"
+  },
+  "dependencies": {
+    "@product-res/shared": "workspace:*",
+    "drizzle-orm": "^0.45.3",
+    "postgres": "^3.4.9"
+  }
+}

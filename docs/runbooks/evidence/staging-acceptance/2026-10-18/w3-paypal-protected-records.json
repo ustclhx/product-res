@@ -1,0 +1,134 @@
+{
+  "observedAt": "2026-10-18T06:20:13.978Z",
+  "preflight": {
+    "observedAt": "2026-10-18T06:20:05.535Z",
+    "accountId": "acct_1UMwpCL3UTpBAoXo",
+    "mode": "test",
+    "health": {
+      "status": "ok",
+      "version": "a2381f875fbd8b1009e48f7024addcb25285aca9",
+      "db": {
+        "status": "up",
+        "latencyMs": 90
+      },
+      "jobs": {
+        "lastCronAt": "2026-10-18T06:00:36.367Z"
+      }
+    },
+    "mainHead": "a2381f875fbd8b1009e48f7024addcb25285aca9",
+    "database": {
+      "database": "product_res_staging",
+      "role": "readonly",
+      "read_only": "on"
+    }
+  },
+  "protectedRecordsUnchanged": true,
+  "protectedAfter": {
+    "protectedSubscriptions": [
+      {
+        "id": "01a129d6-22d0-7031-8006-7ba6f26e57db",
+        "workspace_id": "01a11ec0-006f-76ef-803e-cd77d1e5f68a",
+        "provider_subscription_id": "I-H2LE38AW7EU4",
+        "status": "active",
+        "cancel_at_period_end": false,
+        "current_period_start": "2026-10-11T07:20:36.000Z",
+        "current_period_end": "2026-11-11T10:00:00.000Z"
+      }
+    ],
+    "protectedPayments": [
+      {
+        "id": "01a12983-4129-701b-aa14-8e3001dd758e",
+        "workspace_id": "01a11ec0-006f-76ef-803e-cd77d1e5f68a",
+        "provider_payment_id": "821243239P5069342",
+        "subscription_id": null,
+        "amount": 1000,
+        "status": "succeeded",
+        "refunded_amount": 0
+      },
+      {
+        "id": "01a129d6-2372-71f8-8574-118c3a94c217",
+        "workspace_id": "01a11ec0-006f-76ef-803e-cd77d1e5f68a",
+        "provider_payment_id": "7WT17462SJ5165744",
+        "subscription_id": "01a129d6-22d0-7031-8006-7ba6f26e57db",
+        "amount": 1900,
+        "status": "succeeded",
+        "refunded_amount": 0
+      }
+    ],
+    "protectedRequests": [
+      {
+        "id": "01a12988-8881-750f-9fed-14b436844a4f",
+        "workspace_id": "01a11ec0-006f-76ef-803e-cd77d1e5f68a",
+        "payment_id": "01a12983-4129-701b-aa14-8e3001dd758e",
+        "status": "pending",
+        "requested_amount": null,
+        "approved_amount": null,
+        "provider_refund_id": null
+      }
+    ]
+  },
+  "newRemoteSubscriptions": [
+    {
+      "id": "I-PE4VWXLXB1XP",
+      "status": "SUSPENDED",
+      "httpStatus": 200
+    },
+    {
+      "id": "I-TKG3FMFU9BEN",
+      "status": "SUSPENDED",
+      "httpStatus": 200
+    }
+  ],
+  "remotePhases": {
+    "monthly-subscription": {
+      "recordedAt": "2026-10-18T06:06:56.360Z",
+      "httpStatus": 200,
+      "id": "I-PE4VWXLXB1XP",
+      "status": "ACTIVE",
+      "rawResponseSha256": "68a04cc5eed4e9cfbdd04bf1c738a90618b7270a1f5255ca208112fdec08f224"
+    },
+    "monthly-suspended-subscription": {
+      "recordedAt": "2026-10-18T06:07:42.139Z",
+      "httpStatus": 200,
+      "id": "I-PE4VWXLXB1XP",
+      "status": "SUSPENDED",
+      "rawResponseSha256": "feae4d61517a8b1ab07aa3aa55597b8433f4b3c0842f6c42ef9dcafad77d4e66"
+    },
+    "monthly-resumed-subscription": {
+      "recordedAt": "2026-10-18T06:08:38.634Z",
+      "httpStatus": 200,
+      "id": "I-PE4VWXLXB1XP",
+      "status": "ACTIVE",
+      "rawResponseSha256": "86d8cdd1b08675692678b8622e1d8af1b635b53d1a9b3800eacfff58c05f22ec"
+    },
+    "annual-subscription": {
+      "recordedAt": "2026-10-18T06:09:54.838Z",
+      "httpStatus": 200,
+      "id": "I-TKG3FMFU9BEN",
+      "status": "ACTIVE",
+      "rawResponseSha256": "ba389ab21e5c92c2d75bc62e246c79fe401c8ae70f0c2f7a06f1c75dd1d82c90"
+    },
+    "annual-suspended-subscription": {
+      "recordedAt": "2026-10-18T06:11:31.542Z",
+      "httpStatus": 200,
+      "id": "I-TKG3FMFU9BEN",
+      "status": "SUSPENDED",
+      "rawResponseSha256": "156d4c2264dac4c877c75ef3b415a8740512618774956e3f6f750ab6425463e5"
+    }
+  },
+  "originalWebhookUnchanged": true,
+  "temporaryWebhookDeleted": true,
+  "receiverStopped": true,
+  "quickTunnelStopped": true,
+  "accounting": {
+    "ledger": 879,
+    "active_remaining": 879,
+    "held": 0,
+    "debt": 0,
+    "negative_grants": 0,
+    "duplicate_grant_sources": 0,
+    "duplicate_payments": 0,
+    "expected": 879,
+    "difference": 0
+  }
+}

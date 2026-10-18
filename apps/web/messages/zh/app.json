@@ -1,0 +1,13 @@
+{
+  "app_workspace_not_found": "未找到空间",
+  "app_workspace_no_access": "空间不存在，或你没有访问权限。",
+  "app_go_workspace": "前往我的空间",
+  "app_personal_workspace": "个人空间",
+  "app_team_workspace": "团队空间",
+  "app_role": "你的角色：{role}",
+  "app_readonly": "团队功能已关闭，此空间为只读。",
+  "app_chat": "对话",
+  "app_workspace_settings": "空间设置",
+  "app_billing": "计费",
+  "app_usage": "用量"
+}

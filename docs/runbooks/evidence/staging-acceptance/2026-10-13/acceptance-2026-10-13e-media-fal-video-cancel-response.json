@@ -1,0 +1,12 @@
+{
+  "runId": "acceptance-2026-10-13e",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T08:37:41.648Z",
+  "data": {
+    "taskId": "01a13468-fcdb-760c-b022-2310ed189a3f",
+    "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+    "status": "canceled",
+    "cancellationPending": true,
+    "reused": false
+  }
+}

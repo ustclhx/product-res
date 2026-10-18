@@ -1,0 +1,283 @@
+{
+  "sha": "081305013b022f457c561eecf5828b1959e13908",
+  "startedAt": "2026-10-14T17:02:20.469175+00:00",
+  "boundary": {
+    "colimaProfile": "b-budget",
+    "configuredVcpu": 2,
+    "configuredGiB": 4
+  },
+  "images": [
+    {
+      "service": "postgres",
+      "image": "ghcr.io/ustclhx/product-res/postgres@sha256:ff07d832395490626a1f69b5e608579751bc29682377b59ca5281873b8feb309",
+      "exitCode": 0,
+      "seconds": 35.95
+    },
+    {
+      "service": "valkey",
+      "image": "ghcr.io/ustclhx/product-res/valkey@sha256:e97dc1ae1588d49469790c888d980d6fbf9e1b329864f7ffdda2535e2de4098f",
+      "exitCode": 0,
+      "seconds": 13.22
+    },
+    {
+      "service": "migrate",
+      "image": "ghcr.io/ustclhx/product-res/migrate@sha256:690c6b58d6e2f0c532a6b847dccfeddc6be02e8cd4e468c37cd7d1b1d62a0bc2",
+      "exitCode": 0,
+      "seconds": 73.58
+    },
+    {
+      "service": "web",
+      "image": "ghcr.io/ustclhx/product-res/web@sha256:f8d86a97ef4ba8b81c70bdb2b2cfa73f506901ce39d5e31f493dd31bb6d72439",
+      "exitCode": 0,
+      "seconds": 29.7
+    },
+    {
+      "service": "jobs",
+      "image": "ghcr.io/ustclhx/product-res/jobs@sha256:4807f09bc13d5b54fc64525ac1423e34abb0e5a0f82e4a0072d48a745e74a1e6",
+      "exitCode": 0,
+      "seconds": 24.54
+    },
+    {
+      "service": "caddy",
+      "image": "ghcr.io/ustclhx/product-res/caddy@sha256:aec0926afc3f84f0efebb5423483990ca6173c1cff2bcc02cbc7efd317c58bb1",
+      "exitCode": 0,
+      "seconds": 11.15
+    }
+  ],
+  "checks": [
+    {
+      "check": "app DDL rejected",
+      "passed": true
+    },
+    {
+      "check": "app DDL rejected",
+      "passed": true
+    },
+    {
+      "check": "readonly payload/write rejected",
+      "passed": true
+    },
+    {
+      "check": "readonly payload/write rejected",
+      "passed": true
+    },
+    {
+      "check": "readonly payload/write rejected",
+      "passed": true
+    },
+    {
+      "check": "readonly metadata succeeds",
+      "passed": true
+    },
+    {
+      "check": "formal migrator rerun exit 0",
+      "passed": true
+    },
+    {
+      "check": "app and readonly lack schema CREATE",
+      "passed": true
+    }
+  ],
+  "schema": [
+    {
+      "schema": "dbos",
+      "table": "application_versions"
+    },
+    {
+      "schema": "dbos",
+      "table": "dbos_migrations"
+    },
+    {
+      "schema": "dbos",
+      "table": "event_dispatch_kv"
+    },
+    {
+      "schema": "dbos",
+      "table": "notifications"
+    },
+    {
+      "schema": "dbos",
+      "table": "operation_outputs"
+    },
+    {
+      "schema": "dbos",
+      "table": "queues"
+    },
+    {
+      "schema": "dbos",
+      "table": "streams"
+    },
+    {
+      "schema": "dbos",
+      "table": "workflow_events"
+    },
+    {
+      "schema": "dbos",
+      "table": "workflow_events_history"
+    },
+    {
+      "schema": "dbos",
+      "table": "workflow_input"
+    },
+    {
+      "schema": "dbos",
+      "table": "workflow_output"
+    },
+    {
+      "schema": "dbos",
+      "table": "workflow_schedules"
+    },
+    {
+      "schema": "dbos",
+      "table": "workflow_status"
+    },
+    {
+      "schema": "job_engine",
+      "table": "batch"
+    },
+    {
+      "schema": "job_engine",
+      "table": "dead_letter"
+    },
+    {
+      "schema": "job_engine",
+      "table": "message"
+    },
+    {
+      "schema": "job_engine",
+      "table": "queue"
+    },
+    {
+      "schema": "job_engine",
+      "table": "schedule"
+    },
+    {
+      "schema": "job_engine",
+      "table": "schedule_run"
+    },
+    {
+      "schema": "job_engine",
+      "table": "start"
+    },
+    {
+      "schema": "job_engine",
+      "table": "workflow_event"
+    },
+    {
+      "schema": "job_engine",
+      "table": "workflow_wait"
+    }
+  ],
+  "readonlyMetadata": "SET\n0\n0",
+  "initialLongWorkflow": [
+    {
+      "id": "workflow:YnVkZ2V0LWxvbmctc2xlZXAtdjE:YjE5LTIwMjYxMDE1LWxvbmctc2xlZXA",
+      "name": "product-res-workflow:budget-long-sleep-v1",
+      "status": "PENDING",
+      "executor": "probe-worker-a",
+      "createdAt": 1791997271746,
+      "recovery": 1
+    }
+  ],
+  "publicHealth": {
+    "observedAt": "2026-10-14T17:05:13.733028+00:00",
+    "httpStatus": 200,
+    "body": {
+      "status": "ok",
+      "version": "081305013b022f457c561eecf5828b1959e13908",
+      "db": {
+        "status": "up",
+        "latencyMs": 3
+      },
+      "cache": {
+        "status": "up"
+      },
+      "queue": {
+        "status": "up"
+      },
+      "scheduler": {
+        "status": "up",
+        "lastCronAt": "2026-10-14T17:05:00.213Z"
+      },
+      "jobs": {
+        "lastCronAt": "2026-10-14T17:05:00.213Z"
+      }
+    }
+  },
+  "formalRuntime": {
+    "node": "v22.23.3",
+    "dbos": "5.2.11",
+    "license": "MIT",
+    "licenseSha256": "503e404dfddb2f1ec81ade7bb601e54c05a3bb8e7b657a0e0444069bc00fd86a"
+  },
+  "localBudgetScenario": {
+    "steadyCpu": 1.7,
+    "steadyMiB": 3200,
+    "configuredVmHeadroomMiB": 896,
+    "optionalProfilesIncluded": false,
+    "extraProbeWorkersMiB": 1024
+  },
+  "tcpRoleChecks": [
+    {
+      "role": "readonly",
+      "query": "SELECT current_user; SELECT count(id) FROM job_engine.message;",
+      "exitCode": 0,
+      "passed": true,
+      "safeMetadata": "readonly\n0",
+      "sqlState": null
+    },
+    {
+      "role": "readonly",
+      "query": "SELECT body FROM job_engine.message LIMIT 0;",
+      "exitCode": 3,
+      "passed": true,
+      "safeMetadata": null,
+      "sqlState": "42501"
+    },
+    {
+      "role": "readonly",
+      "query": "INSERT INTO job_engine.queue(name,policy) VALUES ('budget-role-check','{}');",
+      "exitCode": 3,
+      "passed": true,
+      "safeMetadata": null,
+      "sqlState": "42501"
+    },
+    {
+      "role": "app",
+      "query": "CREATE TABLE public.budget_ddl_should_fail(id integer);",
+      "exitCode": 3,
+      "passed": true,
+      "safeMetadata": null,
+      "sqlState": "42501"
+    }
+  ],
+  "activeConnectionsByRole": {
+    "background": 5,
+    "postgres": 2,
+    "app": 18
+  },
+  "finalPublicHealth": {
+    "httpStatus": 200,
+    "body": {
+      "status": "ok",
+      "version": "081305013b022f457c561eecf5828b1959e13908",
+      "db": {
+        "status": "up",
+        "latencyMs": 127
+      },
+      "cache": {
+        "status": "up"
+      },
+      "queue": {
+        "status": "up"
+      },
+      "scheduler": {
+        "status": "up",
+        "lastCronAt": "2026-10-14T18:00:00.138Z"
+      },
+      "jobs": {
+        "lastCronAt": "2026-10-14T18:00:00.138Z"
+      }
+    }
+  }
+}

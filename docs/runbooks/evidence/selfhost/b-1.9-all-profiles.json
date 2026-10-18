@@ -1,0 +1,271 @@
+{
+  "at": "2026-10-14T17:18:38.929077+00:00",
+  "formalSha": "081305013b022f457c561eecf5828b1959e13908",
+  "steadyProductionCaps": {
+    "postgres": ["1g", "0.5"],
+    "valkey": ["192m", "0.1"],
+    "web": ["640m", "0.3"],
+    "jobs": ["384m", "0.2"],
+    "jobs2": ["384m", "0.2"],
+    "caddy": ["128m", "0.1"],
+    "object-storage": ["512m", "0.3"],
+    "backup": ["256m", "0.2"]
+  },
+  "productionSteadyMiB": 3520,
+  "productionSteadyCpu": 1.9,
+  "extraLocalS3Fixture": {
+    "services": ["backup-s3", "backup-tls"],
+    "capMiB": 640,
+    "cpu": 0.4
+  },
+  "extraProbeWorkers": {
+    "capMiB": 1024,
+    "cpu": 0.6
+  },
+  "archiveMode": "on",
+  "archiveTimeout": "1min",
+  "archiveCommandIsWalg": true,
+  "additionalQueueMessages": 90,
+  "containers": [
+    {
+      "service": "postgres",
+      "imageReference": "ghcr.io/ustclhx/product-res/postgres@sha256:ff07d832395490626a1f69b5e608579751bc29682377b59ca5281873b8feb309",
+      "platformImageId": "sha256:2b6fc488a5d08b4258fc861cda19ac15fcea7cfc826a9234b0ffa8153e1a74ba",
+      "revision": "081305013b022f457c561eecf5828b1959e13908",
+      "user": "999:999",
+      "hostname": "16a73b02ab25",
+      "memoryLimitBytes": 1073741824,
+      "nanoCpus": 500000000,
+      "secretNames": [
+        "app_db_password",
+        "backup_s3_access_key_id",
+        "backup_s3_secret_access_key",
+        "migrator_db_password",
+        "readonly_db_password",
+        "postgres_password"
+      ],
+      "hostPorts": {},
+      "oomKilled": false,
+      "restartCount": 0
+    },
+    {
+      "service": "valkey",
+      "imageReference": "ghcr.io/ustclhx/product-res/valkey@sha256:e97dc1ae1588d49469790c888d980d6fbf9e1b329864f7ffdda2535e2de4098f",
+      "platformImageId": "sha256:3beeeb25dea85079f9332974581b9d8abed93eeb76ad5b4b1ead1793640b9b48",
+      "revision": "081305013b022f457c561eecf5828b1959e13908",
+      "user": "999:999",
+      "hostname": "583878ee2db1",
+      "memoryLimitBytes": 201326592,
+      "nanoCpus": 100000000,
+      "secretNames": ["valkey_password"],
+      "hostPorts": {},
+      "oomKilled": false,
+      "restartCount": 0
+    },
+    {
+      "service": "web",
+      "imageReference": "ghcr.io/ustclhx/product-res/web@sha256:f8d86a97ef4ba8b81c70bdb2b2cfa73f506901ce39d5e31f493dd31bb6d72439",
+      "platformImageId": "sha256:a231b79004a8bdb6b6acc272c198f120ee57915ecfb658baee02312cb6e8c793",
+      "revision": "081305013b022f457c561eecf5828b1959e13908",
+      "user": "1000:1000",
+      "hostname": "dc08e87facf7",
+      "memoryLimitBytes": 671088640,
+      "nanoCpus": 300000000,
+      "secretNames": [
+        "github_client_secret",
+        "app_database_url",
+        "google_client_secret",
+        "s3_access_key_id",
+        "valkey_url",
+        "auth_secret",
+        "turnstile_secret",
+        "s3_secret_access_key"
+      ],
+      "hostPorts": {},
+      "oomKilled": false,
+      "restartCount": 0
+    },
+    {
+      "service": "jobs",
+      "imageReference": "ghcr.io/ustclhx/product-res/jobs@sha256:4807f09bc13d5b54fc64525ac1423e34abb0e5a0f82e4a0072d48a745e74a1e6",
+      "platformImageId": "sha256:e7c6ac6c6cbdade864642e3991c2f3d2329cf5d5edcb2fe50ed0dbee4b3a939e",
+      "revision": "081305013b022f457c561eecf5828b1959e13908",
+      "user": "1000:1000",
+      "hostname": "b-budget-jobs-1",
+      "memoryLimitBytes": 402653184,
+      "nanoCpus": 200000000,
+      "secretNames": [
+        "github_client_secret",
+        "s3_access_key_id",
+        "app_database_url",
+        "valkey_url",
+        "auth_secret",
+        "google_client_secret",
+        "s3_secret_access_key",
+        "turnstile_secret"
+      ],
+      "hostPorts": {},
+      "oomKilled": false,
+      "restartCount": 0
+    },
+    {
+      "service": "jobs2",
+      "imageReference": "ghcr.io/ustclhx/product-res/jobs@sha256:4807f09bc13d5b54fc64525ac1423e34abb0e5a0f82e4a0072d48a745e74a1e6",
+      "platformImageId": "sha256:e7c6ac6c6cbdade864642e3991c2f3d2329cf5d5edcb2fe50ed0dbee4b3a939e",
+      "revision": "081305013b022f457c561eecf5828b1959e13908",
+      "user": "1000:1000",
+      "hostname": "b-budget-jobs-2",
+      "memoryLimitBytes": 402653184,
+      "nanoCpus": 200000000,
+      "secretNames": [
+        "github_client_secret",
+        "turnstile_secret",
+        "valkey_url",
+        "s3_access_key_id",
+        "app_database_url",
+        "google_client_secret",
+        "s3_secret_access_key",
+        "auth_secret"
+      ],
+      "hostPorts": {},
+      "oomKilled": false,
+      "restartCount": 0
+    },
+    {
+      "service": "caddy",
+      "imageReference": "ghcr.io/ustclhx/product-res/caddy@sha256:aec0926afc3f84f0efebb5423483990ca6173c1cff2bcc02cbc7efd317c58bb1",
+      "platformImageId": "sha256:c8a750d92647ad57079e0e3f94840c049c543b9704828c3da2c4340829b4fd3f",
+      "revision": "081305013b022f457c561eecf5828b1959e13908",
+      "user": "10001:10001",
+      "hostname": "1fcc2fc9a5be",
+      "memoryLimitBytes": 134217728,
+      "nanoCpus": 100000000,
+      "secretNames": [],
+      "hostPorts": {
+        "443/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "28443"
+          }
+        ],
+        "8080/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "28480"
+          }
+        ]
+      },
+      "oomKilled": false,
+      "restartCount": 0
+    },
+    {
+      "service": "object-storage",
+      "imageReference": "ghcr.io/ustclhx/product-res/object-storage@sha256:a7dc52b320ddeb4169530fea28c538089c70f418e22584f7c90fe7112cc946a7",
+      "platformImageId": "sha256:6f3af077c17a1cb05de3ff5a339c7298aef447acf14a4c3505f0e104875ba8ae",
+      "revision": "081305013b022f457c561eecf5828b1959e13908",
+      "user": "1000:1000",
+      "hostname": "58e6992eaafe",
+      "memoryLimitBytes": 536870912,
+      "nanoCpus": 300000000,
+      "secretNames": [
+        "s3_admin_access_key_id",
+        "s3_admin_secret_access_key",
+        "s3_access_key_id",
+        "s3_secret_access_key"
+      ],
+      "hostPorts": {},
+      "oomKilled": false,
+      "restartCount": 0
+    },
+    {
+      "service": "backup",
+      "imageReference": "ghcr.io/ustclhx/product-res/backup@sha256:7f28d63d5142fbb14c86d13c4f994e0f5eca5bf7ba41d180534bb5927b6069cd",
+      "platformImageId": "sha256:2df8a7958a9610eff3579b8a8333e7fb54f6d6ba20273d7d94fd352c2c010f08",
+      "revision": "081305013b022f457c561eecf5828b1959e13908",
+      "user": "999:999",
+      "hostname": "662871bdeea7",
+      "memoryLimitBytes": 268435456,
+      "nanoCpus": 200000000,
+      "secretNames": ["backup_s3_access_key_id", "backup_s3_secret_access_key"],
+      "hostPorts": {},
+      "oomKilled": false,
+      "restartCount": 0
+    },
+    {
+      "service": "backup-s3",
+      "imageReference": "ghcr.io/ustclhx/product-res/object-storage@sha256:a7dc52b320ddeb4169530fea28c538089c70f418e22584f7c90fe7112cc946a7",
+      "platformImageId": "sha256:6f3af077c17a1cb05de3ff5a339c7298aef447acf14a4c3505f0e104875ba8ae",
+      "revision": "081305013b022f457c561eecf5828b1959e13908",
+      "user": "1000:1000",
+      "hostname": "bd72cb7a95e1",
+      "memoryLimitBytes": 536870912,
+      "nanoCpus": 300000000,
+      "secretNames": [
+        "backup_s3_access_key_id",
+        "backup_s3_secret_access_key",
+        "budget_backup_admin_id",
+        "budget_backup_admin_key"
+      ],
+      "hostPorts": {},
+      "oomKilled": false,
+      "restartCount": 0
+    },
+    {
+      "service": "backup-tls",
+      "imageReference": "ghcr.io/ustclhx/product-res/caddy@sha256:aec0926afc3f84f0efebb5423483990ca6173c1cff2bcc02cbc7efd317c58bb1",
+      "platformImageId": "sha256:c8a750d92647ad57079e0e3f94840c049c543b9704828c3da2c4340829b4fd3f",
+      "revision": "081305013b022f457c561eecf5828b1959e13908",
+      "user": "10001:10001",
+      "hostname": "e7f60cee94c8",
+      "memoryLimitBytes": 134217728,
+      "nanoCpus": 100000000,
+      "secretNames": [],
+      "hostPorts": {},
+      "oomKilled": false,
+      "restartCount": 8
+    },
+    {
+      "service": "probe-worker-a",
+      "imageReference": "ghcr.io/ustclhx/product-res/migrate@sha256:690c6b58d6e2f0c532a6b847dccfeddc6be02e8cd4e468c37cd7d1b1d62a0bc2",
+      "platformImageId": "sha256:50c486974eea1b4186f406044229e7b09db9df41a9e86adebeb957f8bc02d93b",
+      "revision": "081305013b022f457c561eecf5828b1959e13908",
+      "user": "1000:1000",
+      "hostname": "probe-worker-a",
+      "memoryLimitBytes": 536870912,
+      "nanoCpus": 300000000,
+      "secretNames": ["migrator_database_url", "app_database_url"],
+      "hostPorts": {},
+      "oomKilled": false,
+      "restartCount": 0
+    },
+    {
+      "service": "probe-worker-b",
+      "imageReference": "ghcr.io/ustclhx/product-res/migrate@sha256:690c6b58d6e2f0c532a6b847dccfeddc6be02e8cd4e468c37cd7d1b1d62a0bc2",
+      "platformImageId": "sha256:50c486974eea1b4186f406044229e7b09db9df41a9e86adebeb957f8bc02d93b",
+      "revision": "081305013b022f457c561eecf5828b1959e13908",
+      "user": "1000:1000",
+      "hostname": "probe-worker-b",
+      "memoryLimitBytes": 536870912,
+      "nanoCpus": 300000000,
+      "secretNames": ["app_database_url", "migrator_database_url"],
+      "hostPorts": {},
+      "oomKilled": false,
+      "restartCount": 0
+    },
+    {
+      "service": "migrate",
+      "imageReference": "ghcr.io/ustclhx/product-res/migrate@sha256:690c6b58d6e2f0c532a6b847dccfeddc6be02e8cd4e468c37cd7d1b1d62a0bc2",
+      "platformImageId": "sha256:50c486974eea1b4186f406044229e7b09db9df41a9e86adebeb957f8bc02d93b",
+      "revision": "081305013b022f457c561eecf5828b1959e13908",
+      "user": "1000:1000",
+      "hostname": "cc88864afed0",
+      "memoryLimitBytes": 536870912,
+      "nanoCpus": 300000000,
+      "secretNames": ["migrator_database_url"],
+      "hostPorts": {},
+      "oomKilled": false,
+      "restartCount": 0
+    }
+  ],
+  "inspectedAt": "2026-10-14T17:39:38.710317+00:00"
+}

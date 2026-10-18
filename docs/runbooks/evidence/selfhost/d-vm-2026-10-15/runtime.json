@@ -1,0 +1,583 @@
+{
+  "schemaVersion": 1,
+  "project": "selfhost-release-b4d232c1d963",
+  "checks": [
+    {
+      "check": "anonymous GHCR eight-image pull",
+      "passed": true,
+      "sha": "081305013b022f457c561eecf5828b1959e13908",
+      "imageCount": 8,
+      "platform": "linux/arm64"
+    },
+    {
+      "check": "isolated backup S3 TLS fixture",
+      "passed": true,
+      "noPublishedDataPorts": true,
+      "testOnlyHelperMounted": true,
+      "businessSourceMounted": false
+    },
+    {
+      "check": "runtime TLS ports secrets UID",
+      "passed": true,
+      "sha": "081305013b022f457c561eecf5828b1959e13908",
+      "pgVerifyFull": true,
+      "invalidPgCaRejected": true,
+      "unknownHttpsCaRejected": true,
+      "pgHostnameMismatchRejected": true,
+      "secretsDirectoryMode": "0700",
+      "secretFiles": "0600 service UID",
+      "services": [
+        {
+          "service": "backup",
+          "uid": 999,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/backup@sha256:7f28d63d5142fbb14c86d13c4f994e0f5eca5bf7ba41d180534bb5927b6069cd",
+          "networks": ["selfhost-release-b4d232c1d963_data"],
+          "publishedPorts": [],
+          "secretNames": ["backup_s3_access_key_id", "backup_s3_secret_access_key"]
+        },
+        {
+          "service": "caddy",
+          "uid": 10001,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/caddy@sha256:aec0926afc3f84f0efebb5423483990ca6173c1cff2bcc02cbc7efd317c58bb1",
+          "networks": ["selfhost-release-b4d232c1d963_ingress"],
+          "publishedPorts": ["8080/tcp", "8443/tcp"],
+          "secretNames": []
+        },
+        {
+          "service": "jobs",
+          "uid": 1000,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/jobs@sha256:4807f09bc13d5b54fc64525ac1423e34abb0e5a0f82e4a0072d48a745e74a1e6",
+          "networks": ["selfhost-release-b4d232c1d963_data"],
+          "publishedPorts": [],
+          "secretNames": [
+            "app_database_url",
+            "auth_secret",
+            "github_client_secret",
+            "google_client_secret",
+            "turnstile_secret",
+            "valkey_url"
+          ]
+        },
+        {
+          "service": "migrate",
+          "uid": 1000,
+          "state": "exited",
+          "exitCode": 0,
+          "health": "unhealthy",
+          "image": "ghcr.io/ustclhx/product-res/migrate@sha256:690c6b58d6e2f0c532a6b847dccfeddc6be02e8cd4e468c37cd7d1b1d62a0bc2",
+          "networks": ["selfhost-release-b4d232c1d963_data"],
+          "publishedPorts": [],
+          "secretNames": ["migrator_database_url"]
+        },
+        {
+          "service": "postgres",
+          "uid": 999,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/postgres@sha256:ff07d832395490626a1f69b5e608579751bc29682377b59ca5281873b8feb309",
+          "networks": ["selfhost-release-b4d232c1d963_data"],
+          "publishedPorts": [],
+          "secretNames": [
+            "app_db_password",
+            "backup_s3_access_key_id",
+            "backup_s3_secret_access_key",
+            "migrator_db_password",
+            "postgres_password",
+            "readonly_db_password"
+          ]
+        },
+        {
+          "service": "valkey",
+          "uid": 999,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/valkey@sha256:e97dc1ae1588d49469790c888d980d6fbf9e1b329864f7ffdda2535e2de4098f",
+          "networks": ["selfhost-release-b4d232c1d963_data"],
+          "publishedPorts": [],
+          "secretNames": ["valkey_password"]
+        },
+        {
+          "service": "web",
+          "uid": 1000,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/web@sha256:f8d86a97ef4ba8b81c70bdb2b2cfa73f506901ce39d5e31f493dd31bb6d72439",
+          "networks": [
+            "selfhost-release-b4d232c1d963_data",
+            "selfhost-release-b4d232c1d963_ingress"
+          ],
+          "publishedPorts": [],
+          "secretNames": [
+            "app_database_url",
+            "auth_secret",
+            "github_client_secret",
+            "google_client_secret",
+            "turnstile_secret",
+            "valkey_url"
+          ]
+        }
+      ]
+    },
+    {
+      "check": "prepare ready for real VM reboot",
+      "passed": true,
+      "sha": "081305013b022f457c561eecf5828b1959e13908",
+      "naturalHeartbeatCount": 1,
+      "completeBackup": true,
+      "backupSlot": "2026-10-14T17:24:00Z",
+      "ownerMetadataSha256": "712a313e2a7558b4b03c80af99b20e067d90999edf2ae976cbc6d97b323cd03c"
+    },
+    {
+      "check": "real VM reboot resumes services without migrate replay",
+      "passed": true,
+      "sha": "081305013b022f457c561eecf5828b1959e13908",
+      "containers": {
+        "postgres": {
+          "id": "a315dc84486039c9d71773a452dd87840134c12f6f0bb85e6591685ef7f41c07",
+          "state": "running",
+          "running": true,
+          "exitCode": 0,
+          "finishedAt": "2026-10-14T17:31:19.930679107Z",
+          "startedAt": "2026-10-14T17:31:25.589611334Z",
+          "restartCount": 0,
+          "health": "healthy"
+        },
+        "valkey": {
+          "id": "f73382bb7b03b2f2296adbebb80a8291703b7a809c93b90751d66f42ad87730e",
+          "state": "running",
+          "running": true,
+          "exitCode": 0,
+          "finishedAt": "2026-10-14T17:30:34.993512265Z",
+          "startedAt": "2026-10-14T17:31:25.589614709Z",
+          "restartCount": 0,
+          "health": "healthy"
+        },
+        "web": {
+          "id": "9880e1eb7186518c80d2f33bcf59f5cc35f0ac8067c00d98f6304f86af449fdb",
+          "state": "running",
+          "running": true,
+          "exitCode": 0,
+          "finishedAt": "2026-10-14T17:30:34.919798202Z",
+          "startedAt": "2026-10-14T17:31:25.590029001Z",
+          "restartCount": 0,
+          "health": "healthy"
+        },
+        "jobs": {
+          "id": "2788ddee6f5c90a2c6670f340e416117bbf75db0ebfaf87aa3ba86c90a6c94d3",
+          "state": "running",
+          "running": true,
+          "exitCode": 0,
+          "finishedAt": "2026-10-14T17:30:34.920546274Z",
+          "startedAt": "2026-10-14T17:31:25.576235459Z",
+          "restartCount": 0,
+          "health": "healthy"
+        },
+        "caddy": {
+          "id": "a621af9ee0305e46980f166895c5c101b8079264799f83613b27de717c1edbde",
+          "state": "running",
+          "running": true,
+          "exitCode": 0,
+          "finishedAt": "2026-10-14T17:30:34.913712505Z",
+          "startedAt": "2026-10-14T17:31:25.590020959Z",
+          "restartCount": 0,
+          "health": "healthy"
+        },
+        "backup": {
+          "id": "018f3c89f312472c7928ef2f70fbfa859af04f88d2b82e638c94604a9cd3e4ef",
+          "state": "running",
+          "running": true,
+          "exitCode": 0,
+          "finishedAt": "2026-10-14T17:30:35.262766558Z",
+          "startedAt": "2026-10-14T17:31:25.589749918Z",
+          "restartCount": 0,
+          "health": "healthy"
+        },
+        "migrate": {
+          "id": "9173666c0c3693be70b18b61c087ceb554d0227bc8949a1141e4596ef86623d0",
+          "state": "exited",
+          "running": false,
+          "exitCode": 0,
+          "finishedAt": "2026-10-14T17:25:31.879180648Z",
+          "startedAt": "2026-10-14T17:25:29.232206953Z",
+          "restartCount": 0,
+          "health": "unhealthy"
+        },
+        "fixture.object-storage": {
+          "id": "f137ed0f5fa254683f34c06babf72361085e2c68b973c902425b0175fe60de03",
+          "running": true,
+          "startedAt": "2026-10-14T17:31:25.590296043Z"
+        },
+        "fixture.tls": {
+          "id": "62e36be8331f779008e87984eab08bb7178e85cb0f1c40a6574e44fb6300d37c",
+          "running": true,
+          "startedAt": "2026-10-14T17:31:25.590155709Z"
+        }
+      },
+      "health": {
+        "web": {
+          "version": "081305013b022f457c561eecf5828b1959e13908",
+          "componentsUp": true
+        },
+        "jobs": {
+          "version": "081305013b022f457c561eecf5828b1959e13908",
+          "componentsUp": true
+        }
+      },
+      "freshNaturalHeartbeatCount": 2,
+      "migrationUnchanged": true,
+      "successfulBackupSlotPreserved": true,
+      "backupSchedulerResumed": true,
+      "priorOwnerMetadataRecordsPreserved": 1,
+      "ownerMetadataSha256": "3f099604cb8af8980d8057418c49054f40d3e1fb2d9d2e8cbdf9c73f578ba007",
+      "volumesPreserved": true
+    },
+    {
+      "check": "explicit SSH bundle transfer and deployment",
+      "passed": true,
+      "verifiedHostKey": true,
+      "batchMode": true,
+      "targetSha": "081305013b022f457c561eecf5828b1959e13908",
+      "volumesPreserved": true,
+      "incomingDirectoryCleaned": true
+    },
+    {
+      "check": "metadata-only local registry second version",
+      "passed": true,
+      "sha": "e2e92a89b98e180b3b0a1dc1600ab8efaa734342"
+    },
+    {
+      "check": "runtime TLS ports secrets UID",
+      "passed": true,
+      "sha": "e2e92a89b98e180b3b0a1dc1600ab8efaa734342",
+      "pgVerifyFull": true,
+      "invalidPgCaRejected": true,
+      "unknownHttpsCaRejected": true,
+      "pgHostnameMismatchRejected": true,
+      "secretsDirectoryMode": "0700",
+      "secretFiles": "0600 service UID",
+      "services": [
+        {
+          "service": "backup",
+          "uid": 999,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "localhost:41069/fixture/backup@sha256:944987120a942779f131e9a9580e90203a5eeaf3b6d7b3f873ec7054bb5649f9",
+          "networks": ["selfhost-release-b4d232c1d963_data"],
+          "publishedPorts": [],
+          "secretNames": ["backup_s3_access_key_id", "backup_s3_secret_access_key"]
+        },
+        {
+          "service": "caddy",
+          "uid": 10001,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "localhost:41069/fixture/caddy@sha256:bf8c964cc3e8f3ed00bce177d3e353d560286c80c03fa5b44e7b264c6ddc5368",
+          "networks": ["selfhost-release-b4d232c1d963_ingress"],
+          "publishedPorts": ["8080/tcp", "8443/tcp"],
+          "secretNames": []
+        },
+        {
+          "service": "jobs",
+          "uid": 1000,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "localhost:41069/fixture/jobs@sha256:7fe98581b111eaa5d9220cc112f3828fcf2354a1c6a74e20722374965dd6d9d6",
+          "networks": ["selfhost-release-b4d232c1d963_data"],
+          "publishedPorts": [],
+          "secretNames": [
+            "app_database_url",
+            "auth_secret",
+            "github_client_secret",
+            "google_client_secret",
+            "turnstile_secret",
+            "valkey_url"
+          ]
+        },
+        {
+          "service": "migrate",
+          "uid": 1000,
+          "state": "exited",
+          "exitCode": 0,
+          "health": "unhealthy",
+          "image": "localhost:41069/fixture/migrate@sha256:f5d46d4da9ec5ad4f327937f8e3f4f522f2413ec98b6ec3ade622cc7855b4acb",
+          "networks": ["selfhost-release-b4d232c1d963_data"],
+          "publishedPorts": [],
+          "secretNames": ["migrator_database_url"]
+        },
+        {
+          "service": "postgres",
+          "uid": 999,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "localhost:41069/fixture/postgres@sha256:3c15c7fafbf5b14242aecc90889a2f851a521e77e8dfcdaa696fa859bf48ef18",
+          "networks": ["selfhost-release-b4d232c1d963_data"],
+          "publishedPorts": [],
+          "secretNames": [
+            "app_db_password",
+            "backup_s3_access_key_id",
+            "backup_s3_secret_access_key",
+            "migrator_db_password",
+            "postgres_password",
+            "readonly_db_password"
+          ]
+        },
+        {
+          "service": "valkey",
+          "uid": 999,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "localhost:41069/fixture/valkey@sha256:264630e555ca5692a3f51cfb150c644aee9bb057f43118878c509d860e6be390",
+          "networks": ["selfhost-release-b4d232c1d963_data"],
+          "publishedPorts": [],
+          "secretNames": ["valkey_password"]
+        },
+        {
+          "service": "web",
+          "uid": 1000,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "localhost:41069/fixture/web@sha256:9b14495c6cd038e55e647f1a0e35205b3f6bfd7641d8ca1d0e3b1aabf617590e",
+          "networks": [
+            "selfhost-release-b4d232c1d963_data",
+            "selfhost-release-b4d232c1d963_ingress"
+          ],
+          "publishedPorts": [],
+          "secretNames": [
+            "app_database_url",
+            "auth_secret",
+            "github_client_secret",
+            "google_client_secret",
+            "turnstile_secret",
+            "valkey_url"
+          ]
+        }
+      ]
+    },
+    {
+      "check": "existing version upgrade preserves persisted rows",
+      "passed": true,
+      "sha": "e2e92a89b98e180b3b0a1dc1600ab8efaa734342",
+      "volumesPreserved": true
+    },
+    {
+      "check": "real migrator role failure blocks target apps",
+      "passed": true,
+      "successfulSha": "e2e92a89b98e180b3b0a1dc1600ab8efaa734342",
+      "targetAppsStopped": true
+    },
+    {
+      "check": "real HTTPS health failure preserves successful record",
+      "passed": true,
+      "sha": "e2e92a89b98e180b3b0a1dc1600ab8efaa734342"
+    },
+    {
+      "check": "runtime TLS ports secrets UID",
+      "passed": true,
+      "sha": "081305013b022f457c561eecf5828b1959e13908",
+      "pgVerifyFull": true,
+      "invalidPgCaRejected": true,
+      "unknownHttpsCaRejected": true,
+      "pgHostnameMismatchRejected": true,
+      "secretsDirectoryMode": "0700",
+      "secretFiles": "0600 service UID",
+      "services": [
+        {
+          "service": "backup",
+          "uid": 999,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/backup@sha256:7f28d63d5142fbb14c86d13c4f994e0f5eca5bf7ba41d180534bb5927b6069cd",
+          "networks": ["selfhost-release-b4d232c1d963_data"],
+          "publishedPorts": [],
+          "secretNames": ["backup_s3_access_key_id", "backup_s3_secret_access_key"]
+        },
+        {
+          "service": "caddy",
+          "uid": 10001,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/caddy@sha256:aec0926afc3f84f0efebb5423483990ca6173c1cff2bcc02cbc7efd317c58bb1",
+          "networks": ["selfhost-release-b4d232c1d963_ingress"],
+          "publishedPorts": ["8080/tcp", "8443/tcp"],
+          "secretNames": []
+        },
+        {
+          "service": "jobs",
+          "uid": 1000,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/jobs@sha256:4807f09bc13d5b54fc64525ac1423e34abb0e5a0f82e4a0072d48a745e74a1e6",
+          "networks": ["selfhost-release-b4d232c1d963_data"],
+          "publishedPorts": [],
+          "secretNames": [
+            "app_database_url",
+            "auth_secret",
+            "github_client_secret",
+            "google_client_secret",
+            "turnstile_secret",
+            "valkey_url"
+          ]
+        },
+        {
+          "service": "migrate",
+          "uid": 1000,
+          "state": "exited",
+          "exitCode": 0,
+          "health": "unhealthy",
+          "image": "localhost:41069/fixture/migrate@sha256:f5d46d4da9ec5ad4f327937f8e3f4f522f2413ec98b6ec3ade622cc7855b4acb",
+          "networks": ["selfhost-release-b4d232c1d963_data"],
+          "publishedPorts": [],
+          "secretNames": ["migrator_database_url"]
+        },
+        {
+          "service": "postgres",
+          "uid": 999,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/postgres@sha256:ff07d832395490626a1f69b5e608579751bc29682377b59ca5281873b8feb309",
+          "networks": ["selfhost-release-b4d232c1d963_data"],
+          "publishedPorts": [],
+          "secretNames": [
+            "app_db_password",
+            "backup_s3_access_key_id",
+            "backup_s3_secret_access_key",
+            "migrator_db_password",
+            "postgres_password",
+            "readonly_db_password"
+          ]
+        },
+        {
+          "service": "valkey",
+          "uid": 999,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/valkey@sha256:e97dc1ae1588d49469790c888d980d6fbf9e1b329864f7ffdda2535e2de4098f",
+          "networks": ["selfhost-release-b4d232c1d963_data"],
+          "publishedPorts": [],
+          "secretNames": ["valkey_password"]
+        },
+        {
+          "service": "web",
+          "uid": 1000,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/web@sha256:f8d86a97ef4ba8b81c70bdb2b2cfa73f506901ce39d5e31f493dd31bb6d72439",
+          "networks": [
+            "selfhost-release-b4d232c1d963_data",
+            "selfhost-release-b4d232c1d963_ingress"
+          ],
+          "publishedPorts": [],
+          "secretNames": [
+            "app_database_url",
+            "auth_secret",
+            "github_client_secret",
+            "google_client_secret",
+            "turnstile_secret",
+            "valkey_url"
+          ]
+        }
+      ]
+    },
+    {
+      "check": "compatible rollback preserves PG engine rows and volumes",
+      "passed": true,
+      "sha": "081305013b022f457c561eecf5828b1959e13908",
+      "noOldMigration": true,
+      "volumesPreserved": true,
+      "snapshotSha256": "64d3f10097b564f349bb4e4a4c1e386f65be01434321229779230b85995fbecf"
+    }
+  ],
+  "scope": "Debian 12 independent VM; official GHCR bundle and real host reboot",
+  "notVerified": ["cross-host recovery", "unfinished task replay"],
+  "ghcrSha": "081305013b022f457c561eecf5828b1959e13908",
+  "phases": {
+    "prepare": {
+      "passed": true,
+      "bootId": "a50b491c-020b-47de-a35e-f4289f93f39d"
+    },
+    "after-reboot": {
+      "passed": true,
+      "previousBootId": "a50b491c-020b-47de-a35e-f4289f93f39d",
+      "bootId": "8fbee0cb-eb9c-4dd8-92d6-45d04e6a8d2a"
+    },
+    "ssh": {
+      "passed": true
+    },
+    "gates": {
+      "passed": true
+    },
+    "cleanup": {
+      "passed": true
+    }
+  },
+  "passed": true,
+  "fixtureSha": "e2e92a89b98e180b3b0a1dc1600ab8efaa734342",
+  "fixtureMetadataDiff": [
+    {
+      "service": "web",
+      "file": "server/application.mjs",
+      "beforeSha256": "181dd5557be179e33513aef0bcbcb5cbcbd79d594aa7326514cd891716c61d79",
+      "afterSha256": "1af4e335a9e6c842e8638a4a6eeb0809c74982505e91cbf8891cf2080f9340c3",
+      "fullShaReplacementCount": 1,
+      "onlyShaBytesChanged": true
+    },
+    {
+      "service": "web",
+      "file": "server/index.mjs",
+      "beforeSha256": "2b885ec2e4bb9576ca8e10e6c74adbdf75062d96d9654c4031fa24d239fbce46",
+      "afterSha256": "ed4db1641bae5bf7626f22eb5581992719f0f7eafb528cf562a1d76342751708",
+      "fullShaReplacementCount": 1,
+      "onlyShaBytesChanged": true
+    },
+    {
+      "service": "web",
+      "file": "server/_ssr/router-CspZxT4g.mjs",
+      "beforeSha256": "49af29ace0ddd02a8d9ec68963250cbdd45beb1bc51f01eb559ceaf00732d248",
+      "afterSha256": "349bf2264be8590def2f999d54a28d4058dace56806355e7e08f9cfe7ac12487",
+      "fullShaReplacementCount": 1,
+      "onlyShaBytesChanged": true
+    },
+    {
+      "service": "web",
+      "file": "server/_ssr/routes-DbQf9M-U.mjs",
+      "beforeSha256": "0e0c9559078acaca3496283ac99896dcfc22cb444c328945a6561b46f495b06e",
+      "afterSha256": "73617e67059e352ba98aa56d108c2511635798c5f871cb42c83a37fc4e107316",
+      "fullShaReplacementCount": 1,
+      "onlyShaBytesChanged": true
+    },
+    {
+      "service": "jobs",
+      "file": "server/index.mjs",
+      "beforeSha256": "71084e850f919691bb6c69e4457f68901b988c1d7ed530d15c40c957223b3047",
+      "afterSha256": "502dac7b288d4e7da3f5f29728eea395aaa79050cc8bbeaac365dbb7c582d1fd",
+      "fullShaReplacementCount": 3,
+      "onlyShaBytesChanged": true
+    }
+  ],
+  "fixtureDefinition": "same GHCR business/schema/handlers; ENV, OCI revision, /version and compiled full SHA literal only",
+  "cleanupComplete": true
+}

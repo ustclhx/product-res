@@ -1,0 +1,126 @@
+{
+  "captured_at": "2026-10-09T11:15:24.955934+00:00",
+  "database": "product_res_staging",
+  "role": "readonly",
+  "workspace_id": "01a11fca-f8b5-71ac-91cb-2e556301a8e5",
+  "subscriptions": [
+    {
+      "id": "01a11fcb-42fc-72c7-9709-883d4a9f5e0f",
+      "provider_subscription_id": "sub_1UOZEZL3UTpBAoXozNk55goq",
+      "plan_price_id": "01a11bac-8a18-7786-a6cf-d84dd209ef99",
+      "key": "pro",
+      "status": "active",
+      "cancel_at_period_end": false,
+      "current_period_start": "2026-10-09T08:32:53+00:00",
+      "current_period_end": "2026-11-09T08:32:53+00:00",
+      "last_event_at": "2026-10-09T08:33:21.321+00:00"
+    }
+  ],
+  "payments": [
+    {
+      "id": "01a11fcb-4589-72fd-85ea-734b83173b27",
+      "provider_payment_id": "pi_3UOZEXL3UTpBAoXo1ai5GN5a",
+      "kind": "initial",
+      "plan_price_id": "01a11bac-8a18-7786-a6cf-d84dd209ef99",
+      "amount": 1900,
+      "currency": "USD",
+      "refunded_amount": 0,
+      "status": "succeeded",
+      "period_start": "2026-10-09T08:32:53+00:00",
+      "period_end": "2026-11-09T08:32:53+00:00",
+      "paid_at": "2026-10-09T08:32:54+00:00"
+    }
+  ],
+  "payment_refunds": [],
+  "grants": [
+    {
+      "id": "01a11fcb-47f1-71e6-b850-8b0818c971b0",
+      "source": "subscription",
+      "source_ref": "01a11fcb-4589-72fd-85ea-734b83173b27:0",
+      "payment_id": "01a11fcb-4589-72fd-85ea-734b83173b27",
+      "amount": 1000,
+      "remaining": 1000,
+      "status": "active",
+      "expires_at": "2026-11-10T08:32:53+00:00"
+    }
+  ],
+  "ledger": [
+    {
+      "id": "01a11fcb-4838-772b-8368-3f3f6253816d",
+      "type": "grant",
+      "delta": 1000,
+      "grant_id": "01a11fcb-47f1-71e6-b850-8b0818c971b0"
+    }
+  ],
+  "refund_requests": [],
+  "events": [
+    {
+      "provider_event_id": "evt_1UOZEaL3UTpBAoXoBx9EOBx3",
+      "type": "customer.subscription.created",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T08:32:57.305+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_1UOZEaL3UTpBAoXoN7Z1tshS",
+      "type": "invoice.paid",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T08:32:58.489+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_1UOZEaL3UTpBAoXoQYbRwuA7",
+      "type": "checkout.session.completed",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T08:32:58.871+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_1UOZErL3UTpBAoXox7F2sXhs",
+      "type": "customer.subscription.updated",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T08:33:14.847+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_1UOZEyL3UTpBAoXohP7Cz4MV",
+      "type": "customer.subscription.updated",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T08:33:21.874+00:00",
+      "api_version": "2026-09-30.endive"
+    }
+  ],
+  "ledger_total": 1000,
+  "expected": 1000,
+  "negative_grants": 0,
+  "audit": [
+    {
+      "action": "billing.subscription_changed",
+      "target_type": "subscription",
+      "target_id": "01a11fcb-42fc-72c7-9709-883d4a9f5e0f",
+      "created_at": "2026-10-09T08:32:56.823676+00:00"
+    },
+    {
+      "action": "billing.subscription_changed",
+      "target_type": "subscription",
+      "target_id": "01a11fcb-42fc-72c7-9709-883d4a9f5e0f",
+      "created_at": "2026-10-09T08:33:13.906357+00:00"
+    },
+    {
+      "action": "billing.subscription_changed",
+      "target_type": "subscription",
+      "target_id": "01a11fcb-42fc-72c7-9709-883d4a9f5e0f",
+      "created_at": "2026-10-09T08:33:20.831172+00:00"
+    }
+  ]
+}

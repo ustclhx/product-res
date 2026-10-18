@@ -1,0 +1,68 @@
+{
+  "captured_at": "2026-10-09T11:13:04.994191+00:00",
+  "database": "product_res_staging",
+  "role": "readonly",
+  "workspace_id": "01a11fad-54ef-74b1-bb49-26232712dfa4",
+  "subscriptions": [],
+  "payments": [
+    {
+      "id": "01a11fad-b43a-7133-bca1-1d71977dcad4",
+      "provider_payment_id": "pi_3UOYjIL3UTpBAoXo1gvunegg",
+      "kind": "one_time",
+      "plan_price_id": "01a11bac-a47c-77ef-aa22-87cdc57a4339",
+      "amount": 1000,
+      "currency": "USD",
+      "refunded_amount": 0,
+      "status": "succeeded",
+      "period_start": null,
+      "period_end": null,
+      "paid_at": "2026-10-09T08:00:37+00:00"
+    }
+  ],
+  "payment_refunds": [],
+  "grants": [
+    {
+      "id": "01a11fad-b4d0-75f0-973c-254722747594",
+      "source": "purchase",
+      "source_ref": "01a11fad-b43a-7133-bca1-1d71977dcad4",
+      "payment_id": "01a11fad-b43a-7133-bca1-1d71977dcad4",
+      "amount": 1000,
+      "remaining": 1000,
+      "status": "active",
+      "expires_at": "2027-10-09T08:00:37+00:00"
+    }
+  ],
+  "ledger": [
+    {
+      "id": "01a11fad-b50b-74d9-922b-1fd04b0da61d",
+      "type": "grant",
+      "delta": 1000,
+      "grant_id": "01a11fad-b4d0-75f0-973c-254722747594"
+    }
+  ],
+  "refund_requests": [],
+  "events": [
+    {
+      "provider_event_id": "evt_1UOYjKL3UTpBAoXo6nn8x7at",
+      "type": "checkout.session.completed",
+      "status": "processed",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T08:00:40.233+00:00",
+      "api_version": "2026-09-30.endive"
+    },
+    {
+      "provider_event_id": "evt_3UOYjIL3UTpBAoXo1KA14f1c",
+      "type": "charge.refunded",
+      "status": "ignored",
+      "attempts": 1,
+      "error": null,
+      "processed_at": "2026-10-09T08:05:50.86+00:00",
+      "api_version": "2026-09-30.endive"
+    }
+  ],
+  "ledger_total": 1000,
+  "expected": 1000,
+  "negative_grants": 0,
+  "audit": []
+}

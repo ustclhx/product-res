@@ -1,0 +1,22 @@
+---
+title: Writing posts with MDX
+summary: Frontmatter fields, drafts and scheduled publishing.
+date: 2026-09-20
+tags: [guide]
+---
+
+Every post starts with frontmatter:
+
+```yaml
+title: My post
+summary: One sentence shown in the list
+date: 2026-10-01
+tags: [guide]
+draft: false
+```
+
+- **Drafts** (`draft: true`) are visible in local development and are left out of production builds.
+- **Scheduled posts** use a `date` in the future and stay hidden until that time; lists are
+  pre-rendered, so they show the post after the next deployment.
+- **Translations** are optional: if a post has no version in the current language, the default
+  language version is shown.

@@ -1,0 +1,7 @@
+// 仅供 vitest-plugin 测试使用的 Worker 配置：在 workerd 中渲染邮件模板。
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "product-res-email-test",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"]
+}

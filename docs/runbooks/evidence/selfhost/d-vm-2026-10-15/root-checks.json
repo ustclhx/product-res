@@ -1,0 +1,68 @@
+{
+  "baseSha": "7e7c99cec99396e8b469222b3b489a56d73769df",
+  "sourceDirty": true,
+  "checks": [
+    {
+      "command": "pnpm check",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm check:deps",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm check:singletons",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm dedupe --check",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm test",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm build",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm build:node",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm --filter @product-res/platform test",
+      "exitCode": 0
+    },
+    {
+      "command": "python3 -m unittest discover -s deploy/selfhost -p test_deploy.py",
+      "exitCode": 0
+    },
+    {
+      "command": "python3 deploy/selfhost/test-init-server.py",
+      "exitCode": 0
+    },
+    {
+      "command": "python3 -m unittest discover -s deploy/selfhost/release -p test_*.py",
+      "exitCode": 0
+    },
+    {
+      "command": "openspec validate add-selfhost-delivery --strict",
+      "exitCode": 0
+    },
+    {
+      "command": "openspec validate add-selfhost-job-engine --strict",
+      "exitCode": 0
+    }
+  ],
+  "testTasks": 26,
+  "typecheckTasks": 14,
+  "deployTests": 10,
+  "initTests": 8,
+  "bundleTests": 7,
+  "notes": "Node build used base SHA with patched worktree source, not a formal GHCR release; final source checks repeated after changes."
+}

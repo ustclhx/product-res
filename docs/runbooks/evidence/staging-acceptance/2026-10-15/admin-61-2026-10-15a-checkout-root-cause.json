@@ -1,0 +1,213 @@
+{
+  "runId": "admin-61-2026-10-15a",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T19:45:48.414Z",
+  "data": {
+    "expectedRelease": "598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+    "readOnly": true,
+    "dedicatedChromeProfileVerified": true,
+    "defaultChromeUsed": false,
+    "clickWindow": {
+      "intentRecordedAt": "2026-10-14T19:40:14.879Z",
+      "failureRecordedAt": "2026-10-14T19:40:23.156Z",
+      "exactClickTimestampPersisted": false,
+      "allTimestampsUtc": true,
+      "evidenceDirectoryDate": "2026-10-15"
+    },
+    "sentry": {
+      "projectId": "4512238756626432",
+      "primaryQuery": {
+        "query": "environment:staging release:598d1f68b6ef7b19e8a6d30c13575bac1701b7c2 dist:web",
+        "startUtc": "2026-10-14T19:38:00Z",
+        "endUtc": "2026-10-14T19:42:00Z",
+        "queryHttpStatus": 200,
+        "responseStart": "2026-10-14T19:38:00",
+        "responseEnd": "2026-10-14T19:42:00",
+        "issueCount": 0,
+        "issueIds": [],
+        "issueLinks": [],
+        "readOnly": true,
+        "dedicatedProfileVerified": true,
+        "nextPagePresent": false
+      },
+      "broadQuery": {
+        "query": "environment:staging release:598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+        "startUtc": "2026-10-14T19:35:00Z",
+        "endUtc": "2026-10-14T19:45:00Z",
+        "queryHttpStatus": 200,
+        "responseStart": "2026-10-14T19:35:00",
+        "responseEnd": "2026-10-14T19:45:00",
+        "issueCount": 0,
+        "issueIds": [],
+        "issueLinks": [],
+        "readOnly": true,
+        "dedicatedProfileVerified": true,
+        "nextPagePresent": false,
+        "distFilterRemoved": true
+      },
+      "matchingEventsObserved": 0,
+      "eventId": null,
+      "eventUrl": null,
+      "errorClass": null,
+      "safeErrorSummary": null,
+      "requestId": null,
+      "typeScriptFrames": [],
+      "noNewExceptionTriggered": true,
+      "settingsChanged": false,
+      "tokenCreated": false,
+      "absenceDoesNotExcludeHandledErrors": true
+    },
+    "historicalPageAndNetwork": {
+      "originalBrowserContextClosed": true,
+      "originalPageErrorPromptRetained": false,
+      "originalCheckoutResponseHttpStatus": null,
+      "originalCheckoutResponseSafeSummary": null,
+      "originalRequestId": null,
+      "networkTraceOrHarRetained": false,
+      "screenshotRetained": false,
+      "originalHelperErrorClass": "Error",
+      "originalHelperPhase": "create one hosted test checkout",
+      "originalHelperExceptionTextRetained": false,
+      "originalCardSubmissionAttempted": false,
+      "newCheckoutClickPerformedDuringDiagnosis": false,
+      "currentReadonlyStripeListResponseHttpStatus": 200,
+      "currentReadonlyListIsNotHistoricalCreateResponse": true
+    },
+    "window": {
+      "startUtc": "2026-10-14T19:38:00Z",
+      "endUtc": "2026-10-14T19:42:00Z"
+    },
+    "database": {
+      "readOnlyTransaction": true,
+      "roleCannotWritePayment": true,
+      "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+      "billingCustomerCount": 0,
+      "purchases": [],
+      "payments": [],
+      "refundRequestCount": 0,
+      "refundCount": 0,
+      "compensationCount": 0,
+      "workspaceStripeWebhookCount": 0,
+      "stripeWebhookCountInWindow": 0,
+      "ledgerTotal": 24,
+      "activeRemaining": 24,
+      "held": 0,
+      "debt": 0,
+      "billingAuditInWindow": [],
+      "reconciliationDifference": 0
+    },
+    "stripeReadonly": {
+      "readOnly": true,
+      "httpMethod": "GET",
+      "testKeyPrefixVerified": true,
+      "sessionCount": 1,
+      "sessions": [
+        {
+          "sessionIdSha256": "2f6c9035efa226f46b0f77cba51ee361b88744033297bdec26822a69d430204d",
+          "testSessionPrefix": true,
+          "livemode": false,
+          "createdAt": "2026-10-14T19:40:16.000Z",
+          "expiresAt": "2026-10-15T19:40:16.000Z",
+          "status": "open",
+          "paymentStatus": "unpaid",
+          "amountTotal": 1000,
+          "currency": "usd",
+          "mode": "payment",
+          "workspaceMetadataMatches": true,
+          "priceMetadataMatches": true,
+          "providerPaymentId": null,
+          "hostedCheckoutUrlPresent": true,
+          "rawSessionIdAndUrlPersisted": false
+        }
+      ],
+      "httpStatus": 200,
+      "hasMore": false
+    },
+    "sourceInspection": {
+      "provenance": "Repository and local executor helper inspection; these are source locations, not observed Sentry stack frames",
+      "releaseSourceMatchesCurrentCheckout": true,
+      "application": [
+        {
+          "file": "packages/billing/src/services.ts",
+          "function": "createCheckout",
+          "line": 234,
+          "finding": "Calls provider.createCheckout."
+        },
+        {
+          "file": "packages/billing/src/services.ts",
+          "function": "createCheckout",
+          "line": 245,
+          "finding": "Stripe session is associated by webhook; immediate pending purchase insertion requires provider.confirmCheckout."
+        },
+        {
+          "file": "packages/billing/src/stripe/operations.ts",
+          "function": "createStripeCheckout",
+          "line": 44,
+          "finding": "Creates hosted Checkout Session and returns its URL/reference at line 66."
+        },
+        {
+          "file": "packages/billing/src/events/target.ts",
+          "function": "ensurePurchase",
+          "line": 38,
+          "finding": "Webhook processing inserts the purchase if absent."
+        },
+        {
+          "file": "apps/web/src/features/billing/customer.functions.ts",
+          "function": "safe",
+          "line": 56,
+          "finding": "Handled checkout errors are converted to safe results; non-AppError is logged as billing.action_failed, so absence of an unhandled Sentry event alone is inconclusive."
+        }
+      ],
+      "executorHelper": [
+        {
+          "file": "/tmp/admin61-purchase.mjs",
+          "line": 25,
+          "safeCandidateSummary": "Hosted checkout test mode unverified",
+          "finding": "Checks hostname, test session prefix and a DOM text count immediately after navigation.",
+          "thisWasTheObservedOriginalException": false
+        },
+        {
+          "file": "/tmp/admin61-purchase.mjs",
+          "line": 28,
+          "safeCandidateSummary": "Pending purchase mismatch",
+          "finding": "Incorrectly requires an already-persisted pending purchase before Stripe card submission.",
+          "thisWasTheObservedOriginalException": false
+        }
+      ]
+    },
+    "conclusion": {
+      "providerCheckoutCreationSucceeded": true,
+      "singleTestSessionMatchesWorkspacePriceAmountAndTime": true,
+      "checkoutSessionOpenAndUnpaid": true,
+      "applicationCheckoutCreationFailureProven": false,
+      "executorPrepaymentAssertionDefectConfirmed": true,
+      "primaryRootCauseClue": "验收 helper 在 Stripe 付款前错误要求本地 pending purchase；应用按设计在 Stripe 回调阶段建立 purchase。Stripe 测试 Checkout 实际已创建，open/unpaid。",
+      "exactFirstThrowingGuardProven": false,
+      "remainingUncertainty": "原始异常文本、页面提示和创建请求响应未留存；同一阶段还存在测试模式 DOM 检查，无法追溯最先触发的检查，也无法恢复 requestId 或 Sentry 堆栈。",
+      "priorCreateCheckoutFailedCharacterizationCorrected": true,
+      "noLocalPurchasePaymentRefundOrCompensation": true,
+      "sameSnapshotReconciliationDifference": 0,
+      "balanceUnchanged": true,
+      "safeNextStepOnly": "修正付款前置校验并保留逐阶段脱敏诊断；任何继续支付必须按后续用户授权操作，且先复核现有未付款会话，避免重复创建。",
+      "stoppedAfterReadonlyDiagnosis": true
+    },
+    "constraints": {
+      "newCheckoutClicks": 0,
+      "cardSubmissions": 0,
+      "newRefundRequests": 0,
+      "replayRequests": 0,
+      "dbWrites": 0,
+      "stripeWriteRequests": 0,
+      "paypalActions": 0,
+      "liveActions": 0,
+      "emailActions": 0,
+      "deployments": 0,
+      "secretsChanged": false
+    },
+    "credentialScan": "passed",
+    "evidenceCommitted": false,
+    "tasksModified": false,
+    "existingEvidenceFilesVerified": 375,
+    "existingEvidenceUnchanged": true
+  }
+}

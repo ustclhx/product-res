@@ -1,0 +1,64 @@
+{
+  "id": "WH-2XG45013EA714245K-4R502993J1656043F",
+  "event_version": "1.0",
+  "create_time": "2026-10-14T17:08:47.648Z",
+  "resource_type": "refund",
+  "resource_version": "2.0",
+  "event_type": "PAYMENT.CAPTURE.REFUNDED",
+  "resource": {
+    "id": "9UR96226Y9887940S",
+    "amount": {
+      "currency_code": "USD",
+      "value": "0.01"
+    },
+    "seller_payable_breakdown": {
+      "gross_amount": {
+        "currency_code": "USD",
+        "value": "0.01"
+      },
+      "paypal_fee": {
+        "currency_code": "USD",
+        "value": "0.00"
+      },
+      "net_amount": {
+        "currency_code": "USD",
+        "value": "0.01"
+      },
+      "total_refunded_amount": {
+        "currency_code": "USD",
+        "value": "0.01"
+      }
+    },
+    "custom_id": "paypal-worker-independent-card-recording",
+    "status": "COMPLETED",
+    "create_time": "2026-10-14T10:08:42-07:00",
+    "update_time": "2026-10-14T10:08:42-07:00",
+    "payer": {
+      "merchant_id": "MERCHANTRECORDED"
+    },
+    "links": [
+      {
+        "href": "https://api.sandbox.paypal.com/v2/payments/refunds/9UR96226Y9887940S",
+        "rel": "self",
+        "method": "GET"
+      },
+      {
+        "href": "https://api.sandbox.paypal.com/v2/payments/captures/14549073EE7057637",
+        "rel": "up",
+        "method": "GET"
+      }
+    ]
+  },
+  "links": [
+    {
+      "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-2XG45013EA714245K-4R502993J1656043F",
+      "rel": "self",
+      "method": "GET"
+    },
+    {
+      "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-2XG45013EA714245K-4R502993J1656043F/resend",
+      "rel": "resend",
+      "method": "POST"
+    }
+  ]
+}

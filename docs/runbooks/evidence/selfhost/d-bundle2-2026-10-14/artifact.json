@@ -1,0 +1,25 @@
+{
+  "acceptanceRun": "https://github.com/ustclhx/product-res/actions/runs/38596482116",
+  "archive": "selfhost-release-081305013b022f457c561eecf5828b1959e13908.tar.gz",
+  "archiveSha256": "14bf61e0fbbfffee605ec0dcf0f70728e229f3b31ced105dfb064529c233eae0",
+  "sourceSha": "081305013b022f457c561eecf5828b1959e13908",
+  "fileCount": 28,
+  "checksummedFileCount": 27,
+  "matchesPublishedReleaseManifest": true,
+  "hiddenExamplesPreserved": [
+    ".env.example",
+    ".env.backup.example",
+    ".env.object-storage.example",
+    ".env.replica.example"
+  ],
+  "executableModesPreserved": [
+    "deploy.sh",
+    "init-server.sh",
+    "init-firewall.sh",
+    "restore.sh",
+    "restore-drill.sh"
+  ],
+  "bundleContainedVerify": true,
+  "cleanDirectoryComposeConfig": true,
+  "allChecksumsMatch": true
+}

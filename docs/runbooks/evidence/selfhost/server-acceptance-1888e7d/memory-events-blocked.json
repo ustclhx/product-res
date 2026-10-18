@@ -1,0 +1,183 @@
+{
+  "at": "2026-10-16T17:21:27.565337+00:00",
+  "hostOomKillsSinceBoot": 0,
+  "containers": [
+    {
+      "name": "selfhost-accept-probe",
+      "oomKilled": false,
+      "memory.events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0
+      },
+      "memory.current": 69840896,
+      "memory.swap.current": 0,
+      "memory.stat": {
+        "anon": 65163264,
+        "file": 1847296,
+        "sock": 0,
+        "shmem": 0
+      },
+      "processRssKiBSum": 91760,
+      "processHighWaterRssKiBSum": 119716,
+      "processCount": 1
+    },
+    {
+      "name": "selfhost-accept-jobs2",
+      "oomKilled": false,
+      "memory.events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0
+      },
+      "memory.current": 108326912,
+      "memory.swap.current": 0,
+      "memory.stat": {
+        "anon": 91238400,
+        "file": 13238272,
+        "sock": 16384,
+        "shmem": 0
+      },
+      "processRssKiBSum": 118204,
+      "processHighWaterRssKiBSum": 138524,
+      "processCount": 1
+    },
+    {
+      "name": "product-res-selfhost-backup-1",
+      "oomKilled": false,
+      "memory.events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0
+      },
+      "memory.current": 80150528,
+      "memory.swap.current": 0,
+      "memory.stat": {
+        "anon": 15605760,
+        "file": 63369216,
+        "sock": 0,
+        "shmem": 0
+      },
+      "processRssKiBSum": 28352,
+      "processHighWaterRssKiBSum": 29592,
+      "processCount": 1
+    },
+    {
+      "name": "product-res-selfhost-caddy-1",
+      "oomKilled": false,
+      "memory.events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0
+      },
+      "memory.current": 46440448,
+      "memory.swap.current": 0,
+      "memory.stat": {
+        "anon": 10383360,
+        "file": 35405824,
+        "sock": 0,
+        "shmem": 0
+      },
+      "processRssKiBSum": 20892,
+      "processHighWaterRssKiBSum": 48688,
+      "processCount": 1
+    },
+    {
+      "name": "product-res-selfhost-web-1",
+      "oomKilled": false,
+      "memory.events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0
+      },
+      "memory.current": 129273856,
+      "memory.swap.current": 0,
+      "memory.stat": {
+        "anon": 90652672,
+        "file": 35237888,
+        "sock": 0,
+        "shmem": 0
+      },
+      "processRssKiBSum": 119872,
+      "processHighWaterRssKiBSum": 151648,
+      "processCount": 1
+    },
+    {
+      "name": "product-res-selfhost-jobs-1",
+      "oomKilled": false,
+      "memory.events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0
+      },
+      "memory.current": 117846016,
+      "memory.swap.current": 0,
+      "memory.stat": {
+        "anon": 90726400,
+        "file": 23322624,
+        "sock": 20480,
+        "shmem": 0
+      },
+      "processRssKiBSum": 112768,
+      "processHighWaterRssKiBSum": 140800,
+      "processCount": 1
+    },
+    {
+      "name": "product-res-selfhost-postgres-1",
+      "oomKilled": false,
+      "memory.events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0
+      },
+      "memory.current": 537878528,
+      "memory.swap.current": 0,
+      "memory.stat": {
+        "anon": 32657408,
+        "file": 473821184,
+        "sock": 40960,
+        "shmem": 138801152
+      },
+      "processRssKiBSum": 527456,
+      "processHighWaterRssKiBSum": 531080,
+      "processCount": 21
+    },
+    {
+      "name": "product-res-selfhost-valkey-1",
+      "oomKilled": false,
+      "memory.events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0
+      },
+      "memory.current": 20627456,
+      "memory.swap.current": 0,
+      "memory.stat": {
+        "anon": 3031040,
+        "file": 16850944,
+        "sock": 0,
+        "shmem": 4096
+      },
+      "processRssKiBSum": 8252,
+      "processHighWaterRssKiBSum": 12212,
+      "processCount": 1
+    }
+  ],
+  "rssNotes": "Sum of process RSS/HWM at this snapshot; shared pages can be counted more than once, exited children not included. cgroup memory.peak covers complete still-live container lifetime."
+}

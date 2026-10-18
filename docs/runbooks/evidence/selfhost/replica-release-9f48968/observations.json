@@ -1,0 +1,249 @@
+{
+  "pollIntervalSeconds": 45,
+  "sampleCount": 24,
+  "firstObservation": "2026-10-17T16:19:28.292264+00:00",
+  "lastObservation": "2026-10-17T16:39:20.298127+00:00",
+  "allPrimaryOperationsOk": true,
+  "allArchiveConsecutiveFailuresZero": true,
+  "samples": [
+    {
+      "at": "2026-10-17T16:19:28.292264+00:00",
+      "healthy": false,
+      "containerHealth": "starting",
+      "revision": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+      "replica": {
+        "configured": true,
+        "ok": false,
+        "lastAttempt": "2026-10-17T16:16:13.372226Z",
+        "running": true,
+        "lastSuccess": "2026-10-17T16:14:02.141264Z",
+        "syncLagSeconds": 1131.656943,
+        "copiedObjects": 21,
+        "objectCount": 1561,
+        "manifestSha256": "ac42ffcee58cf2d4ea65ebd65351b194ab65e35653fe0d88aed256f00b97adee",
+        "consecutiveFailures": 0,
+        "failures": 1,
+        "lastFailure": "2026-10-16T19:42:14.453039Z",
+        "lastError": "REPLICA_S3_TIMEOUT",
+        "refreshFromSuccess": false,
+        "maxAgeSeconds": 3600,
+        "currentLagSeconds": 1458.287528
+      },
+      "primaryOk": {
+        "base": true,
+        "dump": true,
+        "verification": true
+      },
+      "archiveConsecutiveFailures": 0
+    },
+    {
+      "at": "2026-10-17T16:23:49.483406+00:00",
+      "healthy": false,
+      "containerHealth": "starting",
+      "revision": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+      "replica": {
+        "configured": true,
+        "ok": false,
+        "lastAttempt": "2026-10-17T16:16:13.372226Z",
+        "running": true,
+        "lastSuccess": "2026-10-17T16:14:02.141264Z",
+        "syncLagSeconds": 1131.656943,
+        "copiedObjects": 21,
+        "objectCount": 1561,
+        "manifestSha256": "ac42ffcee58cf2d4ea65ebd65351b194ab65e35653fe0d88aed256f00b97adee",
+        "consecutiveFailures": 0,
+        "failures": 1,
+        "lastFailure": "2026-10-16T19:42:14.453039Z",
+        "lastError": "REPLICA_S3_TIMEOUT",
+        "refreshFromSuccess": false,
+        "maxAgeSeconds": 3600,
+        "currentLagSeconds": 1719.487413
+      },
+      "primaryOk": {
+        "base": true,
+        "dump": true,
+        "verification": true
+      },
+      "archiveConsecutiveFailures": 0
+    },
+    {
+      "at": "2026-10-17T16:28:06.904169+00:00",
+      "healthy": false,
+      "containerHealth": "starting",
+      "revision": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+      "replica": {
+        "configured": true,
+        "ok": false,
+        "lastAttempt": "2026-10-17T16:16:13.372226Z",
+        "running": true,
+        "lastSuccess": "2026-10-17T16:14:02.141264Z",
+        "syncLagSeconds": 1131.656943,
+        "copiedObjects": 21,
+        "objectCount": 1561,
+        "manifestSha256": "ac42ffcee58cf2d4ea65ebd65351b194ab65e35653fe0d88aed256f00b97adee",
+        "consecutiveFailures": 0,
+        "failures": 1,
+        "lastFailure": "2026-10-16T19:42:14.453039Z",
+        "lastError": "REPLICA_S3_TIMEOUT",
+        "refreshFromSuccess": false,
+        "maxAgeSeconds": 3600,
+        "currentLagSeconds": 1976.893587
+      },
+      "primaryOk": {
+        "base": true,
+        "dump": true,
+        "verification": true
+      },
+      "archiveConsecutiveFailures": 0
+    },
+    {
+      "at": "2026-10-17T16:32:26.085502+00:00",
+      "healthy": false,
+      "containerHealth": "unhealthy",
+      "revision": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+      "replica": {
+        "configured": true,
+        "ok": false,
+        "lastAttempt": "2026-10-17T16:16:13.372226Z",
+        "running": true,
+        "lastSuccess": "2026-10-17T16:14:02.141264Z",
+        "syncLagSeconds": 1131.656943,
+        "copiedObjects": 21,
+        "objectCount": 1561,
+        "manifestSha256": "ac42ffcee58cf2d4ea65ebd65351b194ab65e35653fe0d88aed256f00b97adee",
+        "consecutiveFailures": 0,
+        "failures": 1,
+        "lastFailure": "2026-10-16T19:42:14.453039Z",
+        "lastError": "REPLICA_S3_TIMEOUT",
+        "refreshFromSuccess": false,
+        "maxAgeSeconds": 3600,
+        "currentLagSeconds": 2236.084162
+      },
+      "primaryOk": {
+        "base": true,
+        "dump": true,
+        "verification": true
+      },
+      "archiveConsecutiveFailures": 0
+    },
+    {
+      "at": "2026-10-17T16:36:43.883424+00:00",
+      "healthy": false,
+      "containerHealth": "unhealthy",
+      "revision": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+      "replica": {
+        "configured": true,
+        "ok": false,
+        "lastAttempt": "2026-10-17T16:16:13.372226Z",
+        "running": true,
+        "lastSuccess": "2026-10-17T16:14:02.141264Z",
+        "syncLagSeconds": 1131.656943,
+        "copiedObjects": 21,
+        "objectCount": 1561,
+        "manifestSha256": "ac42ffcee58cf2d4ea65ebd65351b194ab65e35653fe0d88aed256f00b97adee",
+        "consecutiveFailures": 0,
+        "failures": 1,
+        "lastFailure": "2026-10-16T19:42:14.453039Z",
+        "lastError": "REPLICA_S3_TIMEOUT",
+        "refreshFromSuccess": false,
+        "maxAgeSeconds": 3600,
+        "currentLagSeconds": 2493.882141
+      },
+      "primaryOk": {
+        "base": true,
+        "dump": true,
+        "verification": true
+      },
+      "archiveConsecutiveFailures": 0
+    },
+    {
+      "at": "2026-10-17T16:37:35.887011+00:00",
+      "healthy": true,
+      "containerHealth": "unhealthy",
+      "revision": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+      "replica": {
+        "configured": true,
+        "ok": true,
+        "lastAttempt": "2026-10-17T16:16:13.372226Z",
+        "running": false,
+        "lastSuccess": "2026-10-17T16:37:29.589605Z",
+        "syncLagSeconds": 1280.548178,
+        "copiedObjects": 22,
+        "objectCount": 1583,
+        "manifestSha256": "06865068c5c91c88529d76abe4b37e2d84ef12a96b3de560adf9d27c9a145968",
+        "consecutiveFailures": 0,
+        "failures": 1,
+        "lastFailure": "2026-10-16T19:42:14.453039Z",
+        "lastDurationSeconds": 1276.217,
+        "maxAgeSeconds": 3600,
+        "currentLagSeconds": 1287.60958
+      },
+      "primaryOk": {
+        "base": true,
+        "dump": true,
+        "verification": true
+      },
+      "archiveConsecutiveFailures": 0
+    },
+    {
+      "at": "2026-10-17T16:38:28.384495+00:00",
+      "healthy": true,
+      "containerHealth": "unhealthy",
+      "revision": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+      "replica": {
+        "configured": true,
+        "ok": false,
+        "lastAttempt": "2026-10-17T16:38:04.221170Z",
+        "running": true,
+        "lastSuccess": "2026-10-17T16:37:29.589605Z",
+        "syncLagSeconds": 1280.548178,
+        "copiedObjects": 22,
+        "objectCount": 1583,
+        "manifestSha256": "06865068c5c91c88529d76abe4b37e2d84ef12a96b3de560adf9d27c9a145968",
+        "consecutiveFailures": 0,
+        "failures": 1,
+        "lastFailure": "2026-10-16T19:42:14.453039Z",
+        "lastDurationSeconds": 1276.217,
+        "refreshFromSuccess": true,
+        "maxAgeSeconds": 3600,
+        "currentLagSeconds": 1339.996077
+      },
+      "primaryOk": {
+        "base": true,
+        "dump": true,
+        "verification": true
+      },
+      "archiveConsecutiveFailures": 0
+    },
+    {
+      "at": "2026-10-17T16:39:20.298127+00:00",
+      "healthy": true,
+      "containerHealth": "healthy",
+      "revision": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+      "replica": {
+        "configured": true,
+        "ok": false,
+        "lastAttempt": "2026-10-17T16:38:04.221170Z",
+        "running": true,
+        "lastSuccess": "2026-10-17T16:37:29.589605Z",
+        "syncLagSeconds": 1280.548178,
+        "copiedObjects": 22,
+        "objectCount": 1583,
+        "manifestSha256": "06865068c5c91c88529d76abe4b37e2d84ef12a96b3de560adf9d27c9a145968",
+        "consecutiveFailures": 0,
+        "failures": 1,
+        "lastFailure": "2026-10-16T19:42:14.453039Z",
+        "lastDurationSeconds": 1276.217,
+        "refreshFromSuccess": true,
+        "maxAgeSeconds": 3600,
+        "currentLagSeconds": 1392.096004
+      },
+      "primaryOk": {
+        "base": true,
+        "dump": true,
+        "verification": true
+      },
+      "archiveConsecutiveFailures": 0
+    }
+  ]
+}

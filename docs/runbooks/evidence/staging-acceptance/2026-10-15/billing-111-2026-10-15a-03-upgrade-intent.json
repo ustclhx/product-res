@@ -1,0 +1,16 @@
+{
+  "runId": "billing-111-2026-10-15a",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T21:35:46.892Z",
+  "data": {
+    "subscriptionId": "01a13c56-9ecc-707a-9aff-c1259ccf7db8",
+    "fromPriceId": "01a11bac-8a18-7786-a6cf-d84dd209ef99",
+    "toPriceId": "01a11bac-974b-70c2-8606-cdc7dbe5768c",
+    "fromMonthlyAmount": 1900,
+    "toMonthlyAmount": 4900,
+    "currency": "USD",
+    "mode": "same-subscription-proration",
+    "upgradeClickPlanned": 1,
+    "noNewCheckout": true
+  }
+}

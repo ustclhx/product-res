@@ -1,0 +1,22 @@
+{
+  "runId": "acceptance-2026-10-14a",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T10:17:00.589Z",
+  "data": {
+    "templatePolicy": {
+      "thinkingDefault": "off",
+      "thinkingUserToggle": false,
+      "reasoningDisplay": false,
+      "source": "template.config.ts",
+      "expectedDeployment": "a7c6f15cbf078e51fe688b92e1bce0e42cc3a7dd"
+    },
+    "persistedUsageLocation": "ai_message.usage_checkpoint; no separate ai_message.usage JSON column",
+    "messageCount": 0,
+    "messages": [],
+    "allMessagePartsExcludeReasoning": null,
+    "allReasoningTokensZero": null,
+    "readOnly": true,
+    "contentsExported": false,
+    "verificationStatus": "not-executed-suite-stopped-before-chat"
+  }
+}

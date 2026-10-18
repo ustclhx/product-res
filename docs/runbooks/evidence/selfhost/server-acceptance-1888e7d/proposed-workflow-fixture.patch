@@ -1,0 +1,7 @@
+--- a/packages/platform/test/node/workflow.integration.test.ts
++++ b/packages/platform/test/node/workflow.integration.test.ts
+@@ -420,3 +420,3 @@
+     const launched = await launch()
+-    const sleepId = await create(launched.child, { mode: 'sleep', sleepMs: 2_000 })
++    const sleepId = await create(launched.child, { mode: 'sleep', sleepMs: 5_000 })
+     const [checkpoint] = await sleepCheckpoint(launched.name, sleepId)

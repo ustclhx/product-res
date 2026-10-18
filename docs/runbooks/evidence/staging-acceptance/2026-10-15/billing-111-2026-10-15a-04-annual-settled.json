@@ -1,0 +1,195 @@
+{
+  "runId": "billing-111-2026-10-15a",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T21:37:06.339Z",
+  "data": {
+    "state": {
+      "workspaceId": "01a134fd-cf19-7366-8567-c002d78f2637",
+      "readOnlyTransaction": true,
+      "roleCannotWritePayment": true,
+      "subscriptions": [
+        {
+          "id": "01a13c58-d1d7-7302-8594-922d3409df40",
+          "provider": "stripe",
+          "providerSubscriptionId": "sub_1UQZqxL3UTpBAoXoPugxzjA2",
+          "planId": "01a11bac-872b-76f6-b42a-d20e8925d1f9",
+          "planPriceId": "01a11bac-8d09-77ec-97df-634cef2f887e",
+          "planKey": "pro",
+          "planSort": 10,
+          "monthlyCredits": 1000,
+          "interval": "year",
+          "status": "active",
+          "cancelAtPeriodEnd": false,
+          "currentPeriodStart": "2026-10-14T21:36:49+00:00",
+          "currentPeriodEnd": "2027-10-14T21:36:49+00:00",
+          "lastEventAt": "2026-10-14T21:36:52+00:00"
+        }
+      ],
+      "purchases": [],
+      "payments": [
+        {
+          "id": "01a13c58-e427-732c-b4bd-658604d31755",
+          "provider": "stripe",
+          "providerPaymentId": "pi_3UQZqvL3UTpBAoXo15aw5NBf",
+          "subscriptionId": "01a13c58-d1d7-7302-8594-922d3409df40",
+          "purchaseId": null,
+          "kind": "initial",
+          "planPriceId": "01a11bac-8d09-77ec-97df-634cef2f887e",
+          "amount": 19000,
+          "currency": "USD",
+          "status": "succeeded",
+          "refundedAmount": 0,
+          "periodStart": "2026-10-14T21:36:49+00:00",
+          "periodEnd": "2027-10-14T21:36:49+00:00",
+          "paidAt": "2026-10-14T21:36:50+00:00"
+        }
+      ],
+      "grants": [
+        {
+          "id": "01a13525-41a4-77c1-960d-0f955e2ee00d",
+          "source": "admin",
+          "sourceRef": "01a13525-3ce3-7099-88ed-d3707c6d2f4d",
+          "paymentId": null,
+          "amount": 25,
+          "remaining": 25,
+          "status": "active",
+          "expiresAt": null
+        },
+        {
+          "id": "01a13c58-ea4b-7638-8856-f5e9ae7cc4fd",
+          "source": "subscription",
+          "sourceRef": "01a13c58-e427-732c-b4bd-658604d31755:0",
+          "paymentId": "01a13c58-e427-732c-b4bd-658604d31755",
+          "amount": 1000,
+          "remaining": 1000,
+          "status": "active",
+          "expiresAt": "2026-11-15T21:36:49+00:00"
+        }
+      ],
+      "runLedger": [
+        {
+          "id": "01a13c58-eb6c-721a-b183-33e04a6955dd",
+          "type": "grant",
+          "delta": 1000,
+          "grantId": "01a13c58-ea4b-7638-8856-f5e9ae7cc4fd",
+          "refType": "subscription",
+          "refId": "01a13c58-e427-732c-b4bd-658604d31755:0",
+          "createdAt": "2026-10-14T21:36:54.993051+00:00"
+        }
+      ],
+      "webhooks": [
+        {
+          "id": "01a13c58-c6df-7431-925a-fe58bc9704e4",
+          "providerEventId": "evt_1UQZqzL3UTpBAoXovN4QlWIw",
+          "type": "customer.subscription.created",
+          "status": "processed",
+          "attempts": 1,
+          "processedAt": "2026-10-14T21:36:57.63+00:00",
+          "receivedAt": "2026-10-14T21:36:53.43719+00:00",
+          "hasError": false,
+          "testMode": true,
+          "apiVersion": "2026-09-30.endive"
+        },
+        {
+          "id": "01a13c58-c7e8-7537-ac81-5774f316cc52",
+          "providerEventId": "evt_1UQZqzL3UTpBAoXou4RW7Utg",
+          "type": "checkout.session.completed",
+          "status": "processed",
+          "attempts": 1,
+          "processedAt": "2026-10-14T21:36:59.322+00:00",
+          "receivedAt": "2026-10-14T21:36:53.710632+00:00",
+          "hasError": false,
+          "testMode": true,
+          "apiVersion": "2026-09-30.endive"
+        },
+        {
+          "id": "01a13c58-c7fc-72a2-ace8-1de1a9b5d8e5",
+          "providerEventId": "evt_1UQZqyL3UTpBAoXoeCcTv5fp",
+          "type": "invoice.paid",
+          "status": "processed",
+          "attempts": 1,
+          "processedAt": "2026-10-14T21:37:03.117+00:00",
+          "receivedAt": "2026-10-14T21:36:53.733423+00:00",
+          "hasError": false,
+          "testMode": true,
+          "apiVersion": "2026-09-30.endive"
+        }
+      ],
+      "audits": [
+        {
+          "id": "01a13c58-d68b-7581-af07-8af21fda0eb8",
+          "action": "billing.subscription_changed",
+          "actorUserId": null,
+          "source": "subscription.activated",
+          "beforeCancelAtPeriodEnd": null,
+          "afterCancelAtPeriodEnd": false,
+          "targetType": "subscription",
+          "targetId": "01a13c58-d1d7-7302-8594-922d3409df40",
+          "createdAt": "2026-10-14T21:36:54.623355+00:00"
+        }
+      ],
+      "snapshot": {
+        "ledgerTotal": 1025,
+        "activeRemaining": 1025,
+        "held": 0,
+        "debt": 0,
+        "negativeGrants": 0,
+        "renewingSubscriptionCount": 1,
+        "reconciliationDifference": 0
+      },
+      "paypalPaymentsDigest": "0ac6a8406de25505f1fbec53bfb26d14",
+      "paypalSubscriptionsDigest": "b211a302a0e184fb13e5bb94cba5e1b0",
+      "paypalRefundsDigest": "d751713988987e9331980363e24189ce",
+      "allRefundRequestsDigest": "8c1c1c505daaefeba680b4bfc7f2643e"
+    },
+    "provider": {
+      "providerSubscriptionId": "sub_1UQZqxL3UTpBAoXoPugxzjA2",
+      "customerId": "cus_VRSmFSEwjb4Aqk",
+      "livemode": false,
+      "status": "active",
+      "cancelAtPeriodEnd": false,
+      "testClockId": null,
+      "priceId": "price_1UOSyiL3UTpBAoXoQVYU90Yt",
+      "providerPaymentId": "pi_3UQZqvL3UTpBAoXo15aw5NBf",
+      "paymentStatus": "succeeded",
+      "amountReceived": 19000,
+      "checkoutStatus": "complete",
+      "checkoutPaymentStatus": "paid"
+    },
+    "checks": {
+      "foreignBillingResourcesUnchanged": true,
+      "readOnly": true,
+      "noNegativeGrants": true,
+      "noHoldOrDebt": true,
+      "reconciles": true,
+      "oneRenewingAtMost": true,
+      "grantIdentitiesUnique": true,
+      "paymentIdentitiesUnique": true,
+      "oneInitialPayment": true,
+      "initialAmount": true,
+      "providerTestMode": true,
+      "providerPriceMatches": true,
+      "subscriptionActive": true,
+      "oneGrant": true,
+      "grantIdentity": true,
+      "oneGrantLedger": true,
+      "expectedBalance": true,
+      "paidSession": true,
+      "immutablePriceAndPeriod": true,
+      "annualFirstMonthOnly": true
+    },
+    "initialSnapshot": {
+      "ledgerTotal": 25,
+      "activeRemaining": 25,
+      "held": 0,
+      "debt": 0,
+      "negativeGrants": 0,
+      "renewingSubscriptionCount": 0,
+      "reconciliationDifference": 0
+    },
+    "paymentSubmissionCount": 1,
+    "paidRetries": 0,
+    "firstMonthCredits": 1000,
+    "annualCreditsNotTwelveTimes": true
+  }
+}

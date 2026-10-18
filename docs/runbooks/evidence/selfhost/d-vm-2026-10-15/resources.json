@@ -1,0 +1,79 @@
+{
+  "cpus": 2,
+  "vmMemory": {
+    "MemTotalKiB": 4022720,
+    "MemAvailableKiB": 2645588,
+    "SwapTotalKiB": 0,
+    "SwapFreeKiB": 0
+  },
+  "services": [
+    {
+      "service": "nifty_thompson",
+      "memory": "244.3MiB / 512MiB",
+      "cpu": "2.50%",
+      "pids": "64"
+    },
+    {
+      "service": "selfhost-release-b4d232c1d963-patched-probe",
+      "memory": "79.32MiB / 256MiB",
+      "cpu": "1.94%",
+      "pids": "11"
+    },
+    {
+      "service": "selfhost-release-b4d232c1d963-original-probe",
+      "memory": "81.43MiB / 256MiB",
+      "cpu": "2.67%",
+      "pids": "11"
+    },
+    {
+      "service": "selfhost-release-b4d232c1d963-backup-1",
+      "memory": "54.7MiB / 384MiB",
+      "cpu": "0.00%",
+      "pids": "1"
+    },
+    {
+      "service": "selfhost-release-b4d232c1d963-caddy-1",
+      "memory": "13.61MiB / 128MiB",
+      "cpu": "0.00%",
+      "pids": "7"
+    },
+    {
+      "service": "selfhost-release-b4d232c1d963-web-1",
+      "memory": "76.04MiB / 1GiB",
+      "cpu": "0.01%",
+      "pids": "11"
+    },
+    {
+      "service": "selfhost-release-b4d232c1d963-jobs-1",
+      "memory": "92.43MiB / 768MiB",
+      "cpu": "3.50%",
+      "pids": "11"
+    },
+    {
+      "service": "selfhost-release-b4d232c1d963-postgres-1",
+      "memory": "117.7MiB / 1GiB",
+      "cpu": "2.92%",
+      "pids": "27"
+    },
+    {
+      "service": "selfhost-release-b4d232c1d963-valkey-1",
+      "memory": "8.969MiB / 384MiB",
+      "cpu": "0.09%",
+      "pids": "5"
+    },
+    {
+      "service": "selfhost-release-b4d232c1d963-s3-object-storage-1",
+      "memory": "127.2MiB / 512MiB",
+      "cpu": "0.09%",
+      "pids": "7"
+    },
+    {
+      "service": "selfhost-release-b4d232c1d963-s3-tls-1",
+      "memory": "28.38MiB / 128MiB",
+      "cpu": "0.00%",
+      "pids": "11"
+    }
+  ],
+  "oomKilled": 0,
+  "scope": "idle stack with pending workflow/S3 fixture; not a full capacity benchmark"
+}

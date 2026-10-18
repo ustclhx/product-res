@@ -1,0 +1,94 @@
+{
+  "runId": "acceptance-2026-10-13e",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T08:39:02.987Z",
+  "data": {
+    "taskId": "01a13468-fcdb-760c-b022-2310ed189a3f",
+    "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+    "modelKey": "acceptance-fal-video",
+    "status": "canceled",
+    "errorCode": "MEDIA_CANCEL_PENDING",
+    "knownCancellationPendingMessage": true,
+    "workflowInstanceId": "01a13468-fcdb-760c-b022-2310ed189a3f",
+    "creditsCharged": 0,
+    "providerJobRecorded": false,
+    "holdId": "01a13468-fe5c-7519-9425-c34eabd92588",
+    "holdStatus": "released",
+    "heldCredits": 3,
+    "capturedCredits": 0,
+    "overageDebited": 0,
+    "overageDebt": 0,
+    "overageAbsorbed": 0,
+    "ledger": [],
+    "ledgerTotal": 27,
+    "activeRemaining": 27,
+    "held": 0,
+    "debt": 0,
+    "reconciliationDifference": 0,
+    "noChargeAndHoldReleased": true,
+    "workflow": {
+      "inspection": "read",
+      "knownMarkers": [],
+      "steps": [
+        {
+          "name": "load-task",
+          "success": true
+        },
+        {
+          "name": "submit",
+          "success": true
+        }
+      ],
+      "errors": []
+    },
+    "workflowOutcomeInspection": {
+      "inspection": "read",
+      "workflowStatus": "complete",
+      "submitSteps": [
+        {
+          "success": true,
+          "fields": ["name", "start", "end", "attempts", "config", "output", "success", "type"],
+          "output": {
+            "stopped": true,
+            "jobIdEmpty": true
+          },
+          "attemptOutputs": [{}]
+        }
+      ],
+      "finalOutput": {
+        "stopped": null,
+        "jobIdEmpty": null
+      }
+    },
+    "preparationCreditAdjustments": [
+      {
+        "auditId": "01a13467-6d37-7624-a9bd-08350c0302bf",
+        "adjustmentId": "01a13467-5f58-7772-bfa4-3ae857dcb49e",
+        "amount": 1
+      }
+    ],
+    "submissionAttemptMarkerRetained": false,
+    "diagnosis": {
+      "assertionFailure": "Expected cancellationPending=false; cancellation response retained cancellationPending=true",
+      "failureDiagnostic": "Failure diagnostic: unclassified",
+      "failureLocation": "apps/web/e2e/staging-acceptance/media.spec.ts:100",
+      "localCancellationStatus": "canceled",
+      "internalCreditRefundVerified": true,
+      "workflowStatus": "complete",
+      "submitOutput": {
+        "stopped": true,
+        "jobIdEmpty": true
+      },
+      "videoProviderSubmissionPrevented": true,
+      "pendingFlagSourceInference": "Workflow get/status/terminate action threw: no providerJobId or retained submissionAttempted marker, submit stopped before provider call; other pending branches cannot account for the observed flag",
+      "underlyingWorkflowOperation": "unknown; individual get/status/terminate exception not retained",
+      "codeReferences": [
+        "apps/web/src/features/ai/media-tasks.ts:379",
+        "apps/web/src/features/ai/media-tasks.ts:399",
+        "apps/web/src/features/ai/media-tasks.ts:414",
+        "apps/jobs/src/workflows/media-runner.ts:297"
+      ],
+      "rerunPerformedAfterFailure": false
+    }
+  }
+}

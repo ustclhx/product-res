@@ -1,0 +1,20 @@
+# Docker Compose >=2.24.4；外部代理模式与基础 compose.yaml 一起加载。
+services:
+  web:
+    environment:
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:?Set exact proxy IPv4 /32 or IPv6 /128 addresses}
+    # 清除基础文件中的静态地址，避免把它带到既有代理网络。
+    networks: !override
+      data: {}
+      ingress: {}
+  caddy:
+    # 即使 .env 保留 COMPOSE_PROFILES=caddy，也不会启用内置代理。
+    profiles: !override [disabled-caddy]
+    # 误用 --profile '*' 也不允许占用宿主端口。
+    ports: !reset []
+    networks: !override
+      ingress: {}
+networks:
+  ingress: !override
+    external: true
+    name: ${EXTERNAL_INGRESS_NETWORK:?Set the controlled existing proxy network}

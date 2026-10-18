@@ -1,0 +1,87 @@
+{
+  "id": "evt_3UOYjIL3UTpBAoXo1KA14f1c",
+  "object": "event",
+  "api_version": "2026-09-30.endive",
+  "created": 1791533150,
+  "data": {
+    "object": {
+      "id": "ch_3UOYjIL3UTpBAoXo11CkLYi7",
+      "object": "charge",
+      "amount": 1000,
+      "amount_captured": 1000,
+      "amount_refunded": 400,
+      "application": null,
+      "application_fee": null,
+      "application_fee_amount": null,
+      "balance_transaction": "txn_3UOYjIL3UTpBAoXo1Pnipj2w",
+      "billing_details": {
+        "address": null,
+        "email": "[redacted]",
+        "name": "[redacted]",
+        "phone": null,
+        "tax_id": null
+      },
+      "calculated_statement_descriptor": "Stripe",
+      "captured": true,
+      "created": 1791532837,
+      "currency": "usd",
+      "customer": "cus_VPNUh1UVdsn46D",
+      "description": null,
+      "destination": null,
+      "dispute": null,
+      "disputed": false,
+      "failure_balance_transaction": null,
+      "failure_code": null,
+      "failure_message": null,
+      "fraud_details": {},
+      "livemode": false,
+      "metadata": {
+        "workspaceId": "01a11fad-54ef-74b1-bb49-26232712dfa4",
+        "planPriceId": "01a11bac-a47c-77ef-aa22-87cdc57a4339",
+        "userId": "01a11fad-54ef-74b1-bb49-26232712dfa4"
+      },
+      "on_behalf_of": null,
+      "order": null,
+      "outcome": {
+        "advice_code": null,
+        "network_advice_code": null,
+        "network_decline_code": null,
+        "network_status": "approved_by_network",
+        "reason": null,
+        "risk_level": "normal",
+        "risk_score": 44,
+        "seller_message": "Payment complete.",
+        "type": "authorized"
+      },
+      "paid": true,
+      "payment_intent": "pi_3UOYjIL3UTpBAoXo1gvunegg",
+      "payment_method": "pm_1UOYjGL3UTpBAoXoxn4zg3oc",
+      "payment_method_details": null,
+      "radar_options": {},
+      "receipt_email": null,
+      "receipt_number": null,
+      "receipt_url": "https://example.invalid/redacted",
+      "refunded": false,
+      "review": null,
+      "shipping": null,
+      "source": null,
+      "source_transfer": null,
+      "statement_descriptor": null,
+      "statement_descriptor_suffix": null,
+      "status": "succeeded",
+      "transfer_data": null,
+      "transfer_group": null
+    },
+    "previous_attributes": {
+      "amount_refunded": 0,
+      "receipt_url": "https://example.invalid/redacted"
+    }
+  },
+  "livemode": false,
+  "pending_webhooks": 3,
+  "request": {
+    "id": "req_Aa05aEEF1Hl2dV",
+    "idempotency_key": "p2-stripe-platform-partial-pi_3UOYjIL3UTpBAoXo1gvunegg"
+  },
+  "type": "charge.refunded"
+}

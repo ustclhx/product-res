@@ -1,0 +1,11 @@
+{
+  "originalRunHarnessRevision": "8b1c3cf0c77c204aa0ebaf5284cbc6c06c03a0cd",
+  "rebasedHarnessRevision": "0346f08f0eb8d32d1320680960db491e99d3c2ac",
+  "rebasedOnto": "1d118fc8012b147317e998fbbda624c7514323ca",
+  "runFilesByteIdenticalAfterRebase": {
+    "deploy/selfhost/test-backup.mjs": true,
+    "deploy/selfhost/backup/fixtures/restore-seed.sql": true,
+    "deploy/selfhost/backup/acceptance-s3.mjs": true
+  },
+  "conflictResolution": "Only tasks.md: preserve coordinator prior review as historical, retain 6.4 signoff, add 6.2 completion and drill evidence. No runtime or fixture code conflict."
+}

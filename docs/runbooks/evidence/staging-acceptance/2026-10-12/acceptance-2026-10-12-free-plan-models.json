@@ -1,0 +1,13 @@
+{
+  "runId": "acceptance-2026-10-12",
+  "target": "staging-real",
+  "recordedAt": "2026-10-12T19:21:57.263Z",
+  "data": {
+    "status": "passed",
+    "action": "admin.plan.models.update",
+    "planId": "01a11bac-85a8-7573-84c9-67a6e7088fc2",
+    "planKey": "free",
+    "models": ["*"],
+    "auditId": "01a13190-776c-7761-bf8c-8ad1a7c7008e"
+  }
+}

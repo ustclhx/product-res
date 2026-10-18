@@ -1,0 +1,64 @@
+{
+  "runId": "fault-2026-10-14a",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T07:04:47.405Z",
+  "data": {
+    "failedScenario": "chat-mid-stream-per_call",
+    "failedMessage": {
+      "id": "01a13936-8b39-72ce-a553-d58154cb6d99",
+      "conversationId": "01a13936-65a2-750d-89f6-cb7a00b8bc93",
+      "modelKey": "acceptance-fault-chat-mid-stream-per_call",
+      "status": "completed",
+      "pricing": {
+        "mode": "per_call",
+        "limits": {
+          "maxInputTokens": 4096,
+          "maxOutputTokens": 1024
+        },
+        "credits": 2,
+        "chargeOn": "any_output"
+      },
+      "credits": 2,
+      "inputTokens": 53,
+      "outputTokens": 1024,
+      "checkpointInputTokens": 121,
+      "checkpointOutputTokens": 0,
+      "proof": {
+        "mode": "chat-mid-stream",
+        "phase": "mid-stream",
+        "injected": false,
+        "injectedAt": null,
+        "outputTokens": null,
+        "policyVersion": 1,
+        "upstreamCalls": 1,
+        "realProviderCalled": true
+      },
+      "charCount": 0,
+      "hasOutput": false,
+      "partTypeCounts": [],
+      "holdId": "01a13936-8c87-73a5-ad3b-9e7a431c37c6",
+      "holdStatus": "captured",
+      "holdAmount": 2,
+      "capturedAmount": 2,
+      "overageDebited": 0,
+      "overageDebt": 0,
+      "ledger": [
+        {
+          "id": "01a13936-b168-711e-a6fe-60bd5ae12038",
+          "type": "consume",
+          "delta": -2
+        }
+      ]
+    },
+    "reconciliation": {
+      "ledgerTotal": 92,
+      "activeRemaining": 92,
+      "held": 0,
+      "debt": 0,
+      "reconciliationDifference": 0
+    },
+    "injectionNotObserved": true,
+    "providerCompletedWithoutRequiredTextThreshold": true,
+    "noNewPaidCallsAfterSuiteFailure": true
+  }
+}

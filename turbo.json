@@ -1,0 +1,33 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"]
+    },
+    "test": {
+      "dependsOn": ["^typecheck", "^test"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "build:node": {
+      "dependsOn": ["^build:node"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/template.config.ts",
+        "$TURBO_ROOT$/tsconfig.base.json",
+        "!dist/**",
+        "!.output/**",
+        "!src/server/cloudflare/**",
+        "!wrangler.jsonc"
+      ],
+      "outputs": [".output/**"],
+      "env": ["APP_VERSION"]
+    }
+  }
+}

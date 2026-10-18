@@ -1,0 +1,229 @@
+{
+  "at": "2026-10-16T17:48:07.743403+00:00",
+  "valkeyProbe": {
+    "keySha256": "1c4a233f16639ef45ee8396d5be0e6321bc29653c7d9523a7cdb55f2c2b05936",
+    "valueSha256": "415ddf95e4b3a6c367930d380b3c2b3386865719946d23f59e240de72212cd9b",
+    "matchesExpected": true
+  },
+  "sha": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+  "bootIdSha256": "a3173775d66532e9ab13b49bfbd67ed827c6b2d3a4adbcd67b1e3494397923da",
+  "uptimeSeconds": 3318405.82,
+  "services": [
+    {
+      "service": "postgres",
+      "idSha256": "019731e63764e4840cf7014cca562a3c8a6a485280315769dd6815a33835ce59",
+      "status": "running",
+      "health": "healthy",
+      "exitCode": 0,
+      "restartCount": 0,
+      "startedAt": "2026-10-16T16:02:15.755116997Z",
+      "finishedAt": "0001-01-01T00:00:00Z",
+      "oomKilled": false
+    },
+    {
+      "service": "valkey",
+      "idSha256": "97dfe3b332c2c08ed53c9a56197e8c822500b53cbff11fef85d6f89c156dc283",
+      "status": "running",
+      "health": "healthy",
+      "exitCode": 0,
+      "restartCount": 0,
+      "startedAt": "2026-10-16T16:02:15.752759009Z",
+      "finishedAt": "0001-01-01T00:00:00Z",
+      "oomKilled": false
+    },
+    {
+      "service": "web",
+      "idSha256": "e88365e5319d61a072932f8a2637ee4c6dc459e10b15bc0d2c63e8c2e6958e80",
+      "status": "running",
+      "health": "healthy",
+      "exitCode": 0,
+      "restartCount": 0,
+      "startedAt": "2026-10-16T16:04:00.585045777Z",
+      "finishedAt": "2026-10-16T16:03:50.192194485Z",
+      "oomKilled": false
+    },
+    {
+      "service": "jobs",
+      "idSha256": "77f8a9e674f5a16956e171d6a9e4d2d4d4159e02324ad11770c3a68cbf688477",
+      "status": "running",
+      "health": "healthy",
+      "exitCode": 0,
+      "restartCount": 0,
+      "startedAt": "2026-10-16T16:04:00.586718083Z",
+      "finishedAt": "2026-10-16T16:03:50.204796191Z",
+      "oomKilled": false
+    },
+    {
+      "service": "caddy",
+      "idSha256": "025297dd014e12b36bc715fe61fb0b05b90b69e6d75d005f622c8079aab6dceb",
+      "status": "running",
+      "health": "healthy",
+      "exitCode": 0,
+      "restartCount": 0,
+      "startedAt": "2026-10-16T16:09:28.156068154Z",
+      "finishedAt": "2026-10-16T16:09:03.231949588Z",
+      "oomKilled": false
+    },
+    {
+      "service": "backup",
+      "idSha256": "8401e3af5000dc50fd3d0f4d268c4e35ac83a083a97c9694b673277104164886",
+      "status": "running",
+      "health": "healthy",
+      "exitCode": 0,
+      "restartCount": 0,
+      "startedAt": "2026-10-16T16:04:02.220617917Z",
+      "finishedAt": "0001-01-01T00:00:00Z",
+      "oomKilled": false
+    },
+    {
+      "service": "migrate",
+      "idSha256": "3bef303ead87ddb6bd5886c7c519edca72b4d3f3dea5c0b985d63715274efb22",
+      "status": "exited",
+      "health": "unhealthy",
+      "exitCode": 0,
+      "restartCount": 0,
+      "startedAt": "2026-10-16T16:03:51.877685354Z",
+      "finishedAt": "2026-10-16T16:04:00.12606523Z",
+      "oomKilled": false
+    }
+  ],
+  "web": {
+    "http": 200,
+    "status": "ok",
+    "version": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+    "db": {
+      "status": "up",
+      "latencyMs": 2
+    },
+    "cache": {
+      "status": "up"
+    },
+    "queue": {
+      "status": "up"
+    },
+    "scheduler": {
+      "status": "up",
+      "lastCronAt": "2026-10-16T17:45:00.425Z"
+    },
+    "jobs": {
+      "lastCronAt": "2026-10-16T17:45:00.425Z"
+    }
+  },
+  "jobs": {
+    "http": 200,
+    "status": "ok",
+    "version": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+    "lastCronAt": "2026-10-16T17:45:00.425Z"
+  },
+  "jobs2": {
+    "http": 200,
+    "status": "ok",
+    "version": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+    "lastCronAt": "2026-10-16T17:45:00.425Z"
+  },
+  "probe": {
+    "status": "waiting",
+    "rows": [
+      {
+        "prepared": 1,
+        "completed": 0
+      }
+    ],
+    "wait": [
+      {
+        "state": "waiting",
+        "deadline": "2026-10-16T17:56:22.742073+00:00",
+        "createdAt": "2026-10-16T17:46:22.72927+00:00",
+        "finishedAt": null
+      }
+    ]
+  },
+  "data": {
+    "users": 2,
+    "filesReady": 6,
+    "markers": 3
+  },
+  "backup": {
+    "base": {
+      "ok": true,
+      "lastAttempt": "2026-10-16T16:15:38.143082Z",
+      "running": false,
+      "backupId": "base_000000010000000000000013",
+      "clusterId": "7697296676033146915",
+      "lastSuccess": "2026-10-16T16:16:33.103907Z",
+      "consecutiveFailures": 0,
+      "failures": 0
+    },
+    "dump": {
+      "ok": true,
+      "lastAttempt": "2026-10-16T16:16:33.108435Z",
+      "running": false,
+      "prefix": "logical/20261016T161633441593Z",
+      "clusterId": "7697296676033146915",
+      "databaseBytes": 11261619,
+      "lastSuccess": "2026-10-16T16:16:36.073832Z",
+      "consecutiveFailures": 0,
+      "failures": 0
+    },
+    "verification": {
+      "ok": true,
+      "lastAttempt": "2026-10-16T17:45:36.539147Z",
+      "running": false,
+      "verifiedAt": "2026-10-16T17:45:41.258101Z",
+      "continuousUntil": "2026-10-16 17:45:36.763414+00",
+      "lastWal": "000000010000000000000079",
+      "lastSuccess": "2026-10-16T17:45:41.258368Z",
+      "consecutiveFailures": 0,
+      "failures": 0
+    },
+    "replica": {
+      "configured": true,
+      "ok": true,
+      "lastAttempt": "2026-10-16T17:45:41.266608Z",
+      "running": false,
+      "clusterId": "7697296676033146915",
+      "timeline": 1,
+      "backupId": "base_000000010000000000000013",
+      "oldestBackupId": "base_000000010000000000000004",
+      "continuousUntil": "2026-10-16 17:45:36.763414+00",
+      "lastWal": "000000010000000000000079",
+      "lastSuccess": "2026-10-16T17:47:55.633998Z",
+      "syncLagSeconds": 138.320605,
+      "copiedObjects": 6,
+      "objectCount": 141,
+      "retention": "retain-all-independent",
+      "manifestSha256": "1ba78cc28476b3eae937b9cb074e7142673fc39f2b03f7e3dcf295846da29cba",
+      "consecutiveFailures": 0,
+      "failures": 0,
+      "currentLagSeconds": 150.881644
+    },
+    "schedule": {
+      "slot": "2026-10-16T02:00:00Z",
+      "lastSuccess": "2026-10-16T16:05:33.029310Z",
+      "ok": true
+    },
+    "archive": {
+      "consecutiveFailures": 0,
+      "lastSuccess": "2026-10-16T17:47:37.600528+00:00",
+      "lastWal": "00000001000000000000007B",
+      "successes": 125
+    },
+    "healthy": true,
+    "checkedAt": "2026-10-16T17:48:07.644979Z"
+  },
+  "nonSelfhost": {
+    "count": 15,
+    "allStopped": true,
+    "allRestartNo": true,
+    "stateFingerprintSha256": "0b6b9a6ecdb9cb8afce57c1eaa71b19ed433764c5d86721f65a4c44faa834990"
+  },
+  "warp": {
+    "startedThisBoot": false,
+    "active": "inactive",
+    "enabled": "disabled"
+  },
+  "dockerEnabled": true,
+  "hostOomKillsSinceBoot": 0,
+  "tlsVerified": true,
+  "certificateSha256": "621ae3ee8c624e4fee249c76a8afa93d8948d916854f200a4384490a2127f5b1"
+}

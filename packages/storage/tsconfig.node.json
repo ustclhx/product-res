@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": [
+    "vitest.config.ts",
+    "test/node-import.unit.test.ts",
+    "test/node-contracts.ts",
+    "src/node",
+    "vitest.node-s3.config.ts",
+    "test/node-s3",
+    "test/node-media",
+    "test/node-media-replay.integration.test.ts"
+  ]
+}

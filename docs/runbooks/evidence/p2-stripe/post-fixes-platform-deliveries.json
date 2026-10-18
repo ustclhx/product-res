@@ -1,0 +1,119 @@
+{
+  "observedAt": "2026-10-09T11:21:51.392Z",
+  "source": "Manual read-only Stripe Workbench visible delivery history; UTC; CLI acceptance is separate",
+  "endpoint": "we_1UO7wML3UTpBAoXo3N6XlJhF",
+  "url": "https://web-staging.product-res-jobs.workers.dev/api/billing/webhooks/stripe",
+  "livemode": false,
+  "apiVersion": "2026-09-30.endive",
+  "stagingVersion": "a978a4d6e2ed0cbc041f376c5591ce033cf929ae",
+  "mainCiRun": 37921394348,
+  "automaticDeployRun": 37922073771,
+  "events": [
+    {
+      "scenario": "monthly-renewal",
+      "event": "evt_1UOYf4L3UTpBAoXoqVeBpjfd",
+      "deliveries": [
+        {
+          "at": "2026-10-09T11:12:18Z",
+          "httpStatus": 200,
+          "kind": "recovery retry"
+        },
+        {
+          "at": "2026-10-09T11:12:29Z",
+          "httpStatus": 200,
+          "kind": "manual retry"
+        },
+        {
+          "at": "2026-10-09T11:12:30Z",
+          "httpStatus": 200,
+          "kind": "manual retry"
+        }
+      ]
+    },
+    {
+      "scenario": "yearly-renewal",
+      "event": "evt_1UObl2L3UTpBAoXoIhWrCL6T",
+      "deliveries": [
+        {
+          "at": "2026-10-09T11:14:38Z",
+          "httpStatus": 200,
+          "kind": "original"
+        },
+        {
+          "at": "2026-10-09T11:15:22Z",
+          "httpStatus": 200,
+          "kind": "manual retry"
+        },
+        {
+          "at": "2026-10-09T11:15:23Z",
+          "httpStatus": 200,
+          "kind": "manual retry"
+        }
+      ]
+    },
+    {
+      "scenario": "platform-partial",
+      "event": "evt_3UOYjIL3UTpBAoXo1APsl6Oi",
+      "deliveries": [
+        {
+          "at": "2026-10-09T11:13:33Z",
+          "httpStatus": 200,
+          "kind": "original"
+        },
+        {
+          "at": "2026-10-09T11:14:19Z",
+          "httpStatus": 200,
+          "kind": "manual retry"
+        },
+        {
+          "at": "2026-10-09T11:14:20Z",
+          "httpStatus": 200,
+          "kind": "manual retry"
+        }
+      ]
+    },
+    {
+      "scenario": "platform-full",
+      "event": "evt_3UOYxzL3UTpBAoXo0y6M4huF",
+      "deliveries": [
+        {
+          "at": "2026-10-09T11:17:02Z",
+          "httpStatus": 200,
+          "kind": "original"
+        },
+        {
+          "at": "2026-10-09T11:17:23Z",
+          "httpStatus": 200,
+          "kind": "manual retry"
+        },
+        {
+          "at": "2026-10-09T11:17:26Z",
+          "httpStatus": 200,
+          "kind": "manual retry"
+        }
+      ]
+    },
+    {
+      "scenario": "resumed-renewal",
+      "event": "evt_1UObm1L3UTpBAoXoS3GRbNMi",
+      "deliveries": [
+        {
+          "at": "2026-10-09T11:15:39Z",
+          "httpStatus": 200,
+          "kind": "original"
+        }
+      ]
+    },
+    {
+      "scenario": "downgrade-renewal",
+      "event": "evt_1UObn7L3UTpBAoXo3OBA8zTx",
+      "deliveries": [
+        {
+          "at": "2026-10-09T11:16:47Z",
+          "httpStatus": 200,
+          "kind": "original"
+        }
+      ]
+    }
+  ]
+}

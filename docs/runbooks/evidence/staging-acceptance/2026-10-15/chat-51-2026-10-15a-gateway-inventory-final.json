@@ -1,0 +1,69 @@
+{
+  "runId": "chat-51-2026-10-15a",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T20:35:36.106Z",
+  "data": {
+    "windowStart": "2026-10-14T20:30:28.834Z",
+    "windowEnd": "2026-10-14T20:34:46.344Z",
+    "logs": [
+      {
+        "id": "01a13c1d-8251-75eb-8fe4-e747d81142c9",
+        "createdAt": "2026-10-14T20:32:10.781Z",
+        "provider": "deepseek",
+        "model": "deepseek/deepseek-flash",
+        "tokensIn": 17,
+        "tokensOut": 10,
+        "success": true,
+        "cached": false,
+        "statusCode": 200,
+        "durationMs": 845
+      },
+      {
+        "id": "01a13c1e-6655-77a3-8a81-8910dde8c68e",
+        "createdAt": "2026-10-14T20:33:09.553Z",
+        "provider": "deepseek",
+        "model": "deepseek/deepseek-flash",
+        "tokensIn": 40,
+        "tokensOut": 343,
+        "success": true,
+        "cached": false,
+        "statusCode": 200,
+        "durationMs": 1520
+      },
+      {
+        "id": "01a13c1e-dd85-7759-bbc9-0308e8b62665",
+        "createdAt": "2026-10-14T20:33:39.118Z",
+        "provider": "deepseek",
+        "model": "deepseek/deepseek-flash",
+        "tokensIn": 17,
+        "tokensOut": 9,
+        "success": true,
+        "cached": false,
+        "statusCode": 200,
+        "durationMs": 779
+      },
+      {
+        "id": "01a13c1f-be81-71fd-bb7d-c050d5e25f46",
+        "createdAt": "2026-10-14T20:34:37.691Z",
+        "provider": "deepseek",
+        "model": "deepseek/deepseek-flash",
+        "tokensIn": 40,
+        "tokensOut": 343,
+        "success": true,
+        "cached": false,
+        "statusCode": 200,
+        "durationMs": 1829
+      }
+    ],
+    "pages": [
+      {
+        "http": 200,
+        "page": 1,
+        "returned": 4,
+        "totalCount": 4,
+        "observedAt": "2026-10-14T20:35:36.106Z"
+      }
+    ],
+    "complete": true
+  }
+}

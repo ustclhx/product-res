@@ -1,0 +1,76 @@
+{
+  "observedAt": "2026-10-18T06:19:18.040Z",
+  "mode": "sandbox",
+  "originalWebhookUnchanged": true,
+  "temporaryWebhookDeleted": true,
+  "receiverStopped": true,
+  "quickTunnelStopped": true,
+  "port18763Listening": false,
+  "ownContainerRunning": false,
+  "originalWebhook": {
+    "id": "2Y038131HD900422W",
+    "url": "https://web-staging.product-res-jobs.workers.dev/api/billing/webhooks/paypal",
+    "event_types": [
+      {
+        "name": "BILLING.SUBSCRIPTION.ACTIVATED",
+        "description": "A billing agreement is activated.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "BILLING.SUBSCRIPTION.CANCELLED",
+        "description": "A billing agreement is canceled.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "BILLING.SUBSCRIPTION.EXPIRED",
+        "description": "A billing agreement is expired.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "BILLING.SUBSCRIPTION.PAYMENT.FAILED",
+        "description": "Subscription payment failure will trigger this webhook event.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "BILLING.SUBSCRIPTION.SUSPENDED",
+        "description": "A billing agreement is suspended.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "BILLING.SUBSCRIPTION.UPDATED",
+        "description": "A billing agreement is updated.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "CHECKOUT.ORDER.APPROVED",
+        "description": "An order has been approved by buyer.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "CUSTOMER.DISPUTE.CREATED",
+        "description": "A customer dispute is created.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "PAYMENT.CAPTURE.COMPLETED",
+        "description": "A payment capture completes.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "PAYMENT.CAPTURE.REFUNDED",
+        "description": "A merchant refunds a payment capture.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "PAYMENT.SALE.COMPLETED",
+        "description": "A sale completes.",
+        "status": "ENABLED"
+      },
+      {
+        "name": "PAYMENT.SALE.REFUNDED",
+        "description": "A merchant refunds a sale.",
+        "status": "ENABLED"
+      }
+    ]
+  }
+}

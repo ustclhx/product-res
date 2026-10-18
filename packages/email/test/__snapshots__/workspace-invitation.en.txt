@@ -1,0 +1,20 @@
+Acme
+
+
+Join Research Lab
+
+Hi,
+
+Grace has invited you to join the Research Lab workspace on Acme as an admin.
+
+This invitation expires in 7 days.
+
+Accept invitation https://acme.test/invite/0199a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+
+If the button does not work, copy and paste this link into your browser:
+
+https://acme.test/invite/0199a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+
+----------------------------------------
+
+If you were not expecting this invitation, you can ignore this email.

@@ -1,0 +1,37 @@
+{
+  "sha": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+  "source": "live read-only SQL captured before suite cleanup; original JSON reporter suppressed console events",
+  "query": "SELECT attempt,started_at FROM public.test_job_engine_attempt WHERE key='mixed-9' ORDER BY attempt",
+  "attempts": [
+    {
+      "attempt": 1,
+      "startedAt": "2026-10-16T16:12:10.153467+00:00"
+    },
+    {
+      "attempt": 2,
+      "startedAt": "2026-10-16T16:12:45.453511+00:00"
+    },
+    {
+      "attempt": 3,
+      "startedAt": "2026-10-16T16:13:50.539937+00:00"
+    },
+    {
+      "attempt": 4,
+      "startedAt": "2026-10-16T16:15:55.600087+00:00"
+    },
+    {
+      "attempt": 5,
+      "startedAt": "2026-10-16T16:20:00.679774+00:00"
+    },
+    {
+      "attempt": 6,
+      "startedAt": "2026-10-16T16:28:05.779441+00:00"
+    }
+  ],
+  "observedGapsSeconds": [35.300044, 65.086426, 125.06015, 245.079687, 485.099667],
+  "productionBackoffSeconds": [30, 60, 120, 240, 480],
+  "configuredCeilingSeconds": 900,
+  "ceilingObserved": false,
+  "fullOriginalSuiteTests": 14,
+  "fullOriginalSuitePassed": 14
+}

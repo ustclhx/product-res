@@ -1,0 +1,133 @@
+{
+  "runId": "acceptance-2026-10-12",
+  "recordedAt": "2026-10-12T19:27:57.953411+00:00",
+  "phase": "acceptance-run-failed-and-stopped",
+  "codeChange": {
+    "pr": "https://github.com/ustclhx/product-res/pull/133",
+    "state": "MERGED",
+    "mainCommit": "62ac48d",
+    "check": "passed",
+    "typecheck": "passed: 14 workspaces",
+    "relatedUnitTests": "passed: 14 tests",
+    "syntheticCdpVerification": "passed: target cookies isolated; browser and existing tabs preserved; login tab closed",
+    "ci": "passed: check, e2e-smoke, node"
+  },
+  "browser": {
+    "dedicatedProfile": "~/.config/product-res-acceptance-chrome",
+    "cdpEndpoint": "http://127.0.0.1:9333",
+    "cdpReachable": true,
+    "adminSessionAndAccessVerified": true,
+    "loginMethod": "existing Google session; clicked Continue with Google in runner-created tab",
+    "passwordOrSecondFactorEnteredByAgent": false,
+    "profileAndExistingTabsPreserved": true,
+    "everydayProfileModified": false
+  },
+  "freePlanModelsUpdate": {
+    "status": "pass",
+    "models": ["*"],
+    "auditId": "01a13190-776c-7761-bf8c-8ad1a7c7008e",
+    "evidenceFile": "acceptance-2026-10-12-free-plan-models.json"
+  },
+  "acceptanceProcessStarted": true,
+  "acceptanceItems": [
+    {
+      "item": "configure or verify text acceptance models",
+      "status": "pass"
+    },
+    {
+      "item": "configure or verify media acceptance models",
+      "status": "pass"
+    },
+    {
+      "item": "media-workers-image",
+      "status": "fail",
+      "reason": "Task reached failed with MEDIA_GENERATION_FAILED; workflow submit reported Workers AI image generation failed",
+      "taskId": "01a13193-6561-7241-9c07-eb954171c866",
+      "creditsCharged": 0,
+      "holdStatus": "released",
+      "reconciliationDifference": 0
+    },
+    {
+      "item": "media-fal-image",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "media-fal-video-cancel",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "media-workers-provider-failure",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite; manual fault injection remains pending"
+    },
+    {
+      "item": "Chat token: normal",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Chat token: stop",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Chat token: page-close",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Chat call: normal",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Chat call: stop",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Chat call: page-close",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Admin 6.1 dedicated-user actions",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    },
+    {
+      "item": "Sentry 1.2 test exception",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    }
+  ],
+  "suite": {
+    "status": "failed",
+    "exitCode": 1,
+    "passed": 2,
+    "failed": 1,
+    "skipped": 11,
+    "retried": false
+  },
+  "failureLimit": "Workers AI adapter suppresses raw upstream diagnostics; lower-level configuration, permission or provider cause is not established",
+  "evidenceFiles": [
+    "acceptance-2026-10-12-execution-status.json",
+    "acceptance-2026-10-12-free-plan-models.json",
+    "acceptance-2026-10-12-media-workers-image-failure-accounting.json",
+    "acceptance-2026-10-12-media-workers-image-terminal.json",
+    "acceptance-2026-10-12-model-acceptance-deepseek-call.json",
+    "acceptance-2026-10-12-model-acceptance-deepseek-token.json",
+    "acceptance-2026-10-12-model-acceptance-fal-image.json",
+    "acceptance-2026-10-12-model-acceptance-fal-video.json",
+    "acceptance-2026-10-12-model-acceptance-workers-image.json"
+  ],
+  "preparationCreditAdjustments": [
+    {
+      "auditId": "01a13193-1aac-7388-af2b-d10c4d5eb747",
+      "adjustmentId": "01a13193-06d6-7296-a0df-bea5d83aa91c",
+      "amount": 30
+    }
+  ]
+}

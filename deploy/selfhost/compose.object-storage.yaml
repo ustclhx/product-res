@@ -1,0 +1,124 @@
+# 仅显式 -f compose.yaml -f compose.object-storage.yaml --profile object-storage 启用。
+# profile 常驻 3328 MiB / 2 CPU；一次性 migrate、bucket init 在应用启动前完成。
+x-object-logging: &object-logging
+  driver: json-file
+  options:
+    max-size: ${LOG_MAX_SIZE:-10m}
+    max-file: ${LOG_MAX_FILE:-3}
+
+x-object-app-env: &object-app-env
+  S3_ENDPOINT: https://${S3_PUBLIC_DOMAIN:?Set a separate public S3 domain}
+  S3_REGION: ${S3_REGION:-us-east-1}
+  S3_BUCKET: ${S3_BUCKET:?Set the private bucket}
+  S3_FORCE_PATH_STYLE: 'true'
+  S3_ACCESS_KEY_ID_FILE: /run/secrets/s3_access_key_id
+  S3_SECRET_ACCESS_KEY_FILE: /run/secrets/s3_secret_access_key
+
+services:
+  object-storage:
+    profiles: [object-storage]
+    image: ${OBJECT_STORAGE_IMAGE:?Build the pinned object-storage wrapper image}
+    user: '1000:1000'
+    restart: unless-stopped
+    mem_limit: 512m
+    cpus: 0.3
+    stop_grace_period: 45s
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    logging: *object-logging
+    environment:
+      S3_PUBLIC_DOMAIN: ${S3_PUBLIC_DOMAIN:?Set a separate public S3 domain}
+      S3_BUCKET: ${S3_BUCKET:?Set the private bucket}
+      S3_ADMIN_ACCESS_KEY_ID_FILE: /run/secrets/s3_admin_access_key_id
+      S3_ADMIN_SECRET_ACCESS_KEY_FILE: /run/secrets/s3_admin_secret_access_key
+      S3_ACCESS_KEY_ID_FILE: /run/secrets/s3_access_key_id
+      S3_SECRET_ACCESS_KEY_FILE: /run/secrets/s3_secret_access_key
+      GOMEMLIMIT: 384MiB
+      GOMAXPROCS: '1'
+    secrets: [s3_admin_access_key_id, s3_admin_secret_access_key, s3_access_key_id, s3_secret_access_key]
+    volumes:
+      - object_data:/data
+      - object_metadata:/metadata
+    tmpfs: ['/tmp:uid=1000,gid=1000,mode=0700']
+    networks: [object]
+    healthcheck:
+      test: [CMD, /usr/local/bin/object-storage-health]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 30s
+
+  object-storage-init:
+    profiles: [object-storage]
+    image: ${MIGRATE_IMAGE:?Use the migration image containing the storage SDK}
+    user: '1000:1000'
+    restart: 'no'
+    mem_limit: 256m
+    cpus: 0.3
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    logging: *object-logging
+    command: [node, /src/deploy/selfhost/object-storage-init.mjs]
+    environment:
+      APP_URL: ${APP_URL:?Set the public HTTPS URL}
+      S3_BUCKET: ${S3_BUCKET:?Set the private bucket}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ADMIN_ACCESS_KEY_ID_FILE: /run/secrets/s3_admin_access_key_id
+      S3_ADMIN_SECRET_ACCESS_KEY_FILE: /run/secrets/s3_admin_secret_access_key
+    secrets: [s3_admin_access_key_id, s3_admin_secret_access_key]
+    volumes:
+      - ./object-storage-init.mjs:/src/deploy/selfhost/object-storage-init.mjs:ro
+    networks: [object]
+    depends_on:
+      object-storage: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
+
+  web:
+    mem_limit: 768m
+    environment: *object-app-env
+    secrets: [s3_access_key_id, s3_secret_access_key]
+    depends_on:
+      object-storage-init: {condition: service_completed_successfully}
+
+  jobs:
+    mem_limit: 512m
+    environment: *object-app-env
+    secrets: [s3_access_key_id, s3_secret_access_key]
+    networks:
+      data: {}
+      # 基础代理的 .2 在应用健康后才启动；避免动态地址提前占用代理地址。
+      ingress:
+        ipv4_address: 172.30.77.4
+    depends_on:
+      object-storage-init: {condition: service_completed_successfully}
+
+  caddy:
+    profiles: !override [object-storage]
+    ports: !override ['80:8080', '443:443']
+    # 仅本代理网络命名空间开放低端口；仍以非 root、cap_drop ALL 运行。
+    sysctls:
+      net.ipv4.ip_unprivileged_port_start: '0'
+    environment:
+      S3_PUBLIC_DOMAIN: ${S3_PUBLIC_DOMAIN:?Set a separate public S3 domain}
+    volumes:
+      - ./Caddyfile.object-storage:/etc/caddy/Caddyfile:ro
+    networks:
+      ingress:
+        aliases: ['${S3_PUBLIC_DOMAIN:?Set a separate public S3 domain}', '${APP_DOMAIN:?Set the public app domain}']
+      object: {}
+    depends_on:
+      object-storage-init: {condition: service_completed_successfully}
+
+networks:
+  object:
+    internal: true
+
+volumes:
+  object_data: {}
+  object_metadata: {}
+
+secrets:
+  s3_admin_access_key_id: {file: '${SECRETS_DIR:-./secrets}/s3_admin_access_key_id'}
+  s3_admin_secret_access_key: {file: '${SECRETS_DIR:-./secrets}/s3_admin_secret_access_key'}
+  s3_access_key_id: {file: '${SECRETS_DIR:-./secrets}/s3_access_key_id'}
+  s3_secret_access_key: {file: '${SECRETS_DIR:-./secrets}/s3_secret_access_key'}

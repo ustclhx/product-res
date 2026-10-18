@@ -1,0 +1,19 @@
+{
+  "officialRuntimeSha": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+  "fixtureCommit": "e5cdd87053d493f943d5a7ffd1a73131aefd5965",
+  "fixtureSha256": "d04f8dda7b5c12122c4830351580fffe42237204d453592dda22bdfe5a8eb661",
+  "fixturePath": "packages/platform/test/node/workflow.integration.test.ts",
+  "change": "initial sleepMs 2000 to 5000; all assertions unchanged",
+  "readOnlyTestFileBind": true,
+  "officialImage": "ghcr.io/ustclhx/product-res/migrate@sha256:2ca5b291e254d3092968f13704a240f04c1f9fac4cce5b5bab551f82cf9973ee",
+  "hostCpu": 2,
+  "testCpuQuota": 2.0,
+  "memoryBytes": 805306368,
+  "businessCodeOrReleaseBundleModified": false,
+  "newImagePublished": false,
+  "runnerPermissionAttempt": {
+    "firstExit": 1,
+    "reason": "test runner bind was mode 0600 root-owned; node1000 could not open; no migration or tests ran",
+    "correction": "non-secret runner changed to 0644; same container started"
+  }
+}

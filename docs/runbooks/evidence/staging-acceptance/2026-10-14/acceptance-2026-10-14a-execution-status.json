@@ -1,0 +1,217 @@
+{
+  "runId": "acceptance-2026-10-14a",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T10:19:50.053Z",
+  "data": {
+    "phase": "suite-failed-readonly-diagnosis-complete",
+    "expectedVersion": "a7c6f15cbf078e51fe688b92e1bce0e42cc3a7dd",
+    "mainHead": "a7c6f15cbf078e51fe688b92e1bce0e42cc3a7dd",
+    "deployedVersionBefore": "a7c6f15cbf078e51fe688b92e1bce0e42cc3a7dd",
+    "deployedVersionAfter": "a7c6f15cbf078e51fe688b92e1bce0e42cc3a7dd",
+    "versionUnchanged": true,
+    "preflightPassed": true,
+    "regularSuite": true,
+    "faultSuite": false,
+    "suite": {
+      "status": "failed",
+      "exitCode": 1,
+      "passed": 2,
+      "failed": 1,
+      "skipped": 11,
+      "workers": 1,
+      "retriesConfigured": 0,
+      "rerunPerformed": false,
+      "tests": [
+        {
+          "status": "passed",
+          "title": "configure or verify text acceptance models through the admin UI"
+        },
+        {
+          "status": "passed",
+          "title": "configure or verify media acceptance models through the admin UI"
+        },
+        {
+          "status": "failed",
+          "title": "media-workers-image：成功下载、按快照扣款一次及积分对账"
+        },
+        {
+          "status": "skipped",
+          "title": "media-fal-image：成功下载、按快照扣款一次及积分对账"
+        },
+        {
+          "status": "skipped",
+          "title": "media-fal-video-cancel：提交后立即取消并全额退回"
+        },
+        {
+          "status": "skipped",
+          "title": "media-workers-provider-failure：人工验证推理失败全额退回"
+        },
+        {
+          "status": "skipped",
+          "title": "Chat 5.1 token: normal"
+        },
+        {
+          "status": "skipped",
+          "title": "Chat 5.1 token: stop"
+        },
+        {
+          "status": "skipped",
+          "title": "Chat 5.1 token: page-close"
+        },
+        {
+          "status": "skipped",
+          "title": "Chat 5.1 call: normal"
+        },
+        {
+          "status": "skipped",
+          "title": "Chat 5.1 call: stop"
+        },
+        {
+          "status": "skipped",
+          "title": "Chat 5.1 call: page-close"
+        },
+        {
+          "status": "skipped",
+          "title": "Admin 6.1: dedicated user, ban, unban, impersonation, credits and restored setting"
+        },
+        {
+          "status": "skipped",
+          "title": "Sentry 1.2: same-origin administrator test exception"
+        }
+      ]
+    },
+    "failureDiagnostics": ["Failure diagnostic: unclassified"],
+    "failureLocations": [
+      "Failure location:     at /Users/hxlee/workspace/product-res/apps/web/e2e/staging-acceptance/media.spec.ts:79:25"
+    ],
+    "failedTasks": [
+      {
+        "taskId": "01a139e8-e9c1-7758-bdf1-99cb2741ab36",
+        "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+        "status": "failed",
+        "modelKey": "acceptance-workers-image",
+        "creditsCharged": 0,
+        "errorCode": "MEDIA_GENERATION_FAILED",
+        "holdId": "01a139e8-eb3c-7387-b63c-f5350fec03f1",
+        "holdStatus": "released",
+        "heldCredits": 1,
+        "capturedCredits": 0,
+        "overageAbsorbed": 0,
+        "overageDebited": 0,
+        "overageDebt": 0,
+        "createdAt": "2026-10-14T10:15:27.350Z",
+        "finishedAt": "2026-10-14T10:15:36.474Z",
+        "errorMessage": "Media generation failed",
+        "errorMessageWithheld": false
+      }
+    ],
+    "failureDiagnosis": {
+      "correlatedSentryEvents": [
+        {
+          "eventId": "8e9fd9629eae49bbba7a25446a24acd9",
+          "eventUrl": "https://product-res.sentry.io/issues/7791591972/events/8e9fd9629eae49bbba7a25446a24acd9/",
+          "taskId": "01a139e8-e9c1-7758-bdf1-99cb2741ab36",
+          "requestId": "01a139e9-0292-75f9-ae6b-97332a60fb45",
+          "exceptions": [
+            {
+              "type": "NonRetryableError",
+              "workersGenerationFailure": true,
+              "upstreamName": "AiError",
+              "upstreamCode": 8007,
+              "safeSummary": "Workers AI image generation failed (AiError 8007)",
+              "summaryWithheld": false
+            }
+          ],
+          "correlationVerified": true
+        }
+      ],
+      "upstreamCode": 8007,
+      "taskCode": "MEDIA_GENERATION_FAILED",
+      "interpretation": "Workers AI returned AiError 8007. Cloudflare step serialization retained a generic task code, so isWorkersUpstream8007 did not match and the serial suite stopped.",
+      "sourceReferences": [
+        "apps/web/e2e/staging-acceptance/media-support.ts:isWorkersUpstream8007",
+        "apps/jobs/src/workflows/media-runner.ts:errorOf",
+        "packages/platform/src/cloudflare/workflow.ts:createCloudflareWorkflowStep"
+      ],
+      "readonlyOnlyAfterFailure": true
+    },
+    "creditAccounting": {
+      "ordinaryWorkspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+      "openingLedgerTotal": 18,
+      "preparationAmount": 12,
+      "preparationCreditAdjustments": [
+        {
+          "auditId": "01a139e8-cacf-7656-8f25-b9c0df135f35",
+          "adjustmentId": "01a139e8-c241-72cc-a2f7-14bd377a8734",
+          "amount": 12
+        }
+      ],
+      "totalGenerationAndChatCharged": 0,
+      "workersHoldAmount": 1,
+      "workersHoldStatus": "released",
+      "workersCapturedAmount": 0,
+      "ordinaryFinalSnapshot": {
+        "ledgerTotal": 30,
+        "activeRemaining": 30,
+        "held": 0,
+        "debt": 0,
+        "activeMediaTasks": 0,
+        "activeMessages": 0,
+        "readOnlyTransaction": true,
+        "reconciliationDifference": 0
+      },
+      "dedicatedWorkspaceId": "01a134fd-cf19-7366-8567-c002d78f2637",
+      "dedicatedFinalSnapshot": {
+        "ledgerTotal": 25,
+        "activeRemaining": 25,
+        "held": 0,
+        "debt": 0,
+        "activeMediaTasks": 0,
+        "activeMessages": 0,
+        "readOnlyTransaction": true,
+        "reconciliationDifference": 0
+      },
+      "closingLedgerMatches": true,
+      "chargesMatchResourceCredits": true,
+      "dedicatedAdminTopupExecutedThisRun": false
+    },
+    "actualSubmittedResources": {
+      "workersTasks": 1,
+      "falImageTasks": 0,
+      "falVideoTasks": 0,
+      "chatAssistantMessages": 0
+    },
+    "reasoningVerification": {
+      "status": "not-executed-suite-stopped-before-chat",
+      "messageCount": 0,
+      "templateThinkingDefault": "off",
+      "templateReasoningDisplay": false,
+      "actualUsageAndPartsVerified": false,
+      "evidenceFile": "acceptance-2026-10-14a-reasoning-readonly-verification.json"
+    },
+    "adminScenariosExecuted": false,
+    "sentryTestExceptionTriggered": false,
+    "paymentsExecuted": false,
+    "deployedByThisRun": false,
+    "secretsChanged": false,
+    "evidenceCommitted": false,
+    "tasksModified": false,
+    "credentialScan": "passed",
+    "evidenceFilesScanned": 11,
+    "evidenceFiles": [
+      "acceptance-2026-10-14a-execution-status.json",
+      "acceptance-2026-10-14a-failure-sentry-readonly.json",
+      "acceptance-2026-10-14a-final-readonly-verification.json",
+      "acceptance-2026-10-14a-media-workers-image-terminal.json",
+      "acceptance-2026-10-14a-model-acceptance-deepseek-call.json",
+      "acceptance-2026-10-14a-model-acceptance-deepseek-token.json",
+      "acceptance-2026-10-14a-model-acceptance-fal-image.json",
+      "acceptance-2026-10-14a-model-acceptance-fal-video.json",
+      "acceptance-2026-10-14a-model-acceptance-workers-image.json",
+      "acceptance-2026-10-14a-preflight-readonly.json",
+      "acceptance-2026-10-14a-reasoning-readonly-verification.json"
+    ],
+    "priorEvidenceFilesVerified": 180,
+    "priorEvidenceFilesUnchanged": true
+  }
+}

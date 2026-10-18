@@ -1,0 +1,30 @@
+{
+  "exitCode": 1,
+  "waitPollCount": 71,
+  "lastWait": {
+    "event": "selfhost.health.wait",
+    "target": "081305013b022f457c561eecf5828b1959e13908",
+    "web": null,
+    "jobs": "081305013b022f457c561eecf5828b1959e13908"
+  },
+  "failureEvents": [
+    {
+      "event": "selfhost.health.failed",
+      "target": "081305013b022f457c561eecf5828b1959e13908",
+      "web": null,
+      "jobs": "081305013b022f457c561eecf5828b1959e13908"
+    },
+    {
+      "event": "selfhost.deploy.failed",
+      "target": "081305013b022f457c561eecf5828b1959e13908",
+      "reason": "web/jobs readiness or full SHA check failed"
+    },
+    {
+      "event": "selfhost.deploy.failed",
+      "target": "081305013b022f457c561eecf5828b1959e13908",
+      "reason": "remote deployment failed"
+    }
+  ],
+  "cause": "Lima SSH login inherited proxy environment; public probe observed no SHA while jobs SHA matched; sanitized direct curl returned healthy target",
+  "proxyValuesWithheld": true
+}

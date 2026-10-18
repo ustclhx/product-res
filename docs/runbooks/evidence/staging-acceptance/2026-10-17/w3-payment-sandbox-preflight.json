@@ -1,0 +1,44 @@
+{
+  "scenario": "W3 payment sandbox acceptance preflight",
+  "observedAt": "2026-10-17T17:09:50.578750+00:00",
+  "origin": "https://web-staging.product-res-jobs.workers.dev",
+  "mainHead": "a2381f875fbd8b1009e48f7024addcb25285aca9",
+  "health": {
+    "status": "ok",
+    "version": "a2381f875fbd8b1009e48f7024addcb25285aca9",
+    "db": {
+      "status": "up",
+      "latencyMs": 45
+    },
+    "jobs": {
+      "lastCronAt": "2026-10-17T17:00:32.503Z"
+    }
+  },
+  "versionMatchesMain": true,
+  "result": "passed",
+  "deploymentRunId": "39052267354",
+  "coordinatorMergeFreezeConfirmed": true,
+  "acceptanceTasksCompleted": [],
+  "workerDeployments": {
+    "web": {
+      "deploymentId": "bb0b4034-d058-47e4-86f5-b7a7666c577e",
+      "createdOn": "2026-10-17T17:07:10.663202Z",
+      "versions": [
+        {
+          "version_id": "b9516fbb-13ff-476d-84ab-d9c86d9fb511",
+          "percentage": 100
+        }
+      ]
+    },
+    "jobs": {
+      "deploymentId": "76a62a4f-3fbf-427a-afea-20a2c22a45b7",
+      "createdOn": "2026-10-17T17:07:00.697942Z",
+      "versions": [
+        {
+          "version_id": "e03680f5-6224-4a82-a52c-76f1f7bf3b9f",
+          "percentage": 100
+        }
+      ]
+    }
+  }
+}

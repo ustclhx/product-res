@@ -1,0 +1,14 @@
+---
+title: Writing content
+description: Blog posts, legal pages and documentation as MDX files.
+section: Guides
+order: 3
+---
+
+Content lives in `apps/web/content`, one folder per collection and language:
+
+- `blog/<locale>/<slug>.mdx` for blog posts
+- `legal/<locale>/<page>.mdx` for the privacy policy, terms and refund policy
+- `docs/<locale>/<slug>.mdx` for this documentation
+
+Pages are rendered at build time, so they stay available even when the database is not.

@@ -1,0 +1,226 @@
+{
+  "schemaVersion": 1,
+  "scope": "D1.4 bundle acceptance root checks",
+  "sourceHead": "081305013b022f457c561eecf5828b1959e13908",
+  "recordedAt": "2026-10-14T16:01:02.538927+00:00",
+  "outcome": "passed",
+  "commands": [
+    {
+      "command": "pnpm check",
+      "exitCode": 0,
+      "durationSeconds": 3.87,
+      "startedAt": "2026-10-14T15:58:30.805602+00:00",
+      "logPath": "/tmp/d-bundle2-root-checks-20261014/recheck-01-pnpm-check.log"
+    },
+    {
+      "command": "pnpm check:deps",
+      "exitCode": 0,
+      "durationSeconds": 0.92,
+      "startedAt": "2026-10-14T15:56:06.644083+00:00",
+      "logPath": "/tmp/d-bundle2-root-checks-20261014/02-pnpm-check-deps.log"
+    },
+    {
+      "command": "pnpm check:singletons",
+      "exitCode": 0,
+      "durationSeconds": 0.05,
+      "startedAt": "2026-10-14T15:56:07.562321+00:00",
+      "logPath": "/tmp/d-bundle2-root-checks-20261014/03-pnpm-check-singletons.log"
+    },
+    {
+      "command": "pnpm dedupe --check",
+      "exitCode": 0,
+      "durationSeconds": 0.65,
+      "startedAt": "2026-10-14T15:56:07.612202+00:00",
+      "logPath": "/tmp/d-bundle2-root-checks-20261014/04-pnpm-dedupe---check.log"
+    },
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "durationSeconds": 0.68,
+      "startedAt": "2026-10-14T15:56:08.261259+00:00",
+      "logPath": "/tmp/d-bundle2-root-checks-20261014/05-pnpm-typecheck.log"
+    },
+    {
+      "command": "pnpm test",
+      "exitCode": 0,
+      "durationSeconds": 112.51,
+      "startedAt": "2026-10-14T15:58:40.212555+00:00",
+      "logPath": "/tmp/d-bundle2-root-checks-20261014/recheck-01-pnpm-test.log"
+    },
+    {
+      "command": "pnpm build",
+      "exitCode": 0,
+      "durationSeconds": 0.27,
+      "startedAt": "2026-10-14T15:58:06.704325+00:00",
+      "logPath": "/tmp/d-bundle2-root-checks-20261014/07-pnpm-build.log"
+    },
+    {
+      "command": "openspec validate add-selfhost-delivery --strict",
+      "exitCode": 0,
+      "durationSeconds": 0.21,
+      "startedAt": "2026-10-14T15:58:06.970527+00:00",
+      "logPath": "/tmp/d-bundle2-root-checks-20261014/08-openspec-validate-add-selfhost-delivery---strict.log"
+    }
+  ],
+  "firstAttemptFailures": [
+    {
+      "command": "pnpm check",
+      "exitCode": 1,
+      "reason": "Biome formatting errors in bundle.json, image-set.json and publish.json under this evidence directory; corrected by supervisor before recheck",
+      "logPath": "/tmp/d-bundle2-root-checks-20261014/01-pnpm-check.log"
+    },
+    {
+      "command": "pnpm test",
+      "exitCode": 1,
+      "reason": "Two marketing route-registration tests could not import missing ignored routeTree.gen; existing generation script restored the artifact before recheck",
+      "webPassedTests": 426,
+      "webFailedTests": 2,
+      "logPath": "/tmp/d-bundle2-root-checks-20261014/06-pnpm-test.log"
+    }
+  ],
+  "generatedArtifactRemediation": {
+    "command": "node scripts/generate-route-tree.mjs",
+    "cwd": "apps/web",
+    "exitCode": 0,
+    "trackedProductionFilesChanged": false
+  },
+  "counts": {
+    "check": {
+      "biomeFiles": 1364,
+      "scriptTestsPassed": 10
+    },
+    "dependencyCheck": {
+      "packages": 12,
+      "applications": 2,
+      "scriptTestsPassed": 7
+    },
+    "singletons": ["drizzle-orm", "react", "react-dom"],
+    "typecheck": {
+      "tasksSuccessful": 14,
+      "tasksTotal": 14,
+      "cachedTasks": 14
+    },
+    "test": {
+      "tasksSuccessful": 26,
+      "tasksTotal": 26,
+      "cachedTasks": 22,
+      "packages": [
+        {
+          "package": "@product-res/shared",
+          "passed": 22,
+          "skipped": 0,
+          "total": 22
+        },
+        {
+          "package": "@product-res/email",
+          "passed": 63,
+          "skipped": 0,
+          "total": 63
+        },
+        {
+          "package": "@product-res/ui",
+          "passed": 17,
+          "skipped": 0,
+          "total": 17
+        },
+        {
+          "package": "@product-res/config",
+          "passed": 56,
+          "skipped": 0,
+          "total": 56
+        },
+        {
+          "package": "@product-res/db",
+          "passed": 56,
+          "skipped": 0,
+          "total": 56
+        },
+        {
+          "package": "@product-res/entitlements",
+          "passed": 14,
+          "skipped": 0,
+          "total": 14
+        },
+        {
+          "package": "@product-res/platform",
+          "passed": 46,
+          "skipped": 0,
+          "total": 46
+        },
+        {
+          "package": "@product-res/credits",
+          "passed": 50,
+          "skipped": 0,
+          "total": 50
+        },
+        {
+          "package": "@product-res/ai",
+          "passed": 176,
+          "skipped": 0,
+          "total": 176
+        },
+        {
+          "package": "@product-res/auth",
+          "passed": 114,
+          "skipped": 0,
+          "total": 114
+        },
+        {
+          "package": "@product-res/billing",
+          "passed": 296,
+          "skipped": 0,
+          "total": 296
+        },
+        {
+          "package": "@product-res/storage",
+          "passed": 26,
+          "skipped": 0,
+          "total": 26
+        },
+        {
+          "package": "@product-res/jobs",
+          "passed": 147,
+          "skipped": 0,
+          "total": 147
+        },
+        {
+          "package": "@product-res/web",
+          "passed": 428,
+          "skipped": 0,
+          "total": 428
+        }
+      ],
+      "passedTests": 1511,
+      "skippedTests": 0
+    },
+    "build": {
+      "tasksSuccessful": 2,
+      "tasksTotal": 2,
+      "cachedTasks": 2
+    }
+  },
+  "worktreeObservation": {
+    "initialStatus": "clean before concurrent supervisor edits",
+    "statusBeforeReportWrite": [
+      " M .github/workflows/selfhost-release-acceptance.yml",
+      " M deploy/selfhost/README.md",
+      " M docs/runbooks/selfhost-deploy.md",
+      " M docs/runbooks/selfhost-release.md",
+      "?? docs/runbooks/evidence/selfhost/d-bundle2-2026-10-14/"
+    ],
+    "supervisorChangesObserved": true,
+    "executorTrackedWrites": [
+      "docs/runbooks/evidence/selfhost/d-bundle2-2026-10-14/root-checks.json"
+    ]
+  },
+  "safety": {
+    "inheritedExternalCredentialEnvironment": "excluded by environment allowlist",
+    "database": "validated loopback worktree-isolated configuration; no connection strings recorded",
+    "logs": "redacted before writing",
+    "publishingOrRealServerActions": false
+  },
+  "limitations": [
+    "Typecheck and build results were full Turbo cache hits, not fresh execution.",
+    "This report only covers the eight assigned root checks; it does not assert live registry, server, recovery or staging acceptance."
+  ]
+}

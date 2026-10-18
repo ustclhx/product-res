@@ -1,0 +1,201 @@
+{
+  "initialStatus": {
+    "base": {
+      "ok": false,
+      "lastAttempt": "2026-10-14T17:18:33.703856Z",
+      "running": false,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "lastFailure": "2026-10-14T17:18:34.219978Z",
+      "lastError": "walg-command-failed"
+    },
+    "schedule": {
+      "ok": false,
+      "lastFailure": "2026-10-14T17:18:34.220996Z",
+      "failures": 1
+    },
+    "archive": {},
+    "pgStatArchiver": {
+      "archived_count": 0,
+      "last_archived_wal": null,
+      "last_archived_time": null,
+      "failed_count": 0,
+      "last_failed_wal": null,
+      "last_failed_time": null,
+      "stats_reset": "2026-10-14T17:00:06.705583+00:00"
+    },
+    "disk": {
+      "freeBytes": 24236945408,
+      "walBytes": 33554432,
+      "pgDataBytes": 91336117
+    },
+    "replica": {
+      "ok": false,
+      "configured": false
+    },
+    "checkedAt": "2026-10-14T17:19:22.171916Z",
+    "healthy": false
+  },
+  "note": "first base attempt overlapped private TLS gateway startup; fixed local Caddyfile formatting before retry; no production changes",
+  "cycleExitCode": 0,
+  "cycleEvents": [
+    {
+      "event": "selfhost.backup.cycle.completed",
+      "ok": true
+    }
+  ],
+  "status": {
+    "base": {
+      "ok": true,
+      "lastAttempt": "2026-10-14T17:19:22.458855Z",
+      "running": false,
+      "failures": 1,
+      "consecutiveFailures": 0,
+      "lastFailure": "2026-10-14T17:18:34.219978Z",
+      "lastError": "walg-command-failed",
+      "backupId": "base_000000010000000000000003",
+      "clusterId": "7696569397157777444",
+      "lastSuccess": "2026-10-14T17:19:27.660477Z"
+    },
+    "schedule": {
+      "ok": false,
+      "lastFailure": "2026-10-14T17:18:34.220996Z",
+      "failures": 1
+    },
+    "dump": {
+      "ok": true,
+      "lastAttempt": "2026-10-14T17:19:27.661393Z",
+      "running": false,
+      "prefix": "logical/20261014T171927760140Z",
+      "clusterId": "7696569397157777444",
+      "databaseBytes": 10983091,
+      "lastSuccess": "2026-10-14T17:19:28.268177Z",
+      "consecutiveFailures": 0,
+      "failures": 0
+    },
+    "verification": {
+      "ok": true,
+      "lastAttempt": "2026-10-14T17:19:28.271288Z",
+      "running": false,
+      "verifiedAt": "2026-10-14T17:19:29.668715Z",
+      "continuousUntil": "2026-10-14 17:19:28.283498+00",
+      "lastWal": "000000010000000000000004",
+      "lastSuccess": "2026-10-14T17:19:29.668815Z",
+      "consecutiveFailures": 0,
+      "failures": 0
+    },
+    "retention": {
+      "dryRun": false,
+      "oldest": "base_000000010000000000000003",
+      "candidates": [],
+      "replica": "not_configured",
+      "continuousUntil": "2026-10-14T17:19:28.283498Z",
+      "lastWal": "000000010000000000000004",
+      "lastSuccess": "2026-10-14T17:19:30.172602Z",
+      "ok": true
+    },
+    "archive": {
+      "consecutiveFailures": 0,
+      "lastSuccess": "2026-10-14T17:19:28.573169+00:00",
+      "lastWal": "000000010000000000000004",
+      "successes": 4
+    },
+    "pgStatArchiver": {
+      "archived_count": 4,
+      "last_archived_wal": "000000010000000000000004",
+      "last_archived_time": "2026-10-14T17:19:28.582193+00:00",
+      "failed_count": 0,
+      "last_failed_wal": null,
+      "last_failed_time": null,
+      "stats_reset": "2026-10-14T17:00:06.705583+00:00"
+    },
+    "disk": {
+      "freeBytes": 24186953728,
+      "walBytes": 67109228,
+      "pgDataBytes": 125060037
+    },
+    "replica": {
+      "ok": false,
+      "configured": false
+    },
+    "checkedAt": "2026-10-14T17:19:30.471190Z",
+    "healthy": true
+  },
+  "afterScheduledRetry": {
+    "base": {
+      "ok": true,
+      "lastAttempt": "2026-10-14T17:23:34.580471Z",
+      "running": false,
+      "failures": 1,
+      "consecutiveFailures": 0,
+      "lastFailure": "2026-10-14T17:18:34.219978Z",
+      "lastError": "walg-command-failed",
+      "backupId": "base_00000001000000000000000A",
+      "clusterId": "7696569397157777444",
+      "lastSuccess": "2026-10-14T17:23:39.760478Z"
+    },
+    "schedule": {
+      "slot": "2026-10-14T02:00:00Z",
+      "lastSuccess": "2026-10-14T17:23:42.371885Z",
+      "ok": true
+    },
+    "dump": {
+      "ok": true,
+      "lastAttempt": "2026-10-14T17:23:39.762616Z",
+      "running": false,
+      "prefix": "logical/20261014T172339866224Z",
+      "clusterId": "7696569397157777444",
+      "databaseBytes": 10983091,
+      "lastSuccess": "2026-10-14T17:23:40.456785Z",
+      "consecutiveFailures": 0,
+      "failures": 0
+    },
+    "verification": {
+      "ok": true,
+      "lastAttempt": "2026-10-14T17:23:40.459420Z",
+      "running": false,
+      "verifiedAt": "2026-10-14T17:23:41.867207Z",
+      "continuousUntil": "2026-10-14 17:23:40.472331+00",
+      "lastWal": "00000001000000000000000B",
+      "lastSuccess": "2026-10-14T17:23:41.867302Z",
+      "consecutiveFailures": 0,
+      "failures": 0
+    },
+    "retention": {
+      "dryRun": false,
+      "oldest": "base_000000010000000000000003",
+      "candidates": [],
+      "replica": "not_configured",
+      "continuousUntil": "2026-10-14T17:23:40.472331Z",
+      "lastWal": "00000001000000000000000B",
+      "lastSuccess": "2026-10-14T17:23:42.370715Z",
+      "ok": true
+    },
+    "archive": {
+      "consecutiveFailures": 0,
+      "lastSuccess": "2026-10-14T17:41:41.315146+00:00",
+      "lastWal": "00000001000000000000001D",
+      "successes": 30
+    },
+    "pgStatArchiver": {
+      "archived_count": 30,
+      "last_archived_wal": "00000001000000000000001D",
+      "last_archived_time": "2026-10-14T17:41:41.3592+00:00",
+      "failed_count": 0,
+      "last_failed_wal": null,
+      "last_failed_time": null,
+      "stats_reset": "2026-10-14T17:00:06.705583+00:00"
+    },
+    "disk": {
+      "freeBytes": 24085647360,
+      "walBytes": 150995307,
+      "pgDataBytes": 210305988
+    },
+    "replica": {
+      "ok": false,
+      "configured": false
+    },
+    "checkedAt": "2026-10-14T17:42:26.268429Z",
+    "healthy": true
+  }
+}

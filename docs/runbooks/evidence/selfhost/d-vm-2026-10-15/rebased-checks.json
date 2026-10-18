@@ -1,0 +1,41 @@
+{
+  "baseSha": "0bdb1cc316dbb343310c237f561a8eee255bd2fb",
+  "checkedCommit": "a46d1ed052ec1dfba183cf5418520c84ac611e23",
+  "checks": [
+    {
+      "command": "pnpm check",
+      "exitCode": 0,
+      "seconds": 4.0
+    },
+    {
+      "command": "pnpm check:deps",
+      "exitCode": 0,
+      "seconds": 1.3
+    },
+    {
+      "command": "pnpm check:singletons",
+      "exitCode": 0,
+      "seconds": 0.1
+    },
+    {
+      "command": "pnpm dedupe --check",
+      "exitCode": 0,
+      "seconds": 0.7
+    },
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "seconds": 11.5
+    },
+    {
+      "command": "pnpm test",
+      "exitCode": 0,
+      "seconds": 130.5
+    },
+    {
+      "command": "pnpm build",
+      "exitCode": 0,
+      "seconds": 6.2
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "transactions": [
+    {
+      "id": "7WT17462SJ5165744",
+      "amount_with_breakdown": {
+        "gross_amount": {
+          "currency_code": "USD",
+          "value": "19.00"
+        },
+        "fee_amount": {
+          "currency_code": "USD",
+          "value": "0.95"
+        },
+        "net_amount": {
+          "currency_code": "USD",
+          "value": "18.05"
+        }
+      },
+      "time": "2026-10-11T07:20:36.000Z",
+      "status": "COMPLETED"
+    }
+  ],
+  "links": [
+    {
+      "href": "https://api-m.sandbox.paypal.com/v1/billing/subscriptions/I-H2LE38AW7EU4/transactions?start_time=2026-10-11T07%3A17%3A44.000Z&end_time=2026-10-11T07%3A20%3A36.000Z",
+      "rel": "SELF",
+      "method": "GET"
+    }
+  ]
+}

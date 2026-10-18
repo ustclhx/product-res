@@ -1,0 +1,14 @@
+---
+title: 编写内容
+description: 以 MDX 文件管理博客、法律页与文档。
+section: 指南
+order: 3
+---
+
+内容放在 `apps/web/content` 中，按集合与语言分目录：
+
+- `blog/<locale>/<slug>.mdx`：博客文章
+- `legal/<locale>/<page>.mdx`：隐私政策、服务条款与退款政策
+- `docs/<locale>/<slug>.mdx`：本文档
+
+页面在构建期渲染，数据库不可用时仍可访问。

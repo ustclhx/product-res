@@ -1,0 +1,56 @@
+{
+  "runId": "acceptance-2026-10-13h",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T10:27:01.902Z",
+  "data": {
+    "scenario": "token-stop",
+    "messages": [
+      {
+        "conversationId": "01a134cb-34e8-7426-953d-f7c27ee35c95",
+        "messageId": "01a134cb-6bde-708e-bd3b-509e230d747c",
+        "status": "completed",
+        "createdAt": "2026-10-13T10:25:09.12023+00:00",
+        "updatedAt": "2026-10-13T10:25:16.54+00:00",
+        "modelKey": "acceptance-deepseek-token",
+        "inputTokens": 64,
+        "outputTokens": 1166,
+        "credits": 3,
+        "usageCheckpoint": {
+          "at": "2026-10-13T10:25:15.775Z",
+          "inputTokens": 150,
+          "outputTokens": 1012
+        },
+        "holdId": "01a134cb-6d7a-70b2-a79a-c8c4a64c834b",
+        "holdStatus": "captured",
+        "heldCredits": 9,
+        "capturedCredits": 3,
+        "overageAbsorbed": 0,
+        "overageDebited": 0,
+        "overageDebt": 0,
+        "textLength": 1036,
+        "partTypes": ["text"],
+        "ledger": [
+          {
+            "id": "01a134cb-889b-75dc-b3fd-94ae51e3a8b3",
+            "type": "consume",
+            "delta": -3
+          }
+        ]
+      }
+    ],
+    "errorCode": null,
+    "errorMessage": null,
+    "errorStorageNote": "ai_message has no persisted errorCode/errorMessage columns; this reply completed; acceptance failed at frontend first-output assertion before Stop action",
+    "diagnosis": {
+      "failureDiagnostic": "Failure diagnostic: unclassified",
+      "failureLocation": "apps/web/e2e/staging-acceptance/chat.spec.ts:201",
+      "failedAssertion": "Assistant paragraph expected non-whitespace output",
+      "stopActionPerformed": false,
+      "databaseMessageStatus": "completed",
+      "textOutputPersisted": true,
+      "replyTextLength": 1036,
+      "underlyingFrontendCause": "unknown: original live UI state and transport diagnostics not retained",
+      "acceptanceRerunAfterFailure": false
+    }
+  }
+}

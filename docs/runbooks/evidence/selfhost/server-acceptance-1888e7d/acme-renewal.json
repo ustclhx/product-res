@@ -1,0 +1,52 @@
+{
+  "sha": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+  "startedAt": "2026-10-16T16:09:03.179820+00:00",
+  "domain": "selfhost.ezarouter.cc",
+  "scope": "separate staging ACME state; official Caddy image; production state preserved",
+  "first": {
+    "serial": "2C75910DE8CFD143AD4D99EC59CBD1D9A0C9",
+    "notBefore": "Oct 16 15:10:38 2026 GMT",
+    "notAfter": "Dec 19 15:10:37 2026 GMT",
+    "sha256 Fingerprint": "EF:F1:20:4E:1D:FF:19:74:68:D1:74:A7:D9:34:D4:C9:5B:B5:C2:36:29:D4:72:67:69:33:AC:24:2B:BF:5B:EF"
+  },
+  "renewed": {
+    "serial": "2C0084A342FAFE0DD02EE749E229C7EBAD29",
+    "notBefore": "Oct 16 15:10:50 2026 GMT",
+    "notAfter": "Dec 19 15:10:49 2026 GMT",
+    "sha256 Fingerprint": "C7:55:25:45:C5:1F:C7:97:67:25:02:7C:01:BA:A9:7C:AD:3D:E7:A7:76:37:B7:5C:00:C5:B1:6E:33:1C:FC:68"
+  },
+  "events": [
+    {
+      "ts": 1792166952.8489974,
+      "logger": "tls.obtain",
+      "msg": "certificate obtained successfully",
+      "identifier": "selfhost.ezarouter.cc"
+    },
+    {
+      "ts": 1792166959.4345956,
+      "logger": "tls",
+      "msg": "certificate is in configured renewal window based on expiration date"
+    },
+    {
+      "ts": 1792166959.4402897,
+      "logger": "tls.renew",
+      "msg": "renewing certificate",
+      "identifier": "selfhost.ezarouter.cc"
+    },
+    {
+      "ts": 1792166964.4341583,
+      "logger": "tls",
+      "msg": "certificate is in configured renewal window based on expiration date"
+    },
+    {
+      "ts": 1792166965.021901,
+      "logger": "tls.renew",
+      "msg": "certificate renewed successfully",
+      "identifier": "selfhost.ezarouter.cc"
+    }
+  ],
+  "success": true,
+  "productionCertificateSha256After": "621ae3ee8c624e4fee249c76a8afa93d8948d916854f200a4384490a2127f5b1",
+  "productionCertificatePreserved": true,
+  "endedAt": "2026-10-16T16:09:29.858815+00:00"
+}

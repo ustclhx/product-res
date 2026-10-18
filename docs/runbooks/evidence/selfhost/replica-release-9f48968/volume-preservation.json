@@ -1,0 +1,42 @@
+{
+  "project": "product-res-selfhost",
+  "newBackupStartedAt": "2026-10-17T16:16:05.879473462Z",
+  "allVolumesPredateUpgrade": true,
+  "volumes": [
+    {
+      "Name": "product-res-selfhost_backup_state",
+      "CreatedAt": "2026-10-17T00:02:14+08:00",
+      "Driver": "local"
+    },
+    {
+      "Name": "product-res-selfhost_caddy_config",
+      "CreatedAt": "2026-10-17T00:02:45+08:00",
+      "Driver": "local"
+    },
+    {
+      "Name": "product-res-selfhost_caddy_data",
+      "CreatedAt": "2026-10-17T00:02:45+08:00",
+      "Driver": "local"
+    },
+    {
+      "Name": "product-res-selfhost_job_owners",
+      "CreatedAt": "2026-10-17T00:02:44+08:00",
+      "Driver": "local"
+    },
+    {
+      "Name": "product-res-selfhost_postgres_data",
+      "CreatedAt": "2026-10-17T00:02:14+08:00",
+      "Driver": "local"
+    },
+    {
+      "Name": "product-res-selfhost_postgres_socket",
+      "CreatedAt": "2026-10-17T00:02:14+08:00",
+      "Driver": "local"
+    },
+    {
+      "Name": "product-res-selfhost_valkey_data",
+      "CreatedAt": "2026-10-17T00:02:14+08:00",
+      "Driver": "local"
+    }
+  ]
+}

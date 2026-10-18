@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-16T17:58:06.711203+00:00",
+  "containers": [
+    {
+      "name": "/selfhost-accept-jobs2",
+      "status": "exited",
+      "exitCode": 0,
+      "finishedAt": "2026-10-16T17:57:06.175519686Z"
+    },
+    {
+      "name": "/selfhost-accept-probe",
+      "status": "exited",
+      "exitCode": 0,
+      "finishedAt": "2026-10-16T17:57:06.63919965Z"
+    }
+  ]
+}

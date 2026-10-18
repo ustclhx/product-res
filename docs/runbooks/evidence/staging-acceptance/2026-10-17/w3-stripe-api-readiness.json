@@ -1,0 +1,239 @@
+{
+  "observedAt": "2026-10-17T17:15:24.228Z",
+  "database": {
+    "database": "product_res_staging",
+    "role": "readonly",
+    "read_only": "on"
+  },
+  "failedEvents": [],
+  "clockEvidence": [
+    {
+      "clock": {
+        "id": "clock_1UOZJ3L3UTpBAoXoluItPGMm",
+        "livemode": false,
+        "status": "ready",
+        "frozen_time": 1794220373,
+        "created": 1791535053,
+        "deletes_after": 1794127053
+      },
+      "subscription": {
+        "id": "sub_1UOZEZL3UTpBAoXozNk55goq",
+        "livemode": false,
+        "status": "active",
+        "customer": "cus_VPO0y4uPpFbE3f",
+        "test_clock": "clock_1UOZJ3L3UTpBAoXoluItPGMm",
+        "cancel_at_period_end": false,
+        "metadata": {
+          "workspaceId": "01a11fca-f8b5-71ac-91cb-2e556301a8e5",
+          "planPriceId": "01a11bac-8a18-7786-a6cf-d84dd209ef99"
+        },
+        "items": [
+          {
+            "priceId": "price_1UOSygL3UTpBAoXoQKRdSIBc",
+            "interval": "month",
+            "currentPeriodStart": 1794213173,
+            "currentPeriodEnd": 1796805173
+          }
+        ]
+      },
+      "checkoutSessions": [
+        {
+          "id": "cs_test_a1uh5jodjnpCmc2S1eJdiltwf2To7wzsL3bsgq9Ofsoh0SLIbeRWCtS6U9",
+          "livemode": false,
+          "status": "complete",
+          "mode": "subscription",
+          "subscription": "sub_1UOZEZL3UTpBAoXozNk55goq",
+          "customer": "cus_VPO0y4uPpFbE3f",
+          "payment_status": "paid",
+          "metadata": {
+            "workspaceId": "01a11fca-f8b5-71ac-91cb-2e556301a8e5",
+            "planPriceId": "01a11bac-8a18-7786-a6cf-d84dd209ef99"
+          }
+        }
+      ],
+      "local": [
+        {
+          "id": "01a11fcb-42fc-72c7-9709-883d4a9f5e0f",
+          "workspace_id": "01a11fca-f8b5-71ac-91cb-2e556301a8e5",
+          "provider_subscription_id": "sub_1UOZEZL3UTpBAoXozNk55goq",
+          "status": "active",
+          "cancel_at_period_end": false,
+          "current_period_start": "2026-11-09T08:32:53.000Z",
+          "current_period_end": "2026-12-09T08:32:53.000Z",
+          "interval": "month"
+        }
+      ]
+    },
+    {
+      "clock": {
+        "id": "clock_1UOZJ3L3UTpBAoXoLRkK3r9T",
+        "livemode": false,
+        "status": "ready",
+        "frozen_time": 1794220509,
+        "created": 1791535053,
+        "deletes_after": 1794127053
+      },
+      "subscription": {
+        "id": "sub_1UOZGkL3UTpBAoXov32keMjQ",
+        "livemode": false,
+        "status": "active",
+        "customer": "cus_VPO2UoUPjgAVbB",
+        "test_clock": "clock_1UOZJ3L3UTpBAoXoLRkK3r9T",
+        "cancel_at_period_end": false,
+        "metadata": {
+          "workspaceId": "01a11fcd-0b52-75db-bad6-3276f1fa0918",
+          "planPriceId": "01a11bac-8a18-7786-a6cf-d84dd209ef99"
+        },
+        "items": [
+          {
+            "priceId": "price_1UOSygL3UTpBAoXoQKRdSIBc",
+            "interval": "month",
+            "currentPeriodStart": 1794213309,
+            "currentPeriodEnd": 1796805309
+          }
+        ]
+      },
+      "checkoutSessions": [
+        {
+          "id": "cs_test_a10gTXvxwYv2Z20Oif8FKJXpRhFPaxvnGPSmz1uXEw7glDAb2L2gak46jT",
+          "livemode": false,
+          "status": "complete",
+          "mode": "subscription",
+          "subscription": "sub_1UOZGkL3UTpBAoXov32keMjQ",
+          "customer": "cus_VPO2UoUPjgAVbB",
+          "payment_status": "paid",
+          "metadata": {
+            "workspaceId": "01a11fcd-0b52-75db-bad6-3276f1fa0918",
+            "planPriceId": "01a11bac-8a18-7786-a6cf-d84dd209ef99"
+          }
+        }
+      ],
+      "local": [
+        {
+          "id": "01a11fcd-55d0-72d3-bc78-9e1df9e645b9",
+          "workspace_id": "01a11fcd-0b52-75db-bad6-3276f1fa0918",
+          "provider_subscription_id": "sub_1UOZGkL3UTpBAoXov32keMjQ",
+          "status": "active",
+          "cancel_at_period_end": false,
+          "current_period_start": "2026-11-09T08:35:09.000Z",
+          "current_period_end": "2026-12-09T08:35:09.000Z",
+          "interval": "month"
+        }
+      ]
+    },
+    {
+      "clock": {
+        "id": "clock_1UOYzzL3UTpBAoXoMAu8qO78",
+        "livemode": false,
+        "status": "ready",
+        "frozen_time": 1823075995,
+        "created": 1791533871,
+        "deletes_after": 1794125871
+      },
+      "subscription": {
+        "id": "sub_1UOYigL3UTpBAoXoRZmjmg7x",
+        "livemode": false,
+        "status": "active",
+        "customer": "cus_VPNTGGkltwSblW",
+        "test_clock": "clock_1UOYzzL3UTpBAoXoMAu8qO78",
+        "cancel_at_period_end": false,
+        "metadata": {
+          "workspaceId": "01a11fac-af11-72da-ad52-0869ceb1c9c9",
+          "planPriceId": "01a11bac-8d09-77ec-97df-634cef2f887e"
+        },
+        "items": [
+          {
+            "priceId": "price_1UOSyiL3UTpBAoXoQVYU90Yt",
+            "interval": "year",
+            "currentPeriodStart": 1823068795,
+            "currentPeriodEnd": 1854691195
+          }
+        ]
+      },
+      "checkoutSessions": [
+        {
+          "id": "cs_test_a1ra8de2coWVSWNwtoCvUZ8boMTbPQ0wc77zcd1jGHsLRIFjnRVJd9w3Fm",
+          "livemode": false,
+          "status": "complete",
+          "mode": "subscription",
+          "subscription": "sub_1UOYigL3UTpBAoXoRZmjmg7x",
+          "customer": "cus_VPNTGGkltwSblW",
+          "payment_status": "paid",
+          "metadata": {
+            "workspaceId": "01a11fac-af11-72da-ad52-0869ceb1c9c9",
+            "planPriceId": "01a11bac-8d09-77ec-97df-634cef2f887e"
+          }
+        }
+      ],
+      "local": [
+        {
+          "id": "01a11fad-1a7a-731a-81fd-cab9492718b4",
+          "workspace_id": "01a11fac-af11-72da-ad52-0869ceb1c9c9",
+          "provider_subscription_id": "sub_1UOYigL3UTpBAoXoRZmjmg7x",
+          "status": "active",
+          "cancel_at_period_end": false,
+          "current_period_start": "2027-10-09T07:59:55.000Z",
+          "current_period_end": "2028-10-09T07:59:55.000Z",
+          "interval": "year"
+        }
+      ]
+    },
+    {
+      "clock": {
+        "id": "clock_1UOYeQL3UTpBAoXoq2VlSbJ7",
+        "livemode": false,
+        "status": "ready",
+        "frozen_time": 1794218086,
+        "created": 1791532534,
+        "deletes_after": 1794124534
+      },
+      "subscription": {
+        "id": "sub_1UOYdgL3UTpBAoXoZxQZO7Ti",
+        "livemode": false,
+        "status": "active",
+        "customer": "cus_VPNOl9hPPPmDPj",
+        "test_clock": "clock_1UOYeQL3UTpBAoXoq2VlSbJ7",
+        "cancel_at_period_end": false,
+        "metadata": {
+          "workspaceId": "01a11fa8-08da-71f1-9c8d-a0ab10568800",
+          "planPriceId": "01a11bac-8a18-7786-a6cf-d84dd209ef99"
+        },
+        "items": [
+          {
+            "priceId": "price_1UOSygL3UTpBAoXoQKRdSIBc",
+            "interval": "month",
+            "currentPeriodStart": 1794210886,
+            "currentPeriodEnd": 1796802886
+          }
+        ]
+      },
+      "checkoutSessions": [
+        {
+          "id": "cs_test_a1vVdkM7hrCGwxLrVDpP3h9H9w11T1THiiFzVpT6lxBtfw5GwwuMXEyjg8",
+          "livemode": false,
+          "status": "complete",
+          "mode": "subscription",
+          "subscription": "sub_1UOYdgL3UTpBAoXoZxQZO7Ti",
+          "customer": "cus_VPNOl9hPPPmDPj",
+          "payment_status": "paid",
+          "metadata": {
+            "workspaceId": "01a11fa8-08da-71f1-9c8d-a0ab10568800",
+            "planPriceId": "01a11bac-8a18-7786-a6cf-d84dd209ef99"
+          }
+        }
+      ],
+      "local": [
+        {
+          "id": "01a11fa8-6180-70c7-9d2e-a5c1571ee116",
+          "workspace_id": "01a11fa8-08da-71f1-9c8d-a0ab10568800",
+          "provider_subscription_id": "sub_1UOYdgL3UTpBAoXoZxQZO7Ti",
+          "status": "active",
+          "cancel_at_period_end": false,
+          "current_period_start": "2026-11-09T07:54:46.000Z",
+          "current_period_end": "2026-12-09T07:54:46.000Z",
+          "interval": "month"
+        }
+      ]
+    }
+  ]
+}

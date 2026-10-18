@@ -1,0 +1,300 @@
+{
+  "utc": "2026-10-14T11:57:30.911574+00:00",
+  "sha": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+  "node": "v23.11.0",
+  "dbos": "5.2.11",
+  "workflow": [
+    {
+      "workflow_uuid": "workflow:dGVzdC1jYzcyMjE1OS03YTEyLTQ5MDMtOGUyMy04MDUzZGMyNzNkNjk:MjBlYWY3ODMtYmM4MS00YjYyLThjMWYtMzdkZTk0MTU3ZTY4",
+      "status": "PENDING",
+      "name": "product-res-workflow:test-cc722159-7a12-4903-8e23-8053dc273d69",
+      "executor_id": "74c25b05-fa49-4e66-8924-a59e12b3b3ea",
+      "application_version": "workflow-integration-v1",
+      "created_at": 1791978948631,
+      "updated_at": 1791978956268,
+      "recovery_attempts": 4
+    }
+  ],
+  "callbacks": [
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-0",
+      "count": 1,
+      "first_at": "2026-10-14T11:55:54.14562+00:00",
+      "last_at": "2026-10-14T11:55:54.14562+00:00"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-1",
+      "count": 1,
+      "first_at": "2026-10-14T11:55:54.155251+00:00",
+      "last_at": "2026-10-14T11:55:54.155251+00:00"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-2",
+      "count": 1,
+      "first_at": "2026-10-14T11:55:54.298963+00:00",
+      "last_at": "2026-10-14T11:55:54.298963+00:00"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-3",
+      "count": 1,
+      "first_at": "2026-10-14T11:55:54.312451+00:00",
+      "last_at": "2026-10-14T11:55:54.312451+00:00"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-4",
+      "count": 1,
+      "first_at": "2026-10-14T11:55:54.44857+00:00",
+      "last_at": "2026-10-14T11:55:54.44857+00:00"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-5",
+      "count": 1,
+      "first_at": "2026-10-14T11:55:54.456076+00:00",
+      "last_at": "2026-10-14T11:55:54.456076+00:00"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-6",
+      "count": 1,
+      "first_at": "2026-10-14T11:55:54.575556+00:00",
+      "last_at": "2026-10-14T11:55:54.575556+00:00"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-7",
+      "count": 1,
+      "first_at": "2026-10-14T11:55:54.579797+00:00",
+      "last_at": "2026-10-14T11:55:54.579797+00:00"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-8",
+      "count": 1,
+      "first_at": "2026-10-14T11:55:54.703416+00:00",
+      "last_at": "2026-10-14T11:55:54.703416+00:00"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-9",
+      "count": 1,
+      "first_at": "2026-10-14T11:55:54.709979+00:00",
+      "last_at": "2026-10-14T11:55:54.709979+00:00"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "list",
+      "count": 1,
+      "first_at": "2026-10-14T11:55:50.63969+00:00",
+      "last_at": "2026-10-14T11:55:50.63969+00:00"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "quota-0",
+      "count": 1,
+      "first_at": "2026-10-14T11:55:54.134222+00:00",
+      "last_at": "2026-10-14T11:55:54.134222+00:00"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "quota-2",
+      "count": 1,
+      "first_at": "2026-10-14T11:55:54.279584+00:00",
+      "last_at": "2026-10-14T11:55:54.279584+00:00"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "quota-4",
+      "count": 1,
+      "first_at": "2026-10-14T11:55:54.435581+00:00",
+      "last_at": "2026-10-14T11:55:54.435581+00:00"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "quota-6",
+      "count": 1,
+      "first_at": "2026-10-14T11:55:54.568404+00:00",
+      "last_at": "2026-10-14T11:55:54.568404+00:00"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "quota-8",
+      "count": 1,
+      "first_at": "2026-10-14T11:55:54.693787+00:00",
+      "last_at": "2026-10-14T11:55:54.693787+00:00"
+    }
+  ],
+  "effects": [
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-0"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-1"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-2"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-3"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-4"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-5"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-6"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-7"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-8"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "detail-9"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "quota-0"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "quota-2"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "quota-4"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "quota-6"
+    },
+    {
+      "run_id": "b012d7e4-9a6a-40b5-99d9-a0041b18bd67",
+      "key": "20eaf783-bc81-4b62-8c1f-37de94157e68",
+      "step": "quota-8"
+    }
+  ],
+  "events": [
+    {
+      "id": "01a13a44-c823-727a-9790-9e84fcd77b56",
+      "sequence": 1,
+      "workflow_id": "workflow:dGVzdC1jYzcyMjE1OS03YTEyLTQ5MDMtOGUyMy04MDUzZGMyNzNkNjk:MjBlYWY3ODMtYmM4MS00YjYyLThjMWYtMzdkZTk0MTU3ZTY4",
+      "type": "early",
+      "created_at": "2026-10-14T11:55:48.644102+00:00",
+      "consumed_at": null
+    },
+    {
+      "id": "01a13a44-d989-70bf-aeb9-5db8662e1a5d",
+      "sequence": 2,
+      "workflow_id": "workflow:dGVzdC1jYzcyMjE1OS03YTEyLTQ5MDMtOGUyMy04MDUzZGMyNzNkNjk:MjBlYWY3ODMtYmM4MS00YjYyLThjMWYtMzdkZTk0MTU3ZTY4",
+      "type": "resume",
+      "created_at": "2026-10-14T11:55:53.098549+00:00",
+      "consumed_at": "2026-10-14T11:55:54.122057+00:00"
+    }
+  ],
+  "waits": [
+    {
+      "id": "01a13a44-d7e0-7737-80de-b344e8530f74",
+      "workflow_id": "workflow:dGVzdC1jYzcyMjE1OS03YTEyLTQ5MDMtOGUyMy04MDUzZGMyNzNkNjk:MjBlYWY3ODMtYmM4MS00YjYyLThjMWYtMzdkZTk0MTU3ZTY4",
+      "name": "deadline",
+      "type": "resume",
+      "deadline": "2026-10-14T11:56:52.67372+00:00",
+      "state": "completed",
+      "created_at": "2026-10-14T11:55:52.667612+00:00",
+      "finished_at": "2026-10-14T11:55:54.123742+00:00"
+    }
+  ],
+  "sleepWakeups": [
+    {
+      "workflow_uuid": "workflow:dGVzdC1jYzcyMjE1OS03YTEyLTQ5MDMtOGUyMy04MDUzZGMyNzNkNjk:MjBlYWY3ODMtYmM4MS00YjYyLThjMWYtMzdkZTk0MTU3ZTY4",
+      "function_id": 2,
+      "function_name": "DBOS.sleep",
+      "wakeup_epoch_ms": "1791978952649"
+    },
+    {
+      "workflow_uuid": "workflow:dGVzdC1jYzcyMjE1OS03YTEyLTQ5MDMtOGUyMy04MDUzZGMyNzNkNjk:MjBlYWY3ODMtYmM4MS00YjYyLThjMWYtMzdkZTk0MTU3ZTY4",
+      "function_id": 8,
+      "function_name": "DBOS.sleep",
+      "wakeup_epoch_ms": "1791978954270"
+    },
+    {
+      "workflow_uuid": "workflow:dGVzdC1jYzcyMjE1OS03YTEyLTQ5MDMtOGUyMy04MDUzZGMyNzNkNjk:MjBlYWY3ODMtYmM4MS00YjYyLThjMWYtMzdkZTk0MTU3ZTY4",
+      "function_id": 13,
+      "function_name": "DBOS.sleep",
+      "wakeup_epoch_ms": "1791978954427"
+    },
+    {
+      "workflow_uuid": "workflow:dGVzdC1jYzcyMjE1OS03YTEyLTQ5MDMtOGUyMy04MDUzZGMyNzNkNjk:MjBlYWY3ODMtYmM4MS00YjYyLThjMWYtMzdkZTk0MTU3ZTY4",
+      "function_id": 18,
+      "function_name": "DBOS.sleep",
+      "wakeup_epoch_ms": "1791978954561"
+    },
+    {
+      "workflow_uuid": "workflow:dGVzdC1jYzcyMjE1OS03YTEyLTQ5MDMtOGUyMy04MDUzZGMyNzNkNjk:MjBlYWY3ODMtYmM4MS00YjYyLThjMWYtMzdkZTk0MTU3ZTY4",
+      "function_id": 23,
+      "function_name": "DBOS.sleep",
+      "wakeup_epoch_ms": "1791978954686"
+    },
+    {
+      "workflow_uuid": "workflow:dGVzdC1jYzcyMjE1OS03YTEyLTQ5MDMtOGUyMy04MDUzZGMyNzNkNjk:MjBlYWY3ODMtYmM4MS00YjYyLThjMWYtMzdkZTk0MTU3ZTY4",
+      "function_id": 28,
+      "function_name": "DBOS.sleep",
+      "wakeup_epoch_ms": "1791978954815"
+    },
+    {
+      "workflow_uuid": "workflow:dGVzdC1jYzcyMjE1OS03YTEyLTQ5MDMtOGUyMy04MDUzZGMyNzNkNjk:MjBlYWY3ODMtYmM4MS00YjYyLThjMWYtMzdkZTk0MTU3ZTY4",
+      "function_id": 30,
+      "function_name": "DBOS.sleep",
+      "wakeup_epoch_ms": "1791982615821"
+    }
+  ],
+  "postgres": "PostgreSQL 17.11 (Debian 17.11-1.pgdg13+2) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit"
+}

@@ -1,0 +1,12 @@
+// 仅供 vitest-plugin 集成测试使用的 Worker 配置（compatibility_date 受限于其自带的 workerd 版本）。
+// HYPERDRIVE 的本地连接串由 vitest.config.ts 通过
+// CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE 提供（取自 .env.worktree）；
+// 不可达 / 挂起的数据库绑定由 vitest.config.ts 按 global-setup 提供的端口添加。
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "product-res-web-test",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "r2_buckets": [{ "binding": "FILES", "bucket_name": "files" }],
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000" }]
+}

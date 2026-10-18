@@ -1,0 +1,14 @@
+{
+  "runId": "admin-61-2026-10-15a",
+  "recordedAt": "2026-10-14T19:41:01.675Z",
+  "data": {
+    "purchases": [],
+    "payments": [],
+    "refundRequests": [],
+    "healthVersion": "598d1f68b6ef7b19e8a6d30c13575bac1701b7c2",
+    "readOnly": true,
+    "paidRetries": 0,
+    "checkoutUrlsPersisted": false,
+    "cardSubmissionCount": 0
+  }
+}

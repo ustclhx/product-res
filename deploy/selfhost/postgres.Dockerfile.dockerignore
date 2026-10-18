@@ -1,0 +1,12 @@
+**
+!deploy/
+!deploy/selfhost/
+!deploy/selfhost/postgres-*.sh
+!deploy/selfhost/pg_hba.conf
+!deploy/selfhost/install-walg.sh
+!deploy/selfhost/backup/
+!deploy/selfhost/backup/walg.py
+!infra/
+!infra/local/
+!infra/local/initdb/
+!infra/local/initdb/*.sql

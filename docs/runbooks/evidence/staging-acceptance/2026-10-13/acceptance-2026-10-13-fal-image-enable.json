@@ -1,0 +1,27 @@
+{
+  "runId": "acceptance-2026-10-13",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T05:42:06.156123+00:00",
+  "data": {
+    "status": "passed",
+    "modelKey": "acceptance-fal-image",
+    "modelId": "01a13192-2aba-735e-8a58-3ea53a10f5eb",
+    "enabled": true,
+    "otherFieldsUnchanged": true,
+    "disabledAudit": {
+      "id": "01a13357-dd42-71d6-8799-b18f7f1b3ef3",
+      "actorUserId": "01a12ef0-66cc-75e2-88d0-eac1f1904d3c",
+      "action": "ai.model_disabled",
+      "occurredAt": "2026-10-13T03:39:18.439866+00:00",
+      "actorMatchesCurrentAdministrator": true
+    },
+    "enabledAudit": {
+      "id": "01a133c5-9016-7018-80de-415fb532ca1f",
+      "actorUserId": "01a12ef0-66cc-75e2-88d0-eac1f1904d3c",
+      "action": "ai.model_enabled",
+      "occurredAt": "2026-10-13T05:39:07.279453+00:00"
+    },
+    "verification": "Previously only enabled differed; after Enable all model fields match the same fixture",
+    "uiFeedback": "Click completed but waiting for Disable timed out; database and new audit confirmed success; no repeated click"
+  }
+}

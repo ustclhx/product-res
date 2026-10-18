@@ -1,0 +1,297 @@
+{
+  "runId": "acceptance-2026-10-13j",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T12:09:19.462321+00:00",
+  "phase": "automated-acceptance-suite-passed-manual-verification-pending",
+  "deployedVersion": "e6936068fb375ba6ed59533124e7da89060ec377",
+  "mainHead": "e6936068fb375ba6ed59533124e7da89060ec377",
+  "preflight": {
+    "status": "passed",
+    "allFiveModelsEnabled": true,
+    "allFiveModelsMatchFixture": true,
+    "readonlyTransport": "reused Node Postgres connection; no Docker psql",
+    "evidenceFile": "acceptance-2026-10-13j-model-preflight-comparison.json"
+  },
+  "authorizedScope": "Coordinator relayed continuing user authorization for full runs including paid generation calls and scripted 8007 retries; stop after diagnosis on suite failure",
+  "suite": {
+    "status": "passed",
+    "exitCode": 0,
+    "passed": 13,
+    "failed": 0,
+    "skipped": 1,
+    "playwrightRetriesConfigured": 0,
+    "readonlyQueryTotalAttemptsLimit": 5,
+    "workers8007ExtraTaskAttemptsLimit": 2,
+    "workers8007ExtraTaskAttemptsExecuted": 0,
+    "rerunAfterSuiteEnd": false
+  },
+  "coordinatorReportedTextEgress": "direct DeepSeek with secret configured; secret values not read or exported",
+  "evidenceCommitted": false,
+  "deployedVersionAfter": "e6936068fb375ba6ed59533124e7da89060ec377",
+  "failureDiagnostics": [],
+  "failedGenerationTasks": [],
+  "creditAccounting": {
+    "ordinaryWorkspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+    "preparationCreditAdjustments": [
+      {
+        "auditId": "01a13520-9f74-76d8-b3fa-d93730e6ab7e",
+        "adjustmentId": "01a13520-9679-74d5-9487-3c50b208653c",
+        "amount": 12
+      }
+    ],
+    "workersImageCharged": 1,
+    "falImageCharged": 2,
+    "falVideoCharged": 0,
+    "falVideoHoldReleased": 3,
+    "chatScenarios": [
+      {
+        "billing": "token",
+        "scenario": "normal",
+        "status": "completed",
+        "credits": 1,
+        "holdAmount": 9,
+        "capturedAmount": 1,
+        "consumeEntryCount": 1,
+        "reconciliationDifference": 0
+      },
+      {
+        "billing": "token",
+        "scenario": "stop",
+        "status": "aborted",
+        "credits": 1,
+        "holdAmount": 9,
+        "capturedAmount": 1,
+        "consumeEntryCount": 1,
+        "reconciliationDifference": 0
+      },
+      {
+        "billing": "token",
+        "scenario": "page-close",
+        "status": "completed",
+        "credits": 3,
+        "holdAmount": 9,
+        "capturedAmount": 3,
+        "consumeEntryCount": 1,
+        "reconciliationDifference": 0,
+        "tailCompletionMs": 4489
+      },
+      {
+        "billing": "call",
+        "scenario": "normal",
+        "status": "completed",
+        "credits": 2,
+        "holdAmount": 2,
+        "capturedAmount": 2,
+        "consumeEntryCount": 1,
+        "reconciliationDifference": 0
+      },
+      {
+        "billing": "call",
+        "scenario": "stop",
+        "status": "aborted",
+        "credits": 0,
+        "holdAmount": 2,
+        "capturedAmount": 0,
+        "consumeEntryCount": 0,
+        "reconciliationDifference": 0
+      },
+      {
+        "billing": "call",
+        "scenario": "page-close",
+        "status": "completed",
+        "credits": 2,
+        "holdAmount": 2,
+        "capturedAmount": 2,
+        "consumeEntryCount": 1,
+        "reconciliationDifference": 0,
+        "tailCompletionMs": 3178
+      }
+    ],
+    "totalGenerationAndChatCharged": 12,
+    "ordinaryFinalSnapshot": {
+      "ledgerTotal": 18,
+      "activeRemaining": 18,
+      "held": 0,
+      "debt": 0,
+      "reconciliationDifference": 0
+    },
+    "dedicatedAdminTopups": [
+      {
+        "auditId": "01a13525-42e0-73ee-8223-16d2a25baa2e",
+        "adjustmentId": "01a13525-3ce3-7099-88ed-d3707c6d2f4d",
+        "amount": 25
+      }
+    ],
+    "dedicatedFinalSnapshot": {
+      "ledgerTotal": 25,
+      "activeRemaining": 25,
+      "held": 0,
+      "debt": 0,
+      "reconciliationDifference": 0
+    }
+  },
+  "adminVerification": {
+    "dedicatedUserCurrentlyBanned": false,
+    "dedicatedUserRole": "user",
+    "impersonationEnded": true,
+    "dedicatedTopupAppliedOnce": true,
+    "dedicatedTopupAmount": 25,
+    "announcementRestored": true,
+    "auditEvidence": {
+      "admin-ban": {
+        "userId": "01a134fd-cf19-7366-8567-c002d78f2637",
+        "status": "banned",
+        "auditId": "01a13525-00c7-73a9-8322-112058f5299a"
+      },
+      "admin-unban": {
+        "userId": "01a134fd-cf19-7366-8567-c002d78f2637",
+        "status": "active",
+        "auditId": "01a13525-0ea6-7527-85fb-6006c4378523"
+      },
+      "admin-impersonation-started": {
+        "userId": "01a134fd-cf19-7366-8567-c002d78f2637",
+        "actorId": "01a12ef0-66cc-75e2-88d0-eac1f1904d3c",
+        "status": "impersonating",
+        "auditId": "01a13525-1bff-7039-a3c9-fd5e795f098b"
+      },
+      "admin-impersonation-ended": {
+        "userId": "01a134fd-cf19-7366-8567-c002d78f2637",
+        "actorId": "01a12ef0-66cc-75e2-88d0-eac1f1904d3c",
+        "status": "admin-restored",
+        "auditId": "01a13525-2d6d-7236-b37e-95e00b376c98"
+      },
+      "admin-top-up": {
+        "userId": "01a134fd-cf19-7366-8567-c002d78f2637",
+        "workspaceId": "01a134fd-cf19-7366-8567-c002d78f2637",
+        "auditId": "01a13525-42e0-73ee-8223-16d2a25baa2e",
+        "adjustmentId": "01a13525-3ce3-7099-88ed-d3707c6d2f4d",
+        "grantId": "01a13525-41a4-77c1-960d-0f955e2ee00d",
+        "amount": 25,
+        "status": "applied-once"
+      },
+      "admin-setting": {
+        "settingKey": "site.announcement",
+        "changedAuditId": "01a13525-56c6-74ec-818d-47cda0e16615",
+        "restoredAuditId": "01a13525-669d-7303-b328-ca9db864634c",
+        "status": "restored"
+      }
+    }
+  },
+  "sentryTestEndpoint": {
+    "status": 500,
+    "requestId": "01a13525-86e8-732f-98e5-9444d2cc6953",
+    "state": "sentry-event-pending-manual-verification"
+  },
+  "remainingManualVerification": [
+    {
+      "item": "Workers provider inference failure fault injection",
+      "status": "pending",
+      "reason": "Suite explicitly skips; perform authorized manual runbook fault injection"
+    },
+    {
+      "item": "Sentry actual event and source-map verification",
+      "status": "pending",
+      "requestId": "01a13525-86e8-732f-98e5-9444d2cc6953",
+      "reason": "Endpoint returned expected 500 and request ID; actual event and web/jobs source mapping still require external verification"
+    }
+  ],
+  "chatUsageExternalComparisonPerformed": false,
+  "acceptanceItems": [
+    {
+      "item": "configure or verify text acceptance models",
+      "status": "pass"
+    },
+    {
+      "item": "configure or verify media acceptance models",
+      "status": "pass"
+    },
+    {
+      "item": "media-workers-image",
+      "status": "pass"
+    },
+    {
+      "item": "media-fal-image",
+      "status": "pass"
+    },
+    {
+      "item": "media-fal-video-cancel",
+      "status": "pass"
+    },
+    {
+      "item": "media-workers-provider-failure",
+      "status": "skip",
+      "reason": "Script always skips this item; runbook requires manual fault injection; not executed"
+    },
+    {
+      "item": "Chat token: normal",
+      "status": "pass"
+    },
+    {
+      "item": "Chat token: stop",
+      "status": "pass"
+    },
+    {
+      "item": "Chat token: page-close",
+      "status": "pass"
+    },
+    {
+      "item": "Chat call: normal",
+      "status": "pass"
+    },
+    {
+      "item": "Chat call: stop",
+      "status": "pass"
+    },
+    {
+      "item": "Chat call: page-close",
+      "status": "pass"
+    },
+    {
+      "item": "Admin 6.1 dedicated-user actions",
+      "status": "pass"
+    },
+    {
+      "item": "Sentry 1.2 test exception endpoint",
+      "status": "pass",
+      "scope": "HTTP endpoint behavior passed; actual event and source-map verification pending"
+    }
+  ],
+  "mediaGenerationTaskCount": 3,
+  "chatAssistantMessageCount": 6,
+  "workersImageTerminalAttempt": 1,
+  "evidenceFiles": [
+    "acceptance-2026-10-13j-admin-ban.json",
+    "acceptance-2026-10-13j-admin-dedicated-user.json",
+    "acceptance-2026-10-13j-admin-impersonation-ended.json",
+    "acceptance-2026-10-13j-admin-impersonation-started.json",
+    "acceptance-2026-10-13j-admin-setting.json",
+    "acceptance-2026-10-13j-admin-top-up.json",
+    "acceptance-2026-10-13j-admin-unban.json",
+    "acceptance-2026-10-13j-chat-call-normal.json",
+    "acceptance-2026-10-13j-chat-call-page-close-action.json",
+    "acceptance-2026-10-13j-chat-call-page-close.json",
+    "acceptance-2026-10-13j-chat-call-stop.json",
+    "acceptance-2026-10-13j-chat-token-normal.json",
+    "acceptance-2026-10-13j-chat-token-page-close-action.json",
+    "acceptance-2026-10-13j-chat-token-page-close.json",
+    "acceptance-2026-10-13j-chat-token-stop.json",
+    "acceptance-2026-10-13j-execution-status.json",
+    "acceptance-2026-10-13j-final-readonly-verification.json",
+    "acceptance-2026-10-13j-media-fal-image-terminal.json",
+    "acceptance-2026-10-13j-media-fal-image.json",
+    "acceptance-2026-10-13j-media-fal-video-cancel-response.json",
+    "acceptance-2026-10-13j-media-fal-video-cancel.json",
+    "acceptance-2026-10-13j-media-workers-image-terminal.json",
+    "acceptance-2026-10-13j-media-workers-image.json",
+    "acceptance-2026-10-13j-model-acceptance-deepseek-call.json",
+    "acceptance-2026-10-13j-model-acceptance-deepseek-token.json",
+    "acceptance-2026-10-13j-model-acceptance-fal-image.json",
+    "acceptance-2026-10-13j-model-acceptance-fal-video.json",
+    "acceptance-2026-10-13j-model-acceptance-workers-image.json",
+    "acceptance-2026-10-13j-model-preflight-comparison.json",
+    "acceptance-2026-10-13j-sentry-test.json"
+  ],
+  "credentialScan": "passed",
+  "oldRunEvidenceUnchanged": true,
+  "priorEvidenceFilesVerified": 121
+}

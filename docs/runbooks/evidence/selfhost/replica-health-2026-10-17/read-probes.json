@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-17",
+  "hostAlias": "product-res-ecs",
+  "project": "product-res-selfhost",
+  "method": "在现有backup容器内使用镜像原版replica.S3，串行List和GET各端最大对象；只输出汇总与计时，不写远端对象或状态。",
+  "socketTimeoutSeconds": 30,
+  "concurrency": 1,
+  "primaryRateBytesPerSecond": 10485760,
+  "replicaRateBytesPerSecond": 10485760,
+  "primary": {
+    "listSeconds": 0.806,
+    "largestReadSeconds": 2.529,
+    "largestReadBytes": 25535244,
+    "groups": {
+      "basebackups_005": {
+        "count": 18,
+        "bytes": 51177702,
+        "maxBytes": 25535244
+      },
+      "logical": {
+        "count": 9,
+        "bytes": 161094,
+        "maxBytes": 76981
+      },
+      "wal_005": {
+        "count": 1466,
+        "bytes": 190382133,
+        "maxBytes": 5389732
+      }
+    }
+  },
+  "replica": {
+    "listSeconds": 1.613,
+    "largestReadSeconds": 2.614,
+    "largestReadBytes": 25535244,
+    "groups": {
+      "basebackups_005": {
+        "count": 18,
+        "bytes": 51177702,
+        "maxBytes": 25535244
+      },
+      "logical": {
+        "count": 9,
+        "bytes": 161094,
+        "maxBytes": 76981
+      },
+      "wal_005": {
+        "count": 1452,
+        "bytes": 188876456,
+        "maxBytes": 5389732
+      }
+    }
+  },
+  "limitations": [
+    "只读List/Get探测未复现历史单次超时，未试写或轮换token。",
+    "对象清单随PG连续归档变化，两个List不是原子快照。",
+    "未记录原请求方法、目标及阶段，无法将历史超时归因于某对象、R2或具体网络环节。"
+  ]
+}

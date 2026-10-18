@@ -1,0 +1,204 @@
+{
+  "mode": "sandbox",
+  "recordingMethod": "Actual transaction events resent to a local HTTP receiver through Docker cloudflare/cloudflared:2026.9.3 quick tunnel; no simulator",
+  "originalTransactionsAt": "2026-10-11",
+  "rawEvidenceLocation": "/tmp/paypal-worktree-session/raw (mode 0700; uncommitted)",
+  "webhookRestored": true,
+  "eventTypesUnchanged": true,
+  "receiverStopped": true,
+  "quickTunnelStopped": true,
+  "redaction": "Removed personal/account details and free text, replaced payer/account identities and checkout UUIDs consistently. No OAuth token, credentials, webhook ID or transmission signature committed. Sanitized payloads test mapping; signatures apply only to restricted raw recordings.",
+  "events": {
+    "monthly-activated-event": {
+      "fixture": "monthly-activated-event.json",
+      "providerEventId": "WH-07667423AJ883562N-7CY31389BG3261138",
+      "eventType": "BILLING.SUBSCRIPTION.ACTIVATED",
+      "receivedAt": "2026-10-14T16:58:52Z",
+      "rawBodySha256": "079d87a4f558eb90a623eed5efb8c62f890209ae55f151283a10951a491e1ef3",
+      "fixtureSha256": "70c9bc19d51658d468336b9e73361f5b25e5482d621e341df26009ba0035af4b",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200
+    },
+    "monthly-resumed-event": {
+      "fixture": "monthly-resumed-event.json",
+      "providerEventId": "WH-9UJ67496C53596114-85T37183PB8684930",
+      "eventType": "BILLING.SUBSCRIPTION.ACTIVATED",
+      "receivedAt": "2026-10-14T16:58:53Z",
+      "rawBodySha256": "d7028ed5121dd221699f4eb48af65cb052c2f87dedfe11bfabe56d38b9e57d70",
+      "fixtureSha256": "2661e457f1088335f0eac22b4c91d8c9daca7e406a4b1555eb0dab3e8b801acb",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200
+    },
+    "monthly-suspended-event": {
+      "fixture": "monthly-suspended-event.json",
+      "providerEventId": "WH-05S0917996421501N-8V949424T6795563Y",
+      "eventType": "BILLING.SUBSCRIPTION.SUSPENDED",
+      "receivedAt": "2026-10-14T16:58:51Z",
+      "rawBodySha256": "96f927b8516dc84935b23234680d613373f80d47f08b64c07f815a8823e228e1",
+      "fixtureSha256": "f7bdd4e4c21ecb87c31adf5e6f72c90dc23e2337d2583820205167ee15738d99",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200
+    },
+    "monthly-initial-event": {
+      "fixture": "monthly-initial-event.json",
+      "providerEventId": "WH-8PT65307RJ3759523-2WS09555HA557983L",
+      "eventType": "PAYMENT.SALE.COMPLETED",
+      "receivedAt": "2026-10-14T16:58:57Z",
+      "rawBodySha256": "9ef026065b908dac19b2750ce7363db950184bedf5e4303aa76c0f1c954a3863",
+      "fixtureSha256": "1a4bbebe316a7ce6b1bcf0c77d619017e094acc7278d2b02d5916de467e93269",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200
+    },
+    "one-time-event": {
+      "fixture": "one-time-event.json",
+      "providerEventId": "WH-9B78516042013691A-0MM29302XS0143134",
+      "eventType": "PAYMENT.CAPTURE.COMPLETED",
+      "receivedAt": "2026-10-14T16:58:56Z",
+      "rawBodySha256": "09aba23f0ee0a2c10b3d2ef906abbec26994523c5f9cd9c470a53aea5c54f685",
+      "fixtureSha256": "f5ecb49a4454d908dd45396bddeaf32da343eab7dd80440d2e7078d4092aa72e",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200
+    },
+    "one-time-approved-event": {
+      "fixture": "one-time-approved-event.json",
+      "providerEventId": "WH-9YP757102E461941A-25A01287X46669021",
+      "eventType": "CHECKOUT.ORDER.APPROVED",
+      "receivedAt": "2026-10-14T16:58:54Z",
+      "rawBodySha256": "f2f3c94a1a4f22b3a5d85949746fdea79f3011633dca201fbdf9a22f0171cd00",
+      "fixtureSha256": "21da7db8da9f6bf1468a87e3af340e27aca21951f784669e447c9fcba90eb446",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200
+    },
+    "card-refunded-capture-event": {
+      "fixture": "card-refunded-capture-event.json",
+      "providerEventId": "WH-2VP98395RE5073433-7B321684F76048538",
+      "eventType": "PAYMENT.CAPTURE.COMPLETED",
+      "receivedAt": "2026-10-14T17:08:57Z",
+      "rawBodySha256": "a57985ba72515d4da87751961b4199f170646df9741e00669229615c11728913",
+      "fixtureSha256": "83cdfd05806ee0e7fdfaf0caf6d0e103cfc0486cf4e3da0cd3e1c5ec9324c0b0",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200
+    },
+    "card-refund-event": {
+      "fixture": "card-refund-event.json",
+      "providerEventId": "WH-2XG45013EA714245K-4R502993J1656043F",
+      "eventType": "PAYMENT.CAPTURE.REFUNDED",
+      "receivedAt": "2026-10-14T17:09:02Z",
+      "rawBodySha256": "d4934f6a5a0282cf25a732292b672ab453392a6a43140486edb791769da6c1dc",
+      "fixtureSha256": "09c787cd34b03edb59d4f0839ef2222e7ce2b5d8f0a5df8717f758be270978b0",
+      "onlineSignatureVerification": "SUCCESS",
+      "listenerHttpStatus": 200
+    }
+  },
+  "snapshots": {
+    "one-time-order": {
+      "method": "GET",
+      "path": "/v2/checkout/orders/2A672877DY6250409",
+      "status": 200,
+      "recordedAt": "2026-10-14T16:57:18.598210+00:00",
+      "fixture": "one-time-order.json",
+      "savedResponseSha256": "33cc70dde5bbcc09945cbf65827f314123ae95000edde721c772b64045e58a3a",
+      "fixtureSha256": "cc3ab668b089eef92b0956da5325c405d3e6266afff4bdfe40e34a3aadc9c341"
+    },
+    "one-time-capture": {
+      "method": "GET",
+      "path": "/v2/payments/captures/821243239P5069342",
+      "status": 200,
+      "recordedAt": "2026-10-14T16:57:19.706988+00:00",
+      "fixture": "one-time-capture.json",
+      "savedResponseSha256": "942e3cd651c3c7cae3d04ac06f468f40944471cb9185d13038bab26bc0c1532a",
+      "fixtureSha256": "2f51fd2d533e0d130194422a09f52892dbb91b9ab72320ba5f39c616cc9c6a2e"
+    },
+    "monthly-initial-sale": {
+      "method": "GET",
+      "path": "/v1/payments/sale/7WT17462SJ5165744",
+      "status": 200,
+      "recordedAt": "2026-10-14T16:57:20.703758+00:00",
+      "fixture": "monthly-initial-sale.json",
+      "savedResponseSha256": "1108b597cef83431a6fa9030637c3609686c38d200efa238b7b1675d5bfffff8",
+      "fixtureSha256": "93f1edf0451e59b6180aeaca3ad6d081868703fcd943d0372bdac7ef1678dd98"
+    },
+    "monthly-subscription": {
+      "method": "GET",
+      "path": "/v1/billing/subscriptions/I-H2LE38AW7EU4",
+      "status": 200,
+      "recordedAt": "2026-10-14T16:57:21.835974+00:00",
+      "fixture": "monthly-subscription.json",
+      "savedResponseSha256": "65d74880f5d769fa986dbc37c10d6c55e8634e685d369f18960fd8bec84dbf46",
+      "fixtureSha256": "ba0e2ce62c560ed7576bcac99eb3f7397379b18735892eb1f9c6f437ee6fe3d0"
+    },
+    "monthly-plan": {
+      "method": "GET",
+      "path": "/v1/billing/plans/P-5DY311405E0178244NLEERUI",
+      "status": 200,
+      "recordedAt": "2026-10-14T16:57:22.894923+00:00",
+      "fixture": "monthly-plan.json",
+      "savedResponseSha256": "c46b9c7a2b7098fa1844222cf24e573409aa6526cce32a05a063c4c563bc49ef",
+      "fixtureSha256": "62d495215acab970d665fe17b29d3606aea59525dfaf6068e19a3ff41f3a52e9"
+    },
+    "monthly-initial-transactions": {
+      "method": "GET",
+      "path": "/v1/billing/subscriptions/I-H2LE38AW7EU4/transactions?start_time=2026-10-11T07%3A17%3A44.000Z&end_time=2026-10-11T07%3A20%3A36.000Z",
+      "status": 200,
+      "recordedAt": "2026-10-14T16:57:24.080961+00:00",
+      "fixture": "monthly-initial-transactions.json",
+      "savedResponseSha256": "003088062184af30e8b572c5234e3408eafb787c8dd06145710c5efa8b43fbbd",
+      "fixtureSha256": "2710cf601d91daeac6373846cd944b81aa20681e8fb67286534cf086e3508bac"
+    },
+    "card-order": {
+      "method": "GET",
+      "path": "/v2/checkout/orders/6KE705423D766922N",
+      "status": 200,
+      "recordedAt": "2026-10-14T17:10:42.853552+00:00",
+      "fixture": "card-order.json",
+      "savedResponseSha256": "e83b86d9b38a057df5e037eeaf5b175f4d4d29464b3383b8044c68d4c31596ef",
+      "fixtureSha256": "6a4fea41b4d23c053055847b333ea218387ff18412b7f87f712fd1eb98828e61"
+    },
+    "card-capture": {
+      "method": "GET",
+      "path": "/v2/payments/captures/14549073EE7057637",
+      "status": 200,
+      "recordedAt": "2026-10-14T17:10:44.147563+00:00",
+      "fixture": "card-capture.json",
+      "savedResponseSha256": "5eba4375211efc65ed9e43ac4b3374a8e8c6e4dabd46a14997485a9c58b1b778",
+      "fixtureSha256": "9f455aea3a4595966d276f700eaa93007a097852773b53cce7d42da45f986b68"
+    },
+    "card-refund": {
+      "method": "GET",
+      "path": "/v2/payments/refunds/9UR96226Y9887940S",
+      "status": 200,
+      "recordedAt": "2026-10-14T17:10:45.334568+00:00",
+      "fixture": "card-refund.json",
+      "savedResponseSha256": "2d3f2fc76cdf6d39e1aea78dc20507c1f21681aba31a8e4e4d542475853dfdd6",
+      "fixtureSha256": "e8bba9e97de630d728af7aa0f9d5b2252d4e3f875eceac50d6cfceabd5534677"
+    }
+  },
+  "pending": [
+    "Natural monthly/yearly renewal, including after resume; cancellation expiry and annual later-month Cron observation transferred to derived projects",
+    "Capture partial refund, dispute and other unrecorded terminal events are outside the four follow-up acceptance tasks"
+  ],
+  "independentCardProbe": {
+    "mode": "sandbox",
+    "requestedAmount": "0.01",
+    "currency": "USD",
+    "cardSource": "https://developer.paypal.com/sandbox-testing/card-testing",
+    "cardPaymentSupported": true,
+    "captureAttempted": false,
+    "refundAttempted": true,
+    "orderId": "6KE705423D766922N",
+    "orderStatus": "COMPLETED",
+    "captureId": "14549073EE7057637",
+    "refundId": "9UR96226Y9887940S",
+    "refundStatus": "COMPLETED",
+    "rawEvidenceLocation": "/tmp/paypal-worktree-session/card-raw (mode 0700; uncommitted)",
+    "checkoutMarker": "paypal-worker-independent-card-recording",
+    "applicationBillingWrites": false,
+    "stagingAcceptancePaymentsUnchanged": true,
+    "webhookRestored": true,
+    "eventTypesUnchanged": true,
+    "receiverStopped": true,
+    "quickTunnelStopped": true,
+    "note": "Orders create with payment_source.card returned COMPLETED and a capture; no separate capture call was needed. An immediate full refund changed the completed-event resource.status to REFUNDED before delivery. This independent probe marker is not application checkout metadata."
+  },
+  "supplementalRecordingManifest": "w3-provenance.json (2026-10-18 monthly/yearly initial Sale and partial/full Sale refunds; see staging acceptance evidence for the application matrix)"
+}

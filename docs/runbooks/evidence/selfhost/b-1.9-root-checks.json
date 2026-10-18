@@ -1,0 +1,327 @@
+{
+  "schema_version": 1,
+  "task": "B1.9",
+  "scope": "PR-required repository root checks",
+  "completed_at_utc": "2026-10-14T17:03:11.407544+00:00",
+  "commit": "7e7c99cec99396e8b469222b3b489a56d73769df",
+  "runtime": {
+    "node": "v23.11.0",
+    "pnpm": "12.8.1",
+    "turbo": "2.11.7"
+  },
+  "execution_policy": {
+    "independent_static_checks": "parallel",
+    "typecheck_test_build": "serial",
+    "production_or_shared_files_modified": false,
+    "external_deployment_performed": false,
+    "other_processes_stopped": false,
+    "raw_logs": "Stored outside the repository in a private temporary directory; no environment values or credentials included in this evidence."
+  },
+  "result": "passed_after_restoring_gitignored_route_tree",
+  "commands": [
+    {
+      "command": "pnpm check",
+      "started_at": "2026-10-14T16:56:03.762927+00:00",
+      "duration_seconds": 5.865,
+      "exit_code": 0,
+      "working_directory": ".",
+      "key_results": {
+        "biome_files_checked": 1368,
+        "credit_boundary_production_files_checked": 664,
+        "payment_runtime_check": "passed",
+        "node_test_cases_passed": 10
+      }
+    },
+    {
+      "command": "pnpm check:deps",
+      "started_at": "2026-10-14T16:56:03.763116+00:00",
+      "duration_seconds": 1.198,
+      "exit_code": 0,
+      "working_directory": ".",
+      "key_results": {
+        "packages_checked": 12,
+        "apps_checked": 2,
+        "node_test_cases_passed": 7
+      }
+    },
+    {
+      "command": "pnpm check:singletons",
+      "started_at": "2026-10-14T16:56:03.763191+00:00",
+      "duration_seconds": 0.058,
+      "exit_code": 0,
+      "working_directory": ".",
+      "key_results": {
+        "single_instance_dependencies": ["drizzle-orm", "react", "react-dom"]
+      }
+    },
+    {
+      "command": "pnpm dedupe --check",
+      "started_at": "2026-10-14T16:56:03.764159+00:00",
+      "duration_seconds": 1.154,
+      "exit_code": 0,
+      "working_directory": ".",
+      "key_results": {
+        "dedupe_required": false,
+        "warnings": [
+          "Three deprecated transitive dependencies: @esbuild-kit/core-utils@3.3.2, @esbuild-kit/esm-loader@2.6.5, uuid@9.0.1."
+        ]
+      }
+    },
+    {
+      "command": "pnpm typecheck",
+      "started_at": "2026-10-14T16:56:09.628249+00:00",
+      "duration_seconds": 0.694,
+      "exit_code": 0,
+      "working_directory": ".",
+      "key_results": {
+        "turbo_tasks_successful": 14,
+        "turbo_tasks_total": 14,
+        "turbo_tasks_cached": 14,
+        "fresh_execution": false
+      }
+    },
+    {
+      "command": "pnpm test",
+      "started_at": "2026-10-14T16:56:10.322938+00:00",
+      "duration_seconds": 124.51,
+      "exit_code": 1,
+      "working_directory": ".",
+      "key_results": {
+        "turbo_tasks_successful": 25,
+        "turbo_tasks_total": 26,
+        "turbo_tasks_cached": 22,
+        "web_test_files_passed": 64,
+        "web_test_files_failed": 1,
+        "web_test_cases_passed": 426,
+        "web_test_cases_failed": 2,
+        "failure_file": "apps/web/src/features/marketing/route-registration.test.ts",
+        "failure_source": "apps/web/src/router.tsx:3",
+        "failure_message": "Cannot find module './routeTree.gen'",
+        "failure_attribution": "The gitignored route tree was absent; the fully cached typecheck did not execute its route generation script or restore this undeclared output.",
+        "resolved_by": "Run existing route generation script, then rerun pnpm test."
+      }
+    },
+    {
+      "command": "pnpm build",
+      "started_at": "2026-10-14T16:58:14.834197+00:00",
+      "duration_seconds": 0.308,
+      "exit_code": 0,
+      "working_directory": ".",
+      "key_results": {
+        "turbo_tasks_successful": 2,
+        "turbo_tasks_total": 2,
+        "turbo_tasks_cached": 2,
+        "fresh_execution": false,
+        "jobs_build_command": "wrangler deploy --dry-run --outdir dist",
+        "external_deployment_performed": false
+      }
+    },
+    {
+      "command": "node scripts/generate-route-tree.mjs",
+      "started_at": "2026-10-14T16:58:59.342556+00:00",
+      "duration_seconds": 3.496,
+      "exit_code": 0,
+      "reason": "Restore gitignored generated route tree absent after typecheck cache hit, then revalidate the root test suite.",
+      "working_directory": "apps/web",
+      "key_results": {
+        "generated_artifact": "apps/web/src/routeTree.gen.ts",
+        "artifact_gitignored": true,
+        "production_source_changed": false
+      }
+    },
+    {
+      "command": "pnpm test",
+      "started_at": "2026-10-14T16:59:02.839441+00:00",
+      "duration_seconds": 195.009,
+      "exit_code": 0,
+      "reason": "Restore gitignored generated route tree absent after typecheck cache hit, then revalidate the root test suite.",
+      "working_directory": ".",
+      "key_results": {
+        "turbo_tasks_successful": 26,
+        "turbo_tasks_total": 26,
+        "turbo_tasks_cached": 22,
+        "test_cases_passed": 1511,
+        "package_test_results": [
+          {
+            "package": "@product-res/config",
+            "passed": 56,
+            "total": 56
+          },
+          {
+            "package": "@product-res/email",
+            "passed": 63,
+            "total": 63
+          },
+          {
+            "package": "@product-res/shared",
+            "passed": 22,
+            "total": 22
+          },
+          {
+            "package": "@product-res/ui",
+            "passed": 17,
+            "total": 17
+          },
+          {
+            "package": "@product-res/db",
+            "passed": 56,
+            "total": 56
+          },
+          {
+            "package": "@product-res/entitlements",
+            "passed": 14,
+            "total": 14
+          },
+          {
+            "package": "@product-res/platform",
+            "passed": 46,
+            "total": 46
+          },
+          {
+            "package": "@product-res/credits",
+            "passed": 50,
+            "total": 50
+          },
+          {
+            "package": "@product-res/ai",
+            "passed": 176,
+            "total": 176
+          },
+          {
+            "package": "@product-res/auth",
+            "passed": 114,
+            "total": 114
+          },
+          {
+            "package": "@product-res/billing",
+            "passed": 296,
+            "total": 296
+          },
+          {
+            "package": "@product-res/storage",
+            "passed": 26,
+            "total": 26
+          },
+          {
+            "package": "@product-res/jobs",
+            "passed": 147,
+            "total": 147
+          },
+          {
+            "package": "@product-res/web",
+            "passed": 428,
+            "total": 428
+          }
+        ],
+        "web_test_files_passed": 65,
+        "web_test_cases_passed": 428
+      }
+    }
+  ],
+  "limitations": [
+    "Typecheck and build passed via local Turbo cache; no fresh compiler or bundle execution was performed by those root commands.",
+    "The first test run failed on two marketing route registration cases because routeTree.gen.ts was missing. The final full root test run passed after the existing generator restored the ignored artifact.",
+    "Non-failing runtime warnings appeared in storage and jobs tests for disconnected request streams, terminating finite workflow states, and canceled Miniflare requests. These did not cause a test failure."
+  ],
+  "supervisorFinalChecks": {
+    "at": "2026-10-14T18:08:44.254339+00:00",
+    "commands": [
+      {
+        "command": "pnpm check",
+        "exitCode": 0,
+        "durationSeconds": 3.912
+      },
+      {
+        "command": "openspec validate add-selfhost-job-engine --strict",
+        "exitCode": 0,
+        "durationSeconds": 1.095
+      }
+    ],
+    "pythonAst": "passed",
+    "probeNodeCheck": "passed",
+    "localLinks": "passed",
+    "sensitiveValueScan": "passed",
+    "longRun": "completion validation exit 0",
+    "cleanupComplete": true,
+    "independentReview": "reproducer cap and sampling-pause issues corrected and re-reviewed"
+  },
+  "rebaseValidation": {
+    "base": "3c5895e09890889b420a5f00a6e40cc65a4753e5",
+    "at": "2026-10-14T18:13:21.424760+00:00",
+    "commands": [
+      {
+        "command": "pnpm check",
+        "exitCode": 0,
+        "durationSeconds": 3.79,
+        "keyOutput": [
+          "Checked 1403 files in 361ms. No fixes applied.",
+          "Credit write check passed (665 production files)",
+          "Payment runtime check passed"
+        ]
+      },
+      {
+        "command": "pnpm check:deps",
+        "exitCode": 0,
+        "durationSeconds": 0.751,
+        "keyOutput": []
+      },
+      {
+        "command": "pnpm check:singletons",
+        "exitCode": 0,
+        "durationSeconds": 0.05,
+        "keyOutput": []
+      },
+      {
+        "command": "pnpm dedupe --check",
+        "exitCode": 0,
+        "durationSeconds": 0.33,
+        "keyOutput": []
+      },
+      {
+        "command": "pnpm typecheck",
+        "exitCode": 0,
+        "durationSeconds": 0.147,
+        "keyOutput": [" Tasks:    14 successful, 14 total", "Cached:    14 cached, 14 total"]
+      },
+      {
+        "command": "pnpm test",
+        "exitCode": 0,
+        "durationSeconds": 104.53,
+        "keyOutput": [
+          "@product-res/credits:test:  Test Files  3 passed (3)",
+          "@product-res/credits:test:       Tests  50 passed (50)",
+          "@product-res/entitlements:test:  Test Files  3 passed (3)",
+          "@product-res/entitlements:test:       Tests  14 passed (14)",
+          "@product-res/platform:test:  Test Files  6 passed (6)",
+          "@product-res/platform:test:       Tests  46 passed (46)",
+          "@product-res/ai:test:  Test Files  16 passed (16)",
+          "@product-res/ai:test:       Tests  176 passed (176)",
+          "@product-res/auth:test:  Test Files  14 passed (14)",
+          "@product-res/auth:test:       Tests  114 passed (114)",
+          "@product-res/billing:test:  Test Files  24 passed (24)",
+          "@product-res/billing:test:       Tests  307 passed (307)",
+          "@product-res/storage:test:  Test Files  4 passed (4)",
+          "@product-res/storage:test:       Tests  26 passed (26)",
+          "@product-res/jobs:test:  Test Files  25 passed (25)",
+          "@product-res/jobs:test:       Tests  147 passed (147)",
+          "@product-res/web:test:  Test Files  65 passed (65)",
+          "@product-res/web:test:       Tests  428 passed (428)",
+          " Tasks:    26 successful, 26 total",
+          "Cached:    22 cached, 26 total"
+        ]
+      },
+      {
+        "command": "pnpm build",
+        "exitCode": 0,
+        "durationSeconds": 0.284,
+        "keyOutput": [" Tasks:    2 successful, 2 total", "Cached:    2 cached, 2 total"]
+      },
+      {
+        "command": "openspec validate add-selfhost-job-engine --strict",
+        "exitCode": 0,
+        "durationSeconds": 1.05,
+        "keyOutput": ["Change 'add-selfhost-job-engine' is valid"]
+      }
+    ]
+  }
+}

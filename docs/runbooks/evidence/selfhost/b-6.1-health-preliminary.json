@@ -1,0 +1,84 @@
+{
+  "startedAt": "2026-10-14T11:58:58.983Z",
+  "sha": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+  "node": "v23.11.0",
+  "checkpoints": [
+    {
+      "event": "initial-null",
+      "at": "2026-10-14T11:59:00.815Z",
+      "health": {
+        "status": 503,
+        "cache": "no-store",
+        "body": {
+          "status": "error",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 16
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "up",
+            "lastCronAt": null
+          },
+          "jobs": {
+            "lastCronAt": null
+          }
+        }
+      },
+      "jobsPids": [41034, 41035]
+    },
+    {
+      "event": "real-five-minute-success",
+      "at": "2026-10-14T12:00:00.552Z",
+      "health": {
+        "status": 200,
+        "cache": "no-store",
+        "body": {
+          "status": "ok",
+          "version": "70496c6496ca7f2b89ea75a49f1a6629836fe628",
+          "db": {
+            "status": "up",
+            "latencyMs": 1
+          },
+          "cache": {
+            "status": "up"
+          },
+          "queue": {
+            "status": "up"
+          },
+          "scheduler": {
+            "status": "up",
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          },
+          "jobs": {
+            "lastCronAt": "2026-10-14T12:00:00.191Z"
+          }
+        }
+      },
+      "ledger": [
+        {
+          "scheduled_at": "2026-10-14T12:00:00.000Z",
+          "state": "completed",
+          "started_at": "2026-10-14T12:00:00.173Z",
+          "finished_at": "2026-10-14T12:00:00.204Z",
+          "id": "01a13a48-9e95-763f-9066-2ea0d2381298",
+          "executor_id": "b-accept-scheduler-jobs-2"
+        }
+      ]
+    },
+    {
+      "event": "acceptance-failed",
+      "at": "2026-10-14T12:00:00.557Z",
+      "code": "22P02",
+      "message": "invalid input syntax for type uuid: \"b-accept-cleanup\""
+    }
+  ],
+  "passed": false,
+  "finishedAt": "2026-10-14T12:00:00.696Z"
+}

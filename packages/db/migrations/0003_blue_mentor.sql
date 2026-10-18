@@ -1,0 +1,2 @@
+ALTER TABLE "payment" DROP CONSTRAINT "payment_kind_reference";--> statement-breakpoint
+ALTER TABLE "payment" ADD CONSTRAINT "payment_kind_reference" CHECK (("payment"."kind" = 'one_time' and "payment"."purchase_id" is not null and "payment"."subscription_id" is null) or ("payment"."kind" in ('initial', 'renewal', 'adjustment') and "payment"."subscription_id" is not null and "payment"."purchase_id" is null));

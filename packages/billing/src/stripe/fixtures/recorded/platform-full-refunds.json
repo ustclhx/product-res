@@ -1,0 +1,38 @@
+{
+  "object": "list",
+  "count": 1,
+  "data": [
+    {
+      "id": "re_3UOYxzL3UTpBAoXo07mx1Eox",
+      "object": "refund",
+      "amount": 1000,
+      "balance_transaction": "txn_3UOYxzL3UTpBAoXo0Iu2HG7G",
+      "charge": "ch_3UOYxzL3UTpBAoXo0ttfyeCc",
+      "created": 1791544620,
+      "currency": "usd",
+      "customer": "cus_VPNjsv19f46fIb",
+      "customer_account": null,
+      "destination_details": {
+        "card": {
+          "reference": "3866921873755150",
+          "reference_status": "available",
+          "reference_type": "acquirer_reference_number",
+          "type": "refund"
+        },
+        "type": "card"
+      },
+      "metadata": {
+        "acceptance": "p2-platform-full-after-a978a4d"
+      },
+      "payment_intent": "pi_3UOYxzL3UTpBAoXo0kFoYJrn",
+      "payment_method": "pm_1UOYxxL3UTpBAoXovPp3JRoI",
+      "reason": null,
+      "receipt_number": null,
+      "source_transfer_reversal": null,
+      "status": "succeeded",
+      "transfer_reversal": null
+    }
+  ],
+  "has_more": false,
+  "url": "https://example.invalid/redacted"
+}

@@ -1,0 +1,35 @@
+{
+  "observedAt": "2026-10-17T17:25:53.594568+00:00",
+  "status": "awaiting-exclusive-browser",
+  "openspecProgress": {
+    "complete": 1,
+    "total": 4
+  },
+  "completed": [
+    "3.1 Stripe monthly/yearly CLI test-clock renewal and two independently observed duplicate deliveries each",
+    "PayPal readonly OAuth/webhook/plan/protected-resource preflight",
+    "1.1 controlled platform failure prepared with zero paid amount and no accounting changes; new trial canceled"
+  ],
+  "pending": [
+    "1.1 real admin replay and audit evidence",
+    "2.1 independent PayPal monthly/yearly Sale and partial/full refund callback recordings plus recorded regressions",
+    "3.2 PayPal sandbox cancellation/resume/overlap/refund/duplicate matrix"
+  ],
+  "adminReplayEventId": "01a14ae5-035b-77c0-b03b-4aa9075d5aa9",
+  "adminReplayProviderEventId": "evt_1URbLcL3UTpBAoXoPo2JjN1L",
+  "exclusiveBrowserMinutesRequested": 25,
+  "browserPurpose": [
+    "Admin webhook replay",
+    "Create independent application users and approve PayPal monthly/yearly/overlap subscription checkouts",
+    "Application PayPal cancel/resume UI"
+  ],
+  "receiverOrQuickTunnelStarted": false,
+  "ownTailProcessesStopped": true,
+  "newStripeTrialStatus": "canceled",
+  "remainingTransfers": [
+    "Natural PayPal renewal/expiry/after-resume charges and annual monthly Cron observations",
+    "Real collection entity and live configuration/financial acceptance"
+  ],
+  "draftPr": "https://github.com/ustclhx/product-res/pull/244",
+  "mergeAuthorized": false
+}

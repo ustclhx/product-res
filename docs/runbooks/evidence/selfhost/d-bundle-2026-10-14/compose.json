@@ -1,0 +1,454 @@
+{
+  "schemaVersion": 1,
+  "project": "selfhost-release-f72f805aa88e",
+  "checks": [
+    {
+      "check": "GHCR eight-image set verified",
+      "passed": true,
+      "sha": "80983d29f83cb5b57563fc8360119793cf8c12be",
+      "imageCount": 8,
+      "platform": "linux/amd64"
+    },
+    {
+      "check": "initial GHCR deployment and real heartbeat",
+      "passed": true,
+      "sha": "80983d29f83cb5b57563fc8360119793cf8c12be",
+      "completedHeartbeatCount": 1,
+      "inboxRows": 0,
+      "nonemptyInboxVerified": false
+    },
+    {
+      "check": "runtime TLS ports secrets UID",
+      "passed": true,
+      "sha": "80983d29f83cb5b57563fc8360119793cf8c12be",
+      "pgVerifyFull": true,
+      "invalidPgCaRejected": true,
+      "unknownHttpsCaRejected": true,
+      "pgHostnameMismatchRejected": true,
+      "secretsDirectoryMode": "0700",
+      "secretFiles": "0600 service UID",
+      "services": [
+        {
+          "service": "caddy",
+          "uid": 10001,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/caddy@sha256:8ec6b136f27a126718a22e8f1e107dcc0d7857a902e614b1eba44ebde01daa3d",
+          "networks": ["selfhost-release-f72f805aa88e_ingress"],
+          "publishedPorts": ["8080/tcp", "8443/tcp"],
+          "secretNames": []
+        },
+        {
+          "service": "jobs",
+          "uid": 1000,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/jobs@sha256:e84f9eb2bdd4b9400f04b72cd6e9e168fd54b593da53f2d32f1261108bfafddd",
+          "networks": ["selfhost-release-f72f805aa88e_data"],
+          "publishedPorts": [],
+          "secretNames": [
+            "app_database_url",
+            "auth_secret",
+            "github_client_secret",
+            "google_client_secret",
+            "turnstile_secret",
+            "valkey_url"
+          ]
+        },
+        {
+          "service": "migrate",
+          "uid": 1000,
+          "state": "exited",
+          "exitCode": 0,
+          "health": "unhealthy",
+          "image": "ghcr.io/ustclhx/product-res/migrate@sha256:2c5f8b35a5f13bfef6bcd1698724b0ea1e8614f86ab743a7f44fed8b17fb96a8",
+          "networks": ["selfhost-release-f72f805aa88e_data"],
+          "publishedPorts": [],
+          "secretNames": ["migrator_database_url"]
+        },
+        {
+          "service": "postgres",
+          "uid": 999,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/postgres@sha256:1abbb015fffe3f9f69b9d909cd61b96aa87b95a873e43175ac76b39a2f521af5",
+          "networks": ["selfhost-release-f72f805aa88e_data"],
+          "publishedPorts": [],
+          "secretNames": [
+            "app_db_password",
+            "migrator_db_password",
+            "postgres_password",
+            "readonly_db_password"
+          ]
+        },
+        {
+          "service": "valkey",
+          "uid": 999,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/valkey@sha256:1229b152f742f1522dc8a87e77062a5c78f2fce94506eeda08844186eb924f80",
+          "networks": ["selfhost-release-f72f805aa88e_data"],
+          "publishedPorts": [],
+          "secretNames": ["valkey_password"]
+        },
+        {
+          "service": "web",
+          "uid": 1000,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/web@sha256:05bce5fada4dfafe4a91acd41cd1832d1c32f6113a1d230ce1ced53b35f3f1a3",
+          "networks": [
+            "selfhost-release-f72f805aa88e_data",
+            "selfhost-release-f72f805aa88e_ingress"
+          ],
+          "publishedPorts": [],
+          "secretNames": [
+            "app_database_url",
+            "auth_secret",
+            "github_client_secret",
+            "google_client_secret",
+            "turnstile_secret",
+            "valkey_url"
+          ]
+        }
+      ]
+    },
+    {
+      "check": "metadata-only local registry second version",
+      "passed": true,
+      "sha": "e23d1292b77d762ba7f29f0b666b226d08f3e5f2"
+    },
+    {
+      "check": "existing version upgrade preserves persisted rows",
+      "passed": true,
+      "sha": "e23d1292b77d762ba7f29f0b666b226d08f3e5f2",
+      "snapshotSha256": "f544fc260d8d05641fed22df774589e39e396fc5d47c80ba74fa7c8d4f62e509",
+      "volumesPreserved": true
+    },
+    {
+      "check": "runtime TLS ports secrets UID",
+      "passed": true,
+      "sha": "e23d1292b77d762ba7f29f0b666b226d08f3e5f2",
+      "pgVerifyFull": true,
+      "invalidPgCaRejected": true,
+      "unknownHttpsCaRejected": true,
+      "pgHostnameMismatchRejected": true,
+      "secretsDirectoryMode": "0700",
+      "secretFiles": "0600 service UID",
+      "services": [
+        {
+          "service": "caddy",
+          "uid": 10001,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "localhost:51507/fixture/caddy@sha256:40796342152629fa580b68fb9f503db0a4cd8c6bdae810106a1adc70e0be0710",
+          "networks": ["selfhost-release-f72f805aa88e_ingress"],
+          "publishedPorts": ["8080/tcp", "8443/tcp"],
+          "secretNames": []
+        },
+        {
+          "service": "jobs",
+          "uid": 1000,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "localhost:51507/fixture/jobs@sha256:0d0b2933ed117ae5bb0f94a2fbfeda15da6dfbb1a708edb756d05b1bec8065b4",
+          "networks": ["selfhost-release-f72f805aa88e_data"],
+          "publishedPorts": [],
+          "secretNames": [
+            "app_database_url",
+            "auth_secret",
+            "github_client_secret",
+            "google_client_secret",
+            "turnstile_secret",
+            "valkey_url"
+          ]
+        },
+        {
+          "service": "migrate",
+          "uid": 1000,
+          "state": "exited",
+          "exitCode": 0,
+          "health": "unhealthy",
+          "image": "localhost:51507/fixture/migrate@sha256:fbe6c387dbd7332c729457375172fc676566d15a14bf75a9c8c4f5a524a3327a",
+          "networks": ["selfhost-release-f72f805aa88e_data"],
+          "publishedPorts": [],
+          "secretNames": ["migrator_database_url"]
+        },
+        {
+          "service": "postgres",
+          "uid": 999,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "localhost:51507/fixture/postgres@sha256:3d3429ad6ec05e9404622758044cdfb1fb025fbf5800674b9e7e839de750e891",
+          "networks": ["selfhost-release-f72f805aa88e_data"],
+          "publishedPorts": [],
+          "secretNames": [
+            "app_db_password",
+            "migrator_db_password",
+            "postgres_password",
+            "readonly_db_password"
+          ]
+        },
+        {
+          "service": "valkey",
+          "uid": 999,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "localhost:51507/fixture/valkey@sha256:e4988dbd5dabf4ba5c09dfee37eb723ccc4cba50f985d79244eadd2fe8e60e91",
+          "networks": ["selfhost-release-f72f805aa88e_data"],
+          "publishedPorts": [],
+          "secretNames": ["valkey_password"]
+        },
+        {
+          "service": "web",
+          "uid": 1000,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "localhost:51507/fixture/web@sha256:d115308a200062bbd57bdc62ed7e1f0aeefbbe9daf88bef8fd7c76eb15534621",
+          "networks": [
+            "selfhost-release-f72f805aa88e_data",
+            "selfhost-release-f72f805aa88e_ingress"
+          ],
+          "publishedPorts": [],
+          "secretNames": [
+            "app_database_url",
+            "auth_secret",
+            "github_client_secret",
+            "google_client_secret",
+            "turnstile_secret",
+            "valkey_url"
+          ]
+        }
+      ]
+    },
+    {
+      "check": "real migrator role failure blocks target apps",
+      "passed": true,
+      "successfulSha": "e23d1292b77d762ba7f29f0b666b226d08f3e5f2",
+      "targetAppsStopped": true
+    },
+    {
+      "check": "real HTTPS health failure preserves successful record",
+      "passed": true,
+      "sha": "e23d1292b77d762ba7f29f0b666b226d08f3e5f2"
+    },
+    {
+      "check": "runtime TLS ports secrets UID",
+      "passed": true,
+      "sha": "80983d29f83cb5b57563fc8360119793cf8c12be",
+      "pgVerifyFull": true,
+      "invalidPgCaRejected": true,
+      "unknownHttpsCaRejected": true,
+      "pgHostnameMismatchRejected": true,
+      "secretsDirectoryMode": "0700",
+      "secretFiles": "0600 service UID",
+      "services": [
+        {
+          "service": "caddy",
+          "uid": 10001,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/caddy@sha256:8ec6b136f27a126718a22e8f1e107dcc0d7857a902e614b1eba44ebde01daa3d",
+          "networks": ["selfhost-release-f72f805aa88e_ingress"],
+          "publishedPorts": ["8080/tcp", "8443/tcp"],
+          "secretNames": []
+        },
+        {
+          "service": "jobs",
+          "uid": 1000,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/jobs@sha256:e84f9eb2bdd4b9400f04b72cd6e9e168fd54b593da53f2d32f1261108bfafddd",
+          "networks": ["selfhost-release-f72f805aa88e_data"],
+          "publishedPorts": [],
+          "secretNames": [
+            "app_database_url",
+            "auth_secret",
+            "github_client_secret",
+            "google_client_secret",
+            "turnstile_secret",
+            "valkey_url"
+          ]
+        },
+        {
+          "service": "migrate",
+          "uid": 1000,
+          "state": "exited",
+          "exitCode": 0,
+          "health": "unhealthy",
+          "image": "localhost:51507/fixture/migrate@sha256:fbe6c387dbd7332c729457375172fc676566d15a14bf75a9c8c4f5a524a3327a",
+          "networks": ["selfhost-release-f72f805aa88e_data"],
+          "publishedPorts": [],
+          "secretNames": ["migrator_database_url"]
+        },
+        {
+          "service": "postgres",
+          "uid": 999,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/postgres@sha256:1abbb015fffe3f9f69b9d909cd61b96aa87b95a873e43175ac76b39a2f521af5",
+          "networks": ["selfhost-release-f72f805aa88e_data"],
+          "publishedPorts": [],
+          "secretNames": [
+            "app_db_password",
+            "migrator_db_password",
+            "postgres_password",
+            "readonly_db_password"
+          ]
+        },
+        {
+          "service": "valkey",
+          "uid": 999,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/valkey@sha256:1229b152f742f1522dc8a87e77062a5c78f2fce94506eeda08844186eb924f80",
+          "networks": ["selfhost-release-f72f805aa88e_data"],
+          "publishedPorts": [],
+          "secretNames": ["valkey_password"]
+        },
+        {
+          "service": "web",
+          "uid": 1000,
+          "state": "running",
+          "exitCode": 0,
+          "health": "healthy",
+          "image": "ghcr.io/ustclhx/product-res/web@sha256:05bce5fada4dfafe4a91acd41cd1832d1c32f6113a1d230ce1ced53b35f3f1a3",
+          "networks": [
+            "selfhost-release-f72f805aa88e_data",
+            "selfhost-release-f72f805aa88e_ingress"
+          ],
+          "publishedPorts": [],
+          "secretNames": [
+            "app_database_url",
+            "auth_secret",
+            "github_client_secret",
+            "google_client_secret",
+            "turnstile_secret",
+            "valkey_url"
+          ]
+        }
+      ]
+    },
+    {
+      "check": "compatible rollback preserves real PG engine rows and volumes",
+      "passed": true,
+      "sha": "80983d29f83cb5b57563fc8360119793cf8c12be",
+      "noOldMigration": true,
+      "snapshotSha256": "f544fc260d8d05641fed22df774589e39e396fc5d47c80ba74fa7c8d4f62e509",
+      "rowCounts": {
+        "public.setting": 0,
+        "public.verification": 0,
+        "public.user": 0,
+        "public.account": 0,
+        "public.apikey": 0,
+        "public.session": 0,
+        "public.organization": 0,
+        "public.two_factor": 0,
+        "public.notification": 0,
+        "public.invitation": 0,
+        "public.member": 0,
+        "public.webhook_event": 0,
+        "public.billing_customer": 0,
+        "public.subscription": 0,
+        "public.purchase": 0,
+        "public.plan": 0,
+        "public.plan_price": 0,
+        "public.credit_debt": 0,
+        "public.credit_grant": 0,
+        "public.credit_hold": 0,
+        "public.credit_hold_allocation": 0,
+        "public.credit_ledger": 0,
+        "public.payment_refund": 0,
+        "public.payment": 0,
+        "public.billing_compensation": 0,
+        "public.refund_request": 0,
+        "public.ai_model": 0,
+        "public.ai_conversation": 0,
+        "public.ai_message": 0,
+        "public.audit_log": 0,
+        "public.newsletter_subscriber": 0,
+        "public.waitlist": 0,
+        "public.metrics_daily": 0,
+        "public.ai_task": 0,
+        "public.file": 0,
+        "job_engine.message": 0,
+        "dbos.workflow_status": 2,
+        "dbos.operation_outputs": 2,
+        "job_engine.schedule": 5,
+        "job_engine.schedule_run": 2,
+        "metadata.schema": 578,
+        "metadata.roles": 3
+      }
+    }
+  ],
+  "scope": "isolated local/CI plain Compose; GHCR initial release",
+  "notVerified": [
+    "B/D 1.5 lifecycle signoff",
+    "host reboot",
+    "cross-host recovery",
+    "unfinished task replay",
+    "complete backup success",
+    "SSH/real server"
+  ],
+  "ghcrSha": "80983d29f83cb5b57563fc8360119793cf8c12be",
+  "fixtureSha": "e23d1292b77d762ba7f29f0b666b226d08f3e5f2",
+  "fixtureMetadataDiff": [
+    {
+      "service": "web",
+      "file": "server/application.mjs",
+      "beforeSha256": "ac6141e9f287d3edb6c27b21a4921dc16c110a4324d79c6d47b3f9e18b14c96d",
+      "afterSha256": "56438ab88274799317e9a017796fea520db584e886c15d1df051d4a044cf624f",
+      "fullShaReplacementCount": 1,
+      "onlyShaBytesChanged": true
+    },
+    {
+      "service": "web",
+      "file": "server/index.mjs",
+      "beforeSha256": "e5b1d3d13945f874ae72789f47cde0b46d63ac62ac1765c08b03955649d3f2aa",
+      "afterSha256": "e1d24221f8e7a2aea0f7cc3b99185ed95f4af69b33871520cf249f0b52a3a39b",
+      "fullShaReplacementCount": 1,
+      "onlyShaBytesChanged": true
+    },
+    {
+      "service": "web",
+      "file": "server/_ssr/router-ClRceRw_.mjs",
+      "beforeSha256": "6e22e0c9d5e9fbc2bebc5c0618ec7170797b4c58da2c309a36da1bd1fac50b54",
+      "afterSha256": "181b03e52622d2a4244b3c2323cddf40fbacf803e0a67c5987292ab42d1d22f3",
+      "fullShaReplacementCount": 1,
+      "onlyShaBytesChanged": true
+    },
+    {
+      "service": "web",
+      "file": "server/_ssr/routes-Dj3SRUFK.mjs",
+      "beforeSha256": "b4612f740ca7999ec22ae60a32190e328473cf6327a515606e6f042e6fc2849b",
+      "afterSha256": "625135cd496c65a029f49b32a5fe03f1075227b70eb8e20e644050874faa7ee3",
+      "fullShaReplacementCount": 1,
+      "onlyShaBytesChanged": true
+    },
+    {
+      "service": "jobs",
+      "file": "server/index.mjs",
+      "beforeSha256": "1d72cf65e5ef335980f6f50f5cfbaa329b1255c9c4cea23898c7335bbc20a330",
+      "afterSha256": "f2e1418d852b39e91be3c31931ead576ee60e2e04a82ea3a054d1c52d2a5f6ec",
+      "fullShaReplacementCount": 3,
+      "onlyShaBytesChanged": true
+    }
+  ],
+  "fixtureDefinition": "same GHCR business/schema/handlers; ENV, OCI revision, /version and compiled full SHA literal only",
+  "passed": true,
+  "cleanupComplete": true
+}

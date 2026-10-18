@@ -1,0 +1,10 @@
+{
+  "observedAt": "2026-10-18T06:13:38.982Z",
+  "mode": "annual-full",
+  "httpStatus": 201,
+  "refundId": "6JW466111B6808810",
+  "state": "completed",
+  "refundAmountMinor": 49000,
+  "paymentId": "01a14da1-c344-76bb-9c0a-114f8f262353",
+  "saleId": "5ST08785RL1551152"
+}

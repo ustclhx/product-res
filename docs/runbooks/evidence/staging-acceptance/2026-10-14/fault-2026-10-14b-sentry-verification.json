@@ -1,0 +1,80 @@
+{
+  "runId": "fault-2026-10-14b",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T08:08:23.602Z",
+  "data": {
+    "taskId": "01a1396d-dd9c-772a-af1b-56eb93ac68ea",
+    "expectedRelease": "6b02f1878ec0cbc945ddd71df1b123e2a2262b25",
+    "correlationByTaskTraceVerified": true,
+    "requestId": "01a1396d-f679-729b-a4bf-6a366aa602f3",
+    "query": {
+      "queryUrl": "https://product-res.sentry.io/issues/?project=4512238756626432&query=environment%3Astaging+release%3A6b02f1878ec0cbc945ddd71df1b123e2a2262b25+dist%3Ajobs+requestId%3A01a1396d-f679-729b-a4bf-6a366aa602f3&sort=date",
+      "querySucceeded": true,
+      "issueIds": ["7791591972"],
+      "hasPaginationHeader": true,
+      "nextPagePresent": false,
+      "allReleaseIssuesEnumerated": true,
+      "issueListUnchanged": true
+    },
+    "eventEnumeration": [
+      {
+        "issueId": "7791591972",
+        "eventCount": 1,
+        "allEventsEnumerated": true
+      }
+    ],
+    "eventCount": 1,
+    "events": [
+      {
+        "issueId": "7791591972",
+        "eventId": "5bd787f2397f4925b299fb7f9ccc8c70",
+        "eventUrl": "https://product-res.sentry.io/issues/7791591972/events/5bd787f2397f4925b299fb7f9ccc8c70/",
+        "release": "6b02f1878ec0cbc945ddd71df1b123e2a2262b25",
+        "releaseMatchesExpected": true,
+        "distIsJobs": true,
+        "environmentIsStaging": true,
+        "traceId": "01a1396ddd9c772aaf1b56eb93ac68ea",
+        "requestId": "01a1396d-f679-729b-a4bf-6a366aa602f3",
+        "mechanismTypes": ["generic"],
+        "sdkStepMechanismObserved": false,
+        "engineWrapperFrameObserved": false,
+        "sourceFrames": [
+          {
+            "file": "dist/../src/sentry.ts",
+            "function": "args[callbackIndex]",
+            "line": 86,
+            "column": 20,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          },
+          {
+            "file": "dist/../../../packages/platform/src/cloudflare/workflow.ts",
+            "function": "run",
+            "line": 92,
+            "column": 53,
+            "typeScriptSource": true,
+            "sourceContextReadable": true
+          }
+        ],
+        "ownTypeScriptFramesMapped": true,
+        "typeScriptSourceContextReadable": true,
+        "sourceMappingErrorCodes": [],
+        "sourceMappingErrorsAbsent": true,
+        "rawEventJsonInspected": true,
+        "credentialsAbsent": true,
+        "emailAbsent": true,
+        "conversationContentAbsent": true,
+        "requestUrlCredentialsAbsent": true
+      }
+    ],
+    "mechanismTypes": ["generic"],
+    "singleEventObserved": true,
+    "engineWrapperEventObserved": false,
+    "ourTypeScriptFramesMapped": true,
+    "privacyPassed": true,
+    "readOnly": true,
+    "settingsChanged": false,
+    "newExceptionTriggered": false,
+    "evidenceCommitted": false
+  }
+}

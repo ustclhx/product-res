@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-09T08:23:20.981444+00:00",
+  "unchanged": {
+    "payments": true,
+    "subscriptions": true,
+    "payment_refunds": true,
+    "refund_requests": true,
+    "grants": true,
+    "ledger": true
+  },
+  "ledgerTotal": 1000,
+  "expected": 1000,
+  "negativeGrants": 0
+}

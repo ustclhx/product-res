@@ -1,0 +1,182 @@
+[
+  {
+    "command": "pnpm check",
+    "exit": 0,
+    "duration_seconds": 6.5,
+    "key_output": [
+      "Biome: 1528 files, no fixes",
+      "Credit write check: 667 production files",
+      "Payment runtime check: passed",
+      "Node tests: 10 passed, 0 failed"
+    ]
+  },
+  {
+    "command": "pnpm check:deps",
+    "exit": 0,
+    "duration_seconds": 2.52,
+    "key_output": ["12 packages, 2 apps; 7 tests passed"]
+  },
+  {
+    "command": "pnpm check:singletons",
+    "exit": 0,
+    "duration_seconds": 0.06,
+    "key_output": ["drizzle-orm, react, react-dom: one instance each"]
+  },
+  {
+    "command": "pnpm dedupe --check",
+    "exit": 0,
+    "duration_seconds": 0.63,
+    "key_output": [
+      "resolved 1018; downloaded 0; added 0; lockfile unchanged",
+      "3 deprecated transitive dependencies reported"
+    ]
+  },
+  {
+    "command": "pnpm typecheck",
+    "exit": 0,
+    "duration_seconds": 0.93,
+    "key_output": [
+      "Tasks:    14 successful, 14 total",
+      "Cached:    14 cached, 14 total",
+      "Time:    31ms >>> FULL TURBO"
+    ]
+  },
+  {
+    "command": "pnpm typecheck --force",
+    "exit": 0,
+    "duration_seconds": 26.8,
+    "key_output": [
+      "Tasks:    14 successful, 14 total",
+      "Cached:    0 cached, 14 total",
+      "Time:    26.72s",
+      "Regenerated missing route tree; pricing fallback warning: local plan table absent"
+    ]
+  },
+  {
+    "command": "pnpm test",
+    "exit": 0,
+    "duration_seconds": 127.37,
+    "key_output": [
+      "14 packages: 1520 tests passed, 2 skipped, 0 failed",
+      "Tasks:    26 successful, 26 total",
+      "Cached:    22 cached, 26 total",
+      "Time:    2m7.279s"
+    ],
+    "packages": [
+      {
+        "package": "@product-res/email",
+        "passed": 63,
+        "skipped": 0
+      },
+      {
+        "package": "@product-res/shared",
+        "passed": 22,
+        "skipped": 0
+      },
+      {
+        "package": "@product-res/config",
+        "passed": 56,
+        "skipped": 0
+      },
+      {
+        "package": "@product-res/ui",
+        "passed": 17,
+        "skipped": 0
+      },
+      {
+        "package": "@product-res/db",
+        "passed": 56,
+        "skipped": 0
+      },
+      {
+        "package": "@product-res/credits",
+        "passed": 50,
+        "skipped": 0
+      },
+      {
+        "package": "@product-res/platform",
+        "passed": 43,
+        "skipped": 2
+      },
+      {
+        "package": "@product-res/entitlements",
+        "passed": 14,
+        "skipped": 0
+      },
+      {
+        "package": "@product-res/ai",
+        "passed": 176,
+        "skipped": 0
+      },
+      {
+        "package": "@product-res/auth",
+        "passed": 114,
+        "skipped": 0
+      },
+      {
+        "package": "@product-res/billing",
+        "passed": 308,
+        "skipped": 0
+      },
+      {
+        "package": "@product-res/storage",
+        "passed": 26,
+        "skipped": 0
+      },
+      {
+        "package": "@product-res/jobs",
+        "passed": 147,
+        "skipped": 0
+      },
+      {
+        "package": "@product-res/web",
+        "passed": 428,
+        "skipped": 0
+      }
+    ]
+  },
+  {
+    "command": "pnpm build",
+    "exit": 0,
+    "duration_seconds": 0.39,
+    "key_output": [
+      "Tasks:    2 successful, 2 total",
+      "Cached:    2 cached, 2 total",
+      "Time:    285ms >>> FULL TURBO"
+    ]
+  },
+  {
+    "command": "openspec validate add-selfhost-delivery --strict",
+    "exit": 0,
+    "duration_seconds": 1.15,
+    "key_output": ["Change 'add-selfhost-delivery' is valid"]
+  },
+  {
+    "command": "pnpm check (after final fixture correction)",
+    "exit": 0,
+    "key_output": ["All root check scripts passed"]
+  },
+  {
+    "command": "python3 -m unittest discover -s deploy/selfhost/backup -p '*test*.py' -q",
+    "exit": 0,
+    "key_output": ["28 tests passed"]
+  },
+  {
+    "command": "node --check deploy/selfhost/test-backup.mjs",
+    "exit": 0
+  },
+  {
+    "command": "git diff --check",
+    "exit": 0
+  },
+  {
+    "command": "pnpm check (after rebase onto main #207)",
+    "exit": 0,
+    "key_output": ["Passed; no production or fixture source conflict; run file SHA256 unchanged"]
+  },
+  {
+    "command": "openspec validate add-selfhost-delivery --strict (after rebase)",
+    "exit": 0,
+    "key_output": ["Valid; 6.2 done, 7.2 pending; 29/33 complete including upstream 6.4"]
+  }
+]

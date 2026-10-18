@@ -1,0 +1,21 @@
+{
+  "observedAt": "2026-10-17T17:24:44.191Z",
+  "subscription": {
+    "id": "sub_1URbLbL3UTpBAoXo884KYavn",
+    "customer": "cus_VSWOYrXBjTWvEf",
+    "livemode": false,
+    "status": "trialing",
+    "trial_start": 1792257883,
+    "trial_end": 1792344283,
+    "trial_settings": {
+      "end_behavior": {
+        "billing_cycle_anchor": "now",
+        "missing_payment_method": "cancel"
+      }
+    },
+    "default_payment_method": null,
+    "latest_invoice": "in_1URbLbL3UTpBAoXoG2ftwMCg"
+  },
+  "applicationMetadataPresent": false,
+  "note": "Platform-generated controlled test, not app Checkout or paid subscription acceptance."
+}

@@ -1,0 +1,384 @@
+{
+  "runId": "chat-51-2026-10-15a",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T20:35:07.555Z",
+  "data": {
+    "readOnlyTransaction": true,
+    "roleCannotWriteMessages": true,
+    "messages": [
+      {
+        "messageId": "01a13c1d-7e5b-7595-b693-9b8035a53d4f",
+        "conversationId": "01a13c1d-4bae-75ad-acad-367ce6c90f61",
+        "scenario": "token normal",
+        "generationStartedAt": "2026-10-14T20:32:08.326406+00:00",
+        "settledAt": "2026-10-14T20:32:11.215+00:00",
+        "status": "completed",
+        "modelKey": "acceptance-deepseek-token",
+        "provider": "deepseek",
+        "providerModelId": "deepseek-flash",
+        "inputTokens": 17,
+        "outputTokens": 10,
+        "credits": 1,
+        "pricing": {
+          "mode": "token",
+          "minCharge": 1,
+          "inputPer1k": 1,
+          "outputPer1k": 2
+        },
+        "checkpoint": {
+          "inputTokens": 17,
+          "outputTokens": 10,
+          "reasoningTokens": 0,
+          "absorbed": {
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reasoningTokens": 0
+          },
+          "total": {
+            "inputTokens": 17,
+            "outputTokens": 10,
+            "reasoningTokens": 0
+          },
+          "at": "2026-10-14T20:32:11.215Z"
+        },
+        "reasoningPartsPresent": false,
+        "holdId": "01a13c1d-800d-72ba-8436-8177e83e8868",
+        "holdStatus": "captured",
+        "holdAmount": 9,
+        "capturedAmount": 1,
+        "overageAbsorbed": 0,
+        "overageDebited": 0,
+        "overageDebt": 0
+      },
+      {
+        "messageId": "01a13c1d-f1bf-718f-9b8d-f94fd7d0bb24",
+        "conversationId": "01a13c1d-c255-7091-84cd-54ed5e93c971",
+        "scenario": "token stop",
+        "generationStartedAt": "2026-10-14T20:32:37.860541+00:00",
+        "settledAt": "2026-10-14T20:32:39.826+00:00",
+        "status": "aborted",
+        "modelKey": "acceptance-deepseek-token",
+        "provider": "deepseek",
+        "providerModelId": "deepseek-flash",
+        "inputTokens": 150,
+        "outputTokens": 0,
+        "credits": 1,
+        "pricing": {
+          "mode": "token",
+          "minCharge": 1,
+          "inputPer1k": 1,
+          "outputPer1k": 2
+        },
+        "checkpoint": {
+          "inputTokens": 150,
+          "outputTokens": 0,
+          "reasoningTokens": 0,
+          "absorbed": {
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reasoningTokens": 0
+          },
+          "total": {
+            "inputTokens": 150,
+            "outputTokens": 0,
+            "reasoningTokens": 0
+          },
+          "at": "2026-10-14T20:32:39.826Z"
+        },
+        "reasoningPartsPresent": false,
+        "holdId": "01a13c1d-f385-72bc-9ae0-179fdf77a9ba",
+        "holdStatus": "captured",
+        "holdAmount": 9,
+        "capturedAmount": 1,
+        "overageAbsorbed": 0,
+        "overageDebited": 0,
+        "overageDebt": 0
+      },
+      {
+        "messageId": "01a13c1e-62f7-7475-b1e2-31094bdaf17e",
+        "conversationId": "01a13c1e-32a6-7719-b78e-209ca14f63ec",
+        "scenario": "token page-close",
+        "generationStartedAt": "2026-10-14T20:33:06.849156+00:00",
+        "settledAt": "2026-10-14T20:33:10.251+00:00",
+        "status": "completed",
+        "modelKey": "acceptance-deepseek-token",
+        "provider": "deepseek",
+        "providerModelId": "deepseek-flash",
+        "inputTokens": 40,
+        "outputTokens": 343,
+        "credits": 1,
+        "pricing": {
+          "mode": "token",
+          "minCharge": 1,
+          "inputPer1k": 1,
+          "outputPer1k": 2
+        },
+        "checkpoint": {
+          "inputTokens": 40,
+          "outputTokens": 343,
+          "reasoningTokens": 0,
+          "absorbed": {
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reasoningTokens": 0
+          },
+          "total": {
+            "inputTokens": 40,
+            "outputTokens": 343,
+            "reasoningTokens": 0
+          },
+          "at": "2026-10-14T20:33:10.251Z"
+        },
+        "reasoningPartsPresent": false,
+        "holdId": "01a13c1e-64b3-71e3-a64b-4a53821dc199",
+        "holdStatus": "captured",
+        "holdAmount": 9,
+        "capturedAmount": 1,
+        "overageAbsorbed": 0,
+        "overageDebited": 0,
+        "overageDebt": 0
+      },
+      {
+        "messageId": "01a13c1e-da3f-76ab-9fc1-377cab6dbfb4",
+        "conversationId": "01a13c1e-ab7c-72e5-af17-be9cc621495f",
+        "scenario": "call normal",
+        "generationStartedAt": "2026-10-14T20:33:37.37901+00:00",
+        "settledAt": "2026-10-14T20:33:39.391+00:00",
+        "status": "completed",
+        "modelKey": "acceptance-deepseek-call",
+        "provider": "deepseek",
+        "providerModelId": "deepseek-flash",
+        "inputTokens": 17,
+        "outputTokens": 9,
+        "credits": 2,
+        "pricing": {
+          "mode": "per_call",
+          "limits": {
+            "maxInputTokens": 4096,
+            "maxOutputTokens": 1024
+          },
+          "credits": 2,
+          "chargeOn": "any_output"
+        },
+        "checkpoint": {
+          "inputTokens": 17,
+          "outputTokens": 9,
+          "reasoningTokens": 0,
+          "absorbed": {
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reasoningTokens": 0
+          },
+          "total": {
+            "inputTokens": 17,
+            "outputTokens": 9,
+            "reasoningTokens": 0
+          },
+          "at": "2026-10-14T20:33:39.391Z"
+        },
+        "reasoningPartsPresent": false,
+        "holdId": "01a13c1e-dbe9-73b1-af99-874d592bc13a",
+        "holdStatus": "captured",
+        "holdAmount": 2,
+        "capturedAmount": 2,
+        "overageAbsorbed": 0,
+        "overageDebited": 0,
+        "overageDebt": 0
+      },
+      {
+        "messageId": "01a13c1f-4dbd-74f7-9f17-3e6b44596251",
+        "conversationId": "01a13c1f-1848-7219-ad1d-7077465e8996",
+        "scenario": "call stop",
+        "generationStartedAt": "2026-10-14T20:34:06.960157+00:00",
+        "settledAt": "2026-10-14T20:34:09.227+00:00",
+        "status": "aborted",
+        "modelKey": "acceptance-deepseek-call",
+        "provider": "deepseek",
+        "providerModelId": "deepseek-flash",
+        "inputTokens": null,
+        "outputTokens": null,
+        "credits": 0,
+        "pricing": {
+          "mode": "per_call",
+          "limits": {
+            "maxInputTokens": 4096,
+            "maxOutputTokens": 1024
+          },
+          "credits": 2,
+          "chargeOn": "any_output"
+        },
+        "checkpoint": {
+          "inputTokens": 150,
+          "outputTokens": 0,
+          "reasoningTokens": 0,
+          "absorbed": {
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reasoningTokens": 0
+          },
+          "total": {
+            "inputTokens": 150,
+            "outputTokens": 0,
+            "reasoningTokens": 0
+          },
+          "at": "2026-10-14T20:34:09.227Z"
+        },
+        "reasoningPartsPresent": false,
+        "holdId": "01a13c1f-4f85-7064-867c-0b8e6207ed7e",
+        "holdStatus": "released",
+        "holdAmount": 2,
+        "capturedAmount": 0,
+        "overageAbsorbed": 0,
+        "overageDebited": 0,
+        "overageDebt": 0
+      },
+      {
+        "messageId": "01a13c1f-bb54-7028-a199-e2171c085321",
+        "conversationId": "01a13c1f-8ce1-701d-81f2-d3817888afc2",
+        "scenario": "call page-close",
+        "generationStartedAt": "2026-10-14T20:34:35.003047+00:00",
+        "settledAt": "2026-10-14T20:34:38.521+00:00",
+        "status": "completed",
+        "modelKey": "acceptance-deepseek-call",
+        "provider": "deepseek",
+        "providerModelId": "deepseek-flash",
+        "inputTokens": 40,
+        "outputTokens": 343,
+        "credits": 2,
+        "pricing": {
+          "mode": "per_call",
+          "limits": {
+            "maxInputTokens": 4096,
+            "maxOutputTokens": 1024
+          },
+          "credits": 2,
+          "chargeOn": "any_output"
+        },
+        "checkpoint": {
+          "inputTokens": 40,
+          "outputTokens": 343,
+          "reasoningTokens": 0,
+          "absorbed": {
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reasoningTokens": 0
+          },
+          "total": {
+            "inputTokens": 40,
+            "outputTokens": 343,
+            "reasoningTokens": 0
+          },
+          "at": "2026-10-14T20:34:38.521Z"
+        },
+        "reasoningPartsPresent": false,
+        "holdId": "01a13c1f-bcfd-7115-962a-520cd4761ffe",
+        "holdStatus": "captured",
+        "holdAmount": 2,
+        "capturedAmount": 2,
+        "overageAbsorbed": 0,
+        "overageDebited": 0,
+        "overageDebt": 0
+      }
+    ],
+    "ledger": [
+      {
+        "id": "01a13c1d-897a-7485-a066-6e3e64c4a99b",
+        "messageId": "01a13c1d-7e5b-7595-b693-9b8035a53d4f",
+        "type": "consume",
+        "delta": -1,
+        "createdAt": "2026-10-14T20:32:10.741806+00:00"
+      },
+      {
+        "id": "01a13c1d-f942-709b-947f-89f2de7eab2c",
+        "messageId": "01a13c1d-f1bf-718f-9b8d-f94fd7d0bb24",
+        "type": "consume",
+        "delta": -1,
+        "createdAt": "2026-10-14T20:32:39.263421+00:00"
+      },
+      {
+        "id": "01a13c1e-7011-7461-9428-066a423f56c0",
+        "messageId": "01a13c1e-62f7-7475-b1e2-31094bdaf17e",
+        "type": "consume",
+        "delta": -1,
+        "createdAt": "2026-10-14T20:33:09.824895+00:00"
+      },
+      {
+        "id": "01a13c1e-e1f3-747c-a672-c1814948fbeb",
+        "messageId": "01a13c1e-da3f-76ab-9fc1-377cab6dbfb4",
+        "type": "consume",
+        "delta": -2,
+        "createdAt": "2026-10-14T20:33:39.01942+00:00"
+      },
+      {
+        "id": "01a13c1f-c8e9-71e1-ba08-6ecf4da3f75f",
+        "messageId": "01a13c1f-bb54-7028-a199-e2171c085321",
+        "type": "consume",
+        "delta": -2,
+        "createdAt": "2026-10-14T20:34:38.225835+00:00"
+      }
+    ],
+    "creditAdjustments": [
+      {
+        "id": "01a13c1d-2eaa-737d-9298-d726d0d3f2a2",
+        "action": "credits.adjust",
+        "targetId": "01a13c1d-1f4c-74e2-918f-dbeaeb040940",
+        "createdAt": "2026-10-14T20:31:46.851196+00:00",
+        "amount": 6
+      }
+    ],
+    "snapshot": {
+      "ledgerTotal": 23,
+      "activeRemaining": 23,
+      "held": 0,
+      "debt": 0,
+      "negativeGrants": 0,
+      "reconciliationDifference": 0
+    },
+    "windowAssistantMessages": [
+      {
+        "id": "01a13c1d-7e5b-7595-b693-9b8035a53d4f",
+        "modelKey": "acceptance-deepseek-token",
+        "createdAt": "2026-10-14T20:32:08.326406+00:00",
+        "status": "completed"
+      },
+      {
+        "id": "01a13c1d-f1bf-718f-9b8d-f94fd7d0bb24",
+        "modelKey": "acceptance-deepseek-token",
+        "createdAt": "2026-10-14T20:32:37.860541+00:00",
+        "status": "aborted"
+      },
+      {
+        "id": "01a13c1e-62f7-7475-b1e2-31094bdaf17e",
+        "modelKey": "acceptance-deepseek-token",
+        "createdAt": "2026-10-14T20:33:06.849156+00:00",
+        "status": "completed"
+      },
+      {
+        "id": "01a13c1e-da3f-76ab-9fc1-377cab6dbfb4",
+        "modelKey": "acceptance-deepseek-call",
+        "createdAt": "2026-10-14T20:33:37.37901+00:00",
+        "status": "completed"
+      },
+      {
+        "id": "01a13c1f-4dbd-74f7-9f17-3e6b44596251",
+        "modelKey": "acceptance-deepseek-call",
+        "createdAt": "2026-10-14T20:34:06.960157+00:00",
+        "status": "aborted"
+      },
+      {
+        "id": "01a13c1f-bb54-7028-a199-e2171c085321",
+        "modelKey": "acceptance-deepseek-call",
+        "createdAt": "2026-10-14T20:34:35.003047+00:00",
+        "status": "completed"
+      }
+    ],
+    "windowIsExclusiveToRun": true,
+    "expectedAssistantMessageCount": 6,
+    "actualAssistantMessageCount": 6,
+    "health": {
+      "version": "a3e8179817406e3b4eb6ead9a14de2fb3268631e",
+      "matchesExpected": true,
+      "dbUp": true
+    }
+  }
+}

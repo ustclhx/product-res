@@ -1,0 +1,41 @@
+{
+  "runId": "acceptance-2026-10-13i",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T11:17:20.225Z",
+  "data": {
+    "status": "completed",
+    "modelKey": "acceptance-deepseek-token",
+    "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+    "conversationId": "01a134fa-af7b-7364-92e6-e9bc9ecbd98c",
+    "messageId": "01a134fa-eb34-7509-b9ae-15aa156255a8",
+    "generationStartedAt": "2026-10-13T11:17:01.91253+00:00",
+    "holdId": "01a134fa-ecce-750b-a243-e0335a6cbd87",
+    "reused": false,
+    "textLength": 1036,
+    "tailCompletionMs": 2417,
+    "inputTokens": 66,
+    "outputTokens": 991,
+    "checkpointInputTokens": 156,
+    "checkpointOutputTokens": 1003,
+    "credits": 3,
+    "holdAmount": 9,
+    "capturedAmount": 3,
+    "ledger": [
+      {
+        "id": "01a134fb-04a2-7024-8f9f-edf1effd7119",
+        "type": "consume",
+        "delta": -3
+      }
+    ],
+    "reconciliation": {
+      "ledgerTotal": 22,
+      "activeRemaining": 22,
+      "held": 0,
+      "debt": 0,
+      "expectedTotal": 22,
+      "difference": 0,
+      "consistent": true
+    },
+    "gatewayComparisonStatus": "pending-log-read-token"
+  }
+}

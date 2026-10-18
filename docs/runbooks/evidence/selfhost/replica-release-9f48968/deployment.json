@@ -1,0 +1,31 @@
+{
+  "hostAlias": "product-res-ecs",
+  "directory": "/opt/product-res-selfhost",
+  "project": "product-res-selfhost",
+  "exitCode": 0,
+  "sha": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+  "composeFiles": [
+    "compose.yaml",
+    "compose.s3.yaml",
+    "compose.backup.yaml",
+    "compose.replica.yaml"
+  ],
+  "envFiles": [".env", ".env.backup", ".env.replica"],
+  "events": [
+    {
+      "event": "selfhost.deploy.pull",
+      "target": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454"
+    },
+    {
+      "event": "selfhost.health.ready",
+      "target": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+      "web": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+      "jobs": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454"
+    },
+    {
+      "event": "selfhost.deploy.completed",
+      "target": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454"
+    }
+  ],
+  "deletedVolumes": false
+}

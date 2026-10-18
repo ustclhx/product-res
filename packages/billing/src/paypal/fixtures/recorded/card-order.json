@@ -1,0 +1,145 @@
+{
+  "id": "6KE705423D766922N",
+  "intent": "CAPTURE",
+  "status": "COMPLETED",
+  "payment_source": {},
+  "purchase_units": [
+    {
+      "reference_id": "default",
+      "amount": {
+        "currency_code": "USD",
+        "value": "0.01",
+        "breakdown": {}
+      },
+      "payee": {
+        "merchant_id": "MERCHANTRECORDED"
+      },
+      "custom_id": "paypal-worker-independent-card-recording",
+      "soft_descriptor": "TEST SL6B4",
+      "supplementary_data": {
+        "risk": {
+          "risk_level_indicator": "HIGH_RISK"
+        }
+      },
+      "payments": {
+        "captures": [
+          {
+            "id": "14549073EE7057637",
+            "status": "REFUNDED",
+            "amount": {
+              "currency_code": "USD",
+              "value": "0.01"
+            },
+            "final_capture": true,
+            "seller_protection": {
+              "status": "NOT_ELIGIBLE"
+            },
+            "seller_receivable_breakdown": {
+              "gross_amount": {
+                "currency_code": "USD",
+                "value": "0.01"
+              },
+              "paypal_fee": {
+                "currency_code": "USD",
+                "value": "0.01"
+              },
+              "net_amount": {
+                "currency_code": "USD",
+                "value": "0.00"
+              }
+            },
+            "custom_id": "paypal-worker-independent-card-recording",
+            "links": [
+              {
+                "href": "https://api.sandbox.paypal.com/v2/payments/captures/14549073EE7057637",
+                "rel": "self",
+                "method": "GET"
+              },
+              {
+                "href": "https://api.sandbox.paypal.com/v2/payments/captures/14549073EE7057637/refund",
+                "rel": "refund",
+                "method": "POST"
+              },
+              {
+                "href": "https://api.sandbox.paypal.com/v2/checkout/orders/6KE705423D766922N",
+                "rel": "up",
+                "method": "GET"
+              }
+            ],
+            "create_time": "2026-10-14T17:08:39Z",
+            "update_time": "2026-10-14T17:08:42Z",
+            "network_transaction_reference": {
+              "id": "821152028699382",
+              "network": "VISA"
+            },
+            "processor_response": {
+              "avs_code": "Y",
+              "cvv_code": "S",
+              "response_code": "0000"
+            }
+          }
+        ],
+        "refunds": [
+          {
+            "id": "9UR96226Y9887940S",
+            "amount": {
+              "currency_code": "USD",
+              "value": "0.01"
+            },
+            "seller_payable_breakdown": {
+              "gross_amount": {
+                "currency_code": "USD",
+                "value": "0.01"
+              },
+              "paypal_fee": {
+                "currency_code": "USD",
+                "value": "0.00"
+              },
+              "platform_fees": [
+                {
+                  "amount": {
+                    "currency_code": "USD",
+                    "value": "0.00"
+                  }
+                }
+              ],
+              "net_amount": {
+                "currency_code": "USD",
+                "value": "0.01"
+              },
+              "total_refunded_amount": {
+                "currency_code": "USD",
+                "value": "0.01"
+              }
+            },
+            "custom_id": "paypal-worker-independent-card-recording",
+            "status": "COMPLETED",
+            "links": [
+              {
+                "href": "https://api.sandbox.paypal.com/v2/payments/refunds/9UR96226Y9887940S",
+                "rel": "self",
+                "method": "GET"
+              },
+              {
+                "href": "https://api.sandbox.paypal.com/v2/payments/captures/14549073EE7057637",
+                "rel": "up",
+                "method": "GET"
+              }
+            ],
+            "create_time": "2026-10-14T10:08:42-07:00",
+            "update_time": "2026-10-14T10:08:42-07:00"
+          }
+        ]
+      }
+    }
+  ],
+  "create_time": "2026-10-14T17:08:39Z",
+  "update_time": "2026-10-14T17:08:42Z",
+  "links": [
+    {
+      "href": "https://api.sandbox.paypal.com/v2/checkout/orders/6KE705423D766922N",
+      "rel": "self",
+      "method": "GET"
+    }
+  ]
+}

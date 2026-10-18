@@ -1,0 +1,13 @@
+{
+  "runId": "acceptance-2026-10-13j",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T11:59:12.253Z",
+  "data": {
+    "taskId": "01a13521-332a-70d4-acc7-23c1a359d70d",
+    "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+    "status": "succeeded",
+    "errorCode": null,
+    "reused": false,
+    "attempt": 1
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "observedAt": "2026-10-17T17:19:20.980Z",
+  "storedBefore": {
+    "id": "01a14ade-29cb-70bb-82bf-3469756fcd66",
+    "provider_event_id": "evt_1URbENL3UTpBAoXokSAeJyGB",
+    "type": "invoice.paid",
+    "status": "processed",
+    "attempts": 1,
+    "processed_at": "2026-10-17T17:17:17.306Z"
+  },
+  "before": {
+    "workspaceId": "01a11fa8-08da-71f1-9c8d-a0ab10568800",
+    "payments": [
+      {
+        "id": "01a11fa8-6553-7210-b496-97d5497dfc99",
+        "provider": "stripe",
+        "provider_payment_id": "pi_3UOYdfL3UTpBAoXo1TssRKHa",
+        "subscription_id": "01a11fa8-6180-70c7-9d2e-a5c1571ee116",
+        "kind": "initial",
+        "amount": 1900,
+        "currency": "USD",
+        "status": "succeeded",
+        "refunded_amount": 0,
+        "plan_price_id": "01a11bac-8a18-7786-a6cf-d84dd209ef99",
+        "period_start": "2026-10-09T07:54:46.000Z",
+        "period_end": "2026-11-09T07:54:46.000Z"
+      },
+      {
+        "id": "01a1205d-24d4-73a1-a1f7-a6e29c586a3c",
+        "provider": "stripe",
+        "provider_payment_id": "pi_3UOYf0L3UTpBAoXo0tcelvaV",
+        "subscription_id": "01a11fa8-6180-70c7-9d2e-a5c1571ee116",
+        "kind": "renewal",
+        "amount": 1900,
+        "currency": "USD",
+        "status": "succeeded",
+        "refunded_amount": 0,
+        "plan_price_id": "01a11bac-8a18-7786-a6cf-d84dd209ef99",
+        "period_start": "2026-11-09T07:54:46.000Z",
+        "period_end": "2026-12-09T07:54:46.000Z"
+      },
+      {
+        "id": "01a14ade-2be8-777c-84ed-fc676e33a843",
+        "provider": "stripe",
+        "provider_payment_id": "pi_3URbEJL3UTpBAoXo1DSb4EmI",
+        "subscription_id": "01a11fa8-6180-70c7-9d2e-a5c1571ee116",
+        "kind": "renewal",
+        "amount": 1900,
+        "currency": "USD",
+        "status": "succeeded",
+        "refunded_amount": 0,
+        "plan_price_id": "01a11bac-8a18-7786-a6cf-d84dd209ef99",
+        "period_start": "2026-12-09T07:54:46.000Z",
+        "period_end": "2027-01-09T07:54:46.000Z"
+      }
+    ],
+    "subscriptions": [
+      {
+        "id": "01a11fa8-6180-70c7-9d2e-a5c1571ee116",
+        "provider": "stripe",
+        "provider_subscription_id": "sub_1UOYdgL3UTpBAoXoZxQZO7Ti",
+        "status": "active",
+        "cancel_at_period_end": false,
+        "current_period_start": "2026-12-09T07:54:46.000Z",
+        "current_period_end": "2027-01-09T07:54:46.000Z"
+      }
+    ],
+    "grants": [
+      {
+        "id": "01a11fa8-6673-7178-9ebd-ae2ddd6c214d",
+        "source": "subscription",
+        "source_ref": "01a11fa8-6553-7210-b496-97d5497dfc99:0",
+        "payment_id": "01a11fa8-6553-7210-b496-97d5497dfc99",
+        "amount": 1000,
+        "remaining": 1000,
+        "status": "active",
+        "expires_at": "2026-11-10T07:54:46.000Z"
+      },
+      {
+        "id": "01a1205d-25db-7364-9b9c-de8156efd190",
+        "source": "subscription",
+        "source_ref": "01a1205d-24d4-73a1-a1f7-a6e29c586a3c:0",
+        "payment_id": "01a1205d-24d4-73a1-a1f7-a6e29c586a3c",
+        "amount": 1000,
+        "remaining": 1000,
+        "status": "active",
+        "expires_at": "2026-12-10T07:54:46.000Z"
+      },
+      {
+        "id": "01a14ade-2d00-778e-bfe1-c6b1870b80cd",
+        "source": "subscription",
+        "source_ref": "01a14ade-2be8-777c-84ed-fc676e33a843:0",
+        "payment_id": "01a14ade-2be8-777c-84ed-fc676e33a843",
+        "amount": 1000,
+        "remaining": 1000,
+        "status": "active",
+        "expires_at": "2027-01-10T07:54:46.000Z"
+      }
+    ],
+    "ledger": [
+      {
+        "id": "01a11fa8-66a8-75f8-bd2f-61e35940b1a9",
+        "grant_id": "01a11fa8-6673-7178-9ebd-ae2ddd6c214d",
+        "type": "grant",
+        "delta": 1000
+      },
+      {
+        "id": "01a1205d-260b-7494-9e11-edc14f15d652",
+        "grant_id": "01a1205d-25db-7364-9b9c-de8156efd190",
+        "type": "grant",
+        "delta": 1000
+      },
+      {
+        "id": "01a14ade-2d37-7575-a8fc-0aa3de15da92",
+        "grant_id": "01a14ade-2d00-778e-bfe1-c6b1870b80cd",
+        "type": "grant",
+        "delta": 1000
+      }
+    ],
+    "refunds": [],
+    "reconciliation": {
+      "ledger": 3000,
+      "active_remaining": 3000,
+      "held": 0,
+      "debt": 0,
+      "negative_grants": 0,
+      "duplicate_grant_sources": 0,
+      "duplicate_payments": 0,
+      "expected": 3000,
+      "difference": 0
+    }
+  }
+}

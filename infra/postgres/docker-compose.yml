@@ -1,0 +1,66 @@
+# 生产服务器上的 Postgres（阶段二模板，docs/07 §0、§1）。阶段一只在本机验证可用性。
+# 部署：
+#   1. cp .env.example .env，填入强密码与 Tunnel 令牌
+#   2. 在 tls/ 放入证书（server.crt、server.key）；没有正式证书时可先运行 ./gen-self-signed.sh
+#   3. docker compose up -d
+# 安全约定：
+#   - 不映射任何宿主机端口；数据库只经 compose 内网被 cloudflared 访问（Workers VPC，docs/07 §2）
+#   - pg_hba.conf 只允许 TLS 连接（hostnossl 一律拒绝），账号与权限同 infra/local（app DML / migrator DDL / readonly SELECT）
+# 备份（WAL-G → R2 与异地副本）属于阶段二任务，见 docs/08-roadmap.md「生产迁移」；届时在本文件加 walg 服务并开启 archive_mode。
+name: product-res-db
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    entrypoint: ['/usr/local/bin/pg-entrypoint.sh']
+    command: ['postgres', '-c', 'config_file=/etc/postgresql/postgresql.conf']
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?在 .env 中设置 POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-product_res_production}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?在 .env 中设置 APP_DB_PASSWORD}
+      MIGRATOR_DB_PASSWORD: ${MIGRATOR_DB_PASSWORD:?在 .env 中设置 MIGRATOR_DB_PASSWORD}
+      READONLY_DB_PASSWORD: ${READONLY_DB_PASSWORD:?在 .env 中设置 READONLY_DB_PASSWORD}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./tls:/etc/postgresql/tls-src:ro
+      - ./pg-entrypoint.sh:/usr/local/bin/pg-entrypoint.sh:ro
+      - ./initdb/01-roles.sh:/docker-entrypoint-initdb.d/01-roles.sh:ro
+      - ../local/initdb/02-db-grants.sql:/docker-entrypoint-initdb.d/02-db-grants.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U postgres -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  # 两个副本连接同一 Tunnel：单个进程崩溃或升级时不中断数据库访问（docs/07 §1）
+  cloudflared:
+    image: cloudflare/cloudflared:2026.9.3
+    restart: unless-stopped
+    command: ['tunnel', '--no-autoupdate', 'run']
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-} # 为空时 cloudflared 启动失败
+    deploy:
+      replicas: 2
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # 可选：docker compose --profile monitoring up -d
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1
+    profiles: ['monitoring']
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_URI: postgres:5432/${POSTGRES_DB:-product_res_production}?sslmode=require
+      DATA_SOURCE_USER: readonly
+      DATA_SOURCE_PASS: ${READONLY_DB_PASSWORD:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pg-data:

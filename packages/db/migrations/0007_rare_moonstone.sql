@@ -1,0 +1,1 @@
+ALTER TABLE "refund_request" ADD COLUMN "provider_refund_id" text;

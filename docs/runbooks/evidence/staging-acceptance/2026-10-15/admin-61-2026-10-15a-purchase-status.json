@@ -1,0 +1,12 @@
+{
+  "runId": "admin-61-2026-10-15a",
+  "recordedAt": "2026-10-14T19:40:23.156Z",
+  "data": {
+    "status": "stopped",
+    "phase": "create one hosted test checkout",
+    "errorClass": "Error",
+    "detailsWithheld": true,
+    "cardSubmissionAttempted": false,
+    "paidRetries": 0
+  }
+}

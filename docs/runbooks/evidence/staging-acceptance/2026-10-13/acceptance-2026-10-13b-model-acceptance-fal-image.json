@@ -1,0 +1,17 @@
+{
+  "runId": "acceptance-2026-10-13b",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T06:10:56.463Z",
+  "data": {
+    "modelId": "01a13192-2aba-735e-8a58-3ea53a10f5eb",
+    "modelKey": "acceptance-fal-image",
+    "status": "verified-existing",
+    "pricing": {
+      "mode": "per_call",
+      "credits": 2,
+      "chargeOn": "success"
+    },
+    "auditIds": ["01a13192-2b44-74fe-955b-2acf8250d172"],
+    "parameterSchemaStatus": "configured"
+  }
+}

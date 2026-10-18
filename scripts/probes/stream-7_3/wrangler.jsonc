@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../apps/web/node_modules/wrangler/config-schema.json",
+  // 临时实测 Worker（tasks.md 7.3），测完用 `wrangler delete` 删除，见 README
+  "name": "probe-73-stream",
+  "main": "./worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  // 本目录不是 workspace 包，没有 node_modules：借用 packages/db 安装的 postgres.js
+  // （workerd 入口 cf/src，与 apps/* 中 exports 的 "workerd" 条件解析到同一文件）
+  "alias": {
+    "postgres": "../../../packages/db/node_modules/postgres/cf/src/index.js"
+  },
+  // 阶段一 staging 的关缓存 Hyperdrive（本机 product_res_staging 库，账号 app）
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "c4b28441aeaf49c3853a321a39cf8ec4" }],
+  "observability": { "enabled": true }
+}

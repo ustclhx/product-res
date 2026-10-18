@@ -1,0 +1,59 @@
+{
+  "sha": "ded83025299507decc5baa45a5769df6b441eb20",
+  "passed": true,
+  "events": [
+    {
+      "event": "features.generated",
+      "locale": "zh",
+      "multiTenant": true,
+      "billing": false,
+      "credits": false,
+      "marketing": false,
+      "i18n": false,
+      "ai": false
+    },
+    {
+      "event": "features.images.built"
+    },
+    {
+      "event": "features.ready",
+      "version": "ded83025299507decc5baa45a5769df6b441eb20",
+      "jobsVersion": "ded83025299507decc5baa45a5769df6b441eb20",
+      "lastCronAt": "2026-10-14T12:30:01.306Z"
+    },
+    {
+      "event": "features.routes",
+      "nodeSSR": true,
+      "staticAssets": true,
+      "locale": "zh",
+      "disabledRoutes404": true,
+      "tls": true
+    },
+    {
+      "event": "features.auth-workspace",
+      "verifiedEmail": true,
+      "passwordLogin": true,
+      "personalWorkspace": true,
+      "teamSwitching": true
+    }
+  ],
+  "ciRun": "https://github.com/ustclhx/product-res/actions/runs/38563638983",
+  "sourceHead": "8507c35d9696b2ba98424272a2a12cc1f7cdf983",
+  "copyVerification": {
+    "command": "pnpm test:create-project:verify",
+    "passed": true,
+    "combinations": [
+      "cloudflare-default-en",
+      "selfhost-default-zh",
+      "selfhost-all-off-zh-from-generated-copy"
+    ],
+    "checks": [
+      "frozen-install",
+      "typecheck",
+      "unit-tests",
+      "node-build",
+      "name-and-namespace",
+      "secret-and-state-exclusion"
+    ]
+  }
+}

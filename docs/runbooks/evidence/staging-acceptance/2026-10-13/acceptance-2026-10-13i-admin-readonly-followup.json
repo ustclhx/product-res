@@ -1,0 +1,63 @@
+{
+  "runId": "acceptance-2026-10-13i",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T11:23:22.992Z",
+  "data": {
+    "dedicatedUser": {
+      "userId": "01a134fd-cf19-7366-8567-c002d78f2637",
+      "banned": false,
+      "role": "user",
+      "fixtureNameMatches": true
+    },
+    "audits": [
+      {
+        "auditId": "01a134fe-1fd1-732d-83ad-5e1314071c61",
+        "action": "user.unbanned",
+        "actorUserId": "01a12ef0-66cc-75e2-88d0-eac1f1904d3c",
+        "createdAt": "2026-10-13T11:20:31.295+00:00"
+      },
+      {
+        "auditId": "01a134fe-01f9-7356-99fc-bdb44a5e4a8f",
+        "action": "user.banned",
+        "actorUserId": "01a12ef0-66cc-75e2-88d0-eac1f1904d3c",
+        "createdAt": "2026-10-13T11:20:23.455602+00:00"
+      }
+    ],
+    "topups": [],
+    "readAttempts": [
+      {
+        "label": "dedicated-user-status",
+        "attempt": 1,
+        "exitCode": 0,
+        "category": null
+      },
+      {
+        "label": "dedicated-user-audits",
+        "attempt": 1,
+        "exitCode": 0,
+        "category": null
+      },
+      {
+        "label": "dedicated-user-topups",
+        "attempt": 1,
+        "exitCode": 0,
+        "category": null
+      }
+    ],
+    "acceptanceRerunPerformed": false,
+    "diagnosis": {
+      "failureDiagnostic": "Failure diagnostic: Read-only evidence query failed (connect)",
+      "failureLocation": "apps/web/e2e/staging-acceptance/admin.spec.ts:106",
+      "failedOperation": "Read-only latestAudit query after unban",
+      "queryTotalAttemptsLimit": 3,
+      "originalPsqlDiagnosticsRetained": false,
+      "underlyingConnectionCause": "unknown: only safe connect category retained",
+      "followupResult": "Dedicated user and audit queries subsequently succeeded on first attempt",
+      "dedicatedUserRestoredActive": true,
+      "impersonationStepReached": false,
+      "dedicated25CreditTopupStepReached": false,
+      "announcementChangeStepReached": false,
+      "acceptanceRerunPerformed": false
+    }
+  }
+}

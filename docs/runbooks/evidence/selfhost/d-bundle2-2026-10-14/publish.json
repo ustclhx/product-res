@@ -1,0 +1,27 @@
+{
+  "conclusion": "success",
+  "headSha": "081305013b022f457c561eecf5828b1959e13908",
+  "jobs": [
+    {
+      "conclusion": "success",
+      "name": "trust",
+      "url": "https://github.com/ustclhx/product-res/actions/runs/38588820873/job/115937931586"
+    },
+    {
+      "conclusion": "success",
+      "name": "verify / images (amd64, ubuntu-24.04)",
+      "url": "https://github.com/ustclhx/product-res/actions/runs/38588820873/job/115938033213"
+    },
+    {
+      "conclusion": "success",
+      "name": "verify / images (arm64, ubuntu-24.04-arm)",
+      "url": "https://github.com/ustclhx/product-res/actions/runs/38588820873/job/115938033486"
+    },
+    {
+      "conclusion": "success",
+      "name": "publish",
+      "url": "https://github.com/ustclhx/product-res/actions/runs/38588820873/job/115945727502"
+    }
+  ],
+  "url": "https://github.com/ustclhx/product-res/actions/runs/38588820873"
+}

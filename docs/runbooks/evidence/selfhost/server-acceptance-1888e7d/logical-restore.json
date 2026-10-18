@@ -1,0 +1,58 @@
+{
+  "startedAt": "2026-10-16T16:23:45.408994+00:00",
+  "checks": [
+    {
+      "name": "before_marker",
+      "ok": true
+    },
+    {
+      "name": "real_native_workflow",
+      "ok": true
+    },
+    {
+      "name": "real_native_checkpoint",
+      "ok": true
+    },
+    {
+      "name": "real_wait_journal",
+      "ok": true
+    },
+    {
+      "name": "real_successful_schedule",
+      "ok": true
+    },
+    {
+      "name": "real_storage_ready",
+      "ok": true
+    },
+    {
+      "name": "after_marker_in_dump",
+      "ok": true
+    },
+    {
+      "name": "roles_not_admin",
+      "ok": true
+    },
+    {
+      "name": "role_permissions",
+      "ok": true
+    },
+    {
+      "name": "constraints_valid",
+      "ok": true
+    },
+    {
+      "name": "all_three_schemas",
+      "ok": true
+    }
+  ],
+  "success": true,
+  "phase": "validated",
+  "network": "none",
+  "unixSocketOnly": true,
+  "noHostPorts": true,
+  "appJobsStarted": false,
+  "elapsedSeconds": 7.541,
+  "endedAt": "2026-10-16T16:23:52.949891+00:00",
+  "ownResourcesCleaned": true
+}

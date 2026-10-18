@@ -1,0 +1,230 @@
+{
+  "runId": "acceptance-2026-10-13i",
+  "target": "staging-real",
+  "recordedAt": "2026-10-13T11:26:08.656299+00:00",
+  "phase": "acceptance-run-failed-and-stopped",
+  "deployedVersion": "d09e1b85c81d95b953d1d59322a2a21f345bf392",
+  "mainHead": "d09e1b85c81d95b953d1d59322a2a21f345bf392",
+  "preflight": {
+    "status": "passed",
+    "allFiveModelsEnabled": true,
+    "allFiveModelsMatchFixture": true,
+    "evidenceFile": "acceptance-2026-10-13i-model-preflight-comparison.json"
+  },
+  "authorizedScope": "Coordinator relayed continuing user authorization for full runs including paid generation calls and scripted 8007 retries; stop after diagnosis on suite failure",
+  "suite": {
+    "status": "failed",
+    "exitCode": 1,
+    "passed": 11,
+    "failed": 1,
+    "skipped": 2,
+    "playwrightRetriesConfigured": 0,
+    "readonlyQueryTotalAttemptsLimit": 3,
+    "workers8007ExtraTaskAttemptsLimit": 2,
+    "workers8007ExtraTaskAttemptsExecuted": 0,
+    "rerunAfterFailure": false
+  },
+  "evidenceCommitted": false,
+  "deployedVersionAfter": "d09e1b85c81d95b953d1d59322a2a21f345bf392",
+  "failureDiagnostics": ["Failure diagnostic: Read-only evidence query failed (connect)"],
+  "blocker": {
+    "scenario": "Admin 6.1",
+    "failureLocation": "apps/web/e2e/staging-acceptance/admin.spec.ts:106",
+    "operation": "Read-only latestAudit query after user unban",
+    "safeErrorCategory": "connect",
+    "originalPsqlDiagnosticsRetained": false,
+    "underlyingConnectionCause": "unknown: only safe connect category retained",
+    "dedicatedUserId": "01a134fd-cf19-7366-8567-c002d78f2637",
+    "dedicatedUserBanned": false,
+    "unbanAuditId": "01a134fe-1fd1-732d-83ad-5e1314071c61",
+    "laterAdminStepsExecuted": false
+  },
+  "failedGenerationTasks": [],
+  "creditAccounting": {
+    "workspaceId": "01a13192-a630-7767-8dc1-a3348f4fb31c",
+    "preparationCreditAdjustments": [
+      {
+        "auditId": "01a134f6-e611-77b2-8056-ca1718974fd7",
+        "adjustmentId": "01a134f6-d089-7040-a391-54566acb19bf",
+        "amount": 20
+      }
+    ],
+    "workersImageCharged": 1,
+    "falImageCharged": 2,
+    "falVideoCharged": 0,
+    "falVideoHoldReleased": 3,
+    "chatScenarios": [
+      {
+        "billing": "token",
+        "scenario": "normal",
+        "status": "completed",
+        "credits": 1,
+        "holdAmount": 9,
+        "capturedAmount": 1,
+        "consumeEntryCount": 1,
+        "reconciliationDifference": 0
+      },
+      {
+        "billing": "token",
+        "scenario": "stop",
+        "status": "aborted",
+        "credits": 1,
+        "holdAmount": 9,
+        "capturedAmount": 1,
+        "consumeEntryCount": 1,
+        "reconciliationDifference": 0
+      },
+      {
+        "billing": "token",
+        "scenario": "page-close",
+        "status": "completed",
+        "credits": 3,
+        "holdAmount": 9,
+        "capturedAmount": 3,
+        "consumeEntryCount": 1,
+        "reconciliationDifference": 0,
+        "tailCompletionMs": 2417
+      },
+      {
+        "billing": "call",
+        "scenario": "normal",
+        "status": "completed",
+        "credits": 2,
+        "holdAmount": 2,
+        "capturedAmount": 2,
+        "consumeEntryCount": 1,
+        "reconciliationDifference": 0
+      },
+      {
+        "billing": "call",
+        "scenario": "stop",
+        "status": "aborted",
+        "credits": 0,
+        "holdAmount": 2,
+        "capturedAmount": 0,
+        "consumeEntryCount": 0,
+        "reconciliationDifference": 0
+      },
+      {
+        "billing": "call",
+        "scenario": "page-close",
+        "status": "completed",
+        "credits": 2,
+        "holdAmount": 2,
+        "capturedAmount": 2,
+        "consumeEntryCount": 1,
+        "reconciliationDifference": 0,
+        "tailCompletionMs": 1892
+      }
+    ],
+    "totalCharged": 12,
+    "ledgerTotal": 18,
+    "activeRemaining": 18,
+    "held": 0,
+    "debt": 0,
+    "reconciliationDifference": 0
+  },
+  "adminPartialResults": {
+    "dedicatedUserVerified": true,
+    "banAuditId": "01a134fe-01f9-7356-99fc-bdb44a5e4a8f",
+    "unbanAuditId": "01a134fe-1fd1-732d-83ad-5e1314071c61",
+    "currentlyBanned": false,
+    "impersonationStepReached": false,
+    "dedicated25CreditTopupStepReached": false,
+    "announcementChangeStepReached": false
+  },
+  "acceptanceItems": [
+    {
+      "item": "configure or verify text acceptance models",
+      "status": "pass"
+    },
+    {
+      "item": "configure or verify media acceptance models",
+      "status": "pass"
+    },
+    {
+      "item": "media-workers-image",
+      "status": "pass"
+    },
+    {
+      "item": "media-fal-image",
+      "status": "pass"
+    },
+    {
+      "item": "media-fal-video-cancel",
+      "status": "pass"
+    },
+    {
+      "item": "media-workers-provider-failure",
+      "status": "skip",
+      "reason": "Script always skips this item; runbook requires manual fault injection; not executed"
+    },
+    {
+      "item": "Chat token: normal",
+      "status": "pass"
+    },
+    {
+      "item": "Chat token: stop",
+      "status": "pass"
+    },
+    {
+      "item": "Chat token: page-close",
+      "status": "pass"
+    },
+    {
+      "item": "Chat call: normal",
+      "status": "pass"
+    },
+    {
+      "item": "Chat call: stop",
+      "status": "pass"
+    },
+    {
+      "item": "Chat call: page-close",
+      "status": "pass"
+    },
+    {
+      "item": "Admin 6.1 dedicated-user actions",
+      "status": "fail",
+      "reason": "Ban and unban performed; latest unban audit read failed with connect category after configured attempts; later Admin steps not reached"
+    },
+    {
+      "item": "Sentry 1.2 test exception",
+      "status": "skip",
+      "reason": "Not executed after prior failure in serial suite"
+    }
+  ],
+  "mediaGenerationTaskCount": 3,
+  "chatAssistantMessageCount": 6,
+  "workersImageTerminalAttempt": 1,
+  "evidenceFiles": [
+    "acceptance-2026-10-13i-accounting-readonly.json",
+    "acceptance-2026-10-13i-admin-ban.json",
+    "acceptance-2026-10-13i-admin-dedicated-user.json",
+    "acceptance-2026-10-13i-admin-readonly-followup.json",
+    "acceptance-2026-10-13i-chat-call-normal.json",
+    "acceptance-2026-10-13i-chat-call-page-close-action.json",
+    "acceptance-2026-10-13i-chat-call-page-close.json",
+    "acceptance-2026-10-13i-chat-call-stop.json",
+    "acceptance-2026-10-13i-chat-token-normal.json",
+    "acceptance-2026-10-13i-chat-token-page-close-action.json",
+    "acceptance-2026-10-13i-chat-token-page-close.json",
+    "acceptance-2026-10-13i-chat-token-stop.json",
+    "acceptance-2026-10-13i-execution-status.json",
+    "acceptance-2026-10-13i-media-fal-image-terminal.json",
+    "acceptance-2026-10-13i-media-fal-image.json",
+    "acceptance-2026-10-13i-media-fal-video-cancel-response.json",
+    "acceptance-2026-10-13i-media-fal-video-cancel.json",
+    "acceptance-2026-10-13i-media-workers-image-terminal.json",
+    "acceptance-2026-10-13i-media-workers-image.json",
+    "acceptance-2026-10-13i-model-acceptance-deepseek-call.json",
+    "acceptance-2026-10-13i-model-acceptance-deepseek-token.json",
+    "acceptance-2026-10-13i-model-acceptance-fal-image.json",
+    "acceptance-2026-10-13i-model-acceptance-fal-video.json",
+    "acceptance-2026-10-13i-model-acceptance-workers-image.json",
+    "acceptance-2026-10-13i-model-preflight-comparison.json"
+  ],
+  "credentialScan": "passed",
+  "oldRunEvidenceUnchanged": true,
+  "priorEvidenceFilesVerified": 96
+}

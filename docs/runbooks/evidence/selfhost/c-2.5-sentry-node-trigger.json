@@ -1,0 +1,36 @@
+{
+  "status": "triggered-awaiting-coordinator-ui-verification",
+  "buildSourceSha": "65c0413794f408259682c9c6afdf2c4364fbfdac",
+  "release": "65c0413794f408259682c9c6afdf2c4364fbfdac",
+  "environment": "smoke",
+  "environmentNote": "Coordinator selected existing smoke gate for local Node acceptance; no production configuration changes",
+  "sourceMapUpload": {
+    "status": "completed-before-trigger",
+    "dists": ["web-node", "jobs-node"]
+  },
+  "web": {
+    "dist": "web-node",
+    "requestId": "01a139cf-cd7b-77df-8b29-0c4b88c4156d",
+    "triggeredAt": "2026-10-14T09:48:02.298Z",
+    "httpStatus": 500,
+    "audited": true,
+    "expectedSource": "apps/web/src/server/sentry-test.ts"
+  },
+  "jobs": {
+    "dist": "jobs-node",
+    "requestId": "01a139cf-ce00-748f-b743-1865fb7b0d5a",
+    "messageId": "01a139cf-ce00-748f-b743-2228509f073b",
+    "idempotencyKey": "sentry-local-01a139cf-ce00-748f-b743-1ecff76e3a74",
+    "triggeredAt": "2026-10-14T09:48:02.432Z",
+    "failure": "SMTP permanent 550 from isolated fixture",
+    "inboxState": "dead",
+    "expectedSource": "packages/email/src/node/smtp.ts"
+  },
+  "publicMaps": "404",
+  "credentialsInApplication": "DSN only; upload token/org/project excluded",
+  "remaining": [
+    "Confirm both events are ingested",
+    "Confirm release, dist, requestId and readable TypeScript source frames",
+    "Inspect event JSON for redaction and duplicate events"
+  ]
+}

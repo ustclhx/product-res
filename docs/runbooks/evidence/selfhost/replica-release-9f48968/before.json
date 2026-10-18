@@ -1,0 +1,161 @@
+{
+  "capturedAt": "2026-10-17T16:11:53.786896+00:00",
+  "project": "product-res-selfhost",
+  "release": {
+    "successful": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+    "previous": null,
+    "schemaSha": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+    "composeFiles": [
+      "compose.yaml",
+      "compose.s3.yaml",
+      "compose.backup.yaml",
+      "compose.replica.yaml"
+    ],
+    "envFiles": [".env", ".env.backup", ".env.replica"]
+  },
+  "containers": [
+    {
+      "service": "backup",
+      "id": "698c181cc391",
+      "revision": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+      "state": "running",
+      "exitCode": 0,
+      "health": "unhealthy",
+      "startedAt": "2026-10-16T17:48:44.368993863Z",
+      "volumes": [
+        "product-res-selfhost_backup_state",
+        "product-res-selfhost_postgres_data",
+        "product-res-selfhost_postgres_socket"
+      ]
+    },
+    {
+      "service": "caddy",
+      "id": "ae75eed950e5",
+      "revision": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+      "state": "running",
+      "exitCode": 0,
+      "health": "healthy",
+      "startedAt": "2026-10-16T17:48:44.109052025Z",
+      "volumes": ["product-res-selfhost_caddy_config", "product-res-selfhost_caddy_data"]
+    },
+    {
+      "service": "jobs",
+      "id": "47c166b05ad2",
+      "revision": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+      "state": "running",
+      "exitCode": 0,
+      "health": "healthy",
+      "startedAt": "2026-10-16T17:48:44.273922794Z",
+      "volumes": ["product-res-selfhost_job_owners"]
+    },
+    {
+      "service": "migrate",
+      "id": "506452a8b7f3",
+      "revision": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+      "state": "exited",
+      "exitCode": 0,
+      "health": "unhealthy",
+      "startedAt": "2026-10-16T16:03:51.877685354Z",
+      "volumes": []
+    },
+    {
+      "service": "postgres",
+      "id": "57258fff0661",
+      "revision": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+      "state": "running",
+      "exitCode": 0,
+      "health": "healthy",
+      "startedAt": "2026-10-16T17:48:44.28943069Z",
+      "volumes": [
+        "product-res-selfhost_backup_state",
+        "product-res-selfhost_postgres_data",
+        "product-res-selfhost_postgres_socket"
+      ]
+    },
+    {
+      "service": "valkey",
+      "id": "ac8cfb64529a",
+      "revision": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+      "state": "running",
+      "exitCode": 0,
+      "health": "healthy",
+      "startedAt": "2026-10-16T17:48:44.196070297Z",
+      "volumes": ["product-res-selfhost_valkey_data"]
+    },
+    {
+      "service": "web",
+      "id": "96380bb697d7",
+      "revision": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+      "state": "running",
+      "exitCode": 0,
+      "health": "healthy",
+      "startedAt": "2026-10-16T17:48:44.251174951Z",
+      "volumes": []
+    }
+  ],
+  "volumes": [
+    "product-res-selfhost_backup_state",
+    "product-res-selfhost_caddy_config",
+    "product-res-selfhost_caddy_data",
+    "product-res-selfhost_job_owners",
+    "product-res-selfhost_postgres_data",
+    "product-res-selfhost_postgres_socket",
+    "product-res-selfhost_valkey_data"
+  ],
+  "backup": {
+    "healthy": false,
+    "operations": {
+      "base": {
+        "ok": true,
+        "lastAttempt": "2026-10-17T02:07:56.266497Z",
+        "running": false,
+        "lastSuccess": "2026-10-17T02:09:15.890484Z",
+        "consecutiveFailures": 0,
+        "failures": 0
+      },
+      "dump": {
+        "ok": true,
+        "lastAttempt": "2026-10-17T02:09:15.894927Z",
+        "running": false,
+        "lastSuccess": "2026-10-17T02:09:18.779330Z",
+        "consecutiveFailures": 0,
+        "failures": 0
+      },
+      "verification": {
+        "ok": true,
+        "lastAttempt": "2026-10-17T15:55:09.758631Z",
+        "running": false,
+        "lastSuccess": "2026-10-17T15:55:15.289382Z",
+        "consecutiveFailures": 0,
+        "failures": 0
+      },
+      "replica": {
+        "configured": true,
+        "ok": false,
+        "lastAttempt": "2026-10-17T15:55:15.298046Z",
+        "running": true,
+        "lastSuccess": "2026-10-17T15:54:39.688278Z",
+        "syncLagSeconds": 1185.166338,
+        "copiedObjects": 21,
+        "objectCount": 1540,
+        "manifestSha256": "08f0d7ff5960df7059adb6e86e799c1d3240b76e93f34a29017f37b32859b80c",
+        "consecutiveFailures": 0,
+        "failures": 1,
+        "lastFailure": "2026-10-16T19:42:14.453039Z",
+        "lastError": "REPLICA_S3_TIMEOUT",
+        "currentLagSeconds": 2220.190805
+      }
+    },
+    "archive": {
+      "lastSuccess": "2026-10-17T16:11:12.496936+00:00",
+      "consecutiveFailures": 0,
+      "successes": 1550
+    },
+    "pgArchiver": {
+      "archived_count": 1548,
+      "failed_count": 0,
+      "last_archived_time": "2026-10-17T16:11:12.513916+00:00",
+      "last_failed_time": null
+    }
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "capturedAt": "2026-10-17T16:39:25.084719+00:00",
+  "sha": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+  "publicTlsVerified": true,
+  "web": {
+    "httpStatus": 200,
+    "status": "ok",
+    "version": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+    "dependencies": {
+      "db": "up",
+      "cache": "up",
+      "queue": "up",
+      "scheduler": "up"
+    },
+    "lastCronAt": "2026-10-17T16:35:00.640Z"
+  },
+  "jobs": {
+    "httpStatus": 200,
+    "status": "ok",
+    "version": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+    "dependencies": {
+      "db": "up",
+      "cache": "up",
+      "queue": "up",
+      "scheduler": "up"
+    },
+    "lastCronAt": "2026-10-17T16:35:00.640Z"
+  },
+  "images": [
+    {
+      "service": "web",
+      "reference": "ghcr.io/ustclhx/product-res/web@sha256:c9ac6fe728e57dd9595751f1a423a8c7c28d13a33442ae5957a32f8113c106cc",
+      "revision": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+      "architecture": "amd64",
+      "user": "1000:1000"
+    },
+    {
+      "service": "jobs",
+      "reference": "ghcr.io/ustclhx/product-res/jobs@sha256:f45531ab7c9fa2a1141d8861a2f50bf07d86b3ef6d3bf066d62ea266807d2ee9",
+      "revision": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+      "architecture": "amd64",
+      "user": "1000:1000"
+    },
+    {
+      "service": "migrate",
+      "reference": "ghcr.io/ustclhx/product-res/migrate@sha256:a48109603acc5b8eaa3900a292e5816291f1617592743fc2a5113dd67a92c4c6",
+      "revision": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+      "architecture": "amd64",
+      "user": "1000:1000"
+    },
+    {
+      "service": "postgres",
+      "reference": "ghcr.io/ustclhx/product-res/postgres@sha256:36f1bbbef06e45dd1606ad80342ae1fe7ed23e7407b8eb6442b2b6c9bab1e042",
+      "revision": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+      "architecture": "amd64",
+      "user": "999:999"
+    },
+    {
+      "service": "valkey",
+      "reference": "ghcr.io/ustclhx/product-res/valkey@sha256:a27930cd81e448ca279db50db1e66b53f709a5a88d7badb42c2a3fa8b74ff839",
+      "revision": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+      "architecture": "amd64",
+      "user": "999:999"
+    },
+    {
+      "service": "caddy",
+      "reference": "ghcr.io/ustclhx/product-res/caddy@sha256:963006e72194a101300358468d120dc75587e05fc09a178ed87f84a2bbdc5fa7",
+      "revision": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+      "architecture": "amd64",
+      "user": "10001:10001"
+    },
+    {
+      "service": "backup",
+      "reference": "ghcr.io/ustclhx/product-res/backup@sha256:313c4939fbd6603234d776127ba88eb08104eec10c081960d1b447dc99ef505e",
+      "revision": "9f48968f1eb64a3c128a5ec4b78c0f0796ec2454",
+      "architecture": "amd64",
+      "user": "999:999"
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "sourceSha": "081305013b022f457c561eecf5828b1959e13908",
+  "cleanDirectory": true,
+  "bundleContainedVerifier": true,
+  "services": {
+    "caddy": {
+      "image": "ghcr.io/ustclhx/product-res/caddy@sha256:aec0926afc3f84f0efebb5423483990ca6173c1cff2bcc02cbc7efd317c58bb1",
+      "build": null,
+      "user": "10001:10001",
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 8080,
+          "published": "80",
+          "protocol": "tcp"
+        },
+        {
+          "mode": "ingress",
+          "target": 8443,
+          "published": "443",
+          "protocol": "tcp"
+        }
+      ]
+    },
+    "jobs": {
+      "image": "ghcr.io/ustclhx/product-res/jobs@sha256:4807f09bc13d5b54fc64525ac1423e34abb0e5a0f82e4a0072d48a745e74a1e6",
+      "build": null,
+      "user": "1000:1000",
+      "ports": []
+    },
+    "migrate": {
+      "image": "ghcr.io/ustclhx/product-res/migrate@sha256:690c6b58d6e2f0c532a6b847dccfeddc6be02e8cd4e468c37cd7d1b1d62a0bc2",
+      "build": null,
+      "user": "1000:1000",
+      "ports": []
+    },
+    "postgres": {
+      "image": "ghcr.io/ustclhx/product-res/postgres@sha256:ff07d832395490626a1f69b5e608579751bc29682377b59ca5281873b8feb309",
+      "build": null,
+      "user": "999:999",
+      "ports": []
+    },
+    "valkey": {
+      "image": "ghcr.io/ustclhx/product-res/valkey@sha256:e97dc1ae1588d49469790c888d980d6fbf9e1b329864f7ffdda2535e2de4098f",
+      "build": null,
+      "user": "999:999",
+      "ports": []
+    },
+    "web": {
+      "image": "ghcr.io/ustclhx/product-res/web@sha256:f8d86a97ef4ba8b81c70bdb2b2cfa73f506901ce39d5e31f493dd31bb6d72439",
+      "build": null,
+      "user": "1000:1000",
+      "ports": []
+    }
+  },
+  "allReferencesMatchRelease": true,
+  "secretValuesRead": false,
+  "optionalConfigurations": {
+    "backup": {
+      "passed": true,
+      "services": {
+        "backup": "ghcr.io/ustclhx/product-res/backup@sha256:7f28d63d5142fbb14c86d13c4f994e0f5eca5bf7ba41d180534bb5927b6069cd",
+        "caddy": "ghcr.io/ustclhx/product-res/caddy@sha256:aec0926afc3f84f0efebb5423483990ca6173c1cff2bcc02cbc7efd317c58bb1",
+        "jobs": "ghcr.io/ustclhx/product-res/jobs@sha256:4807f09bc13d5b54fc64525ac1423e34abb0e5a0f82e4a0072d48a745e74a1e6",
+        "migrate": "ghcr.io/ustclhx/product-res/migrate@sha256:690c6b58d6e2f0c532a6b847dccfeddc6be02e8cd4e468c37cd7d1b1d62a0bc2",
+        "postgres": "ghcr.io/ustclhx/product-res/postgres@sha256:ff07d832395490626a1f69b5e608579751bc29682377b59ca5281873b8feb309",
+        "valkey": "ghcr.io/ustclhx/product-res/valkey@sha256:e97dc1ae1588d49469790c888d980d6fbf9e1b329864f7ffdda2535e2de4098f",
+        "web": "ghcr.io/ustclhx/product-res/web@sha256:f8d86a97ef4ba8b81c70bdb2b2cfa73f506901ce39d5e31f493dd31bb6d72439"
+      },
+      "noBuild": true,
+      "allReferencesMatchRelease": true
+    },
+    "object-storage": {
+      "passed": true,
+      "services": {
+        "caddy": "ghcr.io/ustclhx/product-res/caddy@sha256:aec0926afc3f84f0efebb5423483990ca6173c1cff2bcc02cbc7efd317c58bb1",
+        "jobs": "ghcr.io/ustclhx/product-res/jobs@sha256:4807f09bc13d5b54fc64525ac1423e34abb0e5a0f82e4a0072d48a745e74a1e6",
+        "migrate": "ghcr.io/ustclhx/product-res/migrate@sha256:690c6b58d6e2f0c532a6b847dccfeddc6be02e8cd4e468c37cd7d1b1d62a0bc2",
+        "object-storage": "ghcr.io/ustclhx/product-res/object-storage@sha256:a7dc52b320ddeb4169530fea28c538089c70f418e22584f7c90fe7112cc946a7",
+        "object-storage-init": "ghcr.io/ustclhx/product-res/migrate@sha256:690c6b58d6e2f0c532a6b847dccfeddc6be02e8cd4e468c37cd7d1b1d62a0bc2",
+        "postgres": "ghcr.io/ustclhx/product-res/postgres@sha256:ff07d832395490626a1f69b5e608579751bc29682377b59ca5281873b8feb309",
+        "valkey": "ghcr.io/ustclhx/product-res/valkey@sha256:e97dc1ae1588d49469790c888d980d6fbf9e1b329864f7ffdda2535e2de4098f",
+        "web": "ghcr.io/ustclhx/product-res/web@sha256:f8d86a97ef4ba8b81c70bdb2b2cfa73f506901ce39d5e31f493dd31bb6d72439"
+      },
+      "noBuild": true,
+      "allReferencesMatchRelease": true
+    },
+    "replica": {
+      "passed": true,
+      "services": {
+        "backup": "ghcr.io/ustclhx/product-res/backup@sha256:7f28d63d5142fbb14c86d13c4f994e0f5eca5bf7ba41d180534bb5927b6069cd",
+        "caddy": "ghcr.io/ustclhx/product-res/caddy@sha256:aec0926afc3f84f0efebb5423483990ca6173c1cff2bcc02cbc7efd317c58bb1",
+        "jobs": "ghcr.io/ustclhx/product-res/jobs@sha256:4807f09bc13d5b54fc64525ac1423e34abb0e5a0f82e4a0072d48a745e74a1e6",
+        "migrate": "ghcr.io/ustclhx/product-res/migrate@sha256:690c6b58d6e2f0c532a6b847dccfeddc6be02e8cd4e468c37cd7d1b1d62a0bc2",
+        "postgres": "ghcr.io/ustclhx/product-res/postgres@sha256:ff07d832395490626a1f69b5e608579751bc29682377b59ca5281873b8feb309",
+        "valkey": "ghcr.io/ustclhx/product-res/valkey@sha256:e97dc1ae1588d49469790c888d980d6fbf9e1b329864f7ffdda2535e2de4098f",
+        "web": "ghcr.io/ustclhx/product-res/web@sha256:f8d86a97ef4ba8b81c70bdb2b2cfa73f506901ce39d5e31f493dd31bb6d72439"
+      },
+      "noBuild": true,
+      "allReferencesMatchRelease": true
+    },
+    "all-overrides": {
+      "passed": true,
+      "services": {
+        "backup": "ghcr.io/ustclhx/product-res/backup@sha256:7f28d63d5142fbb14c86d13c4f994e0f5eca5bf7ba41d180534bb5927b6069cd",
+        "caddy": "ghcr.io/ustclhx/product-res/caddy@sha256:aec0926afc3f84f0efebb5423483990ca6173c1cff2bcc02cbc7efd317c58bb1",
+        "jobs": "ghcr.io/ustclhx/product-res/jobs@sha256:4807f09bc13d5b54fc64525ac1423e34abb0e5a0f82e4a0072d48a745e74a1e6",
+        "migrate": "ghcr.io/ustclhx/product-res/migrate@sha256:690c6b58d6e2f0c532a6b847dccfeddc6be02e8cd4e468c37cd7d1b1d62a0bc2",
+        "object-storage": "ghcr.io/ustclhx/product-res/object-storage@sha256:a7dc52b320ddeb4169530fea28c538089c70f418e22584f7c90fe7112cc946a7",
+        "object-storage-init": "ghcr.io/ustclhx/product-res/migrate@sha256:690c6b58d6e2f0c532a6b847dccfeddc6be02e8cd4e468c37cd7d1b1d62a0bc2",
+        "postgres": "ghcr.io/ustclhx/product-res/postgres@sha256:ff07d832395490626a1f69b5e608579751bc29682377b59ca5281873b8feb309",
+        "valkey": "ghcr.io/ustclhx/product-res/valkey@sha256:e97dc1ae1588d49469790c888d980d6fbf9e1b329864f7ffdda2535e2de4098f",
+        "web": "ghcr.io/ustclhx/product-res/web@sha256:f8d86a97ef4ba8b81c70bdb2b2cfa73f506901ce39d5e31f493dd31bb6d72439"
+      },
+      "noBuild": true,
+      "allReferencesMatchRelease": true
+    },
+    "external-proxy": {
+      "passed": true,
+      "services": {
+        "jobs": "ghcr.io/ustclhx/product-res/jobs@sha256:4807f09bc13d5b54fc64525ac1423e34abb0e5a0f82e4a0072d48a745e74a1e6",
+        "migrate": "ghcr.io/ustclhx/product-res/migrate@sha256:690c6b58d6e2f0c532a6b847dccfeddc6be02e8cd4e468c37cd7d1b1d62a0bc2",
+        "postgres": "ghcr.io/ustclhx/product-res/postgres@sha256:ff07d832395490626a1f69b5e608579751bc29682377b59ca5281873b8feb309",
+        "valkey": "ghcr.io/ustclhx/product-res/valkey@sha256:e97dc1ae1588d49469790c888d980d6fbf9e1b329864f7ffdda2535e2de4098f",
+        "web": "ghcr.io/ustclhx/product-res/web@sha256:f8d86a97ef4ba8b81c70bdb2b2cfa73f506901ce39d5e31f493dd31bb6d72439"
+      },
+      "noBuild": true,
+      "allReferencesMatchRelease": true
+    }
+  }
+}

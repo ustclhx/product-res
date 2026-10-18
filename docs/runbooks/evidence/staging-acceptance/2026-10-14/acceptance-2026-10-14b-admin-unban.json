@@ -1,0 +1,10 @@
+{
+  "runId": "acceptance-2026-10-14b",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T11:35:53.330Z",
+  "data": {
+    "userId": "01a134fd-cf19-7366-8567-c002d78f2637",
+    "status": "active",
+    "auditId": "01a13a32-83d6-7704-a69a-5e65d24ac311"
+  }
+}

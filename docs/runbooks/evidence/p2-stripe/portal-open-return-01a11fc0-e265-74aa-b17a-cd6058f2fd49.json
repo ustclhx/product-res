@@ -1,0 +1,91 @@
+{
+  "scenario": "portal-open-return",
+  "capturedAt": "2026-10-09T08:22:19.150Z",
+  "workspaceId": "01a11fc0-e265-74aa-b17a-cd6058f2fd49",
+  "userId": "01a11fc0-e265-74aa-b17a-cd6058f2fd49",
+  "customers": [
+    {
+      "id": "01a11fc1-2cc1-74b9-8157-b5c38ce9ad90",
+      "provider_customer_id": "cus_VPNp7BfIMydmCd"
+    }
+  ],
+  "payments": [
+    {
+      "id": "01a11fc1-2fe2-741a-8a79-baa1bcf4a05f",
+      "provider_payment_id": "pi_3UOZ3sL3UTpBAoXo0Ets3P0Z",
+      "subscription_id": "01a11fc1-2c53-71be-b5fc-78afe13ea47a",
+      "purchase_id": null,
+      "kind": "initial",
+      "amount": 1900,
+      "currency": "USD",
+      "status": "succeeded",
+      "refunded_amount": 0,
+      "plan_price_id": "01a11bac-8a18-7786-a6cf-d84dd209ef99",
+      "period_start": "2026-10-09T08:21:52.000Z",
+      "period_end": "2026-11-09T08:21:52.000Z"
+    }
+  ],
+  "subscriptions": [
+    {
+      "id": "01a11fc1-2c53-71be-b5fc-78afe13ea47a",
+      "provider_subscription_id": "sub_1UOZ3uL3UTpBAoXoZTEA53tY",
+      "status": "active",
+      "cancel_at_period_end": false,
+      "current_period_start": "2026-10-09T08:21:52.000Z",
+      "current_period_end": "2026-11-09T08:21:52.000Z",
+      "plan_key": "pro",
+      "interval": "month",
+      "provider_price_id": "price_1UOSygL3UTpBAoXoQKRdSIBc"
+    }
+  ],
+  "purchases": [],
+  "grants": [
+    {
+      "id": "01a11fc1-30ff-702e-95d2-0a70ac7028a1",
+      "source": "subscription",
+      "payment_id": "01a11fc1-2fe2-741a-8a79-baa1bcf4a05f",
+      "amount": 1000,
+      "remaining": 1000,
+      "status": "active",
+      "expires_at": "2026-11-10T08:21:52.000Z"
+    }
+  ],
+  "ledger": [
+    {
+      "id": "01a11fc1-3132-7378-b917-43025aedf834",
+      "grant_id": "01a11fc1-30ff-702e-95d2-0a70ac7028a1",
+      "type": "grant",
+      "delta": 1000
+    }
+  ],
+  "refunds": [],
+  "events": [
+    {
+      "id": "01a11fc1-2a04-70aa-b754-9f02aa046044",
+      "provider_event_id": "evt_1UOZ3vL3UTpBAoXoBMGJou8b",
+      "type": "checkout.session.completed",
+      "status": "processed",
+      "attempts": 1
+    },
+    {
+      "id": "01a11fc1-2ada-734e-8433-4ab699263c59",
+      "provider_event_id": "evt_1UOZ3vL3UTpBAoXoKqrS1KzX",
+      "type": "customer.subscription.created",
+      "status": "processed",
+      "attempts": 1
+    },
+    {
+      "id": "01a11fc1-2b9b-74de-9039-e63762d7c8a1",
+      "provider_event_id": "evt_1UOZ3vL3UTpBAoXopIc9K2I8",
+      "type": "invoice.paid",
+      "status": "processed",
+      "attempts": 1
+    }
+  ],
+  "balance": {
+    "available": 1000,
+    "held": 0,
+    "debt": 0,
+    "ledger_total": 1000
+  }
+}

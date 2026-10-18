@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": [
+    "*.ts",
+    "lint",
+    "test/global-setup.ts",
+    "test/postgres-socket-rejection.ts",
+    "test/node"
+  ]
+}

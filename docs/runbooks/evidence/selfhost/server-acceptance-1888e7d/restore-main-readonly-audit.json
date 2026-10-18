@@ -1,0 +1,13 @@
+{
+  "target": "main",
+  "credentialMountNames": [
+    "selfhost-restore-main-access-key.secret",
+    "selfhost-restore-main-secret-key.secret"
+  ],
+  "onlySelectedReadonlyIdentityMounted": true,
+  "writerCredentialsMounted": false,
+  "mainCredentialsMounted": true,
+  "noHostPorts": true,
+  "unixSocketOnly": true,
+  "readOnlyPolicyVerifiedByS3": true
+}

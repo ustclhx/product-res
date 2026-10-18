@@ -1,0 +1,75 @@
+{
+  "status": "passed",
+  "cloudflareResourcesStatus": "deleted",
+  "neonProjectStatus": "deleted",
+  "localCopyStatus": "deleted",
+  "prefixChecksStatus": "passed",
+  "rateLimitBindingStatus": "deleted-with-workers",
+  "resources": [
+    {
+      "type": "Worker",
+      "name": "product-res-smoke-web-staging",
+      "status": "deleted"
+    },
+    {
+      "type": "Worker",
+      "name": "product-res-smoke-jobs-staging",
+      "status": "deleted"
+    },
+    {
+      "type": "Queue",
+      "name": "product-res-smoke-email-staging",
+      "status": "deleted"
+    },
+    {
+      "type": "Queue",
+      "name": "product-res-smoke-events-staging",
+      "status": "deleted"
+    },
+    {
+      "type": "Hyperdrive",
+      "name": "product-res-smoke-db",
+      "status": "deleted"
+    },
+    {
+      "type": "Hyperdrive",
+      "name": "product-res-smoke-db-cached",
+      "status": "deleted"
+    },
+    {
+      "type": "KV",
+      "name": "product-res-smoke-cache",
+      "status": "deleted"
+    },
+    {
+      "type": "R2",
+      "name": "product-res-smoke-files-staging",
+      "status": "deleted"
+    },
+    {
+      "type": "RateLimit 绑定",
+      "name": "product-res-smoke-rl-auth",
+      "status": "deleted"
+    },
+    {
+      "type": "RateLimit 绑定",
+      "name": "product-res-smoke-rl-ai",
+      "status": "deleted"
+    },
+    {
+      "type": "RateLimit 绑定",
+      "name": "product-res-smoke-rl-api",
+      "status": "deleted"
+    },
+    {
+      "type": "Neon 项目",
+      "name": "product-res-smoke",
+      "status": "deleted"
+    },
+    {
+      "type": "本地副本",
+      "name": "product-res-smoke",
+      "status": "deleted"
+    }
+  ]
+}

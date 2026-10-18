@@ -1,0 +1,40 @@
+{
+  "runtime": "Node 22 via /opt/homebrew/opt/node@22/bin",
+  "checks": [
+    {
+      "command": "pnpm check",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "successfulTasks": 14,
+      "cachedTasks": 14
+    },
+    {
+      "command": "NODE_OPTIONS=--no-experimental-webstorage pnpm --filter @product-res/billing exec vitest run src/pipeline.test.ts src/stripe/adapter.test.ts src/paypal/recorded.test.ts",
+      "exitCode": 0,
+      "testFilesPassed": 3,
+      "testsPassed": 55
+    },
+    {
+      "command": "openspec validate add-cloud-acceptance-followups --strict --json",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "limits": "Existing regression coverage only. New PayPal Sale refund fixture tests remain pending until actual sandbox recording. No tests certify unexecuted browser or natural-time acceptance.",
+  "evidenceVerification": {
+    "stripeMonthlyYearlyRenewalsAndTwoResendsEach": "passed",
+    "controlledTrialCanceledAndAccountingIsolation": "passed",
+    "credentialAndEmailPatternScan": "passed",
+    "filesScanned": 26
+  },
+  "finalCheckAfterNewEvidence": {
+    "command": "pnpm check",
+    "exitCode": 0
+  }
+}

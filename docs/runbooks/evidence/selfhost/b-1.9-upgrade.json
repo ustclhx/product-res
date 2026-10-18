@@ -1,0 +1,114 @@
+{
+  "old": "5.1.10",
+  "current": "5.2.11",
+  "database": "b_budget_upgrade",
+  "formalImageSha": "081305013b022f457c561eecf5828b1959e13908",
+  "checks": [
+    {
+      "check": "old-init",
+      "at": "2026-10-14T17:09:39.015651+00:00",
+      "exitCode": 0,
+      "events": [
+        {
+          "event": "upgrade.old_schema",
+          "exitCode": 0
+        }
+      ]
+    },
+    {
+      "check": "old-repeat",
+      "at": "2026-10-14T17:09:39.480935+00:00",
+      "exitCode": 0,
+      "events": [
+        {
+          "event": "upgrade.old_schema",
+          "exitCode": 0
+        }
+      ]
+    },
+    {
+      "check": "old-schema-app-rejection",
+      "at": "2026-10-14T17:09:41.260845+00:00",
+      "exitCode": 0,
+      "events": [
+        {
+          "status": "rejected",
+          "code": "JOB_ENGINE_DATABASE_NOT_READY"
+        }
+      ]
+    },
+    {
+      "check": "upgrade",
+      "at": "2026-10-14T17:09:41.835499+00:00",
+      "exitCode": 0,
+      "events": [
+        {
+          "level": "info",
+          "event": "platform.job_engine.migrated"
+        },
+        {
+          "event": "upgrade.current_schema",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "check": "upgrade-repeat",
+      "at": "2026-10-14T17:09:42.369895+00:00",
+      "exitCode": 0,
+      "events": [
+        {
+          "level": "info",
+          "event": "platform.job_engine.migrated"
+        },
+        {
+          "event": "upgrade.current_schema",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "check": "upgraded-app-start",
+      "at": "2026-10-14T17:09:43.971402+00:00",
+      "exitCode": 0,
+      "events": [
+        {
+          "level": "info",
+          "event": "platform.job_engine.sdk"
+        },
+        {
+          "level": "info",
+          "event": "platform.job_engine.sdk"
+        },
+        {
+          "level": "info",
+          "event": "platform.job_engine.sdk"
+        },
+        {
+          "level": "info",
+          "event": "platform.job_engine.sdk"
+        },
+        {
+          "level": "info",
+          "event": "platform.job_engine.sdk"
+        },
+        {
+          "level": "info",
+          "event": "platform.job_engine.sdk"
+        },
+        {
+          "level": "info",
+          "event": "platform.job_engine.sdk"
+        },
+        {
+          "level": "info",
+          "event": "platform.job_engine.started",
+          "nativePoolMax": 4
+        },
+        {
+          "status": "started"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "capturedAt": "2026-10-17T14:51:53.797576+00:00",
+  "hostAlias": "product-res-ecs",
+  "project": "product-res-selfhost",
+  "readOnly": true,
+  "revision": "1888e7d165b0b87784e7d16a4c39709a9bc063e3",
+  "settings": {
+    "BACKUP_NETWORK_RATE_LIMIT": "10485760",
+    "BACKUP_REPLICA_NETWORK_RATE_LIMIT": "10485760",
+    "BACKUP_REPLICA_INTERVAL_SECONDS": "300",
+    "BACKUP_REPLICA_MAX_AGE_SECONDS": "900"
+  },
+  "health": "unhealthy",
+  "statusHealthy": false,
+  "primaryOperations": {
+    "base": {
+      "ok": true,
+      "running": false,
+      "lastSuccess": "2026-10-17T02:09:15.890484Z"
+    },
+    "dump": {
+      "ok": true,
+      "running": false,
+      "lastSuccess": "2026-10-17T02:09:18.779330Z"
+    },
+    "verification": {
+      "ok": true,
+      "running": false,
+      "lastSuccess": "2026-10-17T14:35:43.270609Z"
+    }
+  },
+  "replica": {
+    "configured": true,
+    "ok": false,
+    "running": true,
+    "lastAttempt": "2026-10-17T14:35:43.281458Z",
+    "lastSuccess": "2026-10-17T14:35:08.569441Z",
+    "lastFailure": "2026-10-16T19:42:14.453039Z",
+    "lastError": "REPLICA_S3_TIMEOUT",
+    "failures": 1,
+    "consecutiveFailures": 0,
+    "syncLagSeconds": 1114.253686,
+    "objectCount": 1459,
+    "copiedObjects": 19
+  },
+  "archive": {
+    "lastSuccess": "2026-10-17T14:51:43.504478+00:00",
+    "consecutiveFailures": 0
+  },
+  "pgArchiver": {
+    "archived_count": 1466,
+    "failed_count": 0,
+    "last_archived_time": "2026-10-17T14:51:43.523096+00:00",
+    "last_failed_time": null
+  },
+  "logCounts": {
+    "selfhost.backup.cycle.completed": 2,
+    "selfhost.backup.replica.completed": 157,
+    "selfhost.backup.replica.failed": 1
+  },
+  "failedEvents": [
+    {
+      "at": "2026-10-16T19:42:14.456814743Z",
+      "event": "selfhost.backup.replica.failed",
+      "ok": false,
+      "hasLevel": false,
+      "hasCode": false
+    }
+  ],
+  "recentReplicaCompletedAt": [
+    "2026-10-17T13:20:02.563649956Z",
+    "2026-10-17T13:38:22.170121948Z",
+    "2026-10-17T13:57:05.539857739Z",
+    "2026-10-17T14:16:03.636678515Z",
+    "2026-10-17T14:35:08.574018201Z"
+  ]
+}

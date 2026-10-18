@@ -1,0 +1,76 @@
+{
+  "runId": "fault-2026-10-14b",
+  "target": "staging-real",
+  "recordedAt": "2026-10-14T08:03:43.480Z",
+  "data": {
+    "resourceId": "01a1396f-4121-72b5-b43b-fa0a8539db43",
+    "conversationId": "01a1396f-1096-73d5-8db4-a2a60f778787",
+    "reused": false,
+    "version": "6b02f1878ec0cbc945ddd71df1b123e2a2262b25",
+    "mode": "chat-mid-stream",
+    "id": "01a1396f-4121-72b5-b43b-fa0a8539db43",
+    "status": "failed",
+    "modelKey": "acceptance-fault-chat-mid-stream-per_call",
+    "pricing": {
+      "mode": "per_call",
+      "limits": {
+        "maxInputTokens": 4096,
+        "maxOutputTokens": 1024
+      },
+      "credits": 2,
+      "chargeOn": "any_output"
+    },
+    "credits": 2,
+    "holdId": "01a1396f-42e4-7754-9466-6df3e218162e",
+    "holdStatus": "captured",
+    "held": 2,
+    "captured": 2,
+    "debited": 0,
+    "debt": 0,
+    "absorbed": 0,
+    "inputTokens": 121,
+    "outputTokens": 206,
+    "checkpointInputTokens": 121,
+    "checkpointOutputTokens": 206,
+    "proof": {
+      "mode": "chat-mid-stream",
+      "policyVersion": 1,
+      "injected": true,
+      "realProviderCalled": true,
+      "injectedAt": "2026-10-14T08:02:37.228Z",
+      "phase": "mid-stream",
+      "upstreamCalls": 1,
+      "outputTokens": 206
+    },
+    "charCount": 206,
+    "hasOutput": true,
+    "ledger": [
+      {
+        "id": "01a1396f-4c6d-779f-8326-1d5e551180a6",
+        "type": "consume",
+        "delta": -2
+      }
+    ],
+    "releasedCredits": 0,
+    "reconciliation": {
+      "ledgerTotal": 90,
+      "activeRemaining": 90,
+      "held": 0,
+      "debt": 0,
+      "difference": 0,
+      "consistent": true
+    },
+    "observation": {
+      "observedMs": 62193,
+      "lateReplayStatus": "observed-only",
+      "reconciliation": {
+        "ledgerTotal": 90,
+        "activeRemaining": 90,
+        "held": 0,
+        "debt": 0,
+        "difference": 0,
+        "consistent": true
+      }
+    }
+  }
+}
