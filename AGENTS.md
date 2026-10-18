@@ -80,3 +80,16 @@ config/db 不反向依赖 platform。业务包之间允许依赖，检查器没�
 只实施获分配的编号；全部验收通过后立即勾选对应项，并刷新 apply instructions 确认进度。
 遇到设计冲突或范围扩大时向协调者询问。change 的同步与归档遵循并行计划，只在全部任务
 合并后由协调者处理。PR 应包含验证结果与未完成验收，不把部署或外部凭据验收提前勾选。
+
+## 开发分工与派发（本项目约定）
+
+- **规划**：新需求先用 OpenSpec（explore → propose）形成 change，实施按其 tasks 编号推进；
+  超出 change 的范围先更新 change 再动代码。
+- **并行**：一个 change 拆成文件不重叠的任务组，每组派一个 subagent 在独立 git worktree
+  中开发；共享文件、PR 与 worktree 清理遵循 [并行计划 §3 与 §6](docs/09-parallel-plan.md)。
+- **交给 Orca 派出的 Codex**：简单代码修改（文案、配置、小修复、机械改动）、部署与运维操作，
+  以及需要 computer use 或浏览器操作的任务（页面截图验收、后台配置、手工 e2e 核验）。
+- **由 Claude supervisor 或其 Claude subagent 执行**：代码 review、复杂开发（跨模块、数据层、
+  评分算法、连接器）、需要设计感与审美判断的 UI 任务。
+- **supervisor 职责**：拆分与派发、持续监控 worker 是否停住并及时答复、review 后合并、
+  验收通过后勾选 tasks、合并后核对 main 的 CI 与发布流水线。Codex 产出同样经 Claude review 后合并。
