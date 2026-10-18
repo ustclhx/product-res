@@ -278,6 +278,27 @@ export const dataImport = pgTable(
   ],
 )
 
+/** 平台类目树（eBay Taxonomy 每周同步）；部署级，站点 × 类目 ID 唯一，每次同步整体覆盖 */
+export const marketplaceCategory = pgTable(
+  'marketplace_category',
+  {
+    id: uuid('id').primaryKey().$defaultFn(newId),
+    marketplace: text('marketplace').notNull(),
+    categoryId: text('category_id').notNull(),
+    name: text('name').notNull(),
+    parentId: text('parent_id'),
+    leaf: boolean('leaf').notNull().default(false),
+    /** 从根到本节点的名称路径 */
+    path: text('path').notNull(),
+    treeVersion: text('tree_version').notNull(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex('marketplace_category_uq').on(t.marketplace, t.categoryId),
+    index('marketplace_category_name_idx').on(t.marketplace, t.name),
+  ],
+)
+
 /** 数据质量问题；同一问题（fingerprint）重复出现只更新最近出现时间 */
 export const dataQualityIssue = pgTable(
   'data_quality_issue',

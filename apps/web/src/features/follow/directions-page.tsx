@@ -18,6 +18,7 @@ import {
   removeDirectionSeller,
   reviewDirectionSeller,
   saveDirection,
+  searchDirectionCategories,
   toggleDirection,
 } from './directions.functions.ts'
 import type { DirectionRow, SellerRow } from './directions.server.ts'
@@ -99,6 +100,81 @@ export function DirectionsPage({ slug, initial }: { slug: string; initial: Direc
   )
 }
 
+/** eBay 类目按名称搜索选择；没有类目数据（尚未同步）时提示手填 */
+export function CategorySearch({
+  slug,
+  onPick,
+}: {
+  slug: string
+  onPick: (categoryId: string) => void
+}) {
+  const [q, setQ] = useState('')
+  const [options, setOptions] = useState<{
+    q: string
+    items: Awaited<ReturnType<typeof searchDirectionCategories>>
+  } | null>(null)
+  const [failed, setFailed] = useState(false)
+  async function search() {
+    setFailed(false)
+    try {
+      setOptions({
+        q,
+        items: await searchDirectionCategories({ data: { slug, marketplace: 'ebay-us', q } }),
+      })
+    } catch {
+      setFailed(true)
+    }
+  }
+  return (
+    <div className="grid gap-1.5" data-testid="category-search">
+      <div className="flex gap-2">
+        <Input
+          aria-label="按名称搜索 eBay 类目"
+          placeholder="按名称搜索 eBay 类目"
+          className="h-8 text-[13px]"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              void search()
+            }
+          }}
+        />
+        <Button type="button" size="sm" variant="outline" disabled={!q.trim()} onClick={search}>
+          搜索
+        </Button>
+      </div>
+      {failed ? <p className="text-xs text-destructive">类目搜索失败，可直接手填 ID</p> : null}
+      {options && options.items.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          没有匹配的类目（类目数据每周一同步，尚未同步时请手填 ID）
+        </p>
+      ) : null}
+      {options && options.items.length > 0 ? (
+        <ul className="grid max-h-48 gap-1 overflow-auto text-xs">
+          {options.items.map((item) => (
+            <li key={item.categoryId}>
+              <button
+                type="button"
+                className="w-full rounded border px-2 py-1 text-left hover:bg-muted"
+                onClick={() => onPick(item.categoryId)}
+              >
+                <span className="font-medium">{item.name}</span>
+                <span className="text-muted-foreground">
+                  {' '}
+                  · {item.categoryId}
+                  {item.leaf ? '' : ' · 非叶子'} · {item.path}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  )
+}
+
 function DirectionForm({
   slug,
   nodes,
@@ -161,16 +237,26 @@ function DirectionForm({
               />
             )}
           </Field>
-          <Field label="类目 ID" hint="平台类目 ID，多个用逗号分隔">
-            {(id) => (
-              <Input
-                id={id}
-                className="h-8 text-[13px]"
-                value={categories}
-                onChange={(e) => setCategories(e.target.value)}
+          <div className="grid gap-2">
+            <Field label="类目 ID" hint="平台类目 ID，多个用逗号分隔">
+              {(id) => (
+                <Input
+                  id={id}
+                  className="h-8 text-[13px]"
+                  value={categories}
+                  onChange={(e) => setCategories(e.target.value)}
+                />
+              )}
+            </Field>
+            {marketplaces.includes('ebay-us') ? (
+              <CategorySearch
+                slug={slug}
+                onPick={(categoryId) =>
+                  setCategories((current) => splitList(`${current},${categoryId}`).join(', '))
+                }
               />
-            )}
-          </Field>
+            ) : null}
+          </div>
         </div>
         <CheckboxGroup
           label="平台与站点"

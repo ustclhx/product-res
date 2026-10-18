@@ -2,11 +2,13 @@ import type {
   AcquisitionMethod,
   EntityKey,
   Marketplace,
+  NormalizedCategory,
   NormalizedEntity,
   NormalizedObservation,
 } from '@product-res/datasources'
 import type { Database } from '@product-res/db'
 import {
+  marketplaceCategory,
   marketplaceKeyword,
   marketplaceProduct,
   marketplaceSeller,
@@ -459,4 +461,26 @@ export async function setManualRate(
     ids,
     { sourceId: 'manual', fetchedAt: input.now },
   )
+}
+
+/** 写入类目树节点：站点 × 类目 ID 唯一，重复同步覆盖名称、父级、叶子与路径 */
+export async function upsertCategories(db: Database, categories: readonly NormalizedCategory[]) {
+  for (let i = 0; i < categories.length; i += 1000) {
+    const chunk = categories.slice(i, i + 1000)
+    await db
+      .insert(marketplaceCategory)
+      .values(chunk.map((c) => ({ ...c })))
+      .onConflictDoUpdate({
+        target: [marketplaceCategory.marketplace, marketplaceCategory.categoryId],
+        set: {
+          name: sql`excluded.name`,
+          parentId: sql`excluded.parent_id`,
+          leaf: sql`excluded.leaf`,
+          path: sql`excluded.path`,
+          treeVersion: sql`excluded.tree_version`,
+          updatedAt: sql`now()`,
+        },
+      })
+  }
+  return categories.length
 }

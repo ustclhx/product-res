@@ -61,9 +61,16 @@ async function toBase64(file: File) {
   return btoa(binary)
 }
 
-export function FileImport({ slug }: { slug: string }) {
+export function FileImport({
+  slug,
+  initialSourceId,
+}: {
+  slug: string
+  /** 从数据源卡片跳转时预选的数据源 */
+  initialSourceId?: string | undefined
+}) {
   const [data, setData] = useState<ImportsData | null>(null)
-  const [sourceId, setSourceId] = useState('helium10')
+  const [sourceId, setSourceId] = useState(initialSourceId ?? 'helium10')
   const [marketplace, setMarketplace] = useState<Marketplace>('amazon-us')
   const [entityType, setEntityType] = useState<'product' | 'keyword' | 'seller'>('product')
   const [observedOn, setObservedOn] = useState(() => new Date().toISOString().slice(0, 10))

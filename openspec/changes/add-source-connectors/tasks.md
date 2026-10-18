@@ -6,7 +6,7 @@
 
 - [ ] 1.1 核验 Production 凭据、应用令牌、`getItem` / `getItems` 是否返回 `estimatedSoldQuantity`、限额头。验证：回执存档；design D2 选定快照策略。
 - [ ] 1.2 卖家新品发现（增量翻页）、分档快照、已售量官方/推算两条路径、补货不计负。验证：用存档响应做的归一化夹具测试；推算遇补货记缺失。 进度：连接器已按官方文档实现（令牌缓存、增量翻页 `freshListings`、getItems 20 个一批 / 单个模式、已售量官方值与可售量推算两条路径，补货当天记缺失）；归一化测试使用文档结构样例。待 1.1 核验后用真实响应替换夹具。
-- [ ] 1.3 Taxonomy 类目每周同步。验证：类目树写入并可在方向配置读取。
+- [x] 1.3 Taxonomy 类目每周同步。验证：类目树写入并可在方向配置读取。 证据：ebay-browse 增加 `taxonomy` 能力（getDefaultCategoryTreeId + getCategoryTree，EBAY_US，应用令牌，2 次调用计入额度），归一化为类目节点写入部署级表 `marketplace_category`（迁移 0020），每周一 02:20 在 eBay 已启用且有凭据时投递；方向配置页的类目 ID 增加按名称搜索选择。测试 `connectors/test/ebay-taxonomy.test.ts`（按官方文档结构的夹具，真实响应待凭据核验）、`marketdata/test/categories.test.ts`（写入后可检索、重复同步覆盖）、`jobs/test/node-datasync.integration.test.ts`（周一投递）。
 - [ ] 1.4 生产连续运行 7 天。验证：每日消耗 ≤ 4500，账本与限额头对账无差异；记录实际日均调用。
 
 ## 2. 汇率
@@ -41,7 +41,7 @@
 ## 8. Helium 10
 
 - [ ] 8.1 获取 Black Box、Xray、Cerebro、Magnet 的真实导出样例，建立预置导入模板；向官方确认 Enterprise API。验证：样例导入成功；确认结果回填 design。
-- [ ] 8.2 数据中心显示为“文件导入”类型。验证：卡片不显示同步频率。
+- [x] 8.2 数据中心显示为“文件导入”类型。验证：卡片不显示同步频率。 证据：`helium10` 登记为 access='file' 的描述（`connectors/src/file-import.ts`）；`FileSourceCard` 不显示同步频率、额度与立即刷新，显示“导入文件”入口（跳到导入标签并预选该来源）与最近导入时间；测试 `data-center/file-source-card.test.tsx`。
 
 ## 9. 汇总
 

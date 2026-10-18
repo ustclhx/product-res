@@ -17,6 +17,7 @@ export {
   scheduledHeadroom,
   settle,
 } from './budgets.ts'
+export { type CategoryOption, searchCategories } from './categories.ts'
 export {
   type CommitImportInput,
   commitImport,
@@ -44,6 +45,7 @@ export {
   type SourceValue,
   setManualRate,
   setPriority,
+  upsertCategories,
   upsertEntities,
   upsertObservations,
 } from './observations.ts'

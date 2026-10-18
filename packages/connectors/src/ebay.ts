@@ -4,6 +4,7 @@ import {
   type FetchTask,
   httpRequest,
   type NormalizedBatch,
+  type NormalizedCategory,
   type NormalizedObservation,
   parseJson,
   type RawPayload,
@@ -42,6 +43,15 @@ interface ItemSummary {
   image?: { imageUrl?: string }
   epid?: string
   categories?: { categoryId?: string }[]
+}
+
+/** Taxonomy getCategoryTree 的节点（官方文档结构） */
+interface CategoryTreeNode {
+  category?: { categoryId?: string; categoryName?: string }
+  categoryTreeNodeLevel?: number
+  leafCategoryTreeNode?: boolean
+  childCategoryTreeNodes?: CategoryTreeNode[]
+  parentCategoryTreeNodeHref?: string
 }
 
 interface Item extends ItemSummary {
@@ -103,7 +113,7 @@ export function createEbayBrowseConnector(): SourceConnector {
     label: 'eBay Browse API',
     access: 'api',
     marketplaces: ['ebay-us'],
-    capabilities: ['seller-new-listings', 'product-snapshot'],
+    capabilities: ['seller-new-listings', 'product-snapshot', 'taxonomy'],
     // 每日硬上限 5000、安全线 4500；周期按太平洋时间（以 getRateLimits 的重置时间校准）
     budget: {
       unit: 'call',
@@ -171,6 +181,8 @@ export function createEbayBrowseConnector(): SourceConnector {
       }
     },
     plan(task) {
+      // taxonomy：getDefaultCategoryTreeId + getCategoryTree，各计 1 次
+      if (task.kind === 'taxonomy') return 2
       if (task.kind === 'product-snapshot') {
         const ids = idsOf(task)
         return task.scope.mode === 'single' ? ids.length : Math.ceil(ids.length / BATCH)
@@ -212,6 +224,21 @@ export function createEbayBrowseConnector(): SourceConnector {
         }
         return { payloads, cost: payloads.length }
       }
+      if (task.kind === 'taxonomy') {
+        const idPayload = await get(
+          ctx,
+          task,
+          `/commerce/taxonomy/v1/get_default_category_tree_id?marketplace_id=${MARKETPLACE}`,
+        )
+        const treeId = parseJson<{ categoryTreeId?: string }>(idPayload.body).categoryTreeId
+        if (!treeId) throw new ConnectorError('invalid-response', 'EBAY_TREE_ID_MISSING')
+        const tree = await get(
+          ctx,
+          task,
+          `/commerce/taxonomy/v1/category_tree/${encodeURIComponent(treeId)}`,
+        )
+        return { payloads: [idPayload, tree], cost: 2 }
+      }
       throw new ConnectorError('permanent', 'EBAY_UNSUPPORTED_KIND')
     },
     normalize: normalizeEbay,
@@ -225,8 +252,51 @@ const money = (amount: EbayAmount | undefined) => {
   return Number.isFinite(value) ? value : undefined
 }
 
-/** 纯函数：搜索结果 / getItems / getItem 响应 → 实体与观测值 */
+/**
+ * 纯函数：getCategoryTree 响应 → 类目节点（ID、名称、父 ID、叶子、层级路径）。
+ * 根节点只是树的入口，不入库；其子节点的父 ID 为 null。
+ */
+export function normalizeCategoryTree(body: string): NormalizedCategory[] {
+  const tree = parseJson<{
+    categoryTreeVersion?: string
+    rootCategoryNode?: CategoryTreeNode
+  }>(body)
+  const treeVersion = tree.categoryTreeVersion ?? ''
+  const out: NormalizedCategory[] = []
+  const visit = (node: CategoryTreeNode, parent: NormalizedCategory | null) => {
+    const id = node.category?.categoryId
+    const name = node.category?.categoryName
+    let current = parent
+    if (id && name) {
+      const children = node.childCategoryTreeNodes ?? []
+      current = {
+        marketplace: 'ebay-us',
+        categoryId: id,
+        name,
+        parentId: parent?.categoryId ?? null,
+        leaf: node.leafCategoryTreeNode === true || children.length === 0,
+        path: parent ? `${parent.path} > ${name}` : name,
+        treeVersion,
+      }
+      out.push(current)
+    }
+    for (const child of node.childCategoryTreeNodes ?? []) visit(child, current)
+  }
+  if (tree.rootCategoryNode) {
+    // 根节点（level 0）本身不是可选类目
+    for (const child of tree.rootCategoryNode.childCategoryTreeNodes ?? []) visit(child, null)
+  }
+  return out
+}
+
+/** 纯函数：搜索结果 / getItems / getItem / 类目树响应 → 实体与观测值 */
 export function normalizeEbay(payload: RawPayload): NormalizedBatch {
+  if (payload.task.kind === 'taxonomy') {
+    // 默认类目树 ID 响应没有类目，只有 getCategoryTree 的响应带 rootCategoryNode
+    return payload.request.url.includes('/category_tree/')
+      ? { entities: [], observations: [], categories: normalizeCategoryTree(payload.body) }
+      : { entities: [], observations: [] }
+  }
   const body = parseJson<
     {
       itemSummaries?: ItemSummary[]

@@ -8,6 +8,7 @@ import {
   scoped,
   seasonalNode,
 } from '@product-res/db'
+import { searchCategories } from '@product-res/marketdata'
 import { AppError } from '@product-res/shared'
 import { and, asc, eq, inArray, ne, type SQL } from 'drizzle-orm'
 import { assertWorkbenchWriter } from '../workbench/access.ts'
@@ -99,6 +100,11 @@ export async function directionsPage(actor: WorkbenchActor) {
     sellers: sellers.map(toSellerRow),
     nodes,
   }
+}
+
+/** 按名称或 ID 搜索站点类目（marketplace_category 为部署级共享数据，调用方已通过空间成员校验） */
+export function searchCategoryOptions(actor: WorkbenchActor, marketplace: 'ebay-us', q: string) {
+  return searchCategories(actor.db, marketplace, q)
 }
 
 async function normalize(actor: WorkbenchActor, input: DirectionInput, excludeId?: string) {

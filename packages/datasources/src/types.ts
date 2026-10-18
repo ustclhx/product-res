@@ -84,9 +84,23 @@ export interface NormalizedObservation {
   readonly method: AcquisitionMethod
 }
 
+/** 平台类目树中的一个节点（taxonomy 数据类型） */
+export interface NormalizedCategory {
+  readonly marketplace: Marketplace
+  readonly categoryId: string
+  readonly name: string
+  readonly parentId: string | null
+  readonly leaf: boolean
+  /** 从根到本节点的名称路径，用 " > " 连接 */
+  readonly path: string
+  readonly treeVersion: string
+}
+
 export interface NormalizedBatch {
   readonly entities: readonly NormalizedEntity[]
   readonly observations: readonly NormalizedObservation[]
+  /** 类目树节点（仅 taxonomy 任务返回） */
+  readonly categories?: readonly NormalizedCategory[]
   /** 下一页游标；undefined 表示没有更多 */
   readonly nextCursor?: string | undefined
 }
