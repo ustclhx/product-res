@@ -85,6 +85,7 @@ function columnsFor(slug: string, platform: Platform): DataTableColumn<Candidate
               {ATTENTION_LABEL}
             </Tag>
           ) : null}
+          {item.followMode === 'improved' ? <Tag data-testid="follow-mode-tag">微改良</Tag> : null}
         </div>
       ),
     },

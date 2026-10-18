@@ -137,6 +137,7 @@ export async function candidatesPage(actor: WorkbenchActor, search: CandidateSea
           vetoed: lead.vetoed,
           latestDecisionOn: lead.latestDecisionOn,
           settingVersion: lead.settingVersion,
+          followMode: lead.followMode,
         },
       })
       // 排序键 = 综合分 × 置信度（design D6）；没有综合分的排在最后
@@ -281,6 +282,7 @@ export async function candidatesPage(actor: WorkbenchActor, search: CandidateSea
       }),
       gateReasons: gates.reasons,
       attention: attention(r.score, r.confidence),
+      followMode: r.followMode,
       signals: hitSignals(
         parsed.map((x) => ({ dimension: x.dimension as DimensionId, score: x.score })),
         reversedOf.get(r.settingVersion) ?? DEFAULT_SCORING_SETTINGS.reversed,
