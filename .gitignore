@@ -47,3 +47,4 @@ api-key/
 *.pfx
 *.log
 backups/
+.claude/worktrees/
