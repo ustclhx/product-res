@@ -4,8 +4,8 @@
 
 ## 1. 纯函数包（packages/selection、packages/risk）
 
-- [ ] 1.1 `packages/selection`：维度映射（scales）、7 维信号、最晚决定日、综合分、硬门槛、等级、置信度（design D4–D6）。验证：每个维度的边界与缺失用例；spec 场景（否决、冷启动、高分低置信、缺失不计 0）。
-- [ ] 1.2 `packages/selection` 的归并：标题规范化、Jaccard、GTIN/平台 ID 合并、锁定成员不被覆盖（design D3）。验证：spec 场景用例。
+- [x] 1.1 `packages/selection`：维度映射（scales）、7 维信号、最晚决定日、综合分、硬门槛、等级、置信度（design D4–D6）。验证：每个维度的边界与缺失用例；spec 场景（否决、冷启动、高分低置信、缺失不计 0）。 证据：`packages/selection/src`（scales/signals/deadline/score/confidence）；`test/scales.test.ts` 映射边界，`test/signals.test.ts` 7 个维度的计算、边界与缺失为空（eBay 无已售观测、无落地成本等），`test/deadline.test.ts`「返校季 … → 5/18」，`test/score.test.ts`「一票否决：综合分 82 但合规 20」「冷启动：显示“未验证”…」「缺失维度不按 0 计」「少于 4 个维度不给综合分」，`test/confidence.test.ts`「高分低置信」「只有单一来源的指标标“未交叉验证”」；`check:deps` 通过。
+- [x] 1.2 `packages/selection` 的归并：标题规范化、Jaccard、GTIN/平台 ID 合并、锁定成员不被覆盖（design D3）。验证：spec 场景用例。 证据：`packages/selection/src/cluster.ts`；`test/cluster.test.ts`「GTIN 相同归为一簇…0.95」「标题相似 0.7 但类目不同不归并」「平台 ID 相同即同一商品」「拆分后次日自动归并不会把成员合回原簇」「合并两个簇」。
 - [x] 1.3 `packages/risk`：品牌库、VeRO、品牌备案、受限类目、认证、禁运、外观专利提示（Google Patents 链接）。验证：spec 场景用例；`check:deps` 通过。 证据：`packages/risk`（`checkRisks`，扣分常数 `LEVEL_PENALTY`），`test/check.test.ts` 覆盖品牌库命中、Unbranded、VeRO、品牌备案否决、外观专利链接、类目/认证/危险品、禁运；`check:deps` 通过。
 
 ## 2. 数据表与配置页面
