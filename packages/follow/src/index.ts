@@ -4,6 +4,20 @@
  * 结果写入空间级的簇、信号、线索与风险表。apps/jobs 的每日流水线与 apps/web 共用。
  */
 export {
+  COLLECT_PRIORITY,
+  COLLECT_SOURCES,
+  type CollectionPlan,
+  type CollectionTargets,
+  type CollectStage,
+  loadCollectionTargets,
+  type PlannedTask,
+  type ProductTarget,
+  planCollections,
+  type SellerTarget,
+  type SourceAllowance,
+  taskKey,
+} from './collect.ts'
+export {
   GRADE_FROM_DB,
   GRADE_TO_DB,
   type LeadGradeValue,

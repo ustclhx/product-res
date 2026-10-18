@@ -100,4 +100,27 @@ describe('数据同步队列消费者', () => {
     expect(auth.state).toEqual({ acked: true, retried: false })
     expect(failed).not.toHaveBeenCalled()
   })
+
+  it('分钟周期额度不足时等到下一分钟重试，不丢掉当天任务', async () => {
+    const mock = createMockConnector()
+    const minute = { ...mock, id: 'minute', budget: { ...mock.budget, period: 'minute' as const } }
+    const now = new Date('2031-06-02T02:30:20Z')
+    const minuteContext = {
+      ...context,
+      registry: createRegistry([minute]),
+      now: () => now,
+    }
+    runSyncTask.mockResolvedValueOnce({
+      status: 'deferred',
+      runId: 'r',
+      reason: 'safety-line',
+      resetsAt: new Date('2031-06-02T02:31:00Z'),
+    })
+    const retried: unknown[] = []
+    const { msg, state } = message({ ...validBody, sourceId: 'minute' })
+    const withDelay = { ...msg, retry: (options?: unknown) => retried.push(options) }
+    await consumeDataSync(batch(withDelay), minuteContext, { failed })
+    expect(state.acked).toBe(false)
+    expect(retried).toEqual([{ delaySeconds: 41 }])
+  })
 })

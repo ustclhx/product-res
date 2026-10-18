@@ -18,10 +18,13 @@ import {
 } from '@product-res/marketdata'
 import type { DeadLetterSink, QueueBatch, Scheduler } from '@product-res/platform'
 import { log } from '@product-res/shared/log'
+import { type DataSyncDispatcher, dispatchDailyCollections } from './plan.ts'
 
 /** 数据同步队列（每条消息一个同步任务）；队列级流控按最严格的数据源配置 */
 export const DATASYNC_QUEUE = 'product-res-datasync'
 export const DATASYNC_MAX_RETRIES = 5
+/** 分钟周期额度（Keepa）不足时等到下一分钟重试，而不是丢掉当天的任务 */
+const MINUTE_DEFER_MAX_MS = 5 * 60_000
 
 export interface DataSyncMessage {
   readonly sourceId: string
@@ -38,6 +41,8 @@ export interface DataSyncContext {
   readonly now?: () => Date
   readonly fetch?: typeof fetch
   readonly archiveRetentionDays?: number
+  /** 每日采集任务的幂等投递；未装配时只生成计划并记录日志 */
+  readonly dispatcher?: DataSyncDispatcher
 }
 
 function connectorContext(context: DataSyncContext): ConnectorContext {
@@ -93,6 +98,17 @@ export async function consumeDataSync(
             trigger: message.body.trigger,
           },
         )
+        if (
+          outcome.status === 'deferred' &&
+          connector.budget.period === 'minute' &&
+          message.attempts <= DATASYNC_MAX_RETRIES
+        ) {
+          const wait = outcome.resetsAt.getTime() - ctx.now().getTime()
+          if (wait <= MINUTE_DEFER_MAX_MS) {
+            message.retry({ delaySeconds: Math.max(1, Math.ceil(wait / 1000) + 1) })
+            return
+          }
+        }
         if (outcome.status === 'failed' && outcome.error.retryable) {
           if (message.attempts > DATASYNC_MAX_RETRIES) {
             await sink.failed(message, { code: outcome.error.code, retryable: true })
@@ -140,7 +156,18 @@ export function registerDataSchedules(scheduler: Scheduler, context: DataSyncCon
       await runDailyCollections(context).catch((error) =>
         log.error('datasync.daily_collection_failed', { error }),
       )
+      // 汇率之后按选品方向投递当日采集任务（02:10 卖家新品、02:30 快照与每周关键词）。
+      // 重启后调度器重新执行本次运行，已投递的任务按幂等键跳过；投递失败不阻止维护，
+      // 维护完成后再抛出，让本次运行记为失败
+      const dispatched = await dispatchDailyCollections(context, scheduledAt).then(
+        () => undefined,
+        (error: unknown) => {
+          log.error('datasync.daily_dispatch_failed', { error })
+          return error
+        },
+      )
       await runDataMaintenance(context, scheduledAt)
+      if (dispatched) throw dispatched
     },
   )
   scheduler.register(
@@ -157,8 +184,8 @@ export function createConnectorRegistry(options: { readonly mock?: SourceConnect
 }
 
 /**
- * 每日流水线中不依赖选品方向的固定采集（汇率）；依赖方向的采集（卖家新品、快照、关键词）
- * 在选品方向（M2）上线后由方向配置生成。数据源未启用时 runSyncTask 记为 skipped。
+ * 每日流水线中不依赖选品方向的固定采集（汇率），在投递方向采集之前同步执行；
+ * 依赖方向的采集见 plan.ts。数据源未启用时 runSyncTask 记为 skipped。
  */
 const DAILY_COLLECTIONS: readonly { sourceId: string; task: FetchTask }[] = [
   { sourceId: 'fx-ecb', task: { kind: 'fx-rate', marketplace: 'global', scope: {} } },
