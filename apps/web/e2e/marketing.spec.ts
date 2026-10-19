@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 import templateConfig from '../../../template.config.ts'
 
+test.skip(!templateConfig.marketing.enabled, '模板配置关闭了营销站')
+
 // 营销站（openspec add-marketing-i18n-seo tasks.md 3.1、3.3、3.4、3.5）：首页区块、博客、法律页与文档站，
 // 默认语言与其他语言路径都可访问。数据库停止时的访问与草稿的生产构建检查见 PR 说明与 scripts/content.test.ts。
 const { defaultLocale } = templateConfig.i18n

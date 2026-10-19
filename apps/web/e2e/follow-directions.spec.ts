@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { register, simulateClientIp } from './fixtures.ts'
+import { register, simulateClientIp, waitForHydration } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // add-follow-selection 2.2 / 2.3：从跟卖选品入口进入方向页，新建方向并添加种子店铺；设置页的标签页增删。
@@ -13,13 +13,13 @@ test('选品方向与店铺池、设置页的节点日历与品牌库', async ({
   const base = new URL(page.url()).pathname.replace(/\/$/, '')
 
   await page.goto(`${base}/follow`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByTestId('follow-directions-link').click()
   await expect(page).toHaveURL(new RegExp(`${base}/follow/directions$`))
   await expect(page.getByText('还没有选品方向')).toBeVisible()
   await expect(page.getByTestId('direction-card')).toHaveCount(0)
   // 等待水合完成再交互
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   await page.getByRole('button', { name: '新建方向' }).click()
   const form = page.getByRole('form', { name: '选品方向' })
@@ -47,7 +47,7 @@ test('选品方向与店铺池、设置页的节点日历与品牌库', async ({
   await expect(card.getByText('已停用')).toBeVisible()
 
   await page.goto(`${base}/config`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await expect(page.getByRole('tab', { name: '节点日历' })).toHaveAttribute('aria-selected', 'true')
   await expect(page.getByRole('cell', { name: /黑五\/网一/ })).toBeVisible()
   await page.getByRole('tab', { name: '品牌库' }).click()

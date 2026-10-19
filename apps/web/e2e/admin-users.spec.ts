@@ -3,7 +3,7 @@ import { expect, type Page, test } from '@playwright/test'
 import { capture, grant, hold } from '@product-res/credits'
 import { DEFAULT_FREE_FEATURES } from '@product-res/entitlements'
 import { actionDb, actor } from './billing-actions-helper.ts'
-import { fixtureDb, register, simulateClientIp } from './fixtures.ts'
+import { fixtureDb, register, simulateClientIp, uiText } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 /** 调用浏览器实际导入的 Start 客户端桩，POST 仍进入真实服务端中间件与 handler。 */
@@ -46,8 +46,8 @@ async function makeAdmin(page: Page) {
 }
 
 async function banForm(page: Page, reason: string, button: string) {
-  await page.getByLabel('Reason', { exact: true }).fill(reason)
-  await page.getByLabel('I confirm this user status change').check()
+  await page.getByLabel(uiText('admin_reason'), { exact: true }).fill(reason)
+  await page.getByLabel(uiText('admin_i_confirm_this_user_status_change')).check()
   await page.getByRole('button', { name: button, exact: true }).click()
 }
 
@@ -63,18 +63,18 @@ test('用户封禁后旧会话结账立即被拒绝，解封与自封禁约束�
     await register(targetPage, email)
     const target = await actor(email)
     await page.goto('/admin/users')
-    await page.getByLabel('Search users').fill(email)
-    await page.getByRole('button', { name: 'Apply', exact: true }).click()
+    await page.getByLabel(uiText('admin_search_users')).fill(email)
+    await page.getByRole('button', { name: uiText('admin_apply'), exact: true }).click()
     await page.getByRole('link', { name: email, exact: true }).click()
     await expect(page.getByText('credential', { exact: true })).toBeVisible()
-    await banForm(page, 'Abuse investigation', 'Ban user')
-    await expect(page.getByText('User banned.', { exact: true })).toBeVisible()
+    await banForm(page, 'Abuse investigation', uiText('admin_ban_user'))
+    await expect(page.getByText(uiText('admin_user_banned'), { exact: true })).toBeVisible()
     expect((await checkout(targetPage, target.slug)).rejected).toBe(true)
     expect(
       await sql`select id from purchase where workspace_id=${target.workspaceId}`,
     ).toHaveLength(0)
-    await banForm(page, 'Appeal accepted', 'Unban user')
-    await expect(page.getByText('User unbanned.', { exact: true })).toBeVisible()
+    await banForm(page, 'Appeal accepted', uiText('admin_unban_user'))
+    await expect(page.getByText(uiText('admin_user_unbanned'), { exact: true })).toBeVisible()
     const audit =
       await sql`select actor_user_id,action,meta from audit_log where target_id=${target.userId} and action in ('user.banned','user.unbanned') order by created_at`
     expect(audit).toMatchObject([
@@ -86,10 +86,14 @@ test('用户封禁后旧会话结账立即被拒绝，解封与自封禁约束�
       { actor_user_id: admin.userId, action: 'user.unbanned', meta: { reason: 'Appeal accepted' } },
     ])
     await page.goto(`/admin/users/${admin.userId}`)
-    await page.getByLabel('Reason', { exact: true }).fill('Self ban')
-    await page.getByLabel('I confirm this user status change').check()
-    await expect(page.getByRole('button', { name: 'Ban user', exact: true })).toBeDisabled()
-    await expect(page.getByRole('button', { name: 'Impersonate user' })).toBeDisabled()
+    await page.getByLabel(uiText('admin_reason'), { exact: true }).fill('Self ban')
+    await page.getByLabel(uiText('admin_i_confirm_this_user_status_change')).check()
+    await expect(
+      page.getByRole('button', { name: uiText('admin_ban_user'), exact: true }),
+    ).toBeDisabled()
+    await expect(
+      page.getByRole('button', { name: uiText('admin_impersonate_user') }),
+    ).toBeDisabled()
     const direct = await page.request.post('/api/auth/admin/ban-user', {
       data: { userId: admin.userId, banReason: 'Self ban' },
     })
@@ -115,9 +119,9 @@ test('模拟登录横幅、退出与双重身份审计，真实结账及其他�
     await register(targetPage, email)
     const target = await actor(email)
     await page.goto(`/admin/users/${target.userId}`)
-    await page.getByRole('button', { name: 'Impersonate user' }).click()
+    await page.getByRole('button', { name: uiText('admin_impersonate_user') }).click()
     await expect(page).toHaveURL(new RegExp(`/app/${target.slug}$`))
-    const banner = page.getByRole('status', { name: 'Impersonation' })
+    const banner = page.getByRole('status', { name: uiText('admin_impersonation') })
     await expect(banner).toContainText(email)
     await expect(banner).toContainText(admin.email)
     const result = await checkout(page, target.slug)
@@ -167,9 +171,9 @@ test('模拟登录横幅、退出与双重身份审计，真实结账及其他�
     expect((await page.request.get('/admin/users')).status()).toBe(404)
     await page.goto('/account')
     await expect(banner).toBeVisible()
-    await banner.getByRole('button', { name: 'Stop impersonating' }).click()
+    await banner.getByRole('button', { name: uiText('admin_stop_impersonating') }).click()
     await expect(page).toHaveURL(/\/admin\/users\?offset=0$/)
-    await expect(page.getByRole('status', { name: 'Impersonation' })).toHaveCount(0)
+    await expect(page.getByRole('status', { name: uiText('admin_impersonation') })).toHaveCount(0)
     const audit =
       await sql`select actor_user_id,action,meta from audit_log where target_id=${target.userId} and action like 'user.impersonation.%' order by created_at`
     expect(audit).toMatchObject([
@@ -240,21 +244,27 @@ test('空间详情展示积分、重叠订阅，并恢复原 owner 的访问', a
     await sql`update organization set deleted_at=now() where id=${workspaceId}`
     await sql`delete from member where organization_id=${workspaceId}`
     await ownerPage.goto(`/app/${slug}`)
-    await expect(ownerPage.getByRole('heading', { name: 'Workspace not found' })).toBeVisible()
-    await page.goto('/admin/workspaces')
-    await page.getByLabel('Search workspaces').fill(workspaceId)
-    await page.getByLabel('Status', { exact: true }).selectOption('deleted')
-    await page.getByRole('button', { name: 'Apply', exact: true }).click()
-    await page.getByRole('link', { name: 'Recoverable workspace' }).click()
-    await expect(page.locator('strong').filter({ hasText: 'Overlapping period' })).toHaveCount(2)
-    await expect(page.locator('dl')).toContainText('Held credits10')
-    await expect(page.locator('dl')).toContainText('Credit debt10')
-    await expect(page.getByRole('heading', { name: 'Credit batches' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Recent credit ledger' })).toBeVisible()
-    await page.getByLabel('I confirm restoring this workspace').check()
-    await page.getByRole('button', { name: 'Restore workspace' }).click()
     await expect(
-      page.getByText('Workspace restored. Original owners can access it again.'),
+      ownerPage.getByRole('heading', { name: uiText('app_workspace_not_found') }),
+    ).toBeVisible()
+    await page.goto('/admin/workspaces')
+    await page.getByLabel(uiText('admin_search_workspaces')).fill(workspaceId)
+    await page.getByLabel(uiText('admin_status'), { exact: true }).selectOption('deleted')
+    await page.getByRole('button', { name: uiText('admin_apply'), exact: true }).click()
+    await page.getByRole('link', { name: 'Recoverable workspace' }).click()
+    await expect(
+      page.locator('strong').filter({ hasText: uiText('admin_overlapping_period') }),
+    ).toHaveCount(2)
+    await expect(page.locator('dl')).toContainText(`${uiText('admin_held_credits')}10`)
+    await expect(page.locator('dl')).toContainText(`${uiText('admin_credit_debt')}10`)
+    await expect(page.getByRole('heading', { name: uiText('admin_credit_batches') })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: uiText('admin_recent_credit_ledger') }),
+    ).toBeVisible()
+    await page.getByLabel(uiText('admin_i_confirm_restoring_this_workspace')).check()
+    await page.getByRole('button', { name: uiText('admin_restore_workspace') }).click()
+    await expect(
+      page.getByText(uiText('admin_workspace_restored_original_owners_can_access_it_again')),
     ).toBeVisible()
     await ownerPage.goto(`/app/${slug}`)
     await expect(ownerPage.getByTestId('workspace-name')).toHaveText('Recoverable workspace')

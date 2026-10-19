@@ -4,7 +4,7 @@ import { createDb } from '@product-res/db'
 import { runSelectionForWorkspace } from '@product-res/follow'
 import { newId } from '@product-res/shared'
 import { loadEnv } from 'vite'
-import { fixtureDb, register, simulateClientIp } from './fixtures.ts'
+import { fixtureDb, register, simulateClientIp, waitForHydration } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // add-follow-selection 5.1 验收：页面上配置方向与品牌库 → 直接写入隔离库的市场数据（不经真实连接器）
@@ -28,11 +28,12 @@ async function shot(page: Page, name: string) {
 async function seedMarket(category: string, key: string) {
   const sql = fixtureDb()
   try {
+    // 市场数据在同一 worktree 内跨轮次保留；种子卖家必须唯一，避免选入上轮商品。
     const products = [
       {
         id: `spice-a-${key}`,
         title: 'Bamboo Spice Rack Organizer 3 Tier for Kitchen Cabinet',
-        seller: 'kitchen_pro',
+        seller: `kitchen_pro-${key}`,
         gtin: '0012345678905',
         listed: day(-3),
       },
@@ -109,7 +110,7 @@ test('M2 验收：配置方向 → 流水线 → 候选列表 → 详情说明�
 
   // 1. 配置：品牌库登记 VeRO 品牌，新建方向（eBay US、类目、返校季节点）并添加种子店铺
   await page.goto(`${base}/config`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByRole('tab', { name: '品牌库' }).click()
   await page.getByRole('button', { name: '新增条目' }).click()
   const brand = page.getByRole('form', { name: '品牌库条目' })
@@ -119,7 +120,7 @@ test('M2 验收：配置方向 → 流水线 → 候选列表 → 详情说明�
   await expect(page.getByRole('cell', { name: 'Acmeknife' })).toBeVisible()
 
   await page.goto(`${base}/follow/directions`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByRole('button', { name: '新建方向' }).click()
   const form = page.getByRole('form', { name: '选品方向' })
   await form.getByLabel('方向名称').fill('厨房收纳（验收）')
@@ -130,9 +131,9 @@ test('M2 验收：配置方向 → 流水线 → 候选列表 → 详情说明�
   const card = page.getByTestId('direction-card')
   await expect(card).toHaveCount(1)
   const seedForm = card.getByRole('form', { name: '为厨房收纳（验收）添加种子店铺' })
-  await seedForm.getByLabel('卖家 ID').fill('kitchen_pro')
+  await seedForm.getByLabel('卖家 ID').fill(`kitchen_pro-${key}`)
   await seedForm.getByRole('button', { name: '添加种子店铺' }).click()
-  await expect(card.getByText('kitchen_pro')).toBeVisible()
+  await expect(card.getByText(`kitchen_pro-${key}`)).toBeVisible()
   await shot(page, '01-direction-configured')
 
   // 2. 市场数据（模拟连接器写入）与流水线：只运行本空间，不处理库里其他空间的方向
@@ -152,7 +153,7 @@ test('M2 验收：配置方向 → 流水线 → 候选列表 → 详情说明�
 
   // 3. 候选列表：出现两条 eBay 线索；VeRO 品牌的簇被否决
   await page.goto(`${base}/follow?platform=ebay`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   const table = page.getByRole('table', { name: 'eBay 跟卖候选' })
   await expect(table).toBeVisible()
   const rows = table.locator('tbody tr')
@@ -167,7 +168,7 @@ test('M2 验收：配置方向 → 流水线 → 候选列表 → 详情说明�
   // 4. 详情：维度理由、来源标注、来源对比与风险说明
   await spice.getByRole('link').first().click()
   await expect(page).toHaveURL(new RegExp(`${base}/follow/[0-9a-f-]{36}`))
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await expect(page.getByRole('heading', { name: /Bamboo Spice Rack Organizer/ })).toBeVisible()
   await expect(page.getByTestId('overall-score')).not.toHaveText('—')
   const dims = page.getByTestId('dimension-list')
@@ -186,7 +187,7 @@ test('M2 验收：配置方向 → 流水线 → 候选列表 → 详情说明�
 
   // 被否决的簇：风险卡片说明 VeRO 命中
   await page.goto(`${base}/follow?platform=ebay`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page
     .getByRole('table', { name: 'eBay 跟卖候选' })
     .locator('tbody tr')
@@ -194,7 +195,7 @@ test('M2 验收：配置方向 → 流水线 → 候选列表 → 详情说明�
     .getByRole('link')
     .first()
     .click()
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await expect(page.getByTestId('risk-card')).toContainText('VeRO')
   await expect(page.getByTestId('dimension-list')).toContainText('一票否决')
   await page.waitForTimeout(800)

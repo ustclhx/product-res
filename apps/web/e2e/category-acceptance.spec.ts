@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs'
 import { expect, type Page, test } from '@playwright/test'
 import { categoryFixture } from '../test/fixtures/category-insight-data.ts'
-import { fixtureDb, register, simulateClientIp } from './fixtures.ts'
+import { fixtureDb, register, simulateClientIp, waitForHydration } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // add-category-insight 4.1 验收：夹具市场数据 → 新建品类研究 → 报告 → 竞品矩阵转线索
@@ -65,7 +65,7 @@ test('品类洞察验收：新建研究 → 报告 → 转线索 → 候选可�
 
   // 1. 新建研究并生成报告
   await page.goto(`${base}/category`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByRole('button', { name: '新建研究' }).click()
   const form = page.getByRole('form', { name: '品类研究' })
   await form.getByLabel('研究名称').fill('宠物慢食碗验收')
@@ -87,7 +87,7 @@ test('品类洞察验收：新建研究 → 报告 → 转线索 → 候选可�
     const text = (await module.innerText()).trim()
     expect(text.length, `${id} 不能为空白`).toBeGreaterThan(0)
   }
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await shot(page, '01-report')
 
   // 3. 竞品矩阵第一行转为线索（同款微改良）
@@ -106,25 +106,25 @@ test('品类洞察验收：新建研究 → 报告 → 转线索 → 候选可�
 
   // 4. 跟卖候选列表可见该线索，进入详情“核算”标签确认线索默认跟卖方式
   await page.goto(`${base}/follow?platform=amazon`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   const candidate = page.getByRole('link', { name: (productTitle as string).slice(0, 30) }).first()
   await expect(candidate).toBeVisible()
   await shot(page, '03-follow-candidates')
   await candidate.click()
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByRole('tab', { name: /核算/ }).click()
   await expect(page.getByTestId('costing-tab').getByText('线索默认：同款微改良')).toBeVisible()
   await shot(page, '04-lead-costing-tab')
 
   // 5. 归档后在档案库“品类研究报告”可见
   await page.goto(`${base}/category`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByTestId('study-card').filter({ hasText: '宠物慢食碗验收' }).click()
   await expect(report).toBeVisible({ timeout: 30_000 })
   await page.getByRole('button', { name: '归档到档案库' }).click()
   await expect(page.getByText('已归档').first()).toBeVisible()
   await page.goto(`${base}/archive`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   const archived = page.getByTestId('archived-study-row').filter({ hasText: '宠物慢食碗验收' })
   await expect(archived).toBeVisible()
   await shot(page, '05-archive')

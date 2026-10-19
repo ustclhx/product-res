@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test'
+import templateConfig from '../../../template.config.ts'
 import { DUMMY_TURNSTILE_TOKEN } from './turnstile.ts'
+
+test.skip(!templateConfig.i18n.enabled, '模板配置关闭了多语言偏好')
 
 const password = 'correct-horse-battery-staple'
 

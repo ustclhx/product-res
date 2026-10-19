@@ -2,8 +2,11 @@ import { createHash, randomUUID } from 'node:crypto'
 import { expect, test } from '@playwright/test'
 import { DEFAULT_FREE_FEATURES } from '@product-res/entitlements'
 import { newId } from '@product-res/shared'
+import templateConfig from '../../../template.config.ts'
 import { fixtureDb, register, simulateClientIp } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
+
+test.skip(!templateConfig.ai.image, '本用例验证图片生成表单，模板配置关闭了 AI 图片')
 
 // 后台写入、认证、权益与提交页 loader 均为真实本地链路；只 mock 任务 API，避免调用模型。
 test('saved media parameter schemas drive submit fields, defaults and validation', async ({

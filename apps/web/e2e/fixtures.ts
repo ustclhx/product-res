@@ -11,21 +11,29 @@ import templateConfig from '../../../template.config.ts'
 export const PASSWORD = 'correct-horse-battery'
 // i18n 关闭时页面使用默认语言，表单标签按该语言的消息文件匹配
 const uiLocale = templateConfig.i18n.enabled ? 'en' : templateConfig.i18n.defaultLocale
-const authMessages = JSON.parse(
-  readFileSync(new URL(`../messages/${uiLocale}/auth.json`, import.meta.url), 'utf8'),
-) as Record<string, string>
-const adminMessages = JSON.parse(
-  readFileSync(new URL(`../messages/${uiLocale}/admin.json`, import.meta.url), 'utf8'),
-) as Record<string, string>
-export function adminText(key: string) {
-  const text = adminMessages[key]
-  if (!text) throw new Error(`Missing admin message ${key}`)
-  return text
+const messages: Record<string, string> = Object.assign(
+  {},
+  ...['auth', 'auth-errors', 'errors', 'admin', 'account', 'app'].map((domain) =>
+    JSON.parse(
+      readFileSync(new URL(`../messages/${uiLocale}/${domain}.json`, import.meta.url), 'utf8'),
+    ),
+  ),
+)
+export function uiText(key: string, values: Record<string, string | number> = {}) {
+  const text = messages[key]
+  if (!text) throw new Error(`Missing UI message ${key}`)
+  return text.replace(/\{(\w+)\}/g, (_, name: string) => {
+    const value = values[name]
+    if (value === undefined) throw new Error(`Missing UI message parameter ${key}.${name}`)
+    return String(value)
+  })
 }
-export function authText(key: string) {
-  const text = authMessages[key]
-  if (!text) throw new Error(`Missing auth message ${key}`)
-  return text
+export const adminText = uiText
+export const authText = uiText
+
+/** 主题按钮仅在水合后启用，避免等待后台轮询或其他无关网络请求。 */
+export async function waitForHydration(page: Page) {
+  await expect(page.locator('[data-theme-option="system"]')).toBeEnabled()
 }
 export const APP_URL = /\/app\/u-[a-z0-9]+\/?$/
 const env = loadEnv('worktree', new URL('../../../', import.meta.url).pathname, '')
@@ -95,31 +103,36 @@ export async function verifyInvitation(
   workspaceName: string,
 ) {
   await expect(page.getByText(workspaceName, { exact: false })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Accept invitation', exact: true })).toHaveCount(0)
+  await expect(
+    page.getByRole('button', { name: authText('auth_accept_invitation'), exact: true }),
+  ).toHaveCount(0)
   const request = page.waitForRequest('**/api/auth/send-verification-email')
-  await page.getByRole('button', { name: 'Send verification email' }).click()
+  await page.getByRole('button', { name: authText('auth_send_verification_email') }).click()
   expect((await request).postDataJSON()).toEqual({
     email,
     callbackURL: `/accept-invitation?id=${id}`,
   })
   await expect(
-    page.getByText('Verification email sent. Check your inbox and open the link.'),
+    page.getByText(authText('auth_verification_email_sent_check_your_inbox_and_open')),
   ).toBeVisible()
   await page.goto(await emailLink(email))
   await expect(page).toHaveURL(new RegExp(`/accept-invitation\\?id=${id}$`))
   await expect(
-    page.getByText(`You are invited to ${workspaceName}`, { exact: false }),
+    page.getByText(
+      authText('auth_you_are_invited_to_as', { workspace: workspaceName, role: 'member' }),
+      { exact: false },
+    ),
   ).toBeVisible()
 }
 
 export async function loginOtp(page: Page, email: string, path = '/login') {
   await page.goto(path)
-  await page.getByRole('button', { name: 'Sign in with email code' }).click()
-  await page.getByLabel('Email', { exact: true }).fill(email)
-  await page.getByRole('button', { name: 'Send code' }).click()
-  await expect(page.getByLabel('Verification code')).toBeVisible()
-  await page.getByLabel('Verification code').fill(await emailCode(email))
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click()
+  await page.getByRole('button', { name: authText('auth_sign_in_with_email_code') }).click()
+  await page.getByLabel(authText('auth_email'), { exact: true }).fill(email)
+  await page.getByRole('button', { name: authText('auth_send_code') }).click()
+  await expect(page.getByLabel(authText('auth_verification_code'))).toBeVisible()
+  await page.getByLabel(authText('auth_verification_code')).fill(await emailCode(email))
+  await page.getByRole('button', { name: authText('auth_sign_in'), exact: true }).click()
   await expect(page).not.toHaveURL(/\/login(?:\?|$)/)
 }
 /**

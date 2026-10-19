@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { expect, test } from '@playwright/test'
-import { fixtureDb, register, simulateClientIp } from './fixtures.ts'
+import { fixtureDb, register, simulateClientIp, uiText } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 test('管理员通过统一导航补发、收回指定批次，账务页保留空间筛选', async ({ page }) => {
@@ -16,39 +16,45 @@ test('管理员通过统一导航补发、收回指定批次，账务页保留�
     if (!account || !workspace) throw new Error('Missing account fixture')
     await sql`update "user" set role='admin' where id=${account.id}`
     await page.goto(`/admin/credits?workspaceId=${workspace.id}`)
-    await expect(page.getByRole('heading', { name: 'Credit adjustments' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: uiText('admin_credit_adjustments') }),
+    ).toBeVisible()
     await expect
       .poll(async () => {
-        await page.getByLabel('Amount', { exact: true }).fill('')
-        await page.getByLabel('Amount', { exact: true }).fill('25')
-        await page.getByLabel('Reason', { exact: true }).fill('')
-        await page.getByLabel('Reason', { exact: true }).fill('后台补偿测试')
-        return page.getByRole('button', { name: 'Add credits', exact: true }).isEnabled()
+        await page.getByLabel(uiText('admin_amount'), { exact: true }).fill('')
+        await page.getByLabel(uiText('admin_amount'), { exact: true }).fill('25')
+        await page.getByLabel(uiText('admin_reason'), { exact: true }).fill('')
+        await page.getByLabel(uiText('admin_reason'), { exact: true }).fill('后台补偿测试')
+        return page
+          .getByRole('button', { name: uiText('admin_add_credits'), exact: true })
+          .isEnabled()
       })
       .toBe(true)
-    await page.getByRole('button', { name: 'Add credits', exact: true }).click()
-    await expect(page.getByText('Adjustment applied.', { exact: true })).toBeVisible()
+    await page.getByRole('button', { name: uiText('admin_add_credits'), exact: true }).click()
+    await expect(page.getByText(uiText('admin_adjustment_applied'), { exact: true })).toBeVisible()
     const [batch] =
       await sql`select id from credit_grant where workspace_id=${workspace.id} and source='admin'`
     if (!batch) throw new Error('Missing adjustment batch')
     const row = page.getByRole('row').filter({ hasText: batch.id })
     await expect(row).toContainText('25 / 25')
-    await page.getByLabel('Reason', { exact: true }).fill('撤回误发测试')
+    await page.getByLabel(uiText('admin_reason'), { exact: true }).fill('撤回误发测试')
     page.once('dialog', (dialog) => dialog.accept())
-    await row.getByRole('button', { name: 'Revoke batch' }).click()
+    await row.getByRole('button', { name: uiText('admin_revoke_batch') }).click()
     await expect(row).toContainText('revoked')
     await expect(row).toContainText('25 / 0')
     const [audit] =
       await sql`select count(*)::int as count from audit_log where workspace_id=${workspace.id} and action='credits.adjust'`
     expect(audit?.count).toBe(2)
     for (const [path, heading] of [
-      ['/admin/billing/subscriptions', 'Subscriptions'],
-      ['/admin/billing/purchases', 'One-time purchases'],
-      ['/admin/billing/webhooks', 'Webhook events'],
+      ['/admin/billing/subscriptions', uiText('admin_subscriptions')],
+      ['/admin/billing/purchases', uiText('admin_one_time_purchases')],
+      ['/admin/billing/webhooks', uiText('admin_webhook_events')],
     ] as const) {
       await page.goto(`${path}?workspaceId=${workspace.id}`)
       await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible()
-      await expect(page.getByLabel('Workspace ID', { exact: true })).toHaveValue(workspace.id)
+      await expect(page.getByLabel(uiText('admin_workspace_id'), { exact: true })).toHaveValue(
+        workspace.id,
+      )
     }
   } finally {
     await sql.end()

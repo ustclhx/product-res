@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs'
 import { expect, type Page, test } from '@playwright/test'
 import { newId } from '@product-res/shared'
-import { fixtureDb, register, simulateClientIp } from './fixtures.ts'
+import { fixtureDb, register, simulateClientIp, waitForHydration } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // add-follow-selection 4.1 / 4.2：候选列表空状态、Amazon / eBay 切换（eBay 无 BSR 列）、商品簇详情
@@ -448,7 +448,7 @@ test('跟卖候选列表与商品簇详情', async ({ page }) => {
 
   // 空状态：说明先配置方向与数据源，不放示例数据
   await page.goto(`${base}/follow`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await expect(page.getByTestId('candidates-empty')).toBeVisible()
   await expect(page.getByText('还没有 Amazon 候选')).toBeVisible()
   await expect(page.getByText('配置覆盖 Amazon 站点的选品方向')).toBeVisible()
@@ -460,7 +460,7 @@ test('跟卖候选列表与商品簇详情', async ({ page }) => {
 
   // Amazon：有 BSR 列，按 综合分 × 置信度 排序
   await page.goto(`${base}/follow`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   const table = page.getByRole('table', { name: 'Amazon 跟卖候选' })
   await expect(table).toBeVisible()
   await expect(table.getByRole('columnheader', { name: 'BSR' })).toBeVisible()
@@ -485,7 +485,7 @@ test('跟卖候选列表与商品簇详情', async ({ page }) => {
 
   // 详情
   await page.goto(`${base}/follow/${amazonTop}`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await expect(
     page.getByRole('heading', { name: /Slow Feeder Dog Bowl, Anti-Choking/ }),
   ).toBeVisible()

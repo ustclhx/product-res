@@ -24,8 +24,9 @@ import {
   user,
 } from '@product-res/db'
 import { eq } from 'drizzle-orm'
+import templateConfig from '../../../template.config.ts'
 import { actionDb, actor, offlineProviderTransport } from './billing-actions-helper.ts'
-import { register, simulateClientIp } from './fixtures.ts'
+import { register, simulateClientIp, uiText, waitForHydration } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 async function catalog(db: ReturnType<typeof actionDb>, subscriptionPlan = false) {
@@ -65,13 +66,17 @@ for (const realSubmission of [true, false])
       ? 'real customer refund submission saves contact and rejects duplicates'
       : 'offline partial admin approval preserves money until callback',
     async ({ page }) => {
+      test.skip(
+        !realSubmission && !templateConfig.billing.providers.includes('stripe'),
+        '模板配置关闭了 Stripe 退款审批渠道',
+      )
       const db = actionDb()
       try {
         const email = `refund-actions-${randomUUID()}@example.com`
         await simulateClientIp(page)
         await stubTurnstile(page)
         await register(page, email)
-        await page.waitForLoadState('networkidle')
+        await waitForHydration(page)
         const owner = await actor(email)
         const { planId, priceId } = await catalog(db)
         const purchaseId = randomUUID()
@@ -108,7 +113,8 @@ for (const realSubmission of [true, false])
           amount: 100,
         })
         if (realSubmission) {
-          await page.getByRole('link', { name: 'Billing', exact: true }).click()
+          await page.goto(`/app/${owner.slug}/billing`)
+          await waitForHydration(page)
           const form = page.getByRole('form', { name: 'Request a refund' })
           await form.getByRole('combobox', { name: 'Payment', exact: true }).selectOption(paymentId)
           await form
@@ -160,7 +166,7 @@ for (const realSubmission of [true, false])
         )
         await db.update(user).set({ role: 'admin' }).where(eq(user.id, owner.userId))
         await page.goto('/admin/billing')
-        await page.waitForLoadState('networkidle')
+        await waitForHydration(page)
         const calls: RefundInput[] = []
         const provider = {
           id: 'stripe',
@@ -193,14 +199,19 @@ for (const realSubmission of [true, false])
           return { ok: true, status: saved.status }
         })
         await page
-          .getByRole('navigation', { name: 'Admin sections' })
-          .getByRole('link', { name: 'Refund reviews', exact: true })
+          .getByRole('navigation', { name: uiText('admin_admin_sections') })
+          .getByRole('link', { name: uiText('admin_refund_reviews'), exact: true })
           .click()
-        const article = page.getByRole('article', { name: `Refund ${request.id}`, exact: true })
-        await article.getByLabel('Review note').fill('Partial review offline')
-        await article.getByLabel('Partial amount (USD cents)').fill('400')
-        await article.getByRole('button', { name: 'Approve partial refund' }).click()
-        await expect(article.getByText('Status: approved', { exact: false })).toBeVisible()
+        const article = page.getByRole('article', {
+          name: uiText('admin_refund', { id: request.id }),
+          exact: true,
+        })
+        await article.getByLabel(uiText('admin_review_note_field')).fill('Partial review offline')
+        await article.getByLabel(uiText('admin_partial_amount_usd_cents')).fill('400')
+        await article.getByRole('button', { name: uiText('admin_approve_partial_refund') }).click()
+        await expect(
+          article.getByText(`${uiText('admin_status_inline')} approved`, { exact: false }),
+        ).toBeVisible()
         expect(calls).toEqual([
           {
             providerPaymentId: paymentId,
@@ -210,9 +221,11 @@ for (const realSubmission of [true, false])
             idempotencyKey: `refund:${request.id}`,
           },
         ])
-        await article.getByRole('button', { name: 'Retry approved refund API' }).click()
+        await article
+          .getByRole('button', { name: uiText('admin_retry_approved_refund_api') })
+          .click()
         await expect(
-          article.getByRole('button', { name: 'Retry approved refund API' }),
+          article.getByRole('button', { name: uiText('admin_retry_approved_refund_api') }),
         ).toBeEnabled()
         expect(calls).toHaveLength(1)
         expect((await db.select().from(payment).where(eq(payment.id, paymentId)))[0]).toMatchObject(
@@ -262,13 +275,17 @@ for (const realSubmission of [true, false])
 test('offline browser cancel and resume call real services without minting credits', async ({
   page,
 }) => {
+  test.skip(
+    !templateConfig.billing.providers.includes('stripe'),
+    '模板配置关闭了 Stripe 订阅管理渠道',
+  )
   const db = actionDb()
   try {
     const email = `subscription-actions-${randomUUID()}@example.com`
     await simulateClientIp(page)
     await stubTurnstile(page)
     await register(page, email)
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     const owner = await actor(email)
     const { planId, priceId } = await catalog(db, true)
     const id = randomUUID()
@@ -321,6 +338,8 @@ test('offline browser cancel and resume call real services without minting credi
       .select()
       .from(creditGrant)
       .where(eq(creditGrant.workspaceId, owner.workspaceId))
+    await page.goto(`/app/${owner.slug}/billing-return`)
+    await waitForHydration(page)
     await offlineProviderTransport(page, async (data) => {
       expect(data.slug).toBe(owner.slug)
       expect(data.subscriptionId).toBe(id)
@@ -333,7 +352,7 @@ test('offline browser cancel and resume call real services without minting credi
       }
       return { ok: true, result: { status: 'updated' } }
     })
-    await page.getByRole('link', { name: 'Billing', exact: true }).click()
+    await page.getByRole('link', { name: 'Return to billing', exact: true }).click()
     await page.getByRole('button', { name: 'Cancel at period end' }).click()
     await expect(page.getByRole('button', { name: 'Resume subscription' })).toBeEnabled()
     expect((await db.select().from(subscription).where(eq(subscription.id, id)))[0]).toMatchObject({

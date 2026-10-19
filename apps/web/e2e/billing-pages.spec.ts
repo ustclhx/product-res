@@ -3,12 +3,14 @@ import { expect, test } from '@playwright/test'
 import { capture, grant, hold } from '@product-res/credits'
 import { createDb } from '@product-res/db'
 import { readLocalEnv } from '@product-res/db/worktree-env'
+import templateConfig from '../../../template.config.ts'
 import { fixtureDb, register, simulateClientIp } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 test('public pricing describes unavailable payments without a checkout success', async ({
   page,
 }) => {
+  test.skip(!templateConfig.marketing.enabled, '模板配置关闭了公开定价页')
   await page.goto('/pricing')
   await expect(page.getByRole('heading', { name: 'Pricing', exact: true })).toBeVisible()
   await expect(
