@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const composeFile = join(root, 'deploy/selfhost/compose.yaml')
 const proxyFile = join(root, 'deploy/selfhost/compose.proxy.yaml')
+const tunnelFile = join(root, 'deploy/selfhost/compose.tunnel.yaml')
 // 与 catalog 的 app Dockerfile 共用基础 manifest，冷缓存 CI 也不能依赖浮动标签。
 const nodeImage = readFileSync(join(root, 'deploy/selfhost/app.Dockerfile'), 'utf8').match(
   /^FROM (node:\S+@sha256:[a-f0-9]{64})\s/m,
@@ -70,12 +71,59 @@ function checkConfig(config, external) {
     nonRoot: true,
   })
 }
+// 隧道模式：cloudflared 是唯一入口，只接 ingress 固定地址；token 只经 file secret 交给它。
+function checkTunnelConfig(config) {
+  assert(!config.services.caddy, 'Tunnel mode must not enable the built-in proxy')
+  const tunnel = config.services.cloudflared
+  assert(tunnel, 'Missing cloudflared service')
+  for (const [name, service] of Object.entries(config.services)) {
+    assert(service.image && !service.build, `${name}: prebuilt image required`)
+    assert(/^[1-9]\d*(?::[1-9]\d*)?$/.test(service.user), `${name}: non-root UID required`)
+    assert(!service.ports?.length, `${name}: host port forbidden`)
+    if (!['web', 'cloudflared'].includes(name))
+      assert.deepEqual(Object.keys(service.networks), ['data'], `${name}: ingress access forbidden`)
+    if (name !== 'cloudflared')
+      assert(
+        !(service.secrets ?? []).some((secret) => secret.source === 'cloudflared_tunnel_token'),
+        `${name}: tunnel token must stay with cloudflared`,
+      )
+  }
+  assert(!config.networks.ingress.external, 'Tunnel ingress is the private project network')
+  assert.deepEqual(Object.keys(tunnel.networks), ['ingress'], 'cloudflared must not join data')
+  const address = tunnel.networks.ingress?.ipv4_address
+  assert(isIP(address) === 4, 'cloudflared requires a fixed IPv4 address')
+  assert.equal(config.services.web.environment.TRUSTED_PROXY_CIDRS, `${address}/32`)
+  assert.equal(config.services.web.networks.ingress.ipv4_address, '172.30.77.3')
+  assert.notEqual(address, config.services.web.networks.ingress.ipv4_address)
+  assert.deepEqual(
+    (tunnel.secrets ?? []).map((secret) => secret.source),
+    ['cloudflared_tunnel_token'],
+  )
+  assert(tunnel.command.includes('--token-file'), 'Tunnel token must be read from a file')
+  assert(tunnel.command.includes('--no-autoupdate'), 'Tunnel binary must not self-update')
+  assert(
+    !tunnel.command.some((arg) => arg === '--token' || arg.startsWith('--token=')),
+    'Tunnel token must not be passed in argv',
+  )
+  assert(
+    !Object.keys(tunnel.environment ?? {}).some((key) => key.startsWith('TUNNEL_TOKEN')),
+    'Tunnel token must not be passed in the environment',
+  )
+  assert.equal(tunnel.read_only, true)
+  assert.deepEqual(tunnel.cap_drop, ['ALL'])
+  assert(tunnel.security_opt.includes('no-new-privileges:true'))
+  assert.equal(tunnel.restart, 'unless-stopped')
+  event('selfhost.proxy.config', { mode: 'tunnel', build: false, hostPorts: false, nonRoot: true })
+}
 if (args.length) {
   assert(
-    args.length === 2 && ['--external-config', '--plain-config'].includes(args[0]),
-    'Usage: node test-proxy.mjs [--external-config|--plain-config final.json]',
+    args.length === 2 &&
+      ['--external-config', '--plain-config', '--tunnel-config'].includes(args[0]),
+    'Usage: node test-proxy.mjs [--external-config|--plain-config|--tunnel-config final.json]',
   )
-  checkConfig(JSON.parse(readFileSync(resolve(args[1]), 'utf8')), args[0] === '--external-config')
+  const config = JSON.parse(readFileSync(resolve(args[1]), 'utf8'))
+  if (args[0] === '--tunnel-config') checkTunnelConfig(config)
+  else checkConfig(config, args[0] === '--external-config')
   process.exit(0)
 }
 
@@ -97,7 +145,7 @@ const env = {
   TRUSTED_PROXY_CIDRS: '172.30.77.2/32',
   EXTERNAL_INGRESS_NETWORK: `${project}-external`,
 }
-for (const name of ['WEB', 'JOBS', 'MIGRATE', 'POSTGRES', 'VALKEY', 'CADDY'])
+for (const name of ['WEB', 'JOBS', 'MIGRATE', 'POSTGRES', 'VALKEY', 'CADDY', 'CLOUDFLARED'])
   env[`${name}_IMAGE`] = `fixture/${name.toLowerCase()}:${'a'.repeat(40)}`
 const run = (command, parameters, options = {}) =>
   execFileSync(command, parameters, {
@@ -133,6 +181,25 @@ try {
   const exposed = config([composeFile, proxyFile])
   exposed.services.postgres.ports = [{ target: 5432, published: '5432' }]
   assert.throws(() => checkConfig(exposed, true), /host port/)
+
+  // 隧道叠加：.env 保留 caddy profile 或误用 --profile '*' 都不能恢复内置代理与宿主端口。
+  checkTunnelConfig(config([composeFile, tunnelFile]))
+  const everyProfile = config([composeFile, tunnelFile], ['--profile', '*'])
+  assert.deepEqual(everyProfile.services.caddy?.ports ?? [], [], 'Tunnel caddy kept host ports')
+  delete everyProfile.services.caddy
+  checkTunnelConfig(everyProfile)
+  const tunnelBroad = config([composeFile, tunnelFile])
+  tunnelBroad.services.web.environment.TRUSTED_PROXY_CIDRS = '172.30.77.0/28'
+  assert.throws(() => checkTunnelConfig(tunnelBroad))
+  const tunnelData = config([composeFile, tunnelFile])
+  tunnelData.services.cloudflared.networks.data = {}
+  assert.throws(() => checkTunnelConfig(tunnelData), /data/)
+  const tunnelArgv = config([composeFile, tunnelFile])
+  tunnelArgv.services.cloudflared.command.push('--token=leak')
+  assert.throws(() => checkTunnelConfig(tunnelArgv), /argv/)
+  const tunnelShared = config([composeFile, tunnelFile])
+  tunnelShared.services.web.secrets.push({ source: 'cloudflared_tunnel_token' })
+  assert.throws(() => checkTunnelConfig(tunnelShared), /stay with cloudflared/)
 
   run('openssl', [
     'req',

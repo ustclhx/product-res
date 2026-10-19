@@ -133,6 +133,113 @@ class ComposeTest(unittest.TestCase):
                         deploy.Compose(directory, directory, candidate, ['compose.yaml', name], ['.env'])
                     command.assert_not_called()
 
+    def test_tunnel_and_external_proxy_overlays_are_mutually_exclusive_before_any_command(self):
+        files = ['compose.yaml', 'compose.proxy.yaml', 'compose.tunnel.yaml']
+        release = {'images': {}, 'files': dict.fromkeys(files)}
+        with tempfile.TemporaryDirectory() as temporary, patch.object(deploy, 'run') as command:
+            directory = Path(temporary)
+            with self.assertRaisesRegex(deploy.DeploymentError, 'mutually exclusive'):
+                deploy.Compose(directory, directory, release, files, ['.env'])
+            command.assert_not_called()
+        deploy.check_overlays(['compose.tunnel.yaml', 'compose.s3.yaml'])
+        deploy.check_overlays(['compose.proxy.yaml'])
+
+
+class TunnelComposeTest(unittest.TestCase):
+    """用真实 compose.tunnel.yaml 渲染结构的最小等价物驱动部署门；不运行 pull/up。"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.directory = Path(self.tmp.name)
+        for name in ['.env', '.env.example']:
+            (self.directory / name).write_text('APP_URL=https://product.ezarouter.cc\n')
+            (self.directory / name).chmod(0o600)
+        self.secret = self.directory / 'secrets/cloudflared_tunnel_token'
+        self.secret.parent.mkdir(mode=0o700)
+        self.secret.write_text('fixture-token-sentinel\n')
+        self.secret.chmod(0o600)
+        self.files = ['compose.yaml', 'compose.tunnel.yaml']
+        names = ['postgres', 'valkey', 'migrate', 'web', 'jobs', 'cloudflared']
+        self.images = {name: f'registry.example/{name}@sha256:{"a" * 64}' for name in names}
+        self.release = {'images': self.images, 'files': dict.fromkeys(self.files)}
+        services = {name: {'image': image, 'user': '1000:1000', 'networks': {'data': {}}}
+                    for name, image in self.images.items()}
+        services['web']['networks'] = {'data': {}, 'ingress': {'ipv4_address': '172.30.77.3'}}
+        services['web']['environment'] = {'APP_URL': 'https://product.ezarouter.cc',
+                                          'TRUSTED_PROXY_CIDRS': '172.30.77.6/32'}
+        services['web']['secrets'] = [{'source': 'auth_secret'}]
+        services['cloudflared'] = {
+            'image': self.images['cloudflared'], 'user': '65532:65532', 'read_only': True,
+            'command': ['tunnel', '--no-autoupdate', 'run', '--token-file',
+                        '/run/secrets/cloudflared_tunnel_token'],
+            'secrets': [{'source': 'cloudflared_tunnel_token',
+                         'target': '/run/secrets/cloudflared_tunnel_token'}],
+            'networks': {'ingress': {'ipv4_address': '172.30.77.6'}},
+        }
+        self.config = {'name': 'isolated', 'services': services,
+                       'networks': {'data': {}, 'ingress': {}},
+                       'secrets': {'cloudflared_tunnel_token': {'file': str(self.secret)}}}
+
+    def compose(self, config=None):
+        with patch.object(deploy, 'run', side_effect=[json.dumps(config or self.config), '']):
+            return deploy.Compose(self.directory, self.directory, self.release, self.files, ['.env'])
+
+    def test_valid_tunnel_plan_passes_without_reading_the_token(self):
+        compose = self.compose()
+        self.assertIn('cloudflared', compose.config['services'])
+        self.assertNotIn('fixture-token-sentinel', json.dumps(compose.runtime))
+
+    def test_tunnel_plan_rejects_unsafe_topology_before_service_changes(self):
+        def mutate(change):
+            value = json.loads(json.dumps(self.config))
+            change(value)
+            return value
+        caddy = {'image': self.images['web'], 'user': '10001:10001', 'networks': {'ingress': {}}}
+        cases = {
+            'disabled built-in proxy': lambda c: c['services'].update(caddy=caddy),
+            'ports': lambda c: c['services']['cloudflared'].update(ports=[{'published': '443'}]),
+            'only ingress': lambda c: c['services']['cloudflared']['networks'].update(data={}),
+            'trust only the cloudflared': lambda c: c['services']['web']['environment'].update(
+                TRUSTED_PROXY_CIDRS='172.30.77.0/28'),
+            'read-only file secret': lambda c: c['services']['cloudflared']['command'].append('--token=leak'),
+            'mounted into cloudflared': lambda c: c['services']['web']['secrets'].append(
+                {'source': 'cloudflared_tunnel_token'}),
+            'private ingress': lambda c: c['networks']['ingress'].update(external=True),
+        }
+        for message, change in cases.items():
+            with self.subTest(message=message), self.assertRaisesRegex(deploy.DeploymentError, message):
+                self.compose(mutate(change))
+        environment = mutate(lambda c: c['services']['cloudflared'].update(environment={'TUNNEL_TOKEN': 'x'}))
+        with self.assertRaisesRegex(deploy.DeploymentError, 'file secret'):
+            self.compose(environment)
+
+    def test_tunnel_token_file_must_exist_be_private_and_non_empty(self):
+        self.secret.chmod(0o640)
+        with self.assertRaisesRegex(deploy.DeploymentError, 'mode 0600'):
+            self.compose()
+        self.secret.chmod(0o600)
+        self.secret.write_text('')
+        with self.assertRaisesRegex(deploy.DeploymentError, 'non-empty'):
+            self.compose()
+        self.secret.unlink()
+        with self.assertRaisesRegex(deploy.DeploymentError, 'missing'):
+            self.compose()
+
+    def test_mode_switch_retires_only_the_inactive_ingress_containers_of_this_project(self):
+        compose = self.compose()
+        calls = []
+
+        def fake_run(args, **_kwargs):
+            calls.append(args)
+            return 'old-caddy\n' if args[:2] == ['docker', 'ps'] and 'service=caddy' in args[-1] else ''
+        with patch.object(deploy, 'run', side_effect=fake_run):
+            compose.retire_inactive_ingress()
+        self.assertEqual(len([args for args in calls if args[:2] == ['docker', 'ps']]), 1)
+        self.assertIn('label=com.docker.compose.project=isolated', calls[0])
+        self.assertEqual(calls[1], ['docker', 'stop', '--time', '30', 'old-caddy'])
+        self.assertEqual(calls[2], ['docker', 'rm', 'old-caddy'])
+
 
 class DeployTest(unittest.TestCase):
     def setUp(self):
@@ -161,6 +268,8 @@ class DeployTest(unittest.TestCase):
                 return ''
             def stop_apps(self):
                 owner.commands.append(('drain',))
+            def retire_inactive_ingress(self):
+                owner.commands.append(('retire',))
             def jobs_probe(self, timeout):
                 return response(B)
         self.patches = [patch.object(deploy, 'Compose', FakeCompose),
@@ -184,9 +293,22 @@ class DeployTest(unittest.TestCase):
         start = next(i for i, command in enumerate(self.commands) if command == ('up', '-d', '--no-deps', 'web', 'jobs'))
         self.assertLess(self.commands.index(('drain',)), migrate)
         self.assertLess(migrate, start)
+        # 旧入口在新应用启动后、公网健康门之前退役，健康门只能经当前计划的入口通过。
+        self.assertLess(start, self.commands.index(('retire',)))
         state = json.loads(self.statefile.read_text())
         self.assertEqual(state['successful']['sha'], B)
         self.assertEqual(state['previous']['sha'], A)
+
+    def test_conflicting_ingress_overlays_fail_before_bundle_import_or_any_command(self):
+        before = self.statefile.read_text()
+        argv = ['deploy.py', '--local', '--dir', str(self.directory), '--sha', B, '--bundle', str(self.directory),
+                '--compose-file', 'compose.tunnel.yaml', '--compose-file', 'compose.proxy.yaml']
+        with patch.object(sys, 'argv', argv), patch.object(deploy, 'import_bundle') as imported, \
+                patch('sys.stderr'):
+            self.assertEqual(deploy.main(), 1)
+            imported.assert_not_called()
+        self.assertEqual(self.commands, [])
+        self.assertEqual(self.statefile.read_text(), before)
 
     def test_pull_failure_does_not_stop_apps_or_change_success_record(self):
         before = self.statefile.read_text()

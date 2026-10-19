@@ -273,7 +273,7 @@ secrets:
         self.arch = 'arm64' if info['Architecture'] in ['aarch64', 'arm64'] else 'amd64'
         require(info['Architecture'] in ['aarch64', 'arm64', 'x86_64', 'amd64'], 'unsupported VM architecture')
         self.save_control()
-        self.stage = 'anonymous GHCR eight-image pull'
+        self.stage = 'anonymous GHCR image-set pull'
         deadline = time.monotonic() + 900
         for reference in self.release['images'].values():
             require(time.monotonic() < deadline, 'anonymous pull exceeded 15 minutes')
@@ -281,8 +281,10 @@ secrets:
             image = json.loads(self.docker('image', 'inspect', reference))[0]
             require(image['Config']['Labels'].get('org.opencontainers.image.revision') == self.a,
                     'official image revision differs')
-        require(len(self.release['images']) == 8, 'release does not contain eight images')
-        self.mark('anonymous GHCR eight-image pull', sha=self.a, imageCount=8, platform='linux/' + self.arch)
+        # 隧道入口前的发布为八镜像，之后含 cloudflared 为九镜像；bundle 校验已固定确切集合。
+        require(len(self.release['images']) in (8, 9), 'release does not contain the complete image set')
+        self.mark('anonymous GHCR image-set pull', sha=self.a, imageCount=len(self.release['images']),
+                  platform='linux/' + self.arch)
         self.configure()
         self.configure_backup()
         self.stage = 'initial official deployment with backup override'

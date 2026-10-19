@@ -18,7 +18,10 @@ SERVICE_ENV = {
     'web': 'WEB_IMAGE', 'jobs': 'JOBS_IMAGE', 'migrate': 'MIGRATE_IMAGE',
     'postgres': 'POSTGRES_IMAGE', 'valkey': 'VALKEY_IMAGE', 'caddy': 'CADDY_IMAGE',
     'object-storage': 'OBJECT_STORAGE_IMAGE', 'backup': 'BACKUP_IMAGE',
+    'cloudflared': 'CLOUDFLARED_IMAGE',
 }
+# 隧道入口之前发布的版本没有 cloudflared 镜像；只有含 compose.tunnel.yaml 的新契约必须带它。
+PRE_TUNNEL_SERVICES = frozenset(SERVICE_ENV) - {'cloudflared'}
 # 已发布版本保持原契约；新版本不能把源码、构建材料或工作树secret递归打进包。
 LEGACY_RUNTIME_FILES = (
     'compose.yaml', 'compose.backup.yaml', 'compose.object-storage.yaml',
@@ -36,7 +39,7 @@ PRE_S3_RUNTIME_FILES = (
     'restore.sh', 'restore-drill.sh', 'backup/restore.py', 'compose.replica.yaml',
     '.env.backup.example', '.env.object-storage.example', '.env.replica.example',
 )
-RUNTIME_FILES = (
+PRE_TUNNEL_RUNTIME_FILES = (
     'compose.yaml', 'compose.backup.yaml', 'compose.object-storage.yaml',
     'compose.proxy.yaml', '.env.example', 'secrets.example',
     'Caddyfile.object-storage', 'object-storage-init.mjs',
@@ -46,6 +49,16 @@ RUNTIME_FILES = (
     '.env.backup.example', '.env.object-storage.example', '.env.replica.example',
     'compose.s3.yaml',
 )
+RUNTIME_FILES = (
+    'compose.yaml', 'compose.backup.yaml', 'compose.object-storage.yaml',
+    'compose.proxy.yaml', '.env.example', 'secrets.example',
+    'Caddyfile.object-storage', 'object-storage-init.mjs',
+    'deploy.sh', 'deploy.py', 'health.py', 'init-server.sh', 'init-server.py', 'init-firewall.sh',
+    'release/bundle.py', 'README.md', 'OPERATIONS.md',
+    'restore.sh', 'restore-drill.sh', 'backup/restore.py', 'compose.replica.yaml',
+    '.env.backup.example', '.env.object-storage.example', '.env.replica.example',
+    'compose.s3.yaml', 'compose.tunnel.yaml',
+)
 GENERATED_FILES = ('image-set.json', 'image-catalog.json', 'images.env')
 
 
@@ -54,7 +67,7 @@ def require(condition, message):
         raise ValueError(message)
 
 
-def validate_image_set(image_set, sha, catalog, fixture=False):
+def validate_image_set(image_set, sha, catalog, fixture=False, runtime_files=RUNTIME_FILES):
     require(bool(SHA.fullmatch(sha)), 'expected full lowercase source SHA')
     require(image_set.get('schemaVersion') == 1 and image_set.get('sha') == sha,
             'image-set source SHA/schema mismatch')
@@ -70,7 +83,8 @@ def validate_image_set(image_set, sha, catalog, fixture=False):
     require(catalog.get('schemaVersion') == 1 and catalog.get('pendingServices', []) == [],
             'incomplete image catalog')
     names = [item['name'] for item in catalog['services']]
-    require(len(names) == len(set(names)) and set(names) == set(SERVICE_ENV),
+    require(len(names) == len(set(names)) and (set(names) == set(SERVICE_ENV) or
+            ('compose.tunnel.yaml' not in runtime_files and set(names) == PRE_TUNNEL_SERVICES)),
             'runtime catalog must contain every supported service exactly once')
     images = image_set.get('images', [])
     require(isinstance(images, list) and len(images) == len(names), 'incomplete image-set')
@@ -109,7 +123,7 @@ def verify_bundle(directory, expected_sha, allow_fixture=False):
         require(path.is_file() or path.is_dir(), 'bundle special files are forbidden')
         if path.is_file():
             actual.add(path.relative_to(directory).as_posix())
-    runtime_files = next((names for names in (LEGACY_RUNTIME_FILES, PRE_S3_RUNTIME_FILES, RUNTIME_FILES)
+    runtime_files = next((names for names in (LEGACY_RUNTIME_FILES, PRE_S3_RUNTIME_FILES, PRE_TUNNEL_RUNTIME_FILES, RUNTIME_FILES)
                           if actual == set(names) | set(GENERATED_FILES) | {'release.json'}), None)
     require(runtime_files is not None, 'bundle contains missing or unexpected runtime files')
     expected = set(runtime_files) | set(GENERATED_FILES) | {'release.json'}
@@ -130,7 +144,7 @@ def verify_bundle(directory, expected_sha, allow_fixture=False):
                 and checksum(directory / name) == digest, 'bundle file checksum mismatch: ' + name)
     catalog = json.loads((directory / 'image-catalog.json').read_text())
     image_set = json.loads((directory / 'image-set.json').read_text())
-    images = validate_image_set(image_set, expected_sha, catalog, release['fixture'])
+    images = validate_image_set(image_set, expected_sha, catalog, release['fixture'], runtime_files)
     require(release.get('images') == images, 'release image-set mismatch')
     require((directory / 'images.env').read_text() == env_text(release), 'image env mismatch')
     example = (directory / '.env.example').read_text()
@@ -174,7 +188,7 @@ def source_runtime_files(source, sha):
         names = ast.literal_eval(assignments[0])
     except (SyntaxError, ValueError, TypeError):
         raise ValueError('source runtime whitelist must be one literal tuple') from None
-    require(isinstance(names, tuple) and names in (LEGACY_RUNTIME_FILES, PRE_S3_RUNTIME_FILES, RUNTIME_FILES),
+    require(isinstance(names, tuple) and names in (LEGACY_RUNTIME_FILES, PRE_S3_RUNTIME_FILES, PRE_TUNNEL_RUNTIME_FILES, RUNTIME_FILES),
             'source runtime whitelist is not an approved file list')
     return names
 
@@ -190,7 +204,7 @@ def build_bundle(source, sha, image_set_path, output, compatible=(), fixture=Fal
     runtime_files = source_runtime_files(source, sha)
     catalog = json.loads(git_file(source, sha, 'images/catalog.json')[0])
     image_set = json.loads(Path(image_set_path).read_text())
-    images = validate_image_set(image_set, sha, catalog, fixture)
+    images = validate_image_set(image_set, sha, catalog, fixture, runtime_files)
     require(all(SHA.fullmatch(value) for value in compatible) and len(set(compatible)) == len(compatible),
             'compatibility values must be distinct full source SHAs')
     output.parent.mkdir(parents=True, exist_ok=True)

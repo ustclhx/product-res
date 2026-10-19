@@ -13,6 +13,7 @@
     { "name": "valkey", "dockerfile": "deploy/selfhost/valkey.Dockerfile" },
     { "name": "caddy", "dockerfile": "deploy/selfhost/caddy.Dockerfile" },
     { "name": "object-storage", "dockerfile": "deploy/selfhost/object-storage.Dockerfile" },
-    { "name": "backup", "dockerfile": "deploy/selfhost/backup.Dockerfile" }
+    { "name": "backup", "dockerfile": "deploy/selfhost/backup.Dockerfile" },
+    { "name": "cloudflared", "dockerfile": "deploy/selfhost/cloudflared.Dockerfile" }
   ]
 }

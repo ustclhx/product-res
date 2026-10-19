@@ -1,0 +1,62 @@
+# Docker Compose >=2.24.4；Cloudflare Tunnel 入口与基础 compose.yaml 一起加载，与 compose.proxy.yaml 互斥。
+# Tunnel 为 remotely-managed：public hostname → http://web:3000 在 Cloudflare 控制台配置，服务器只持有 token。
+x-tunnel-logging: &tunnel-logging
+  driver: json-file
+  options:
+    max-size: ${LOG_MAX_SIZE:-10m}
+    max-file: ${LOG_MAX_FILE:-3}
+
+services:
+  cloudflared:
+    image: ${CLOUDFLARED_IMAGE:?Use the prebuilt selfhost cloudflared image}
+    user: '65532:65532'
+    restart: unless-stopped
+    logging: *tunnel-logging
+    stop_grace_period: 45s
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs: ['/tmp:uid=65532,gid=65532,mode=0700']
+    mem_limit: 128m
+    cpus: 0.2
+    # token 只经文件读取：不进入环境变量、argv、日志或 bundle。metrics/ready 仅监听容器回环；
+    # 关闭 management diagnostics，避免经 Cloudflare 管理通道暴露 pprof/metrics。
+    command:
+      - tunnel
+      - --no-autoupdate
+      - --management-diagnostics=false
+      - --metrics
+      - 127.0.0.1:20241
+      - --loglevel
+      - info
+      - run
+      - --token-file
+      - /run/secrets/cloudflared_tunnel_token
+    secrets: [cloudflared_tunnel_token]
+    # 只接 ingress（出站到 Cloudflare 并转发到 web:3000），不接 data，固定地址供 web 精确信任。
+    networks:
+      ingress:
+        ipv4_address: 172.30.77.6
+    depends_on:
+      web: {condition: service_healthy}
+    healthcheck:
+      # distroless 无 shell/curl；用自带 ready 子命令读取本地 /ready（已注册到边缘才为 200）。
+      test: [CMD, cloudflared, tunnel, --metrics, 127.0.0.1:20241, ready]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  web:
+    environment:
+      # 只信任 cloudflared 固定地址；Cloudflare 把边缘看到的来源追加在 XFF 末尾，伪造前缀被跳过。
+      TRUSTED_PROXY_CIDRS: 172.30.77.6/32
+
+  caddy:
+    # 与外部代理模式相同：即使 .env 保留 COMPOSE_PROFILES=caddy 也不启用内置代理。
+    profiles: !override [disabled-caddy]
+    # 误用 --profile '*' 也不允许占用宿主端口。
+    ports: !reset []
+
+secrets:
+  cloudflared_tunnel_token: {file: '${SECRETS_DIR:-./secrets}/cloudflared_tunnel_token'}

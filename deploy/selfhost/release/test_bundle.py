@@ -84,7 +84,7 @@ class BundleTest(unittest.TestCase):
         self.assertFalse((self.output / 'secrets').exists())
         required = {'restore.sh', 'restore-drill.sh', 'backup/restore.py', 'compose.replica.yaml',
                     '.env.backup.example', '.env.object-storage.example', '.env.replica.example',
-                    'compose.s3.yaml'}
+                    'compose.s3.yaml', 'compose.tunnel.yaml'}
         self.assertEqual(set(bundle.RUNTIME_FILES) - set(bundle.LEGACY_RUNTIME_FILES), required)
         self.assertEqual(set(release['files']), set(bundle.RUNTIME_FILES) | set(bundle.GENERATED_FILES))
         for name, service in [('.env.backup.example', 'backup'),
@@ -167,7 +167,8 @@ class BundleTest(unittest.TestCase):
 
     def test_legacy_source_sha_keeps_its_exact_files_and_validator(self):
         # 小型旧版validator独立检查其原始契约；新版打包器不能加文件或换入当前代码。
-        for names in (bundle.LEGACY_RUNTIME_FILES, bundle.PRE_S3_RUNTIME_FILES):
+        for names in (bundle.LEGACY_RUNTIME_FILES, bundle.PRE_S3_RUNTIME_FILES,
+                      bundle.PRE_TUNNEL_RUNTIME_FILES):
             with self.subTest(runtime_files=len(names)):
                 validator = ('RUNTIME_FILES = ' + repr(names) + '\n' +
                              "from pathlib import Path\nimport json\n"
@@ -254,13 +255,88 @@ class BundleTest(unittest.TestCase):
         self.commit_source('restore approved runtime contract')
         self.build()
         for name, message in [('restore.sh', 'missing or unexpected'),
-                              ('compose.s3.yaml', 'checksum manifest must cover the exact runtime file list')]:
+                              ('compose.tunnel.yaml', 'checksum manifest must cover the exact runtime file list')]:
             path = self.output / name
             contents = path.read_bytes()
             path.unlink()
             with self.assertRaisesRegex(ValueError, message):
                 bundle.verify_bundle(self.output, self.sha)
             path.write_bytes(contents)
+
+    def use_catalog(self, names):
+        catalog = dict(self.catalog, services=[{'name': name} for name in names])
+        (self.source / 'deploy/selfhost/images/catalog.json').write_text(json.dumps(catalog))
+        self.image_set['images'] = [item for item in self.image_set['images'] if item['name'] in names]
+
+    def test_tunnel_overlay_is_checksummed_and_requires_the_cloudflared_image(self):
+        self.assertEqual(set(bundle.RUNTIME_FILES) - set(bundle.PRE_TUNNEL_RUNTIME_FILES),
+                         {'compose.tunnel.yaml'})
+        release = self.build()
+        self.assertIn('compose.tunnel.yaml', release['files'])
+        self.assertIn('cloudflared', release['images'])
+        self.assertIn('CLOUDFLARED_IMAGE=' + release['images']['cloudflared'] + '\n',
+                      (self.output / 'images.env').read_text())
+        tunnel = self.output / 'compose.tunnel.yaml'
+        tunnel.write_text('services: {tampered: {}}\n')
+        with self.assertRaisesRegex(ValueError, 'checksum mismatch: compose.tunnel.yaml'):
+            bundle.verify_bundle(self.output, self.sha)
+        # 新契约（含隧道叠加）缺 cloudflared 镜像时在输出前拒绝。
+        self.output = self.root / 'release-without-cloudflared'
+        self.use_catalog(sorted(bundle.PRE_TUNNEL_SERVICES))
+        self.commit_source('catalog without cloudflared')
+        with self.assertRaisesRegex(ValueError, 'every supported service'):
+            self.build()
+        self.assertFalse(self.output.exists())
+
+    def test_pre_tunnel_release_with_eight_images_still_verifies_for_rollback(self):
+        # 已发布的旧 SHA（无 compose.tunnel.yaml、八镜像）仍可导入、校验并作为回滚目标。
+        self.validator.write_text('RUNTIME_FILES = ' + repr(bundle.PRE_TUNNEL_RUNTIME_FILES) + '\n')
+        (self.source / 'deploy/selfhost/compose.tunnel.yaml').unlink()
+        self.use_catalog(sorted(bundle.PRE_TUNNEL_SERVICES))
+        self.commit_source('pre-tunnel release')
+        release = self.build()
+        self.assertEqual(bundle.verify_bundle(self.output, self.sha), release)
+        self.assertNotIn('cloudflared', release['images'])
+        self.assertNotIn('compose.tunnel.yaml', release['files'])
+
+    def test_bundled_tunnel_overlay_renders_single_private_ingress_without_host_ports(self):
+        # 只渲染真实交付文件，不创建 secret 文件、不读取 token、不启动容器。
+        for name in ('compose.yaml', 'compose.tunnel.yaml', 'compose.s3.yaml', '.env.example'):
+            original = Path(__file__).resolve().parents[1] / name
+            (self.source / 'deploy/selfhost' / name).write_bytes(original.read_bytes())
+        self.commit_source('tunnel assembly')
+        release = self.build()
+        clean_env = {key: value for key, value in os.environ.items() if key in
+                     ('PATH', 'HOME', 'DOCKER_CONFIG', 'DOCKER_HOST', 'DOCKER_CONTEXT')}
+        for extra in ([], ['compose.s3.yaml'], ['--profile', '*']):
+            with self.subTest(extra=extra):
+                files = ['compose.yaml', 'compose.tunnel.yaml'] + [item for item in extra if item.endswith('.yaml')]
+                args = ['docker', 'compose', '--project-directory', str(self.output),
+                        '--env-file', str(self.output / '.env.example'),
+                        '--env-file', str(self.output / 'images.env')]
+                for name in files:
+                    args += ['-f', str(self.output / name)]
+                args += [item for item in extra if not item.endswith('.yaml')]
+                result = subprocess.run(args + ['config', '--format', 'json'], env=clean_env,
+                                        capture_output=True, check=True)
+                config = json.loads(result.stdout)
+                if extra != ['--profile', '*']:
+                    self.assertNotIn('caddy', config['services'])
+                tunnel = config['services']['cloudflared']
+                self.assertEqual(tunnel['image'], release['images']['cloudflared'])
+                self.assertEqual(tunnel['user'], '65532:65532')
+                self.assertEqual(set(tunnel['networks']), {'ingress'})
+                address = tunnel['networks']['ingress']['ipv4_address']
+                self.assertEqual(address, '172.30.77.6')
+                self.assertEqual(config['services']['web']['environment']['TRUSTED_PROXY_CIDRS'],
+                                 address + '/32')
+                self.assertIn('--token-file', tunnel['command'])
+                self.assertTrue(tunnel['read_only'])
+                for name, service in config['services'].items():
+                    self.assertFalse(service.get('ports'), name)
+                    self.assertNotIn('build', service)
+                    mounts = {item['source'] for item in service.get('secrets', [])}
+                    self.assertEqual('cloudflared_tunnel_token' in mounts, name == 'cloudflared')
 
 
 if __name__ == '__main__':
