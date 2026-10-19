@@ -13,6 +13,7 @@ import { getWebRuntime } from '../../server/runtime.ts'
 import { templateConfig } from '../../server/template-config.ts'
 import { startWorkspaceChat, type WorkspaceChatDeps } from '../ai/chat.ts'
 import type { AiPrompt, InsightAi } from './ai.ts'
+import type { AnalysisBackground } from './analysis.server.ts'
 
 /**
  * 品类洞察的文本模型调用（tasks 3.3）：复用 AI 对话的同一条计费链路（权益 → 余额 → 定价快照 + 预扣 →
@@ -60,6 +61,18 @@ export function runtimeInsightAi(context: {
     workersAi: ai.value.workersAi.available,
     waitUntil: (promise) => ai.value.background.waitUntil(promise),
   })
+}
+
+/**
+ * 后台分析的执行方式（add-insight-background-analysis）：交给请求运行时的 BackgroundTasks，
+ * 请求立即返回；Node 进程停机时等待在途分析排空。未装配 AI 能力时不会产生待执行的分析。
+ */
+export function runtimeAnalysisBackground(): AnalysisBackground {
+  const ai = getWebRuntime().ai
+  return (run) => {
+    const task = run()
+    if (ai?.available) ai.value.background.waitUntil(task)
+  }
 }
 
 export function createInsightAi(deps: InsightAiDeps): InsightAi {

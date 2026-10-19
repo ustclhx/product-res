@@ -23,16 +23,9 @@ import {
   type TrendNode,
 } from '@product-res/insight'
 import { dispersionOf, getPriority, normalizePhrase, rankValues } from '@product-res/marketdata'
-import { AppError } from '@product-res/shared'
-import { log } from '@product-res/shared/log'
 import { and, desc, eq, gte, ilike, inArray, or, type SQL } from 'drizzle-orm'
-import {
-  buildInsightPrompt,
-  type InsightAi,
-  InsightOutputError,
-  insightFingerprint,
-  parseInsightOutput,
-} from './ai.ts'
+import { buildInsightPrompt, type InsightAi, insightFingerprint } from './ai.ts'
+import { newAnalysisJob, type PendingAnalysis, runningState } from './analysis.server.ts'
 import type {
   AiMeta,
   MatrixRowView,
@@ -201,7 +194,11 @@ export async function buildSnapshot(
   db: Database,
   study: Pick<CategoryStudy, 'marketplace' | 'categoryIds' | 'keywords' | 'topN'>,
   deps: BuildSnapshotDeps,
-): Promise<{ modules: SnapshotModules; dataAsOf: string | null }> {
+): Promise<{
+  modules: SnapshotModules
+  dataAsOf: string | null
+  analysis: PendingAnalysis | null
+}> {
   const marketplace = study.marketplace as Marketplace
   const { now } = deps
   const nowMonth = now.toISOString().slice(0, 7)
@@ -389,6 +386,7 @@ export async function buildSnapshot(
   let termsModule: SnapshotModules['painPoints']['terms']
   let themes: SnapshotModules['painPoints']['themes']
   let suggestions: SnapshotModules['suggestions']
+  let analysis: PendingAnalysis | null = null
   if (negative.status === 'no-source') {
     const reason = '没有评论数据来源（评论来源待接入，可在数据中心导入）'
     termsModule = { status: 'no-source', reason }
@@ -435,6 +433,7 @@ export async function buildSnapshot(
         themes = { status: 'ai-not-configured', reason: resolved.reason }
         suggestions = { status: 'ai-not-configured', reason: resolved.reason }
       } else {
+        // 模型调用可能超过边缘代理的读超时：快照先以“分析中”写入，由调用方在后台执行（analysis.server.ts）
         const input = buildInsightPrompt(
           aiReviews,
           competitors.map((r) => ({
@@ -446,30 +445,20 @@ export async function buildSnapshot(
             salesMonthly: r.salesMonthly?.value ?? null,
           })),
         )
-        try {
-          const parsed = parseInsightOutput(await resolved.generate(input.prompt), input)
-          const ai: AiMeta = {
-            modelKey: resolved.modelKey,
-            generatedAt: now.toISOString(),
-            fingerprint,
-            reusedFrom: null,
-          }
-          for (const t of parsed.themes) for (const id of t.reviewIds) cite(id)
-          for (const s of parsed.suggestions)
-            for (const c of s.citations) if (c.kind === 'review') cite(c.id)
-          themes = { status: 'ok', themes: parsed.themes, analyzed: input.reviewCount, ai }
-          suggestions = { status: 'ok', items: parsed.suggestions, dropped: parsed.dropped, ai }
-        } catch (error) {
-          const reason =
-            error instanceof InsightOutputError
-              ? `${error.message}，本次未生成`
-              : error instanceof AppError
-                ? aiErrorReason(error)
-                : 'AI 调用失败，请稍后刷新重试'
-          if (!(error instanceof InsightOutputError || error instanceof AppError))
-            log.error('category.ai_failed', { error })
-          themes = { status: 'error', reason }
-          suggestions = { status: 'error', reason }
+        const job = newAnalysisJob(fingerprint, resolved.modelKey, now)
+        themes = suggestions = runningState(job)
+        analysis = {
+          job,
+          input,
+          generate: resolved.generate,
+          reviewPool: aiReviews.map((r) => ({
+            id: r.id,
+            productId: r.productId,
+            rating: r.rating,
+            title: r.title,
+            body: r.body,
+            sourceId: r.sourceId,
+          })),
         }
       }
     }
@@ -573,23 +562,5 @@ export async function buildSnapshot(
     reviews: reviewViews,
   }
   const days = [productObs.latestDay, keywordObs.latestDay].filter((d): d is string => !!d).sort()
-  return { modules, dataAsOf: days.at(-1) ?? null }
-}
-
-function aiErrorReason(error: AppError): string {
-  switch (error.code) {
-    case 'INSUFFICIENT_CREDITS':
-      return '积分不足，未生成 AI 分析'
-    case 'CREDIT_DEBT':
-      return '空间有未结清的积分欠费，未生成 AI 分析'
-    case 'UPGRADE_REQUIRED':
-      return '当前套餐不能使用该文本模型'
-    case 'MODEL_UNAVAILABLE':
-    case 'AI_PROVIDER_NOT_CONFIGURED':
-      return 'AI 模型未配置或不可用'
-    case 'RATE_LIMITED':
-      return 'AI 调用过于频繁，请稍后刷新'
-    default:
-      return 'AI 调用失败，请稍后刷新重试'
-  }
+  return { modules, dataAsOf: days.at(-1) ?? null, analysis }
 }

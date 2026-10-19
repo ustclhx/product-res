@@ -33,7 +33,29 @@ export interface SourceSummary {
 }
 
 export type NoData = { status: 'no-source'; reason: string }
-export type AiUnavailable = { status: 'ai-not-configured' | 'error' | 'skipped'; reason: string }
+/**
+ * AI 未生成的原因。error 带机器可读的 code（add-insight-background-analysis）：
+ * INVALID_OUTPUT（模型输出不合规）、ANALYSIS_EXPIRED（后台分析超时）、AI_FAILED（未知失败），
+ * 其余为计费链路的 AppError code（INSUFFICIENT_CREDITS、CREDIT_DEBT、RATE_LIMITED 等）。
+ */
+export type AiUnavailable = {
+  status: 'ai-not-configured' | 'error' | 'skipped'
+  reason: string
+  code?: string
+}
+
+/** 一次后台 AI 分析（add-insight-background-analysis）：快照先以“分析中”写入，后台完成后原地更新 */
+export interface AiAnalysisJob {
+  /** 本次分析的 ID；后台只更新仍属于该分析的快照 */
+  id: string
+  /** 输入指纹：同一研究同一指纹的分析在途时，重复刷新复用该快照，不再调用 */
+  fingerprint: string
+  modelKey: string
+  startedAt: string
+  /** 超过该时间仍未完成即视为失败（ANALYSIS_EXPIRED），可重新刷新 */
+  expiresAt: string
+}
+export type AiRunning = { status: 'running'; reason: string; job: AiAnalysisJob }
 export type Module<T> = ({ status: 'ok' } & T) | NoData
 
 export interface PriceBandView {
@@ -166,11 +188,13 @@ export interface SnapshotModules {
     }>
     themes:
       | ({ status: 'ok'; themes: PainTheme[]; analyzed: number; ai: AiMeta } | AiUnavailable)
+      | AiRunning
       | NoData
   }
   returnRate: NoData
   suggestions:
     | ({ status: 'ok'; items: Suggestion[]; dropped: number; ai: AiMeta } | AiUnavailable)
+    | AiRunning
     | NoData
   /** 被词云、主题或建议引用的评论原文 */
   reviews: Record<string, ReviewView>
