@@ -1,4 +1,4 @@
-# 同一 Compose 的外部代理接入（D 2.4）
+# 同一 Compose 的外部代理与 Cloudflare Tunnel 接入（D 2.4 / add-tunnel-ingress）
 
 plain Compose 使用 release 中的 `compose.yaml`，`.env` 的 `COMPOSE_PROFILES=caddy`
 启用 Caddy，只有它发布 80/443。PG/Valkey/web/jobs 不发布宿主端口。外部入口继续使用
@@ -99,6 +99,9 @@ HTTPS 在 Cloudflare 边缘终止，容器到 web 是同机私有 HTTP；不要�
 端口，不为隧道添加宿主 ports。优先接到已有、已验证的边缘代理，让它按已验证客户端链
 重建 XFF，再信任它在 web 网络上的确切地址。
 
+本节描述接入**已存在的**、由入口 owner 自行运维的 cloudflared。需要随发布交付、固定
+digest 且受 `deploy.sh` 管理的隧道入口时，使用第 4 节的 `compose.tunnel.yaml`。
+
 直接 cloudflared→web 时，只有在真实 Tunnel 验证 Cloudflare edge 对恶意 XFF 的清洗、
 实际 socket peer 和最终 client IP 后才能启用该 `/32` 或 `/128`。验证之前设
 `TRUSTED_PROXY_CIDRS=`（本 override 会拒绝空值，可先使用基础 Compose 的 ingress 手动
@@ -107,13 +110,101 @@ HTTPS 在 Cloudflare 边缘终止，容器到 web 是同机私有 HTTP；不要�
 `originServerName` 和 `caPool` 验证私有 CA；参考
 [Cloudflare origin parameters](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/configure-tunnels/origin-parameters/)。
 
-## 4. 权限与最终配置门
+## 4. 随发布交付的 Cloudflare Tunnel（compose.tunnel.yaml）
+
+适用于 DNS 由 Cloudflare 管理、希望不开放服务器 80/443、不暴露源站 IP 的部署。拓扑：
+
+```
+用户 ──HTTPS──> Cloudflare 边缘 ──Tunnel(出站 QUIC/HTTP2)──> cloudflared ──HTTP──> web:3000
+```
+
+- cloudflared 镜像来自同 SHA image-set（catalog 第 9 个服务），基于官方
+  `cloudflare/cloudflared:2026.10.0` 的固定 multiarch digest，不重新编译，非 root UID 65532。
+- 叠加文件启用 `cloudflared`、停用内置 Caddy 并清空 ports；任何服务都不发布宿主端口。
+- cloudflared 只接 ingress，固定地址 `172.30.77.6`（避开 Caddy `.2`、web `.3`、object-storage
+  模式 jobs `.4`）；不接 data。web 的 `TRUSTED_PROXY_CIDRS` 由叠加文件固定为 `172.30.77.6/32`，
+  `.env` 中的值在隧道模式下不生效。
+- 只读根文件系统、`cap_drop: [ALL]`、`no-new-privileges`、`restart: unless-stopped`、日志轮转与
+  其他常驻服务一致；`--no-autoupdate`，关闭 management diagnostics；metrics/ready 只监听容器回环，
+  healthcheck 使用镜像自带的 `cloudflared tunnel ready`。
+- 与 `compose.proxy.yaml` 互斥：`deploy.py` 在导入 bundle、拉取或任何服务变更前拒绝同时加载。
+  也不与 `compose.object-storage.yaml` 组合（其 S3 域名依赖内置 Caddy 发布 443，部署门会因 Caddy /
+  宿主端口拒绝）；隧道模式的对象存储使用 `compose.s3.yaml` 外部 S3 / R2。
+- Cloudflare 边缘对单个请求约 100 秒超时，长时间同步请求可能被切断（与橙云代理相同）。
+
+### 4.1 在 Cloudflare 创建 remotely-managed Tunnel
+
+1. Cloudflare Zero Trust → Networks → Tunnels → Create a tunnel，类型选 **Cloudflared**，
+   命名（例如 `product-res-production`）。
+2. 安装步骤页只复制 connector **token**（`cloudflared tunnel run --token <token>` 中的值）。不要在
+   服务器上执行页面给出的安装命令，也不要把 token 粘贴到 shell 历史、工单或聊天中。
+3. Public Hostname（新版控制台为 Routes → Published application）：主机名选 `APP_DOMAIN`
+   （例如 `product.ezarouter.cc`），Path 留空，Service 类型 **HTTP**，URL 填 `web:3000`。
+   控制台会自动创建 proxied CNAME 到 `<tunnel-id>.cfargotunnel.com`；若该主机名已有
+   A/AAAA/CNAME 记录，需先删除旧记录（切换窗口内站点不可达，选择低峰时段）。
+4. 不配置 Access 策略，不启用 `noTLSVerify`：origin 是同机私有 HTTP，不是 origin TLS。
+
+### 4.2 写入 token secret
+
+token 只作为 file secret 挂给 cloudflared，经 `--token-file` 读取，不进入 `.env`、环境变量、
+命令行、日志、bundle 或版本库。在部署目录（`SECRETS_DIR` 父目录 0700）中以有权设置属主的账号执行，
+从剪贴板或密码管理器经 stdin 写入，不出现在 argv：
+
+```sh
+umask 077
+install -m 0600 -o 65532 -g 65532 /dev/null secrets/cloudflared_tunnel_token
+# 粘贴 token 后按 Ctrl-D；文件只有一行，结尾可有一个 LF。
+cat > secrets/cloudflared_tunnel_token
+stat -c '%a %u:%g %s' secrets/cloudflared_tunnel_token   # 期望 600 65532:65532 及非零大小
+```
+
+隧道模式下 `deploy.py` 要求该文件为非空普通文件、group/other 无权限，且只挂给 cloudflared；
+缺失或权限过宽时在任何服务变更前失败。轮换：在 Cloudflare 的 Tunnel 页刷新 token，替换此文件后
+重新执行部署命令。
+
+### 4.3 部署命令
+
+首次使用隧道的发布必须包含 cloudflared 镜像（协调者以 `new_services=cloudflared` 发布新 SHA）。
+旧 bundle 不含 `compose.tunnel.yaml`，不能现场添加。`deploy.sh` 始终以 bundle 的 `images.env`
+digest 固定 `CLOUDFLARED_IMAGE`。
+
+```sh
+deploy.sh --host <user@host> --dir /srv/product-res --sha <full-sha> \
+  --bundle <bundle-dir> --compose-file compose.tunnel.yaml
+# 同时使用外部 S3：--compose-file compose.s3.yaml --compose-file compose.tunnel.yaml
+```
+
+部署流程不变：拉取 → 排空旧 web/jobs → 迁移 → 启动 web/jobs 与 cloudflared。随后按 project /
+service 标签停止并移除**当前计划未启用**的入口容器（从 Caddy 切到隧道时移除旧 Caddy 并释放
+80/443；回滚到 Caddy 计划时移除 cloudflared），再执行公网健康门。健康门经 `APP_URL` 的
+`/api/health` 检查完整 SHA，请求经 Tunnel 到达 web，因此同时证明隧道连通；jobs 的内部 ready
+检查不变。隧道未连通时部署失败并输出回滚命令；回滚到上一个成功计划会重新启动其 Caddy。
+主机防火墙 / 安全组关闭 80/443 入站属于主机层操作，在确认隧道稳定后另行执行。
+
+### 4.4 真实环境验收（部署阶段）
+
+CI 只验证镜像构建、版本、非 root、无 token 拒绝启动，以及 Compose 渲染与部署门；以下项必须在
+真实 Tunnel 上完成并记录：
+
+1. 公网 HTTPS：`curl -sS https://<APP_DOMAIN>/api/health` 返回 200 与目标完整 SHA，证书由
+   Cloudflare 边缘提供；cloudflared 为 healthy，其日志只出现 tunnel ID / connector ID，不出现 token。
+2. 无宿主监听：服务器上 `ss -ltnp '( sport = :80 or sport = :443 )'` 为空，本 project 的
+   `docker ps --format '{{.Names}} {{.Ports}}'` 无宿主端口映射。
+3. 客户端 IP：从已知出口 IP 的机器访问会记录客户端地址的入口（如登录或限流相关请求），在应用
+   结构化日志或审计记录中确认 clientIp 等于该出口 IP，而不是 `172.30.77.6` 或 Cloudflare 边缘地址。
+4. 伪造 XFF：同一机器发送 `curl -H 'X-Forwarded-For: 203.0.113.9' https://<APP_DOMAIN>/...`，确认
+   记录的 clientIp 仍为真实出口 IP。Cloudflare 把边缘看到的来源追加在 XFF 末尾，web 从右向左跳过
+   可信的 `172.30.77.6` 后取到的就是它；若结果为伪造值或边缘地址，立即回滚到 Caddy 计划并停止验收。
+5. 运行身份：`docker top <cloudflared-container> -o pid,uid` 为 65532，`docker inspect` 显示
+   ReadonlyRootfs=true、CapDrop=[ALL]、只接 `<project>_ingress` 且地址为 `172.30.77.6`。
+
+## 5. 权限与最终配置门
 
 Docker Compose file secrets 为宿主 bind mount，不会替宿主改 UID/mode。受限父目录0700，
 按接收容器 UID 设置只读权限：PG/Valkey999，web/jobs/migrate1000，Caddy10001；共享
 file secret 使用适当的受限组或 ACL，让两个指定 UID 可读，不扩大到宿主公共目录。
 PG 私钥只给PG，应用只拿 CA；超级用户/migrator/readonly/backup凭据不分配给web/jobs，
-代理只持有自身TLS材料。代理 Docker socket 和 Dokploy 控制权限相当于宿主管理权限，
+代理只持有自身TLS材料，Tunnel token 只给 cloudflared（UID65532，0600）。代理 Docker socket 和 Dokploy 控制权限相当于宿主管理权限，
 不能挂给应用或隧道；Traefik已有provider权限不因本接入扩大。日志不记录请求query、
 认证链接或secret。网络隔离不替代宿主/面板访问权限。
 
@@ -131,6 +222,10 @@ Dokploy Preview 导出为 `compose.preview.yaml` 后，在它实际使用的目�
 docker compose --env-file .env -f compose.preview.yaml config --format json > final.preview.json
 node test-proxy.mjs --external-config final.preview.json
 ```
+
+隧道模式渲染时加 `-f compose.tunnel.yaml`，并用 `node test-proxy.mjs --tunnel-config final.json`
+检查：额外要求 cloudflared 只接 ingress 固定地址、web 只信任该 `/32`、token 只经 file secret
+挂给 cloudflared、只读根文件系统且不存在 Caddy。
 
 门要求 image-only、所有 service显式非root UID、web仅data+ingress、数据服务仅data、
 迁移成功依赖、应用secret不越权、确切可信IP以及零宿主ports。这不能证明已部署容器；

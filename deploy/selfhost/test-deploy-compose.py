@@ -2,7 +2,7 @@
 """隔离真实 registry/Compose 的发布机制验收；不验证业务 PG、DBOS、TLS 或心跳。
 
 运行 python3 deploy/selfhost/test-deploy-compose.py。需要 Docker/Compose v2、Git、curl。
-夹具只构建本机平台，八服务使用相同 Node 夹具程序，镜像按服务标记完整源码 SHA。
+夹具只构建本机平台，全部 catalog 服务使用相同 Node 夹具程序，镜像按服务标记完整源码 SHA。
 fixture readiness 的依赖和心跳字段为合成响应，持久任务仅为 marker，不是 DBOS 状态。
 """
 import json

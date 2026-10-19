@@ -7,12 +7,14 @@ runner。显式检出源后以 `git rev-parse HEAD` 固化版本；PR 使用 mer
 每架构校验 Dockerfile 中基础 digest 的 multiarch manifest，再 buildx `--load` 构建
 catalog 的完整已有集合及 native-smoke。实际启动 PG/Valkey/migrate/web/jobs/Caddy/
 object-storage，并以独立PG/S3夹具验收backup真实备份和逻辑恢复，核对镜像与 PID1 UID、原生 sharp、SQL→DBOS 迁移、真实五分钟 heartbeat、
-TLS、web/jobs 编译 SHA（运行时伪造 APP_VERSION 不能覆盖）。夹具只使用随机本地 file
+TLS、web/jobs 编译 SHA（运行时伪造 APP_VERSION 不能覆盖）。cloudflared 不连接真实 Cloudflare：
+在无网络、只读、cap_drop ALL 的独立容器中核对版本、`--token-file` 支持、显式数字 UID 与实际进程 UID，
+并要求无 token / token 文件缺失时以固定用法错误非零退出。夹具只使用随机本地 file
 secrets、自签 CA、私有网络和临时卷，无宿主数据端口；结束只清理自己创建的 project。
 
 实际版本写入 `smoke.json` 的 runtimeVersion，基础引用输出到 CI log。当前固定基础为
 Node22 bookworm、PG17 trixie、Valkey8.1.6、Caddy2.11.2、SeaweedFS Community4.48，
-pnpm12.8.1；精确 patch 与 Docker/Buildx/Compose 版本以实际 run 证据为准。
+cloudflared2026.10.0（官方 distroless 镜像，仅隧道模式使用），pnpm12.8.1；精确 patch 与 Docker/Buildx/Compose 版本以实际 run 证据为准。
 
 2026-10-14 本机 arm64 已实际构建并运行全部七服务及 sharp smoke；使用未改应用代码的
 基线源码 `ffd6ba7a6bfa706893ab4a0dfe095afb008ae4a1`，正式模板保持不变。成功验证迁移、

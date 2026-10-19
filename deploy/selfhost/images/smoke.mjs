@@ -1,9 +1,10 @@
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
+import { assertTokenRefusal, numericImageUid } from './policy.mjs'
 
 const root = resolve(import.meta.dirname, '../../..')
 const [sha, arch, directory] = process.argv.slice(2)
@@ -74,6 +75,84 @@ function run(command, args, timeout = 60_000) {
 const compose = (...args) => run('docker', [...composeArgs, ...args], 210_000)
 const assert = (condition, reason) => {
   if (!condition) throw new Error(reason)
+}
+// 与生产 compose.tunnel.yaml 相同的加固参数；不接任何网络，不连接真实 Cloudflare。
+const hardened = [
+  '--network',
+  'none',
+  '--read-only',
+  '--cap-drop',
+  'ALL',
+  '--security-opt',
+  'no-new-privileges:true',
+]
+let cloudflaredContainer
+function cloudflaredSmoke(service) {
+  const help = run('docker', [
+    'run',
+    '--rm',
+    ...hardened,
+    image('cloudflared'),
+    'tunnel',
+    'run',
+    '--help',
+  ])
+  assert(help.includes('--token-file'), 'cloudflared: --token-file unsupported')
+  // 期望的非零退出不能经 run()；只取退出码与固定用法提示，不透传其他输出。
+  for (const args of [
+    ['tunnel', '--no-autoupdate', 'run'],
+    ['tunnel', '--no-autoupdate', 'run', '--token-file', '/run/secrets/cloudflared_tunnel_token'],
+  ]) {
+    const result = spawnSync(
+      'docker',
+      ['run', '--rm', ...hardened, image('cloudflared'), ...args],
+      {
+        cwd: root,
+        env,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+        timeout: 60_000,
+      },
+    )
+    assert(!result.error, 'Smoke command failed: docker run')
+    try {
+      assertTokenRefusal({ status: result.status, output: `${result.stdout}${result.stderr}` })
+    } catch {
+      throw new Error('cloudflared: missing token was not refused')
+    }
+  }
+  // distroless 无 shell/cat；用本地常驻子命令（只监听容器回环）观察实际进程 UID。
+  cloudflaredContainer = `${project}-cloudflared`
+  run('docker', [
+    'run',
+    '-d',
+    '--name',
+    cloudflaredContainer,
+    ...hardened,
+    image('cloudflared'),
+    'access',
+    'tcp',
+    '--hostname',
+    'selfhost-smoke.invalid',
+    '--url',
+    '127.0.0.1:2222',
+  ])
+  let runtimeUid
+  for (let attempt = 0; attempt < 20 && runtimeUid === undefined; attempt++) {
+    // Docker 需要 PID 列才能把宿主 ps 结果限定到该容器；只取第二列数字 UID。
+    const rows = run('docker', ['top', cloudflaredContainer, '-o', 'pid,uid'])
+      .trim()
+      .split('\n')
+      .slice(1)
+    if (rows.length) runtimeUid = Number(rows[0].trim().split(/\s+/)[1])
+    else execFileSync('sleep', ['0.5'])
+  }
+  assert(runtimeUid > 0 && runtimeUid === service.uid, 'cloudflared: PID1 UID mismatch')
+  run('docker', ['rm', '-f', cloudflaredContainer])
+  cloudflaredContainer = undefined
+  service.runtimeUid = runtimeUid
+  service.tokenRequired = true
+  service.passed = true
 }
 function secret(name, value = randomBytes(32).toString('hex')) {
   // 父目录0700；文件挂载需允许镜像内的三个不同非 root UID 读取。
@@ -146,18 +225,22 @@ try {
     )
     const user = config.Config.User.split(':')[0]
     assert(user && user !== 'root' && !/^0+$/.test(user), `${name}: image configured as root`)
-    const uid = Number(
-      run('docker', [
-        'run',
-        '--rm',
-        '--network',
-        'none',
-        '--entrypoint',
-        'id',
-        image(name),
-        '-u',
-      ]).trim(),
-    )
+    // cloudflared 官方镜像为 distroless，没有 id；改为要求镜像配置显式数字 UID。
+    const uid =
+      name === 'cloudflared'
+        ? numericImageUid(config.Config.User)
+        : Number(
+            run('docker', [
+              'run',
+              '--rm',
+              '--network',
+              'none',
+              '--entrypoint',
+              'id',
+              image(name),
+              '-u',
+            ]).trim(),
+          )
     assert(uid > 0, `${name}: configured UID is root`)
     const binary = {
       web: 'node',
@@ -168,6 +251,7 @@ try {
       caddy: 'caddy',
       'object-storage': 'weed',
       backup: 'wal-g',
+      cloudflared: 'cloudflared',
     }[name]
     assert(binary, `${name}: missing binary version smoke`)
     const flag = ['caddy', 'object-storage'].includes(name) ? 'version' : '--version'
@@ -182,8 +266,15 @@ try {
       flag,
     ]).trim()
     assert(runtimeVersion, `${name}: missing runtime version`)
+    if (name === 'cloudflared')
+      assert(
+        /^cloudflared version \d{4}\.\d+\.\d+ /.test(runtimeVersion),
+        'cloudflared: unexpected version output',
+      )
     services.push({ name, passed: false, uid, revision: sha, runtimeVersion })
   }
+  // 隧道入口只能在部署阶段连真实 Cloudflare 验收；这里证明版本、非 root 与缺 token 失败关闭。
+  cloudflaredSmoke(services.find((service) => service.name === 'cloudflared'))
   const native = run('docker', ['run', '--rm', '--network', 'none', image('native-smoke')])
   assert(/native sharp module loaded, uid=[1-9][0-9]*/.test(native), 'native sharp smoke failed')
   nativeSmoke = true
@@ -365,6 +456,11 @@ secrets:
       service.passed = true
       continue
     }
+    // cloudflared 不在基础 Compose 中，已由上方独立加固容器完成运行时检查。
+    if (service.name === 'cloudflared') {
+      assert(service.passed && service.tokenRequired, 'cloudflared: missing runtime smoke')
+      continue
+    }
     assert(config.services[service.name], `${service.name}: missing runtime smoke`)
     if (service.name !== 'migrate') {
       const status = compose('exec', '-T', service.name, 'cat', '/proc/1/status')
@@ -420,6 +516,7 @@ secrets:
 } finally {
   try {
     if (started) compose('down', '-v', '--remove-orphans')
+    if (cloudflaredContainer) run('docker', ['rm', '-f', cloudflaredContainer])
   } catch {
     failure ??= 'Smoke cleanup failed'
   }

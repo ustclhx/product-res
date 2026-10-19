@@ -1,7 +1,36 @@
 import assert from 'node:assert/strict'
 
 export const architectures = ['amd64', 'arm64']
-export const requiredServices = ['web', 'jobs', 'migrate', 'postgres', 'valkey', 'caddy', 'backup']
+export const requiredServices = [
+  'web',
+  'jobs',
+  'migrate',
+  'postgres',
+  'valkey',
+  'caddy',
+  'backup',
+  'cloudflared',
+]
+
+// distroless 镜像没有 `id`；只接受显式数字非 0 UID，用户名可能在运行时解析成 root。
+export function numericImageUid(user) {
+  const match = /^([0-9]+)(?::[0-9]+)?$/.exec(user ?? '')
+  assert(match, 'image user must be an explicit numeric UID')
+  const uid = Number(match[1])
+  assert(uid > 0, 'image user must not be root')
+  return uid
+}
+
+// 无 token 时必须以固定用法错误非零退出，证明不会以空凭据或默认配置“成功”启动。
+export function assertTokenRefusal(result) {
+  assert.notEqual(result.status, 0, 'cloudflared started without a tunnel token')
+  assert.equal(typeof result.status, 'number', 'cloudflared refusal did not exit normally')
+  assert.match(
+    result.output,
+    /requires the ID or name of the tunnel|Failed to read token file/,
+    'cloudflared exited for an unexpected reason',
+  )
+}
 
 export function validateIdentity(sha, namespace) {
   assert.match(sha, /^[a-f0-9]{40}$/, 'source must be a full lowercase git SHA')

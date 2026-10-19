@@ -69,6 +69,7 @@ PG 复用 `infra/local/initdb/01-roles.sql` 和 `02-db-grants.sql`。唯一共�
 | valkey | 999:999 | `/data` 0700，AOF 持久化；ACL 散列只在 tmpfs 中 |
 | web / jobs / migrate | 1000:1000 | 应用文件归 node；jobs 的 `/app/.data/job-owners` 为 0700；无数据库/证书写卷 |
 | caddy | 10001:10001 | `/data` 与 `/config` 镜像预置可写，证书/ACME 状态持久化 |
+| cloudflared（仅隧道模式） | 65532:65532 | 无卷；只读根文件系统，`/tmp` 为 0700 tmpfs，token 为 0600 file secret |
 
 首次 named volume 通过镜像目录复制正确属主，不使用 root init 容器。jobs 镜像由 node（UID 1000）创建 0700 的 owner 目录，空 `job_owners` 卷继承该属主和权限，owner/guard 文件为 0600。已有卷必须预先匹配上述 UID；不要通过 root 入口在每次启动时修正。Compose file secrets 不转换宿主文件 UID/mode：宿主父目录使用 0700，secret 文件与只读证书挂载源必须让分配的容器 UID 可读。Linux 可按对应 UID/GID 设置权限；不把私钥开放到公共宿主目录。PG 入口每次以 postgres 用户将挂载证书复制到受限可写目录。
 
@@ -83,6 +84,16 @@ Valkey 密码通过 ACL SHA-256 文件加载，不进入命令行；web/jobs 共
 Caddy 不信任外部转发链；它将 XFF 覆盖为实际 peer，并移除 CF-Connecting-IP 与 Forwarded。web 只信任专用 ingress 上的 Caddy 固定地址 `172.30.77.2/32`，不信任所有 Docker 网段。没有开启请求 access log，避免认证链接/query 进入日志；Caddy 自身日志为 JSON。
 
 外部代理模式设置 `COMPOSE_PROFILES=`，通过 `docker network connect <project>_ingress <proxy-container>` 将受控代理接到本项目 ingress，并使用 `web:3000`。给代理固定地址，将 `TRUSTED_PROXY_CIDRS` 设置为它的确切地址或受限子网；显式空值表示完全不信任转发头；代理同样必须覆盖客户端转发头。外部代理不接 data 网。Dokploy/Traefik 的外部网络、label、域名与证书由 D 配置，本 Compose 不声明 Dokploy 专有设置；接入后仍使用同样的迁移 gate 与 secret 隔离。
+
+Cloudflare Tunnel 模式加载 bundle 中的 `compose.tunnel.yaml`：随发布交付的 cloudflared（官方
+`cloudflare/cloudflared:2026.10.0` 固定 multiarch digest，非 root 65532，catalog 第 9 个镜像）作为唯一公网入口，
+内置 Caddy 停用且所有服务无宿主端口。cloudflared 只接 ingress 固定地址 `172.30.77.6`，web 只信任
+`172.30.77.6/32`；Tunnel token 仅以 `cloudflared_tunnel_token` file secret 经 `--token-file` 读取，不进入环境变量、
+命令行、日志或 bundle。Tunnel 为 Cloudflare 控制台创建的 remotely-managed 类型，public hostname 指向
+`http://web:3000`。部署追加 `--compose-file compose.tunnel.yaml`，与 `compose.proxy.yaml` 互斥（部署脚本在任何
+服务变更前拒绝），也不与 object-storage override 组合。切换入口模式时部署脚本移除本 project 未启用的旧入口
+容器，健康门经 `APP_URL` 走隧道。创建 Tunnel、写入 token、部署命令与真实客户端 IP / 伪造 XFF 验收见
+[代理与隧道 runbook §4](../../docs/runbooks/selfhost-proxy.md#4-随发布交付的-cloudflare-tunnelcomposetunnelyaml)。
 
 Caddy 配置依据官方 [global options](https://caddyserver.com/docs/caddyfile/options) 与 [reverse_proxy](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)。Valkey ACL/认证依据官方 [security](https://valkey.io/topics/security/)；这些资料不替代本仓库固定镜像的实测结果。
 

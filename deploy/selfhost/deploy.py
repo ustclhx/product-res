@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import shlex
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -22,6 +23,19 @@ from release.bundle import image_env, verify_bundle
 
 class DeploymentError(Exception):
     pass
+
+
+PROXY_OVERLAY = 'compose.proxy.yaml'
+TUNNEL_OVERLAY = 'compose.tunnel.yaml'
+TUNNEL_SECRET = 'cloudflared_tunnel_token'
+# 这些服务只在对应入口模式下运行；切换模式时旧入口容器不会被 Compose 自动移除。
+INGRESS_SERVICES = ('caddy', 'cloudflared')
+
+
+def check_overlays(files):
+    # 两个叠加都会停用内置 Caddy 并各自定义唯一公网入口；同时加载时入口与可信地址不确定。
+    if PROXY_OVERLAY in files and TUNNEL_OVERLAY in files:
+        raise DeploymentError('compose.tunnel.yaml and compose.proxy.yaml are mutually exclusive ingress overlays')
 
 
 def run(args, *, env=None, cwd=None, timeout=180, input=None):
@@ -54,6 +68,7 @@ class Compose:
             self.env.update(runtime)
         self.env.update(image_env(release))
         self.args = ['docker', 'compose', '--project-directory', str(directory)]
+        check_overlays(files)
         for name in env_files:
             if not re.fullmatch(r'\.env(?:\.[a-z-]+)?', name) or name.endswith('.example'):
                 raise DeploymentError('invalid runtime env filename')
@@ -103,11 +118,64 @@ class Compose:
                     raise DeploymentError('external proxy requires /32 or /128 trusted addresses')
             if not self.config['networks']['ingress'].get('external'):
                 raise DeploymentError('external ingress must remain an external network')
+        if TUNNEL_OVERLAY in files:
+            self.check_tunnel(directory, services)
         for name in ['postgres', 'valkey', 'migrate', 'jobs']:
             allowed = {'data', 'ingress'} if name == 'jobs' and 'object-storage-init' in services else {'data'}
             if set(services[name].get('networks', {})) != allowed:
                 raise DeploymentError('data services may not join an external proxy network')
         self.project = self.config['name']
+
+    def check_tunnel(self, directory, services):
+        # 隧道是唯一公网入口：不允许内置代理或任何宿主端口残留。
+        if 'cloudflared' not in services or 'caddy' in services:
+            raise DeploymentError('tunnel ingress requires cloudflared and a disabled built-in proxy')
+        if any(service.get('ports') for service in services.values()):
+            raise DeploymentError('tunnel ingress forbids host ports')
+        if self.config['networks']['ingress'].get('external'):
+            raise DeploymentError('tunnel ingress uses the private ingress network')
+        tunnel = services['cloudflared']
+        networks = tunnel.get('networks') or {}
+        address = (networks.get('ingress') or {}).get('ipv4_address')
+        if set(networks) != {'ingress'} or not address:
+            raise DeploymentError('cloudflared must join only ingress with a fixed address')
+        try:
+            ipaddress.IPv4Address(address)
+        except ValueError as error:
+            raise DeploymentError('cloudflared must join only ingress with a fixed address') from error
+        if services['web']['environment'].get('TRUSTED_PROXY_CIDRS') != address + '/32':
+            raise DeploymentError('web must trust only the cloudflared address')
+        # token 只能是 cloudflared 的文件 secret；不接受环境变量或命令行 token。
+        command = tunnel.get('command') or []
+        if ('--token-file' not in command or any(arg == '--token' or arg.startswith('--token=') for arg in command)
+                or any(key.startswith('TUNNEL_TOKEN') for key in tunnel.get('environment') or {})
+                or [item['source'] for item in tunnel.get('secrets', [])] != [TUNNEL_SECRET]
+                or not tunnel.get('read_only')):
+            raise DeploymentError('cloudflared token must be a read-only file secret')
+        if any(TUNNEL_SECRET in [item['source'] for item in service.get('secrets', [])]
+               for name, service in services.items() if name != 'cloudflared'):
+            raise DeploymentError('tunnel token may only be mounted into cloudflared')
+        path = Path(self.config['secrets'][TUNNEL_SECRET]['file'])
+        if not path.is_absolute():
+            path = directory / path
+        try:
+            status = os.lstat(path)
+        except OSError as error:
+            raise DeploymentError('tunnel token secret file missing') from error
+        if not stat.S_ISREG(status.st_mode) or status.st_mode & 0o077 or not status.st_size:
+            raise DeploymentError('tunnel token secret must be a non-empty regular file with mode 0600')
+
+    def retire_inactive_ingress(self):
+        # 切换入口模式后，旧模式的 Caddy/cloudflared 仍在运行并占用 80/443 或转发流量；
+        # 只按本 project 与服务标签处理，不触碰其他服务或卷。
+        for name in INGRESS_SERVICES:
+            if name in self.config['services']:
+                continue
+            ids = run(['docker', 'ps', '-aq', '--filter', 'label=com.docker.compose.project=' + self.project,
+                       '--filter', 'label=com.docker.compose.service=' + name], env=self.env).split()
+            if ids:
+                run(['docker', 'stop', '--time', '30', *ids], env=self.env, timeout=60)
+                run(['docker', 'rm', *ids], env=self.env)
 
     def __call__(self, *args, timeout=180):
         return run(self.args + list(args), env=self.env, cwd=self.directory, timeout=timeout)
@@ -235,6 +303,8 @@ def local(args):
                   ['postgres', 'valkey', 'migrate', 'web', 'jobs', 'object-storage', 'object-storage-init']]
         if extras:
             compose('up', '-d', '--no-deps', *extras)
+        # 先退役旧入口再做公网健康门：隧道模式下 APP_URL 只能经 Tunnel 通过，不能被残留 Caddy 代答。
+        compose.retire_inactive_ingress()
         url = compose.config['services']['web']['environment']['APP_URL'].rstrip('/') + '/api/health'
         # SSH 的登录环境可能携带代理；探活与 Compose 共用经过筛选的环境，避免观察错误入口。
         if not wait_health(target, lambda timeout: public_probe(url, timeout, env=compose.env), compose.jobs_probe, timeout=args.health_timeout):
@@ -304,6 +374,8 @@ def main():
     try:
         if not SHA.fullmatch(args.rollback or args.sha) or not 1 <= args.health_timeout <= 900:
             raise DeploymentError('invalid full SHA or health window')
+        # 在导入 bundle、拉取或任何服务变更之前拒绝互斥入口组合（本地与 SSH 两种模式）。
+        check_overlays(args.compose_file)
         local(args) if args.local else remote(args)
     except (DeploymentError, ValueError, TypeError, KeyError, OSError, StopIteration, subprocess.SubprocessError) as error:
         reason = str(error) if isinstance(error, DeploymentError) else 'invalid release, runtime config or state; details withheld'

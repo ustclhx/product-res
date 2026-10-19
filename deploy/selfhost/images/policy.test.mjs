@@ -5,8 +5,10 @@ import {
   assertEvidence,
   assertFormalTagsAbsent,
   assertPlatforms,
+  assertTokenRefusal,
   formalRepository,
   hasTrustedCi,
+  numericImageUid,
   parseNewServices,
   requiredServices,
   validateIdentity,
@@ -204,4 +206,21 @@ test('构建前检查只用匿名或只读pull token，403/网络/不明确404�
   ]) {
     await assert.rejects(formalTagState('owner/project/web', sha, fixture(...replies)))
   }
+})
+
+test('cloudflared 证据只接受显式数字非 root UID 与无 token 的固定拒绝', () => {
+  assert.equal(numericImageUid('65532:65532'), 65532)
+  assert.equal(numericImageUid('10001'), 10001)
+  for (const user of ['', 'nonroot', '0:0', '00', 'root', '65532:abc', undefined])
+    assert.throws(() => numericImageUid(user))
+  assertTokenRefusal({
+    status: 255,
+    output: '"cloudflared tunnel run" requires the ID or name of the tunnel to run',
+  })
+  assertTokenRefusal({ status: 255, output: 'Failed to read token file: open /run/x' })
+  assert.throws(() =>
+    assertTokenRefusal({ status: 0, output: 'requires the ID or name of the tunnel' }),
+  )
+  assert.throws(() => assertTokenRefusal({ status: null, output: 'Failed to read token file' }))
+  assert.throws(() => assertTokenRefusal({ status: 1, output: 'exec format error' }))
 })
