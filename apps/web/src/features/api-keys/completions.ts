@@ -53,6 +53,77 @@ export function apiError(error: unknown): Response {
   )
 }
 
+const usageOf = (usage: {
+  inputTokens?: number | undefined
+  outputTokens?: number | undefined
+}) => ({
+  prompt_tokens: usage.inputTokens ?? 0,
+  completion_tokens: usage.outputTokens ?? 0,
+  total_tokens: (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0),
+})
+const finish = (reason: string) => (reason === 'length' ? 'length' : 'stop')
+
+type StartedChat = Pick<Awaited<ReturnType<typeof startWorkspaceChat>>, 'result' | 'done'>
+
+/**
+ * 流式 Chat Completions 的 SSE 正文。首个 role 分片在等待上游前立即写出，响应头随之发出；
+ * 上游静默时把心跳写成 SSE 注释行（客户端规范要求忽略），避免 Cloudflare 边缘 100 秒读超时。
+ */
+export function completionEventStream(
+  started: StartedChat,
+  base: { id: string; created: number; model: string },
+  includeUsage: boolean | undefined,
+): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder()
+  let cancelled = false
+  return new ReadableStream<Uint8Array>({
+    cancel() {
+      cancelled = true
+    },
+    async start(controller) {
+      const send = (value: unknown) => {
+        if (!cancelled) controller.enqueue(encoder.encode(`data: ${JSON.stringify(value)}\n\n`))
+      }
+      const chunk = (delta: Record<string, string>, finishReason: string | null = null) => ({
+        ...base,
+        object: 'chat.completion.chunk',
+        choices: [{ index: 0, delta, finish_reason: finishReason, logprobs: null }],
+        ...(includeUsage ? { usage: null } : {}),
+      })
+      try {
+        send(chunk({ role: 'assistant', content: '' }))
+        for await (const part of started.result.fullStream) {
+          if (cancelled) break
+          if (part.type === 'error') throw part.error
+          if (part.type === 'keepalive') {
+            controller.enqueue(encoder.encode(': keepalive\n\n'))
+            continue
+          }
+          // 公开协议只转发正文；reasoning 与内部重试信号均不泄露给 API key 客户端。
+          if (part.type === 'text-delta') send(chunk({ content: part.text }))
+        }
+        await started.done
+        send(chunk({}, finish(await started.result.finishReason)))
+        if (includeUsage)
+          send({
+            ...base,
+            object: 'chat.completion.chunk',
+            choices: [],
+            usage: usageOf(await started.result.totalUsage),
+          })
+      } catch (error) {
+        const response = apiError(error)
+        send(await response.json())
+      } finally {
+        if (!cancelled) {
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+          controller.close()
+        }
+      }
+    },
+  })
+}
+
 /** OpenAI Chat Completions 的文本子集；协议转换不承担计费职责。 */
 export async function handleCompletions(
   request: Request,
@@ -96,15 +167,6 @@ export async function handleCompletions(
       model: input.model,
     }
     const headers = { 'x-request-id': currentRequestId() ?? '', 'Cache-Control': 'no-store' }
-    const usageOf = (usage: {
-      inputTokens?: number | undefined
-      outputTokens?: number | undefined
-    }) => ({
-      prompt_tokens: usage.inputTokens ?? 0,
-      completion_tokens: usage.outputTokens ?? 0,
-      total_tokens: (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0),
-    })
-    const finish = (reason: string) => (reason === 'length' ? 'length' : 'stop')
     if (!input.stream) {
       const text = await started.result.text
       const usage = usageOf(await started.result.totalUsage)
@@ -126,50 +188,7 @@ export async function handleCompletions(
         { headers },
       )
     }
-    const encoder = new TextEncoder()
-    let cancelled = false
-    const stream = new ReadableStream<Uint8Array>({
-      cancel() {
-        cancelled = true
-      },
-      async start(controller) {
-        const send = (value: unknown) => {
-          if (!cancelled) controller.enqueue(encoder.encode(`data: ${JSON.stringify(value)}\n\n`))
-        }
-        const chunk = (delta: Record<string, string>, finishReason: string | null = null) => ({
-          ...base,
-          object: 'chat.completion.chunk',
-          choices: [{ index: 0, delta, finish_reason: finishReason, logprobs: null }],
-          ...(input.stream_options?.include_usage ? { usage: null } : {}),
-        })
-        try {
-          send(chunk({ role: 'assistant', content: '' }))
-          for await (const part of started.result.fullStream) {
-            if (cancelled) break
-            if (part.type === 'error') throw part.error
-            // 公开协议只转发正文；reasoning 与内部重试信号均不泄露给 API key 客户端。
-            if (part.type === 'text-delta') send(chunk({ content: part.text }))
-          }
-          await started.done
-          send(chunk({}, finish(await started.result.finishReason)))
-          if (input.stream_options?.include_usage)
-            send({
-              ...base,
-              object: 'chat.completion.chunk',
-              choices: [],
-              usage: usageOf(await started.result.totalUsage),
-            })
-        } catch (error) {
-          const response = apiError(error)
-          send(await response.json())
-        } finally {
-          if (!cancelled) {
-            controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-            controller.close()
-          }
-        }
-      },
-    })
+    const stream = completionEventStream(started, base, input.stream_options?.include_usage)
     return new Response(stream, {
       headers: { ...headers, 'Content-Type': 'text/event-stream; charset=utf-8' },
     })

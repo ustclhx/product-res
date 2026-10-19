@@ -32,6 +32,14 @@ type Part =
   | { type: 'reasoning-end'; attempt: number }
   | { type: 'data-retry'; data: { n: number } }
   | { type: 'error'; error: unknown }
+  /** 空闲心跳：只为让代理看到字节，序列化时转为客户端忽略的片段 */
+  | { type: 'keepalive' }
+
+/**
+ * Cloudflare 边缘（橙云代理与 Tunnel）开始响应前或两段数据之间约 100 秒无字节即返回 524；
+ * 推理模型隐藏思考阶段可能长时间不输出，按此间隔补发心跳，给网络抖动留足余量。
+ */
+export const STREAM_HEARTBEAT_MS = 25_000
 
 const emptyReply = () =>
   new AppError('AI_EMPTY_REPLY', 'The model returned no visible reply', { status: 502 })
@@ -73,20 +81,39 @@ export function createChatStream(options: {
   retryDelay: (ms: number, signal: AbortSignal) => Promise<void>
   checkpoint: (snapshot: Omit<ChatAttemptResult, 'status' | 'finishReason' | 'usageSource'>) => void
   settle: (result: ChatAttemptResult) => Promise<void>
+  /** 无输出时的心跳间隔，默认 `STREAM_HEARTBEAT_MS`；测试可调 */
+  heartbeatMs?: number
 }) {
   let sink!: ReadableStreamDefaultController<Part>
   let cancelled = false
+  let closed = false
+  let heartbeat: ReturnType<typeof setTimeout> | undefined
+  const heartbeatMs = options.heartbeatMs ?? STREAM_HEARTBEAT_MS
+  const stopHeartbeat = () => {
+    clearTimeout(heartbeat)
+    heartbeat = undefined
+  }
+  // 每次真实输出都重新计时，只有静默满一个间隔才补发；流结束或取消后不再留定时器。
+  const armHeartbeat = () => {
+    stopHeartbeat()
+    if (!cancelled && !closed)
+      heartbeat = setTimeout(() => emit({ type: 'keepalive' }), heartbeatMs)
+  }
   const fullStream = new ReadableStream<Part>({
     start(controller) {
       sink = controller
     },
     cancel() {
       cancelled = true
+      stopHeartbeat()
     },
   })
   const emit = (part: Part) => {
-    if (!cancelled) sink.enqueue(part)
+    if (cancelled || closed) return
+    sink.enqueue(part)
+    armHeartbeat()
   }
+  armHeartbeat()
   const done = (async () => {
     const capabilities = getTextProviderCapabilities(options.provider)
     const signal = options.controller.signal
@@ -259,10 +286,18 @@ export function createChatStream(options: {
       await options.settle(outcome)
     } finally {
       if (status === 'failed') emit({ type: 'error', error: lastError })
+      closed = true
+      stopHeartbeat()
       if (!cancelled) sink.close()
     }
     return outcome
   })()
+  // 结算前的意外异常不会走到上面的 finally，同样要停止心跳；拒绝仍由调用方的 done 处理。
+  const halt = () => {
+    closed = true
+    stopHeartbeat()
+  }
+  void done.then(halt, halt)
   return {
     done,
     fullStream,
@@ -306,7 +341,10 @@ export function createChatStream(options: {
                 writer.write({ type: 'reasoning-delta', id, delta: part.text })
               } else if (part.type === 'reasoning-end') {
                 writer.write({ type: 'reasoning-end', id: `reasoning-${part.attempt}` })
-              } else if (part.type === 'data-retry') writer.write(part)
+              } else if (part.type === 'keepalive')
+                // transient 数据片段不进入消息 parts，useChat 解析后直接丢弃，只起保活作用。
+                writer.write({ type: 'data-keepalive', data: null, transient: true })
+              else if (part.type === 'data-retry') writer.write(part)
               else writer.write({ type: 'error', errorText: 'The reply failed. Please try again.' })
             }
             if (textStarted) writer.write({ type: 'text-end', id: 'text' })

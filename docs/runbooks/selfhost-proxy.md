@@ -110,6 +110,13 @@ digest 且受 `deploy.sh` 管理的隧道入口时，使用第 4 节的 `compose
 `originServerName` 和 `caPool` 验证私有 CA；参考
 [Cloudflare origin parameters](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/configure-tunnels/origin-parameters/)。
 
+Cloudflare 边缘（橙云代理与 Tunnel 相同）在源站开始响应前或两段数据之间约 100 秒无字节时
+返回 524，Free/Pro/Business 不可调整。AI 对话流与 OpenAI 兼容流在上游静默（如推理模型隐藏
+思考）满 25 秒时发送心跳（站内为前端忽略的 transient 片段，公开 API 为 SSE 注释
+`: keepalive`），并在等待首个 token 前发出响应头，见 [06-ai §3「空闲心跳」](../06-ai.md)。
+中间若还有 Nginx 等代理，其读超时须大于 25 秒且不得缓冲 `text/event-stream`
+（Nginx 对这些路由设 `proxy_buffering off`）；Caddy 对 SSE 默认立即转发。
+
 ## 4. 随发布交付的 Cloudflare Tunnel（compose.tunnel.yaml）
 
 适用于 DNS 由 Cloudflare 管理、希望不开放服务器 80/443、不暴露源站 IP 的部署。拓扑：
