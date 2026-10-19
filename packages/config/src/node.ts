@@ -8,6 +8,15 @@ import type { TemplateConfig } from './template.ts'
 
 export { type NodeEnv, nodeEnvSchema, nodeEnvSchemaFor, nodeSecretNames } from './node-schema.ts'
 
+const blankAsUnset = new Set([
+  'EMAIL_FROM',
+  'EMAIL_REPLY_TO',
+  'SMTP_HOST',
+  'SMTP_PORT',
+  'SMTP_TLS_MODE',
+  'SMTP_USER',
+])
+
 export interface NodeStorageConfig {
   readonly endpoint: string
   readonly region: string
@@ -87,6 +96,8 @@ export function loadNodeEnv(options: NodeEnvOptions = {}): NodeEnv {
   }
   const source: Record<string, string | undefined> = { ...dotenv }
   for (const [key, value] of Object.entries(options.env ?? process.env)) {
+    // Compose 用 `${NAME:-}` 透传可选项时未配置即为空串；这些键按未设置处理，避免格式校验误判
+    if (value === '' && blankAsUnset.has(key)) continue
     if (value !== undefined) source[key] = value
   }
   const invalid: string[] = []

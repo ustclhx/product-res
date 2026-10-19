@@ -225,6 +225,21 @@ describe('Node runtime config', () => {
     }
   })
 
+  it('Compose 透传的空邮件/SMTP 可选项按未设置处理，log 模式可加载', () => {
+    const blank = {
+      EMAIL_FROM: '',
+      EMAIL_REPLY_TO: '',
+      SMTP_HOST: '',
+      SMTP_PORT: '',
+      SMTP_TLS_MODE: '',
+      SMTP_USER: '',
+    }
+    const loaded = loadNodeEnv({ dotenvPath: false, env: { ...valid, ...blank } })
+    expect(loaded.EMAIL_FROM).toBeUndefined()
+    expect(loaded.SMTP_HOST).toBeUndefined()
+    expect(loaded.SMTP_TLS_MODE).toBe('starttls')
+  })
+
   it('SMTP 拒绝 URL host、非法端口/TLS、空认证及多邮箱/换行注入', () => {
     const cases = {
       SMTP_HOST: ['https://private.test', 'user@private.test', 'private.test/path', 'host name'],
