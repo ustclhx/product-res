@@ -19,7 +19,7 @@
 ## A. 部署（product.ezarouter.cc / 43.106.17.72）
 
 1. **DNS 写权限**：wrangler 的 OAuth 没有任何 DNS 写 scope，cloudflared 本机也没有登录凭据，所以 CLI 改不了 DNS。二选一：
-   - 你在 Cloudflare 控制台把 `product.ezarouter.cc` 改为 **A → 43.106.17.72，仅 DNS（灰云）**（目前指向已失效的 Tunnel，返回 530）；
+   - 你在 Cloudflare 控制台把 `product.ezarouter.cc` 改为 **A → 43.106.17.72，仅 DNS（灰云）**（2026-10-19 复查：仍是 Cloudflare 代理 IP，未修改）；
    - 或创建一个只含 `Zone → DNS → Edit`、限定 `ezarouter.cc` 的 API Token，保存到 `~/.config/cloudflare/dns-token`（0600），之后我用 Cloudflare API 修改。
 2. **服务器写入被权限策略拦截**：在 ECS 上生成数据库/缓存/登录密钥与 PG 证书的步骤（准备脚本已写好，不输出任何密钥）被本机 Claude Code 自动模式拦截（Secret-Store Writes）。需要你：
    - 允许这一步（在 Claude Code 设置里为该 ssh 命令加允许规则），或
@@ -29,15 +29,19 @@
 5. **阿里云安全组**：确认入方向 TCP 80/443 已放行。
 6. **部署后未覆盖项**：备份（需要 S3/R2 桶与独立凭据）、真实邮件发送（SMTP/Resend）、套餐/积分初始化（billing seed 需要经 SSH 隧道连接生产库）。AI Key 放在服务器 `/opt/product-res/secrets/optional/OPENAI_API_KEY`（或 DEEPSEEK_API_KEY 等），后台只配置模型与授权，不填 Key。
 
+7. **发布用哪个 SHA**：`259f8ee` 只含 M0/M1，M2–M5 的 62 个提交还在本地未推送。建议先推送 main，等新 SHA 的 CI 通过后用新 SHA 发布，避免部署后马上再发一版。
+
 部署顺序：1 DNS → 2 服务器密钥 → 3 发布 → 4 包可见性 → 由你授权后执行 bundle 中的部署脚本（迁移、健康检查、ACME 证书）→ 你注册 `lhx960924@gmail.com` 并确认能进 `/admin`。
 
 ## B. 开发协作方式
 
-1. **Codex 派发被拦截**：按 AGENTS.md 约定，简单任务应通过 Orca 派 Codex，但本机自动模式拦截了 `codex --dangerously-bypass-approvals-and-sandbox`（Create Unsafe Agents），连查看 codex 帮助也被拦截。目前简单任务改由 Claude subagent（Sonnet）在独立 worktree 完成。若要恢复 Codex 派发，需要你在 Claude Code 权限设置中允许 `orca terminal create ... codex ...`。
+1. ~~**Codex 派发被拦截**~~ **已解决（2026-10-19）**：权限设置更新后，经 Orca 启动 `codex --dangerously-bypass-approvals-and-sandbox` 已验证可用（只读试运行通过，未改动仓库）。后续简单任务、部署与浏览器类任务按 AGENTS.md 派 Codex。
 2. **本地 Orca worktree 数据库**：`scripts/orca/lib.sh` 默认容器名 `product-res-pg`，本机实际使用的是模板的 `saas-template-pg`，Orca 自动 setup 会跳过建库。目前手动加 `PRODUCT_RES_PG_CONTAINER=saas-template-pg`。可以考虑在本机起一个 `product-res-pg` 容器（换端口）或改默认值。
 3. **CI 中各包的集成测试被跳过**：turbo 严格环境模式没有透传 `MIGRATION_DATABASE_URL` 等变量，`pnpm test` 下 marketdata（以及模板的 entitlements 等）集成测试在 CI 里实际被跳过，只在本地运行。是否在 `turbo.json` 的 test 任务加 `passThroughEnv` 让它们在 CI 真正运行，需要你决定（会让 CI 变慢，且可能暴露模板集成测试的问题）。
 
 4. **模板的完整 e2e 套件未适配本项目**：`pnpm exec playwright test`（全部用例，CI 只跑 smoke）在 main 上 44 个失败，主要是模板对已关闭功能（营销页、i18n/英文、SEO、支付页面、AI 媒体、分析）的用例，以及按英文文案匹配的认证/后台用例（本项目默认中文）。本项目新增的用例单独运行全部通过；但这些用例里用 `waitForLoadState('networkidle')` 等待页面，在长时间连续运行后（dev server 负载高）偶发超时（costing-acceptance、follow-* 各出现过一次），重跑通过，之后可改为等待具体元素。是否清理或改写这些模板用例（删除已关闭功能的用例、按语言消息文件匹配文案）需要你决定；工作量中等。
+
+5. **CI「Selfhost disabled features」在 `259f8ee` 失败**：模板的关闭功能组合（billing/AI/i18n 关闭）浏览器验收在 `auth-workspace.selfhost.ts:238` 断言失败（空间设置页成员行 `名字 (邮箱) · owner` 文案不匹配，与 M0 改动工作区标题有关）。发布门只要求 CI 通过，不阻塞发布，但 main 会保持红色；待修复（适合派 Codex）。
 
 ## C. 数据源（M1b，凭据由你配置）
 
