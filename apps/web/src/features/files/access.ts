@@ -3,6 +3,7 @@ import { type Database, member, scoped } from '@product-res/db'
 import { AppError } from '@product-res/shared'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
+import { assertAccountActivated } from '../../server/account-activation.ts'
 import { templateConfig } from '../../server/template-config.ts'
 
 export const fileWorkspaceInput = z.object({ workspaceId: z.uuid() })
@@ -37,6 +38,8 @@ export async function requireFileWorkspace(options: {
     .select(member, { where: eq(member.userId, fresh.user.id) })
     .limit(1)
   if (!membership) throw fileNotFound()
+  // 文件接口不经 withWorkspace，内测准入在此单独检查（add-beta-access-gate）
+  await assertAccountActivated(options.db, fresh.user, workspace.id)
   return {
     ...fresh,
     workspace,
