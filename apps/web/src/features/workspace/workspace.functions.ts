@@ -4,7 +4,8 @@ import { redirect } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { z } from 'zod'
-import { withWorkspace } from '../../server/middleware.ts'
+import { isAccountActivated } from '../../server/account-activation.ts'
+import { withWorkspaceMembership } from '../../server/middleware.ts'
 import { getWebRuntime } from '../../server/runtime.ts'
 import { templateConfig } from '../../server/template-config.ts'
 import {
@@ -15,8 +16,12 @@ import {
   workspaceMembers,
 } from '../../server/workspace-data.ts'
 
+/**
+ * 工作台布局数据。未开通账号（add-beta-access-gate）只返回 `activation: 'pending'` 与用户信息，
+ * 由 `/app/$slug` 渲染待开通页面；其它工作台入口经 `withWorkspace` 返回 403。
+ */
 export const getWorkspacePage = createServerFn({ method: 'GET' })
-  .middleware([withWorkspace])
+  .middleware([withWorkspaceMembership])
   .handler(async ({ context }) => {
     const { db, workspace, member, workspaceReadOnly } = context
     const { user } = await requireFreshSession({
@@ -24,12 +29,18 @@ export const getWorkspacePage = createServerFn({ method: 'GET' })
       db,
       headers: getRequest().headers,
     })
+    if (!(await isAccountActivated(db, user, workspace.id)))
+      return {
+        activation: 'pending' as const,
+        user: { id: user.id, name: user.name, email: user.email },
+      }
     const members = await workspaceMembers(db, workspace.id)
     const canManage =
       !workspace.isPersonal &&
       !workspaceReadOnly &&
       (member.role === 'owner' || member.role === 'admin')
     return {
+      activation: 'active' as const,
       user: { id: user.id, name: user.name, email: user.email },
       workspace: {
         id: workspace.id,

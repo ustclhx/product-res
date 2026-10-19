@@ -9,5 +9,8 @@
   "app_chat": "对话",
   "app_workspace_settings": "空间设置",
   "app_billing": "计费",
-  "app_usage": "用量"
+  "app_usage": "用量",
+  "app_account_pending_title": "账号待管理员开通",
+  "app_account_pending_body": "你的账号已注册成功。内测期间需由管理员为账号发放积分后才能使用工作台，开通后刷新本页即可进入。",
+  "app_account_pending_account": "账号设置"
 }

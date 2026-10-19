@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test'
 import templateConfig from '../../../template.config.ts'
-import { simulateClientIp, uiText } from './fixtures.ts'
+import { activateAccount, simulateClientIp, uiText } from './fixtures.ts'
 import { DUMMY_TURNSTILE_TOKEN, stubTurnstile } from './turnstile.ts'
 
 /**
@@ -15,6 +15,8 @@ const PASSWORD = 'correct-horse-battery'
 
 /** 跳到 /app（p1-workspace 合并后会再重定向到 /app/<slug>） */
 const APP_URL = /\/app\/u-[a-z0-9]+\/?$/
+/** 内测准入：新注册账号先看到待开通页面 */
+const gated = templateConfig.credits.requireGrantForAccess
 
 test.beforeEach(async ({ page }) => {
   await simulateClientIp(page)
@@ -81,6 +83,13 @@ test('注册 → 进入 /app；退出后登录 → 进入 /app', async ({ page, 
     }
   }
   await expect(page).toHaveURL(APP_URL)
+  if (gated) {
+    await expect(
+      page.getByRole('heading', { level: 1, name: uiText('app_account_pending_title') }),
+    ).toBeVisible()
+    await activateAccount(email)
+    await page.reload()
+  }
   await expect(page.getByTestId('current-user')).toContainText(email)
   await expect(page.getByText(uiText('app_personal_workspace'), { exact: true })).toBeVisible()
 
@@ -128,7 +137,11 @@ test('注册表单：只显示已失焦字段的错误，修正后一次点击�
   await submit.click({ position: { x: box.width / 2, y: box.height - 3 } })
   await signUp
   await expect(page).toHaveURL(APP_URL)
-  await expect(page.getByText(uiText('app_personal_workspace'), { exact: true })).toBeVisible()
+  await expect(
+    gated
+      ? page.getByRole('heading', { level: 1, name: uiText('app_account_pending_title') })
+      : page.getByText(uiText('app_personal_workspace'), { exact: true }),
+  ).toBeVisible()
 })
 
 test('错误按错误码提示：密码错误', async ({ page }) => {

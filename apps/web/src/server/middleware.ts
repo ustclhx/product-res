@@ -12,6 +12,7 @@ import { getRequest } from '@tanstack/react-start/server'
 import { z } from 'zod'
 import { assertRealSession } from '../features/admin/impersonation.ts'
 import { readRequestSession } from '../features/i18n/session.server.ts'
+import { assertAccountActivated } from './account-activation.ts'
 import { requireFeature } from './feature-gates.ts'
 import { getWebRuntime } from './runtime.ts'
 import { templateConfig } from './template-config.ts'
@@ -76,7 +77,7 @@ const workspaceInput = z.looseObject({
  * 成员身份每次请求查库，不使用会话缓存中的空间信息；空间不存在、已删除或不是成员一律 404，
  * 跨空间访问与访问不存在的空间不可区分。
  */
-export const withWorkspace = createMiddleware({ type: 'function' })
+export const withWorkspaceMembership = createMiddleware({ type: 'function' })
   .middleware([withSession])
   .validator(workspaceInput)
   .server(async ({ next, data, context }) => {
@@ -92,6 +93,18 @@ export const withWorkspace = createMiddleware({ type: 'function' })
         workspaceReadOnly: !templateConfig.tenancy.multiTenant && !resolved.workspace.isPersonal,
       },
     })
+  })
+
+/**
+ * 工作台入口：在成员校验之上要求账号已开通（add-beta-access-gate），未开通返回 403
+ * `ACCOUNT_NOT_ACTIVATED`。只有 `/app` 重定向与 `getWorkspacePage`（需要展示待开通页面）
+ * 直接使用 `withWorkspaceMembership`。
+ */
+export const withWorkspace = createMiddleware({ type: 'function' })
+  .middleware([withWorkspaceMembership])
+  .server(async ({ next, context }) => {
+    await assertAccountActivated(context.db, context.user, context.workspace.id)
+    return next()
   })
 
 /**

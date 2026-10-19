@@ -43,6 +43,7 @@ import { AppError, newId, toErrorResponse } from '@product-res/shared'
 import { log, setLogContext } from '@product-res/shared/log'
 import { and, asc, eq, inArray, type SQL } from 'drizzle-orm'
 import { z } from 'zod'
+import { assertAccountActivated } from '../../server/account-activation.ts'
 import { templateConfig } from '../../server/template-config.ts'
 import { resolveWorkspaceBySlug } from '../../server/workspace-context.ts'
 import { sessionFaultAccess } from './fault-access.ts'
@@ -157,6 +158,8 @@ async function startChat(request: Request, deps: ChatDeps): Promise<Response> {
   setLogContext({ workspaceId, userId: user.id })
   if (!templateConfig.tenancy.multiTenant && !resolved.workspace.isPersonal)
     throw new AppError('WORKSPACE_READ_ONLY', 'Team workspace writes are disabled', { status: 403 })
+  // 对话接口不经 withWorkspace，内测准入在此单独检查（add-beta-access-gate）
+  await assertAccountActivated(db, user, workspaceId)
   const started = await startWorkspaceChat(
     input,
     { workspaceId, userId: user.id },

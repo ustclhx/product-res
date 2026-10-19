@@ -7,6 +7,13 @@ import { DEFAULT_FREE_FEATURES } from '@product-res/entitlements'
 import { newId } from '@product-res/shared'
 import { loadEnv } from 'vite'
 import templateConfig from '../../../template.config.ts'
+import { activateAccount } from './fixtures/activation.ts'
+
+export {
+  activateAccount,
+  activateWorkspace,
+  removeWorkspaceActivation,
+} from './fixtures/activation.ts'
 
 export const PASSWORD = 'correct-horse-battery'
 // i18n 关闭时页面使用默认语言，表单标签按该语言的消息文件匹配
@@ -72,7 +79,12 @@ export async function seedWorkspaceSeats(slug: string) {
   }
 }
 
-export async function register(page: Page, email: string, name = 'Workspace Owner') {
+export async function register(
+  page: Page,
+  email: string,
+  name = 'Workspace Owner',
+  { activate = true }: { activate?: boolean } = {},
+) {
   await page.goto('/register')
   const form = page.getByRole('form', { name: authText('auth_create_an_account') })
   await form.getByLabel(authText('auth_name'), { exact: true }).fill(name)
@@ -80,6 +92,11 @@ export async function register(page: Page, email: string, name = 'Workspace Owne
   await form.getByLabel(authText('auth_password'), { exact: true }).fill(PASSWORD)
   await form.getByRole('button', { name: authText('auth_create_account') }).click()
   await expect(page).toHaveURL(APP_URL)
+  // 内测准入（add-beta-access-gate）：注册后开通个人空间，再刷新进入工作台
+  if (activate && templateConfig.credits.requireGrantForAccess) {
+    await activateAccount(email)
+    await page.reload()
+  }
 }
 export async function login(page: Page, email: string, path = '/login') {
   await page.goto(path)

@@ -7,6 +7,8 @@ export interface AuthEnv {
   readonly APP_URL?: string | undefined
   /** 已验证邮箱的首次管理员名单；逗号分隔，空值禁用 */
   readonly BOOTSTRAP_ADMIN_EMAILS?: string | undefined
+  /** 'true' 时引导不要求邮箱已验证；其它取值或未设置保持要求（风险见 deploy/selfhost/README.md） */
+  readonly BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED?: string | undefined
   /** 注册白名单；逗号分隔，空值不限制 */
   readonly SIGNUP_ALLOWED_EMAILS?: string | undefined
   readonly GOOGLE_CLIENT_ID?: string | undefined
@@ -32,6 +34,7 @@ export function parseAuthEnv(env: AuthEnv, config: TemplateConfig) {
     BETTER_AUTH_SECRET: z.string().min(32),
     APP_URL: z.url(),
     BOOTSTRAP_ADMIN_EMAILS: z.string().optional(),
+    BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED: z.string().optional(),
     SIGNUP_ALLOWED_EMAILS: z.string().optional(),
     GOOGLE_CLIENT_ID: oauth.has('google') ? secret : optional,
     GOOGLE_CLIENT_SECRET: oauth.has('google') ? secret : optional,

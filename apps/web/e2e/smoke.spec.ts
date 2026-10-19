@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { expect, test } from '@playwright/test'
-import { APP_URL, login, register, simulateClientIp } from './fixtures.ts'
+import templateConfig from '../../../template.config.ts'
+import { APP_URL, activateAccount, login, register, simulateClientIp } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 const NAV = ['工作台', '跟卖选品', '品牌选品', '选品档案库', '算法验证', '数据中心', '设置']
@@ -21,7 +22,18 @@ test('register, see the workbench navigation, sign out and back in', async ({
   await stubTurnstile(page)
   await simulateClientIp(page)
   const email = `ci-smoke-${randomUUID()}@example.com`
-  await register(page, email)
+  await register(page, email, undefined, { activate: false })
+  if (templateConfig.credits.requireGrantForAccess) {
+    // 内测准入：未开通时显示待开通页面，管理员发放积分后刷新即可进入
+    const pending = page.getByRole('heading', { level: 1, name: '账号待管理员开通' })
+    await expect(pending).toBeVisible()
+    await expect(page.getByRole('navigation', { name: '主导航' })).toHaveCount(0)
+    // 服务端渲染同样显示待开通页面，子路由接口不会被调用
+    await page.reload()
+    await expect(pending).toBeVisible()
+    await activateAccount(email)
+    await page.reload()
+  }
   await expect(page.getByTestId('current-user')).toContainText(email)
 
   const nav = page.getByRole('navigation', { name: '主导航' })

@@ -14,7 +14,10 @@ import { FormAlert } from '../auth/auth-layout.tsx'
 import { actionResult, activateWorkspace, workspaceAction } from './client.ts'
 import type { getWorkspacePage } from './workspace.functions.ts'
 
-export type WorkspacePage = Awaited<ReturnType<typeof getWorkspacePage>>
+export type WorkspacePage = Extract<
+  Awaited<ReturnType<typeof getWorkspacePage>>,
+  { activation: 'active' }
+>
 export function HydratedControls({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false)
   useEffect(() => setHydrated(true), [])

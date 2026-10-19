@@ -82,11 +82,15 @@ const nodeEnvBaseSchema = z.object({
     .transform((value) => value === 'true')
     .optional(),
   BOOTSTRAP_ADMIN_EMAILS: z.string().optional(),
+  // 'true' 时首个管理员引导不要求邮箱已验证；其它取值保持要求
+  BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED: z.string().optional(),
   SIGNUP_ALLOWED_EMAILS: z.string().optional(),
   // 可选密钥目录（自托管挂载 secrets/optional）；文件名为密钥名
   OPTIONAL_SECRETS_DIR: z.string().optional(),
   // 只在开发与验收时注册模拟数据源；生产不设置
   DATASOURCE_MOCK: z.enum(['true', 'false']).optional(),
+  // paused 时数据 / 选品定时计划仍注册但到点直接返回；拼写错误启动即失败，避免误以为已暂停
+  DATA_PIPELINE_SCHEDULES: z.enum(['paused', 'running']).optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: secret.optional(),
   GITHUB_CLIENT_ID: z.string().optional(),

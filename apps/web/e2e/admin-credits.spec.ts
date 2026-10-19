@@ -9,7 +9,8 @@ test('管理员通过统一导航补发、收回指定批次，账务页保留�
   try {
     await simulateClientIp(page)
     await stubTurnstile(page)
-    await register(page, email)
+    // 随后提升为平台 admin（始终放行），不预置开通批次以免与本测试的管理员批次混淆
+    await register(page, email, undefined, { activate: false })
     const [account] = await sql`select id from "user" where email=${email}`
     const [workspace] =
       await sql`select organization_id as id from member where user_id=${account?.id} and role='owner' limit 1`

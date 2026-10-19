@@ -5,8 +5,20 @@ import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 
 type BootstrapTrigger = 'user.create' | 'user.update' | 'email.verify' | 'session.create'
 
+export interface AdminBootstrapOptions {
+  /**
+   * 不要求邮箱已验证（BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED=true）。用于未接邮件服务的部署：
+   * 谁先以名单邮箱注册谁就成为管理员，须配合只放行运维邮箱的 SIGNUP_ALLOWED_EMAILS，提升后关闭。
+   */
+  readonly allowUnverified?: boolean
+}
+
 /** 认证事件只提供用户 id；授权条件必须以已提交的数据库状态为准。 */
-export function adminBootstrap(db: Database, configuredEmails: string | undefined) {
+export function adminBootstrap(
+  db: Database,
+  configuredEmails: string | undefined,
+  options: AdminBootstrapOptions = {},
+) {
   const emails = [
     ...new Set(
       (configuredEmails ?? '')
@@ -22,7 +34,7 @@ export function adminBootstrap(db: Database, configuredEmails: string | undefine
     await db.transaction(async (tx) => {
       const eligible = and(
         eq(user.id, userId),
-        eq(user.emailVerified, true),
+        options.allowUnverified ? undefined : eq(user.emailVerified, true),
         sql`${user.banned} is not true`,
         inArray(sql<string>`lower(trim(${user.email}))`, emails),
       )

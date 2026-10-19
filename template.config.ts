@@ -29,7 +29,7 @@ export default defineTemplateConfig({
     enabled: true, // 计费依赖积分；关闭计费时同时关闭 AI
     providers: [], // 结账页展示顺序
     currency: 'usd',
-    signupBonusCredits: 100, // 用户领取时触发邮箱验证，验证完成后发放
+    signupBonusCredits: 0, // 内测不发注册赠送（0 隐藏领取入口）；由管理员在后台发放积分开通账号
     pastDueGraceDays: 7, // past_due 期间保留权益的天数
     subscriptionCreditGraceHours: 24, // 订阅积分批次在周期末之后的额外有效期
     overage: {
@@ -40,7 +40,10 @@ export default defineTemplateConfig({
     },
     refundWindowDays: 30, // 可申请退款的付款时间范围；退款需人工审核，默认不主动退
   },
-  credits: { enabled: true },
+  credits: {
+    enabled: true,
+    requireGrantForAccess: true, // 内测：管理员发放积分后才能使用工作台（平台 admin 始终可用）
+  },
   marketing: { enabled: false },
   ai: {
     text: {

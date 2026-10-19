@@ -36,6 +36,8 @@ declare namespace Cloudflare {
     BETTER_AUTH_SECRET?: string
     /** 可选首次管理员邮箱名单；仅已验证且未封禁账号会被提升 */
     BOOTSTRAP_ADMIN_EMAILS?: string
+    /** 'true' 时名单账号无需验证邮箱即被提升；须配合只放行运维邮箱的注册白名单，提升后关闭 */
+    BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED?: string
     SIGNUP_ALLOWED_EMAILS?: string
     TURNSTILE_SECRET_KEY?: string
     GOOGLE_CLIENT_ID?: string

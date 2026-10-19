@@ -62,7 +62,9 @@ export function createAuth(env: AuthEnv, db: Database, deps: CreateAuthDeps) {
   const { config, sendEmail } = deps
   const vars = parseAuthEnv(env, config)
   const workspaceHooks = personalWorkspaceHooks(db)
-  const bootstrapAdmin = adminBootstrap(db, vars.BOOTSTRAP_ADMIN_EMAILS)
+  const bootstrapAdmin = adminBootstrap(db, vars.BOOTSTRAP_ADMIN_EMAILS, {
+    allowUnverified: vars.BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED === 'true',
+  })
   const assertSignupAllowed = signupAllowlist(vars.SIGNUP_ALLOWED_EMAILS)
 
   const auth = betterAuth({

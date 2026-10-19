@@ -136,7 +136,7 @@ function MenuLink({
   )
 }
 
-function SignOutButton() {
+export function SignOutButton() {
   const [ready, setReady] = useState(false)
   useEffect(() => setReady(true), [])
   const [busy, setBusy] = useState(false)

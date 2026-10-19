@@ -240,6 +240,28 @@ describe('Node runtime config', () => {
     expect(loaded.SMTP_TLS_MODE).toBe('starttls')
   })
 
+  it('内测开关：Compose 空串按未设置，管理员引导开关透传，流水线暂停值严格校验', () => {
+    const blank = loadNodeEnv({
+      dotenvPath: false,
+      env: { ...valid, BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED: '', DATA_PIPELINE_SCHEDULES: '' },
+    })
+    expect(blank.BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED).toBeUndefined()
+    expect(blank.DATA_PIPELINE_SCHEDULES).toBeUndefined()
+    const set = loadNodeEnv({
+      dotenvPath: false,
+      env: {
+        ...valid,
+        BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED: 'true',
+        DATA_PIPELINE_SCHEDULES: 'paused',
+      },
+    })
+    expect(set.BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED).toBe('true')
+    expect(set.DATA_PIPELINE_SCHEDULES).toBe('paused')
+    expect(() =>
+      loadNodeEnv({ dotenvPath: false, env: { ...valid, DATA_PIPELINE_SCHEDULES: 'pause' } }),
+    ).toThrow(EnvValidationError)
+  })
+
   it('SMTP 拒绝 URL host、非法端口/TLS、空认证及多邮箱/换行注入', () => {
     const cases = {
       SMTP_HOST: ['https://private.test', 'user@private.test', 'private.test/path', 'host name'],

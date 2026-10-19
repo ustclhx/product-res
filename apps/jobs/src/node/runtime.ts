@@ -22,6 +22,7 @@ import { registerNodeDataSources } from '../datasources/node.ts'
 import { DATASYNC_QUEUE } from '../datasources/sync.ts'
 import { consumeJobsBatch, type JobsContext } from '../handlers.ts'
 import { type JobObserver, logJobObserver } from '../observer.ts'
+import { pausePipelineSchedules } from '../pipeline-pause.ts'
 import { registerSelectionReview } from '../review/selection-review.ts'
 import { registerNodeSelection } from '../selection/node.ts'
 import { createNodeMediaHandler } from './media.ts'
@@ -154,18 +155,23 @@ export async function startNodeJobs(config: NodeEnv, options: NodeJobsOptions) {
         }
         scheduler = createNodeScheduler({ engine })
         dispose = registerNodeJobsSchedules(scheduler, context, template)
+        // 数据源凭据验收前可暂停数据 / 选品定时流水线（计划仍注册，到点直接返回）
+        const pipelineScheduler = pausePipelineSchedules(
+          scheduler,
+          config.DATA_PIPELINE_SCHEDULES === 'paused',
+        )
         // 数据层（add-data-source-hub）：同步队列与每日维护
         const dataSync = await registerNodeDataSources({
           db,
           queues,
-          scheduler,
+          scheduler: pipelineScheduler,
           mock: config.DATASOURCE_MOCK === 'true',
           producer: createNodeQueueProducer(db, DATASYNC_QUEUE).producer,
         })
         // 跟卖选品（add-follow-selection）：每日 04:00 SGT 归并、打分并生成线索；
         // 影子验证（add-shadow-validation）：05:00 打标签、周一 05:30 重算准备度、Keepa 回放队列
-        registerNodeSelection({ db, scheduler, queues, dataSync })
-        registerSelectionReview(scheduler, db)
+        registerNodeSelection({ db, scheduler: pipelineScheduler, queues, dataSync })
+        registerSelectionReview(pipelineScheduler, db)
         await queues.prepare()
         await scheduler.prepare()
       },

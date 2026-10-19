@@ -7,10 +7,10 @@ import { cookieHeader, PASSWORD, setup, signUpBody, testUsers } from './helpers.
 
 const users = testUsers('admin-bootstrap')
 afterAll(() => users.cleanup())
-const configured = (emails?: string, magicLink = false) =>
+const configured = (emails?: string, magicLink = false, allowUnverified?: string) =>
   setup({
     config: { auth: { turnstile: false, magicLink } },
-    env: { BOOTSTRAP_ADMIN_EMAILS: emails },
+    env: { BOOTSTRAP_ADMIN_EMAILS: emails, BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED: allowUnverified },
     rateLimiter: undefined,
   })
 const readUser = async (s: ReturnType<typeof setup>, email: string) => {
@@ -100,6 +100,36 @@ describe('first-run administrator bootstrap', () => {
       expect(await audits(s, user.id)).toMatchObject([{ meta: { trigger: 'user.update' } }])
     },
   )
+
+  it('promotes an unverified password signup immediately only when explicitly allowed', async () => {
+    const allowed = users.email('allow-unverified')
+    const s = configured(allowed, false, 'true')
+    expect((await s.post('/sign-up/email', signUpBody(allowed))).status).toBe(200)
+    const user = await readUser(s, allowed)
+    expect(user).toMatchObject({ role: 'admin', emailVerified: false })
+    expect(await audits(s, user.id)).toMatchObject([{ meta: { trigger: 'user.create' } }])
+
+    // 未设置、空串或非 true 取值保持已验证要求
+    for (const [index, flag] of [undefined, '', 'TRUE', '1'].entries()) {
+      const address = users.email(`deny-unverified-${index}`)
+      const off = configured(address, false, flag)
+      expect((await off.post('/sign-up/email', signUpBody(address))).status).toBe(200)
+      const denied = await readUser(off, address)
+      expect(denied).toMatchObject({ role: 'user', emailVerified: false })
+      expect(await audits(off, denied.id)).toEqual([])
+    }
+  })
+
+  it('keeps banned accounts out even when unverified promotion is allowed', async () => {
+    const address = users.email('allow-unverified-banned')
+    const initial = configured()
+    const { user } = await oauth(initial, address, false)
+    await initial.db.$client`update "user" set banned = true where id = ${user.id}`
+    const s = configured(address, false, 'true')
+    await (await s.auth.$context).internalAdapter.createSession(user.id)
+    expect(await readUser(s, address)).toMatchObject({ role: 'user' })
+    expect(await audits(s, user.id)).toEqual([])
+  })
 
   it('promotes an existing verified account on login, stays idempotent, and never demotes when removed', async () => {
     const address = users.email('existing')

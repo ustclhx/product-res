@@ -9,6 +9,8 @@ import type { TemplateConfig } from './template.ts'
 export { type NodeEnv, nodeEnvSchema, nodeEnvSchemaFor, nodeSecretNames } from './node-schema.ts'
 
 const blankAsUnset = new Set([
+  'BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED',
+  'DATA_PIPELINE_SCHEDULES',
   'EMAIL_FROM',
   'EMAIL_REPLY_TO',
   'SMTP_HOST',
