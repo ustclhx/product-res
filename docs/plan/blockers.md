@@ -16,6 +16,14 @@
 
 各验收记录见 `docs/receipts/m{2,3,4,5}-acceptance-2026-10-19.md`；截图在同名目录。全部提交在本地 main，**尚未推送**（推送会触发 CI；是否推送由你决定）。
 
+## 2026-10-19 决定
+
+- 已推送 main（`b3b1bb9`）；新 SHA 的 CI 通过后再发布，不用 `259f8ee`。
+- 服务器密钥写入、触发发布、部署交给 Codex 执行（已授权）；GHCR 包可见性与安全组由你处理；DNS 方案待你在解释后决定。
+- B3：开发阶段不在 CI 打开集成测试透传。B4、B5：派 Codex 清理模板 e2e、修复 disabled-features。
+- C：数据源凭据推迟到验收阶段，届时再讨论要哪些数据源与接入方式。
+- D：全部按现有默认执行。
+
 ## A. 部署（product.ezarouter.cc / 43.106.17.72）
 
 1. **DNS 写权限**：wrangler 的 OAuth 没有任何 DNS 写 scope，cloudflared 本机也没有登录凭据，所以 CLI 改不了 DNS。二选一：

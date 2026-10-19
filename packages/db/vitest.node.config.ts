@@ -18,8 +18,18 @@ process.env.NODE_DB_TEST_URL = appUrl
 process.env.CREDITS_TEST_DATABASE_URL = appUrl
 process.env.MIGRATION_DATABASE_URL = migrationUrl
 
-// 复用原业务断言，只替换五个 CF 测试的连接输入；不加载或仿真 Worker 运行时。
-const sharedTests = ['audit-log-grants', 'billing-credits', 'schema', 'scoped', 'setting'].map(
+// 复用原业务断言，只替换各 CF 测试的连接输入；不加载或仿真 Worker 运行时。
+const sharedTests = [
+  'audit-log-grants',
+  'billing-credits',
+  'costing',
+  'insight',
+  'schema',
+  'scoped',
+  'selection',
+  'setting',
+  'validation',
+].map(
   (name) => fileURLToPath(new URL(`./test/${name}.test.ts`, import.meta.url)),
 )
 const fixturePath = fileURLToPath(new URL('./test/node/env.ts', import.meta.url))
