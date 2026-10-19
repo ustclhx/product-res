@@ -73,11 +73,17 @@ async function ours(day: string) {
 }
 
 describe('每日采集投递', () => {
+  let insertedQueue = false
   beforeAll(async () => {
-    await db
-      .insert(jobQueue)
-      .values({ name: DATASYNC_QUEUE, policy: { maxRetries: 5 } })
-      .onConflictDoNothing()
+    // 只为外键写入占位队列行；结束时删除，避免后续 wire 测试按正式策略注册时判为策略冲突
+    insertedQueue =
+      (
+        await db
+          .insert(jobQueue)
+          .values({ name: DATASYNC_QUEUE, policy: { maxRetries: 5 } })
+          .onConflictDoNothing()
+          .returning({ name: jobQueue.name })
+      ).length > 0
     await ensureSources(db, registry.all())
     previous = await db.select().from(dataSource).where(inArray(dataSource.id, SOURCES))
     await db
@@ -156,6 +162,7 @@ describe('每日采集投递', () => {
           like(jobMessage.idempotencyKey, `${DAILY_KEY_PREFIX}:2031-06-0%`),
         ),
       )
+    if (insertedQueue) await db.delete(jobQueue).where(eq(jobQueue.name, DATASYNC_QUEUE))
     for (const row of previous)
       await db
         .update(dataSource)
