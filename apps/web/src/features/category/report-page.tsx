@@ -1,6 +1,6 @@
 import { Button, cn, Tag } from '@product-res/ui'
 import { Link, useNavigate, useRouter } from '@tanstack/react-router'
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import { marketplaceLabel } from '../follow/marketplaces.ts'
 import { controlClass, ErrorText, Field, useAction } from '../workbench/fields.tsx'
 import {
@@ -29,6 +29,9 @@ import {
 
 export type ReportData = Awaited<ReturnType<typeof getCategoryReport>>
 
+/** “分析中”时的轮询间隔 */
+const ANALYSIS_POLL_MS = 4000
+
 /** 品类洞察报告（对照 docs/design/workbench-overview.html「品牌选品 · 品类洞察」） */
 export function CategoryReportPage({ slug, data }: { slug: string; data: ReportData }) {
   const router = useRouter()
@@ -47,6 +50,17 @@ export function CategoryReportPage({ slug, data }: { slug: string; data: ReportD
     await router.invalidate()
   })
   const archived = study.status === 'archived'
+  // 后台 AI 分析在途（add-insight-background-analysis）：定时重新加载，完成或过期后停止
+  const analyzing =
+    snapshot?.modules.painPoints.themes.status === 'running' ||
+    snapshot?.modules.suggestions.status === 'running'
+  useEffect(() => {
+    if (!analyzing) return
+    const timer = setInterval(() => {
+      void router.invalidate()
+    }, ANALYSIS_POLL_MS)
+    return () => clearInterval(timer)
+  }, [analyzing, router])
   return (
     <div className="grid gap-3" data-testid="category-report">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -543,8 +557,14 @@ function PainPanel({ modules }: { modules: SnapshotModules }) {
                   </div>
                 </div>
               ))
+            ) : themes.status === 'running' ? (
+              <AiRunning reason={themes.reason} />
             ) : (
-              <AiReason status={themes.status} reason={themes.reason} />
+              <AiReason
+                status={themes.status}
+                reason={themes.reason}
+                code={'code' in themes ? themes.code : undefined}
+              />
             )}
           </div>
         </div>
@@ -553,10 +573,34 @@ function PainPanel({ modules }: { modules: SnapshotModules }) {
   )
 }
 
-function AiReason({ status, reason }: { status: string; reason: string }) {
+function AiRunning({ reason }: { reason: string }) {
+  return (
+    <p
+      data-testid="ai-running"
+      role="status"
+      className="flex items-center gap-2 rounded-md bg-primary-soft px-3 py-2 text-xs text-primary"
+    >
+      <span className="size-2 shrink-0 animate-pulse rounded-full bg-current" aria-hidden />
+      <span>
+        <span className="font-medium">分析中</span>：{reason}
+      </span>
+    </p>
+  )
+}
+
+function AiReason({
+  status,
+  reason,
+  code,
+}: {
+  status: string
+  reason: string
+  code?: string | undefined
+}) {
   return (
     <p
       data-testid="ai-reason"
+      data-code={code}
       className={cn(
         'rounded-md px-3 py-2 text-xs',
         status === 'error'
@@ -855,8 +899,10 @@ function SuggestionsPanel({
     >
       {s.status === 'no-source' ? (
         <NoSource reason={s.reason} />
+      ) : s.status === 'running' ? (
+        <AiRunning reason={s.reason} />
       ) : s.status !== 'ok' ? (
-        <AiReason status={s.status} reason={s.reason} />
+        <AiReason status={s.status} reason={s.reason} code={s.code} />
       ) : s.items.length === 0 ? (
         <p className="text-xs text-muted-foreground">AI 给出的建议都没有有效依据，已全部丢弃。</p>
       ) : (

@@ -25,14 +25,19 @@ type Ctx = Parameters<typeof actorOf>[0] & {
 }
 const categoryActor = (context: Ctx) => ({ ...actorOf(context), userId: context.user.id })
 
-async function insightAi(context: Ctx, studyName: string) {
-  return (await aiRuntime()).runtimeInsightAi({
-    db: context.db,
-    workspaceId: context.workspace.id,
-    userId: context.user.id,
-    slug: context.workspace.slug,
-    title: `品类洞察 · ${studyName}：差评痛点与差异化建议`,
-  })
+/** AI 分析在请求之外执行（add-insight-background-analysis）：生成 / 刷新立即返回，页面轮询“分析中”的快照 */
+async function insightDeps(context: Ctx, studyName: string) {
+  const runtime = await aiRuntime()
+  return {
+    ai: runtime.runtimeInsightAi({
+      db: context.db,
+      workspaceId: context.workspace.id,
+      userId: context.user.id,
+      slug: context.workspace.slug,
+      title: `品类洞察 · ${studyName}：差评痛点与差异化建议`,
+    }),
+    background: runtime.runtimeAnalysisBackground(),
+  }
 }
 
 export const getCategoryStudies = createServerFn({ method: 'GET' })
@@ -47,9 +52,11 @@ export const createCategoryStudy = createServerFn({ method: 'POST' })
   .middleware([withWorkspace])
   .inputValidator(slug.extend({ study: studyInput }))
   .handler(async ({ context, data }) =>
-    (await service()).createStudy(categoryActor(context), data.study, {
-      ai: await insightAi(context, data.study.name),
-    }),
+    (await service()).createStudy(
+      categoryActor(context),
+      data.study,
+      await insightDeps(context, data.study.name),
+    ),
   )
 
 export const updateCategoryStudy = createServerFn({ method: 'POST' })
@@ -64,9 +71,11 @@ export const refreshCategoryStudy = createServerFn({ method: 'POST' })
   .middleware([withWorkspace])
   .inputValidator(slug.extend({ id: z.uuid(), name: z.string().max(64) }))
   .handler(async ({ context, data }) =>
-    (await service()).refreshStudy(categoryActor(context), data.id, {
-      ai: await insightAi(context, data.name),
-    }),
+    (await service()).refreshStudy(
+      categoryActor(context),
+      data.id,
+      await insightDeps(context, data.name),
+    ),
   )
 
 export const archiveCategoryStudy = createServerFn({ method: 'POST' })

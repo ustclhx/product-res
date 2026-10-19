@@ -21,13 +21,14 @@ import {
   user,
 } from '@product-res/db'
 import { DEFAULT_FREE_FEATURES } from '@product-res/entitlements'
-import { newId } from '@product-res/shared'
+import { AppError, newId } from '@product-res/shared'
 import { simulateReadableStream } from 'ai'
 import { MockLanguageModelV4 } from 'ai/test'
 import { and, eq, inArray, type SQL } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { AiPrompt, InsightAi } from '../src/features/category/ai.ts'
 import { createInsightAi } from '../src/features/category/ai-runtime.server.ts'
+import { ANALYSIS_TTL_MS } from '../src/features/category/analysis.server.ts'
 import {
   type CategoryActor,
   convertToLead,
@@ -40,7 +41,12 @@ import {
 import { categoryFixture } from './fixtures/category-insight-data.ts'
 
 // add-category-insight tasks 3.1 / 3.3 / 3.4：快照生成与刷新（真实 PG）、AI 引用校验与用量、转线索与归档。
-const db = () => createDb(env.HYPERDRIVE)
+// 共用一个连接池：每次新建客户端会在本地 PG 上耗尽连接槽
+let client: ReturnType<typeof createDb> | undefined
+const db = () => {
+  client ??= createDb(env.HYPERDRIVE)
+  return client
+}
 const NOW = new Date('2026-10-19T08:00:00Z')
 const suffix = newId().slice(-8)
 const fx = categoryFixture(NOW, suffix)
@@ -134,6 +140,37 @@ function fakeAi(output: unknown): InsightAi & { calls: AiPrompt[]; resolves: num
   }
   return ai
 }
+/** 收集后台分析任务，测试中显式等待完成 */
+function backgroundTasks() {
+  const tasks: Promise<void>[] = []
+  return {
+    run: (run: () => Promise<void>) => {
+      tasks.push(run())
+    },
+    flush: () => Promise.all(tasks.splice(0)),
+  }
+}
+
+/** 由测试控制何时完成的 AI 调用 */
+function deferredAi() {
+  const pending: { resolve(text: string): void; reject(error: unknown): void }[] = []
+  const ai = {
+    calls: 0,
+    pending,
+    async resolve() {
+      return {
+        ok: true as const,
+        modelKey: 'deferred-model',
+        generate: () => {
+          ai.calls++
+          return new Promise<string>((resolve, reject) => pending.push({ resolve, reject }))
+        },
+      }
+    },
+  }
+  return ai
+}
+
 const notConfigured = (): InsightAi & { generate: ReturnType<typeof vi.fn> } => {
   const generate = vi.fn()
   return {
@@ -170,6 +207,7 @@ afterAll(async () => {
   await db().delete(marketplaceProduct).where(inArray(marketplaceProduct.id, productIds))
   await db().delete(marketplaceKeyword).where(eq(marketplaceKeyword.id, keywordId))
   if (modelId) await db().update(aiModel).set({ enabled: false }).where(eq(aiModel.id, modelId))
+  await client?.close()
 })
 
 describe('研究快照', () => {
@@ -243,8 +281,19 @@ describe('研究快照', () => {
         { title: '引用不存在的评论', detail: '', citations: ['R999'] },
       ],
     })
-    const { id } = await createStudy(owner, studyInput('AI 建议'), { ai, now: NOW })
-    await refreshStudy(owner, id, { ai, now: new Date(NOW.getTime() + 60_000) })
+    const bg = backgroundTasks()
+    const { id } = await createStudy(owner, studyInput('AI 建议'), {
+      ai,
+      now: NOW,
+      background: bg.run,
+    })
+    await bg.flush()
+    await refreshStudy(owner, id, {
+      ai,
+      now: new Date(NOW.getTime() + 60_000),
+      background: bg.run,
+    })
+    await bg.flush()
     expect(ai.calls).toHaveLength(1)
     const m = (await reportPage(owner, id)).snapshot?.modules
     if (m?.suggestions.status !== 'ok' || m.painPoints.themes.status !== 'ok')
@@ -268,6 +317,124 @@ describe('研究快照', () => {
     })
     const other = await space()
     await expect(reportPage(other, id)).rejects.toMatchObject({ code: 'NOT_FOUND' })
+  })
+})
+
+describe('后台分析', () => {
+  const output = JSON.stringify({
+    themes: [{ label: '底部打滑', reviewIds: ['R1', 'R2'] }],
+    suggestions: [{ title: '底部防滑硅胶圈', detail: '解决打滑', citations: ['R1', 'P1'] }],
+  })
+
+  it('生成立即返回“分析中”，后台完成后写回同一份快照', async () => {
+    const owner = await space()
+    const ai = deferredAi()
+    const bg = backgroundTasks()
+    const created = await createStudy(owner, studyInput('后台写回'), {
+      ai,
+      now: NOW,
+      background: bg.run,
+    })
+    expect(created.analyzing).toBe(true)
+    const running = (await reportPage(owner, created.id, undefined, NOW)).snapshot?.modules
+    expect(running?.painPoints.themes).toMatchObject({
+      status: 'running',
+      job: { modelKey: 'deferred-model' },
+    })
+    expect(running?.suggestions.status).toBe('running')
+    // 非 AI 模块已完整写入
+    expect(running?.competitors.status).toBe('ok')
+
+    ai.pending[0]?.resolve(output)
+    await bg.flush()
+    const page = await reportPage(owner, created.id, undefined, NOW)
+    expect(page.snapshots).toHaveLength(1)
+    const m = page.snapshot?.modules
+    if (m?.suggestions.status !== 'ok' || m.painPoints.themes.status !== 'ok')
+      throw new Error('analysis not persisted')
+    expect(m.suggestions.items.map((x) => x.title)).toEqual(['底部防滑硅胶圈'])
+    expect(m.painPoints.themes.themes[0]).toMatchObject({ label: '底部打滑', reviewCount: 2 })
+    const reviewId = m.suggestions.items[0]?.citations[0]?.id as string
+    expect(m.reviews[reviewId]?.body).toBeTruthy()
+  })
+
+  it('分析在途时重复刷新返回同一份快照，不新增、不重复调用', async () => {
+    const owner = await space()
+    const ai = deferredAi()
+    const bg = backgroundTasks()
+    const created = await createStudy(owner, studyInput('双击'), {
+      ai,
+      now: NOW,
+      background: bg.run,
+    })
+    const later = new Date(NOW.getTime() + 30_000)
+    const [a, b] = await Promise.all([
+      refreshStudy(owner, created.id, { ai, now: later, background: bg.run }),
+      refreshStudy(owner, created.id, { ai, now: later, background: bg.run }),
+    ])
+    expect([a.id, b.id]).toEqual([created.snapshotId, created.snapshotId])
+    expect(a.analyzing).toBe(true)
+    expect(ai.calls).toBe(1)
+    expect((await reportPage(owner, created.id, undefined, later)).snapshots).toHaveLength(1)
+    ai.pending[0]?.resolve(output)
+    await bg.flush()
+  })
+
+  it('超时未完成显示 ANALYSIS_EXPIRED，可重新刷新；迟到的结果仍写回原快照', async () => {
+    const owner = await space()
+    const ai = deferredAi()
+    const bg = backgroundTasks()
+    const created = await createStudy(owner, studyInput('过期'), {
+      ai,
+      now: NOW,
+      background: bg.run,
+    })
+    const expired = new Date(NOW.getTime() + ANALYSIS_TTL_MS + 1000)
+    const m = (await reportPage(owner, created.id, undefined, expired)).snapshot?.modules
+    expect(m?.painPoints.themes).toMatchObject({ status: 'error', code: 'ANALYSIS_EXPIRED' })
+    expect(m?.suggestions).toMatchObject({ status: 'error', code: 'ANALYSIS_EXPIRED' })
+
+    const retried = await refreshStudy(owner, created.id, {
+      ai,
+      now: expired,
+      background: bg.run,
+    })
+    expect(retried.id).not.toBe(created.snapshotId)
+    expect(ai.calls).toBe(2)
+
+    ai.pending[0]?.resolve(output)
+    ai.pending[1]?.resolve(output)
+    await bg.flush()
+    const old = (await reportPage(owner, created.id, created.snapshotId, expired)).snapshot
+    expect(old?.modules.suggestions.status).toBe('ok')
+  })
+
+  it('失败写成机器可读的 code：积分不足、输出不合规', async () => {
+    const owner = await space()
+    const ai = deferredAi()
+    const bg = backgroundTasks()
+    const created = await createStudy(owner, studyInput('失败'), {
+      ai,
+      now: NOW,
+      background: bg.run,
+    })
+    ai.pending[0]?.reject(new AppError('INSUFFICIENT_CREDITS', 'no credits', { status: 402 }))
+    await bg.flush()
+    let m = (await reportPage(owner, created.id, undefined, NOW)).snapshot?.modules
+    expect(m?.painPoints.themes).toMatchObject({ status: 'error', code: 'INSUFFICIENT_CREDITS' })
+    expect(m?.suggestions).toMatchObject({ status: 'error', code: 'INSUFFICIENT_CREDITS' })
+
+    // 失败的快照不参与沿用：再次刷新重新调用
+    await refreshStudy(owner, created.id, {
+      ai,
+      now: new Date(NOW.getTime() + 60_000),
+      background: bg.run,
+    })
+    expect(ai.calls).toBe(2)
+    ai.pending[1]?.resolve('不是 JSON')
+    await bg.flush()
+    m = (await reportPage(owner, created.id, undefined, NOW)).snapshot?.modules
+    expect(m?.suggestions).toMatchObject({ status: 'error', code: 'INVALID_OUTPUT' })
   })
 })
 

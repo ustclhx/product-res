@@ -20,6 +20,12 @@ import { isLeadDecided } from '../costing/labels.ts'
 import { assertWorkbenchWriter } from '../workbench/access.ts'
 import type { WorkbenchActor } from '../workbench/actor.ts'
 import type { InsightAi } from './ai.ts'
+import {
+  type AnalysisBackground,
+  activeAnalysis,
+  runAnalysis,
+  withAnalysisExpiry,
+} from './analysis.server.ts'
 import { buildSnapshot } from './snapshot.server.ts'
 import type { SnapshotModules } from './types.ts'
 
@@ -126,6 +132,11 @@ function normalize(input: StudyInput) {
 export interface RefreshDeps {
   ai: InsightAi
   now?: Date
+  /**
+   * 后台执行 AI 分析（add-insight-background-analysis）；由入口用 BackgroundTasks 装配。
+   * 缺省时直接起一个不等待的 Promise（runAnalysis 不抛出）。
+   */
+  background?: AnalysisBackground
 }
 
 /** 新建研究并生成第一份快照 */
@@ -140,7 +151,7 @@ export async function createStudy(actor: CategoryActor, input: StudyInput, deps:
     .returning({ id: categoryStudy.id })
   if (!row) throw new Error('insert category_study failed')
   const snapshot = await refreshStudy(actor, row.id, deps)
-  return { id: row.id, snapshotId: snapshot.id }
+  return { id: row.id, snapshotId: snapshot.id, analyzing: snapshot.analyzing }
 }
 
 export async function updateStudy(actor: CategoryActor, id: string, input: StudyInput) {
@@ -158,9 +169,13 @@ export async function updateStudy(actor: CategoryActor, id: string, input: Study
   await s.updateById(categoryStudy, id, values)
 }
 
+const themesStatus = sql`${categoryStudySnapshot.modules}->'painPoints'->'themes'->>'status'`
+
 /**
  * 生成 / 刷新快照：每次新增一行，旧快照保留（spec「刷新保留历史」）。
- * 只读已有观测值；差评与竞品与上一份相同时沿用其 AI 结果。
+ * 只读已有观测值；差评与竞品与最近一份 AI 成功的快照相同时沿用其结果。
+ * 需要调用 AI 时快照先以“分析中”写入并立即返回，分析在后台完成后写回（add-insight-background-analysis）；
+ * 同一研究同一输入指纹的分析仍在途时，重复刷新直接返回那份快照，不新增、不再调用（按研究加事务级咨询锁串行判断）。
  */
 export async function refreshStudy(actor: CategoryActor, id: string, deps: RefreshDeps) {
   assertWorkbenchWriter(actor)
@@ -168,7 +183,9 @@ export async function refreshStudy(actor: CategoryActor, id: string, deps: Refre
   const study = await s.findById(categoryStudy, id)
   if (study.status === 'archived') throw conflict('已归档的研究不能刷新，请先取消归档')
   const [previous] = await s
-    .select(categoryStudySnapshot, { where: eq(categoryStudySnapshot.studyId, id) })
+    .select(categoryStudySnapshot, {
+      where: and(eq(categoryStudySnapshot.studyId, id), sql`${themesStatus} = 'ok'`) as SQL,
+    })
     .orderBy(desc(categoryStudySnapshot.generatedAt))
     .limit(1)
   await ensureSelectionDefaults(actor.db, actor.workspaceId)
@@ -180,7 +197,7 @@ export async function refreshStudy(actor: CategoryActor, id: string, deps: Refre
     },
   })
   const now = deps.now ?? new Date()
-  const { modules, dataAsOf } = await buildSnapshot(actor.db, study, {
+  const { modules, dataAsOf, analysis } = await buildSnapshot(actor.db, study, {
     ai: deps.ai,
     now,
     nodes,
@@ -188,18 +205,54 @@ export async function refreshStudy(actor: CategoryActor, id: string, deps: Refre
       ? { id: previous.id, modules: previous.modules as unknown as SnapshotModules }
       : null,
   })
-  const [row] = await s
-    .insert(categoryStudySnapshot, {
-      studyId: id,
-      generatedAt: now,
-      dataAsOf,
-      modules: modules as unknown as Record<string, unknown>,
-    })
-    .returning()
-  if (!row) throw new Error('insert category_study_snapshot failed')
-  // 列表按最近更新排序
-  await s.updateById(categoryStudy, id, { updatedAt: now })
-  return { id: row.id, generatedAt: row.generatedAt.toISOString() }
+  const saved = await actor.db.transaction(async (raw) => {
+    // 同一研究的刷新串行判断“是否已有同指纹的在途分析”，避免双击或重试重复调用、重复计费
+    await raw.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${`category-study:${id}`}, 0))`,
+    )
+    const tx = scoped(raw, actor.workspaceId)
+    if (analysis) {
+      const [latest] = await tx
+        .select(categoryStudySnapshot, { where: eq(categoryStudySnapshot.studyId, id) })
+        .orderBy(desc(categoryStudySnapshot.generatedAt))
+        .limit(1)
+      const inflight = latest
+        ? activeAnalysis(latest.modules as unknown as SnapshotModules, now)
+        : null
+      if (latest && inflight?.fingerprint === analysis.job.fingerprint)
+        return { id: latest.id, generatedAt: latest.generatedAt, reused: true }
+    }
+    const [row] = await tx
+      .insert(categoryStudySnapshot, {
+        studyId: id,
+        generatedAt: now,
+        dataAsOf,
+        modules: modules as unknown as Record<string, unknown>,
+      })
+      .returning()
+    if (!row) throw new Error('insert category_study_snapshot failed')
+    // 列表按最近更新排序
+    await tx.updateById(categoryStudy, id, { updatedAt: now })
+    return { id: row.id, generatedAt: row.generatedAt, reused: false }
+  })
+  if (analysis && !saved.reused) {
+    // 事务提交后再启动：后台写回时快照一定已存在
+    const run = () =>
+      runAnalysis({
+        db: actor.db,
+        workspaceId: actor.workspaceId,
+        snapshotId: saved.id,
+        pending: analysis,
+      })
+    if (deps.background) deps.background(run)
+    else void run()
+  }
+  return {
+    id: saved.id,
+    generatedAt: saved.generatedAt.toISOString(),
+    /** AI 分析在后台进行中（含复用的在途分析） */
+    analyzing: analysis !== null,
+  }
 }
 
 export async function setStudyArchived(actor: CategoryActor, id: string, archived: boolean) {
@@ -216,7 +269,12 @@ const snapshotMeta = (row: Pick<CategoryStudySnapshot, 'id' | 'generatedAt' | 'd
 })
 
 /** 报告页：研究、快照列表（新 → 旧）、所选快照（默认最新）、可选方向与已转线索 */
-export async function reportPage(actor: WorkbenchActor, id: string, snapshotId?: string) {
+export async function reportPage(
+  actor: WorkbenchActor,
+  id: string,
+  snapshotId?: string,
+  now = new Date(),
+) {
   const s = scoped(actor.db, actor.workspaceId)
   const study = await s.findById(categoryStudy, id)
   const snapshots = await s
@@ -261,7 +319,11 @@ export async function reportPage(actor: WorkbenchActor, id: string, snapshotId?:
     },
     snapshots: snapshots.map(snapshotMeta),
     snapshot: current
-      ? { ...snapshotMeta(current), modules: current.modules as unknown as SnapshotModules }
+      ? {
+          ...snapshotMeta(current),
+          // 超时仍未完成的后台分析按失败显示（ANALYSIS_EXPIRED），可重新刷新
+          modules: withAnalysisExpiry(current.modules as unknown as SnapshotModules, now),
+        }
       : null,
     directions,
     converted: await convertedLeads(actor, id),

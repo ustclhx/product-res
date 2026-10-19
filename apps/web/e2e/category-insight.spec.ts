@@ -54,89 +54,98 @@ async function seed(slug: string, suffix: string) {
 async function addAiFixtureSnapshot(workspaceId: string, suffix: string) {
   const sql = fixtureDb()
   try {
-    const [snap] =
-      await sql`select s.study_id, s.modules, s.data_as_of from category_study_snapshot s
-      where s.workspace_id = ${workspaceId} order by generated_at desc limit 1`
-    if (!snap) throw new Error('snapshot missing')
-    const reviews = await sql`select r.id, r.review_id, r.rating, r.title, r.body, r.product_id
-      from marketplace_review r where r.review_id like ${`R${suffix}-%`}`
-    const byKey = new Map(reviews.map((r) => [r.review_id as string, r]))
-    const rid = (i: number) => byKey.get(`R${suffix}-${i}`)?.id as string
-    const modules = snap.modules as SnapshotModules
-    const rows = modules.competitors.status === 'ok' ? modules.competitors.rows : []
-    for (const r of reviews)
-      modules.reviews[r.id] = {
-        id: r.id,
-        productId: r.product_id,
-        rating: r.rating,
-        title: r.title,
-        body: r.body,
-        sourceId: 'import',
-      }
-    const ai = {
-      modelKey: 'fixture-model',
-      generatedAt: new Date().toISOString(),
-      fingerprint: 'fixture',
-      reusedFrom: null,
-    }
-    const theme = (label: string, idx: number[]) => ({
-      label,
-      reviewCount: idx.length,
-      share: idx.length / 16,
-      reviewIds: idx.slice(0, 3).map(rid),
-    })
-    modules.painPoints.themes = {
-      status: 'ok',
-      analyzed: 16,
-      ai,
-      themes: [
-        theme('底部打滑', [0, 6, 12, 13]),
-        theme('材质易裂', [1, 8, 15, 7]),
-        theme('难清洗', [2, 5, 11]),
-        theme('尺寸偏小', [3, 9]),
-        theme('异味', [4, 14]),
-        theme('色差', [10]),
-      ],
-    }
-    modules.suggestions = {
-      status: 'ok',
-      dropped: 1,
-      ai,
-      items: [
-        {
-          title: '底部一体防滑硅胶圈',
-          detail: '头部商品差评集中在地面打滑，底部加宽硅胶圈并做吸附纹理。',
-          citations: [
-            { kind: 'review', id: rid(0) },
-            { kind: 'review', id: rid(6) },
-            { kind: 'product', id: rows[0]?.id as string },
-          ],
-        },
-        {
-          title: '改用食品级陶瓷或加厚 PP',
-          detail: '多条差评提到一周内开裂、廉价感，材质升级拉开与低价款的差距。',
-          citations: [
-            { kind: 'review', id: rid(1) },
-            { kind: 'review', id: rid(8) },
-            { kind: 'product', id: rows[1]?.id as string },
-          ],
-        },
-        {
-          title: '可拆迷宫 + 可洗碗机',
-          detail: '迷宫纹路难清洗是第三大痛点，做成可拆插件并标注洗碗机安全。',
-          citations: [
-            { kind: 'review', id: rid(2) },
-            { kind: 'review', id: rid(5) },
-            { kind: 'product', id: rows[6]?.id as string },
-          ],
-        },
-      ],
-    }
+    const { snap, modules } = await aiFixtureModules(sql, workspaceId, suffix)
     await sql`insert into category_study_snapshot (id, workspace_id, study_id, generated_at, data_as_of, modules)
       values (gen_random_uuid(), ${workspaceId}, ${snap.study_id}, now(), ${snap.data_as_of}, ${sql.json(modules as never)})`
   } finally {
     await sql.end()
   }
+}
+
+/** 最新快照 + 夹具 AI 主题与建议 */
+async function aiFixtureModules(
+  sql: ReturnType<typeof fixtureDb>,
+  workspaceId: string,
+  suffix: string,
+) {
+  const [snap] = await sql`select s.study_id, s.modules, s.data_as_of from category_study_snapshot s
+      where s.workspace_id = ${workspaceId} order by generated_at desc limit 1`
+  if (!snap) throw new Error('snapshot missing')
+  const reviews = await sql`select r.id, r.review_id, r.rating, r.title, r.body, r.product_id
+      from marketplace_review r where r.review_id like ${`R${suffix}-%`}`
+  const byKey = new Map(reviews.map((r) => [r.review_id as string, r]))
+  const rid = (i: number) => byKey.get(`R${suffix}-${i}`)?.id as string
+  const modules = snap.modules as SnapshotModules
+  const rows = modules.competitors.status === 'ok' ? modules.competitors.rows : []
+  for (const r of reviews)
+    modules.reviews[r.id] = {
+      id: r.id,
+      productId: r.product_id,
+      rating: r.rating,
+      title: r.title,
+      body: r.body,
+      sourceId: 'import',
+    }
+  const ai = {
+    modelKey: 'fixture-model',
+    generatedAt: new Date().toISOString(),
+    fingerprint: 'fixture',
+    reusedFrom: null,
+  }
+  const theme = (label: string, idx: number[]) => ({
+    label,
+    reviewCount: idx.length,
+    share: idx.length / 16,
+    reviewIds: idx.slice(0, 3).map(rid),
+  })
+  modules.painPoints.themes = {
+    status: 'ok',
+    analyzed: 16,
+    ai,
+    themes: [
+      theme('底部打滑', [0, 6, 12, 13]),
+      theme('材质易裂', [1, 8, 15, 7]),
+      theme('难清洗', [2, 5, 11]),
+      theme('尺寸偏小', [3, 9]),
+      theme('异味', [4, 14]),
+      theme('色差', [10]),
+    ],
+  }
+  modules.suggestions = {
+    status: 'ok',
+    dropped: 1,
+    ai,
+    items: [
+      {
+        title: '底部一体防滑硅胶圈',
+        detail: '头部商品差评集中在地面打滑，底部加宽硅胶圈并做吸附纹理。',
+        citations: [
+          { kind: 'review', id: rid(0) },
+          { kind: 'review', id: rid(6) },
+          { kind: 'product', id: rows[0]?.id as string },
+        ],
+      },
+      {
+        title: '改用食品级陶瓷或加厚 PP',
+        detail: '多条差评提到一周内开裂、廉价感，材质升级拉开与低价款的差距。',
+        citations: [
+          { kind: 'review', id: rid(1) },
+          { kind: 'review', id: rid(8) },
+          { kind: 'product', id: rows[1]?.id as string },
+        ],
+      },
+      {
+        title: '可拆迷宫 + 可洗碗机',
+        detail: '迷宫纹路难清洗是第三大痛点，做成可拆插件并标注洗碗机安全。',
+        citations: [
+          { kind: 'review', id: rid(2) },
+          { kind: 'review', id: rid(5) },
+          { kind: 'product', id: rows[6]?.id as string },
+        ],
+      },
+    ],
+  }
+  return { snap, modules }
 }
 
 async function shot(page: Page, name: string) {
@@ -228,4 +237,67 @@ test('品类洞察：新建研究生成报告、快照切换、来源查看、�
   await waitForHydration(page)
   await expect(page.getByTestId('study-card')).toHaveCount(2)
   await shot(page, '06-study-list')
+})
+
+test('品类洞察：后台 AI 分析中显示“分析中”，完成后页面自动更新', async ({ page }) => {
+  test.setTimeout(180_000)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await simulateClientIp(page)
+  await stubTurnstile(page)
+  const suffix = Math.random().toString(36).slice(2, 10)
+  await register(page, `category-bg-${suffix}@example.com`)
+  const base = new URL(page.url()).pathname.replace(/\/$/, '')
+  const slug = base.split('/').pop() as string
+  const { fx, workspaceId } = await seed(slug, suffix)
+
+  await page.goto(`${base}/category`)
+  await waitForHydration(page)
+  await page.getByRole('button', { name: '新建研究' }).click()
+  const form = page.getByRole('form', { name: '品类研究' })
+  await form.getByLabel('研究名称').fill('后台分析')
+  await form.getByLabel('类目 ID').fill(fx.categoryId)
+  await form.getByLabel('关键词').fill(fx.keyword)
+  await form.getByRole('button', { name: '创建并生成报告' }).click()
+  await expect(page.getByTestId('category-report')).toBeVisible({ timeout: 60_000 })
+
+  // 本地没有启用的文本模型：用夹具快照模拟后台分析在途，再写入结果，验证页面轮询更新
+  const sql = fixtureDb()
+  try {
+    const { snap, modules } = await aiFixtureModules(sql, workspaceId, suffix)
+    const startedAt = new Date()
+    const job = {
+      id: crypto.randomUUID(),
+      fingerprint: 'fixture',
+      modelKey: 'fixture-model',
+      startedAt: startedAt.toISOString(),
+      expiresAt: new Date(startedAt.getTime() + 10 * 60_000).toISOString(),
+    }
+    const running = { status: 'running', reason: 'AI 正在后台分析差评与竞品，完成后自动显示', job }
+    const done = structuredClone(modules)
+    const [row] = await sql`insert into category_study_snapshot
+      (id, workspace_id, study_id, generated_at, data_as_of, modules)
+      values (gen_random_uuid(), ${workspaceId}, ${snap.study_id}, now(), ${snap.data_as_of},
+        ${sql.json({ ...modules, painPoints: { ...modules.painPoints, themes: running }, suggestions: running } as never)})
+      returning id`
+    await page.reload()
+    await waitForHydration(page)
+    await expect(page.getByTestId('module-suggestions').getByTestId('ai-running')).toContainText(
+      '分析中',
+    )
+    await expect(page.getByTestId('module-pain').getByTestId('ai-running')).toBeVisible()
+    // add-insight-background-analysis 的验收截图单独存放，不覆盖 M4 的截图
+    const bgReceipts = new URL(`../../../docs/receipts/insight-background-${day}/`, import.meta.url)
+      .pathname
+    mkdirSync(bgReceipts, { recursive: true })
+    await page.screenshot({ path: `${bgReceipts}07-analysis-running.png`, fullPage: true })
+
+    await sql`update category_study_snapshot set modules = ${sql.json(done as never)} where id = ${row?.id}`
+    // 不刷新页面：轮询拿到结果
+    await expect(page.getByTestId('module-suggestions')).toContainText('底部一体防滑硅胶圈', {
+      timeout: 20_000,
+    })
+    await expect(page.getByTestId('ai-running')).toHaveCount(0)
+  } finally {
+    await sql.end()
+  }
 })
