@@ -29,9 +29,7 @@ const sharedTests = [
   'selection',
   'setting',
   'validation',
-].map(
-  (name) => fileURLToPath(new URL(`./test/${name}.test.ts`, import.meta.url)),
-)
+].map((name) => fileURLToPath(new URL(`./test/${name}.test.ts`, import.meta.url)))
 const fixturePath = fileURLToPath(new URL('./test/node/env.ts', import.meta.url))
 export default defineConfig({
   plugins: [
