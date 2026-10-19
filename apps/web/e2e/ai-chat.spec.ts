@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { expect, type Page, test } from '@playwright/test'
 import { DEFAULT_FREE_FEATURES } from '@product-res/entitlements'
 import { newId } from '@product-res/shared'
-import { fixtureDb, login, register, simulateClientIp } from './fixtures.ts'
+import { fixtureDb, login, register, simulateClientIp, uiText } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // 对话列表与对话页（tasks.md 3.1）。本地没有真实模型：发送消息时拦截 POST /api/ai/chat，
@@ -35,7 +35,8 @@ test('creates, renames and archives own conversations', async ({ page }) => {
   const email = `chat-list-${randomUUID()}@example.com`
   await register(page, email)
   const slug = slugOf(page)
-  await page.getByRole('link', { name: 'Chat', exact: true }).click()
+  await page.getByTestId('current-user').click()
+  await page.locator(`a[href="/app/${slug}/chat"]`).click()
   await expect(page.getByText('No conversations yet.')).toBeVisible()
 
   const id = await newConversation(page, slug)
@@ -238,9 +239,9 @@ test('chat page picks a model, streams replies, stops and explains errors', asyn
 
     // 2. 错误码显示为可读提示
     for (const [status, code, text, billing] of [
-      [503, 'AI_PROVIDER_NOT_CONFIGURED', 'AI replies are not set up on this server yet.', 0],
-      [402, 'INSUFFICIENT_CREDITS', 'Not enough credits for this message.', 1],
-      [429, 'RATE_LIMITED', 'Too many messages.', 0],
+      [503, 'AI_PROVIDER_NOT_CONFIGURED', uiText('chat_error_ai_provider_not_configured'), 0],
+      [402, 'INSUFFICIENT_CREDITS', uiText('chat_error_insufficient_credits'), 1],
+      [429, 'RATE_LIMITED', uiText('chat_error_rate_limited'), 0],
     ] as const) {
       await page.route('**/api/ai/chat', (route) =>
         route.fulfill({ status, json: { error: { code, message: code } } }),

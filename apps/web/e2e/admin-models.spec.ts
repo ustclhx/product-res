@@ -1,11 +1,11 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { expect, type Route, test } from '@playwright/test'
-import { fixtureDb, register, simulateClientIp } from './fixtures.ts'
+import { fixtureDb, register, simulateClientIp, uiText } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 test('model administration is hidden from non-admins', async ({ page }) => {
   await page.goto('/admin/models')
-  await expect(page.getByRole('heading', { name: 'AI models' })).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: uiText('admin_ai_models') })).toHaveCount(0)
 })
 
 test('platform admin can create, edit, disable and enable a model', async ({ page }) => {
@@ -21,37 +21,39 @@ test('platform admin can create, edit, disable and enable a model', async ({ pag
     await sql`update "user" set role='admin' where id=${account.id}`
 
     await page.goto('/admin/models')
-    await expect(page.getByRole('heading', { name: 'AI models' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: uiText('admin_ai_models') })).toBeVisible()
     // 新建表单默认收起，先展开
-    await page.getByRole('button', { name: 'New model', exact: true }).click()
-    const form = page.getByRole('article', { name: 'New model' })
+    await page.getByRole('button', { name: uiText('admin_new_model'), exact: true }).click()
+    const form = page.getByRole('article', { name: uiText('admin_new_model') })
     // template.config.ts 中文本模型默认按 token 计费
-    await expect(form.getByLabel('Pricing mode')).toHaveValue('token')
+    await expect(form.getByLabel(uiText('admin_pricing_mode'))).toHaveValue('token')
 
     // 页面水合前的操作不会进入 React 状态：重复切换直到按次字段出现
     await expect
       .poll(async () => {
-        await form.getByLabel('Pricing mode').selectOption('per_call')
-        return form.getByLabel('Credits per call').isVisible()
+        await form.getByLabel(uiText('admin_pricing_mode')).selectOption('per_call')
+        return form.getByLabel(uiText('admin_credits_per_call')).isVisible()
       })
       .toBe(true)
-    await form.getByLabel('Key').fill(key)
-    await form.getByLabel('Provider', { exact: true }).fill('openai')
-    await form.getByLabel('Provider model ID').fill('gpt-fixture')
-    await form.getByLabel('Credits per call').fill('2')
-    await form.getByRole('button', { name: 'Create model' }).click()
-    await expect(form.getByRole('status')).toContainText('token limits')
+    await form.getByLabel(uiText('admin_key')).fill(key)
+    await form.getByLabel(uiText('admin_provider'), { exact: true }).fill('openai')
+    await form.getByLabel(uiText('admin_provider_model_id')).fill('gpt-fixture')
+    await form.getByLabel(uiText('admin_credits_per_call')).fill('2')
+    await form.getByRole('button', { name: uiText('admin_create_model') }).click()
+    await expect(form.getByRole('status')).toContainText(
+      uiText('admin_per_call_text_models_require_input_and_output'),
+    )
     expect(await sql`select id from ai_model where key=${key}`).toHaveLength(0)
 
-    await form.getByLabel('Max input tokens').fill('8000')
-    await form.getByLabel('Max output tokens').fill('2000')
-    await form.getByLabel('Parameters schema (JSON)', { exact: true }).fill('{')
-    await form.getByRole('button', { name: 'Create model' }).click()
+    await form.getByLabel(uiText('admin_max_input_tokens')).fill('8000')
+    await form.getByLabel(uiText('admin_max_output_tokens')).fill('2000')
+    await form.getByLabel(uiText('admin_parameters_schema_json'), { exact: true }).fill('{')
+    await form.getByRole('button', { name: uiText('admin_create_model') }).click()
     await expect(form.getByRole('status')).toContainText(/JSON/i)
     await form
-      .getByLabel('Parameters schema (JSON)', { exact: true })
+      .getByLabel(uiText('admin_parameters_schema_json'), { exact: true })
       .fill(JSON.stringify({ 'x-text': { tokensPerChar: 0 } }))
-    await form.getByRole('button', { name: 'Create model' }).click()
+    await form.getByRole('button', { name: uiText('admin_create_model') }).click()
     await expect(form.getByRole('status')).toContainText(/tokensPerChar|x-text/i)
     expect(await sql`select id from ai_model where key=${key}`).toHaveLength(0)
     expect(
@@ -60,10 +62,10 @@ test('platform admin can create, edit, disable and enable a model', async ({ pag
 
     const initialSchema = { 'x-text': { tokensPerChar: 1.5, maxOutputTokens: 2000 } }
     await form
-      .getByLabel('Parameters schema (JSON)', { exact: true })
+      .getByLabel(uiText('admin_parameters_schema_json'), { exact: true })
       .fill(JSON.stringify(initialSchema))
-    await form.getByRole('button', { name: 'Create model' }).click()
-    const card = page.getByRole('article', { name: `Model ${key}` })
+    await form.getByRole('button', { name: uiText('admin_create_model') }).click()
+    const card = page.getByRole('article', { name: uiText('admin_model_title', { key }) })
     await expect(card).toBeVisible()
 
     const [created] = await sql`select params_schema from ai_model where key=${key}`
@@ -89,9 +91,9 @@ test('platform admin can create, edit, disable and enable a model', async ({ pag
       tampered = true
       await route.continue({ postData: JSON.stringify(wire) })
     }
-    await card.getByLabel('Parameters schema (JSON)', { exact: true }).fill(validJson)
+    await card.getByLabel(uiText('admin_parameters_schema_json'), { exact: true }).fill(validJson)
     await page.route('**/_serverFn/**', tamper)
-    await card.getByRole('button', { name: 'Save changes' }).click()
+    await card.getByRole('button', { name: uiText('admin_save_changes') }).click()
     await expect(card.getByRole('status')).toContainText(/JSON/i)
     await page.unroute('**/_serverFn/**', tamper)
     expect(tampered).toBe(true)
@@ -103,11 +105,11 @@ test('platform admin can create, edit, disable and enable a model', async ({ pag
 
     const editedSchema = { 'x-text': { tokensPerChar: 2, maxOutputTokens: 1800 } }
     await card
-      .getByLabel('Parameters schema (JSON)', { exact: true })
+      .getByLabel(uiText('admin_parameters_schema_json'), { exact: true })
       .fill(JSON.stringify(editedSchema))
-    await card.getByLabel('Credits per call').fill('3')
-    await card.getByRole('button', { name: 'Save changes' }).click()
-    await expect(card.getByRole('status')).toContainText('Saved.')
+    await card.getByLabel(uiText('admin_credits_per_call')).fill('3')
+    await card.getByRole('button', { name: uiText('admin_save_changes') }).click()
+    await expect(card.getByRole('status')).toContainText(uiText('admin_saved'))
     const [saved] =
       await sql`select id, pricing, params_schema, enabled from ai_model where key=${key}`
     expect(saved).toMatchObject({
@@ -116,10 +118,10 @@ test('platform admin can create, edit, disable and enable a model', async ({ pag
       pricing: { mode: 'per_call', credits: 3, limits: { maxInputTokens: 8000 } },
     })
 
-    await card.getByRole('button', { name: 'Disable' }).click()
-    await expect(card.getByRole('heading')).toContainText('(disabled)')
-    await card.getByRole('button', { name: 'Enable' }).click()
-    await expect(card.getByRole('button', { name: 'Disable' })).toBeVisible()
+    await card.getByRole('button', { name: uiText('admin_disable') }).click()
+    await expect(card.getByRole('heading')).toContainText(uiText('admin_disabled_suffix').trim())
+    await card.getByRole('button', { name: uiText('admin_enable') }).click()
+    await expect(card.getByRole('button', { name: uiText('admin_disable') })).toBeVisible()
 
     const audits =
       await sql`select action, meta from audit_log where target_type='ai_model' and target_id=${String(saved?.id)} order by id`
@@ -152,13 +154,15 @@ test('platform admin can create, edit, disable and enable a model', async ({ pag
     // 复制拥有自己的参数草稿，不改变来源模型的已保存 schema。
     const copiedSchema = { 'x-text': { tokensPerChar: 3, maxOutputTokens: 1600 } }
     await card
-      .getByLabel('Copy parameters schema (JSON)', { exact: true })
+      .getByLabel(uiText('admin_copy_parameters_schema_json'), { exact: true })
       .fill(JSON.stringify(copiedSchema))
-    await card.getByLabel('Copy key').fill(`${key}-copy`)
-    await card.getByRole('button', { name: 'Copy model', exact: true }).click()
-    const copy = page.getByRole('article', { name: `Model ${key}-copy` })
+    await card.getByLabel(uiText('admin_copy_key')).fill(`${key}-copy`)
+    await card.getByRole('button', { name: uiText('admin_copy_model'), exact: true }).click()
+    const copy = page.getByRole('article', {
+      name: uiText('admin_model_title', { key: `${key}-copy` }),
+    })
     await expect(copy).toBeVisible()
-    await expect(copy.getByRole('heading')).toContainText('(disabled)')
+    await expect(copy.getByRole('heading')).toContainText(uiText('admin_disabled_suffix').trim())
     const [cloned] =
       await sql`select id, pricing, params_schema, provider_model_id from ai_model where key=${`${key}-copy`}`
     expect(cloned).toMatchObject({
@@ -177,17 +181,17 @@ test('platform admin can create, edit, disable and enable a model', async ({ pag
     const [sourceAfterCopy] = await sql`select params_schema from ai_model where key=${key}`
     expect(sourceAfterCopy?.params_schema).toEqual(editedSchema)
 
-    await page.getByLabel('Model type').selectOption('image')
-    await page.getByRole('button', { name: 'Apply', exact: true }).click()
+    await page.getByLabel(uiText('admin_model_type')).selectOption('image')
+    await page.getByRole('button', { name: uiText('admin_apply'), exact: true }).click()
     await expect(card).toHaveCount(0)
     await expect(copy).toHaveCount(0)
     await expect(page).toHaveURL(/kind=image/)
-    await page.getByLabel('Model type').selectOption('text')
-    await page.getByLabel('Order models').selectOption('key_desc')
-    await page.getByRole('button', { name: 'Apply', exact: true }).click()
+    await page.getByLabel(uiText('admin_model_type')).selectOption('text')
+    await page.getByLabel(uiText('admin_order_models')).selectOption('key_desc')
+    await page.getByRole('button', { name: uiText('admin_apply'), exact: true }).click()
     await expect(copy).toBeVisible()
     const keys = await page
-      .getByRole('table', { name: 'AI models' })
+      .getByRole('table', { name: uiText('admin_ai_models') })
       .getByRole('link')
       .allTextContents()
     expect(keys).toEqual([...keys].sort().reverse())

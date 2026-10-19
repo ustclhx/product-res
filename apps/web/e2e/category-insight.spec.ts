@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs'
 import { expect, type Page, test } from '@playwright/test'
 import type { SnapshotModules } from '../src/features/category/types.ts'
 import { categoryFixture } from '../test/fixtures/category-insight-data.ts'
-import { fixtureDb, register, simulateClientIp } from './fixtures.ts'
+import { fixtureDb, register, simulateClientIp, waitForHydration } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // add-category-insight 3.2 / 3.4：报告页截图对照设计稿；夹具数据直接写入隔离库。
@@ -158,7 +158,7 @@ test('品类洞察：新建研究生成报告、快照切换、来源查看、�
   const { fx, workspaceId } = await seed(slug, suffix)
 
   await page.goto(`${base}/category`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await expect(page.getByText('还没有品类研究')).toBeVisible()
   await page.getByRole('button', { name: '新建研究' }).click()
   const form = page.getByRole('form', { name: '品类研究' })
@@ -175,13 +175,13 @@ test('品类洞察：新建研究生成报告、快照切换、来源查看、�
   await expect(page.getByTestId('stat-return')).toContainText('无数据来源')
   await expect(page.getByTestId('stat-cr')).toContainText('已交叉验证')
   await expect(page.getByTestId('module-matrix').locator('tbody tr')).toHaveCount(10)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await shot(page, '01-report-generated')
 
   // AI 主题与建议的版式（夹具快照），同时验证快照切换
   await addAiFixtureSnapshot(workspaceId, suffix)
   await page.reload()
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await expect(page.getByTestId('module-suggestions')).toContainText('底部一体防滑硅胶圈')
   await page.getByTestId('module-suggestions').getByText('依据：').first().click()
   await shot(page, '02-report-ai-themes-suggestions')
@@ -212,7 +212,7 @@ test('品类洞察：新建研究生成报告、快照切换、来源查看、�
 
   // 无数据的研究：各模块显示“无数据来源”
   await page.goto(`${base}/category`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByRole('button', { name: '新建研究' }).click()
   const empty = page.getByRole('form', { name: '品类研究' })
   await empty.getByLabel('研究名称').fill('尚无数据的品类')
@@ -221,11 +221,11 @@ test('品类洞察：新建研究生成报告、快照切换、来源查看、�
   await expect(report).toBeVisible({ timeout: 60_000 })
   await expect(page.getByTestId('module-trend')).toContainText('无数据来源')
   await expect(page.getByTestId('module-pain')).toContainText('无数据来源')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await shot(page, '05-report-no-source')
 
   await page.goto(`${base}/category`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await expect(page.getByTestId('study-card')).toHaveCount(2)
   await shot(page, '06-study-list')
 })

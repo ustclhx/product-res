@@ -9,7 +9,9 @@ import {
   register,
   seedWorkspaceSeats,
   simulateClientIp,
+  uiText,
   verifyInvitation,
+  waitForHydration,
 } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
@@ -17,7 +19,7 @@ const key = () => `${Date.now()}-${randomUUID().slice(0, 8)}`
 
 async function confirmAccountDeletion(page: Page) {
   await page.goto('/account')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   const button = page.getByRole('button', { name: 'Delete account', exact: true })
   await expect(button).toBeDisabled()
   await page.getByLabel('Type DELETE to confirm').fill('DELETE')
@@ -28,7 +30,7 @@ async function confirmAccountDeletion(page: Page) {
 async function expectWorkspaceMissing(page: Page, path: string) {
   const response = await page.goto(path)
   expect(response?.status()).toBe(404)
-  await expect(page.getByRole('heading', { name: 'Workspace not found' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: uiText('app_workspace_not_found') })).toBeVisible()
   await expect(page.getByTestId('workspace-name')).toHaveCount(0)
 }
 
@@ -76,11 +78,11 @@ test('account deletion rejects original cookies and password; same email creates
 
     await context.clearCookies()
     await page.goto('/login')
-    const form = page.getByRole('form', { name: 'Sign in with password' })
-    await form.getByLabel('Email', { exact: true }).fill(email)
-    await form.getByLabel('Password', { exact: true }).fill(PASSWORD)
-    await form.getByRole('button', { name: 'Sign in', exact: true }).click()
-    await expect(page.getByRole('alert')).toHaveText('Incorrect email or password.')
+    const form = page.getByRole('form', { name: uiText('auth_sign_in_with_password') })
+    await form.getByLabel(uiText('auth_email'), { exact: true }).fill(email)
+    await form.getByLabel(uiText('auth_password'), { exact: true }).fill(PASSWORD)
+    await form.getByRole('button', { name: uiText('auth_sign_in'), exact: true }).click()
+    await expect(page.getByRole('alert')).toHaveText(uiText('auth_error_invalid_email_or_password'))
     await expect(page).toHaveURL(/\/login$/)
 
     await register(page, email)
@@ -128,13 +130,11 @@ test('team deletion is owner-only, blocks sole-owner account deletion and revoke
   const memberPage = await memberContext.newPage()
   try {
     await page.goto('/account')
-    await page.waitForLoadState('networkidle')
-    await page.getByRole('button', { name: 'Send verification email' }).click()
-    await expect(
-      page.getByText('Verification email sent. Check your inbox and open the link.'),
-    ).toBeVisible()
+    await waitForHydration(page)
+    await page.getByRole('button', { name: uiText('account_verification_send') }).click()
+    await expect(page.getByText(uiText('account_verification_sent'))).toBeVisible()
     await page.goto(await emailLink(ownerEmail))
-    await expect(page.getByText('Your email address is verified.')).toBeVisible()
+    await expect(page.getByText(uiText('account_verification_verified'))).toBeVisible()
     await page.goto('/app')
     await page.getByRole('button', { name: 'Create team workspace' }).click()
     await page.getByLabel('Team name', { exact: true }).fill(teamName)
@@ -154,7 +154,7 @@ test('team deletion is owner-only, blocks sole-owner account deletion and revoke
     await register(memberPage, memberEmail, 'Deletion Member')
     await memberPage.goto(`/accept-invitation?id=${invitation.id}`)
     await verifyInvitation(memberPage, memberEmail, String(invitation.id), teamName)
-    await memberPage.getByRole('button', { name: 'Accept invitation' }).click()
+    await memberPage.getByRole('button', { name: uiText('auth_accept_invitation') }).click()
     await expect(memberPage).toHaveURL(new RegExp(`/app/${slug}$`))
     const memberCookies = await memberContext.cookies()
     await memberPage.goto(`/app/${slug}/settings`)
@@ -167,7 +167,7 @@ test('team deletion is owner-only, blocks sole-owner account deletion and revoke
       'transfer ownership or delete this team first.',
     )
     await page.goto(`/app/${slug}/delete`)
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     const button = page.getByRole('button', { name: 'Delete workspace', exact: true })
     await expect(button).toBeDisabled()
     await page.getByLabel(`Type ${teamName} to confirm`).fill(teamName)

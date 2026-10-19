@@ -1,4 +1,7 @@
 import { expect, test } from '@playwright/test'
+import templateConfig from '../../../template.config.ts'
+
+test.skip(!templateConfig.marketing.enabled, '模板配置关闭了本用例访问的公开营销页面')
 
 test('默认公开页面 head 不加载 PostHog 或 Cloudflare beacon，保留首屏主题脚本', async ({
   page,

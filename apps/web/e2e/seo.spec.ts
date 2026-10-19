@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 import templateConfig from '../../../template.config.ts'
 
+test.skip(!templateConfig.marketing.enabled, '模板配置关闭了营销站及其 SEO 入口')
+
 const { locales, defaultLocale } = templateConfig.i18n
 const publicPaths = ['/', '/pricing', '/legal/privacy', '/legal/terms', '/legal/refund']
 if (templateConfig.features.blog)

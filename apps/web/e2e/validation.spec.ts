@@ -1,6 +1,6 @@
 import { mkdirSync } from 'node:fs'
 import { expect, type Page, test } from '@playwright/test'
-import { fixtureDb, register, simulateClientIp } from './fixtures.ts'
+import { fixtureDb, register, simulateClientIp, waitForHydration } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // add-shadow-validation 4.1：算法验证页冷启动空状态与有样本状态的截图对照。
@@ -209,7 +209,7 @@ test('算法验证：冷启动说明、有样本时的矩阵/曲线/构成、权
 
   // 冷启动：说明需要的样本数与预计时间，不画示例曲线
   await page.goto(`${base}/validation`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await expect(page.getByTestId('cold-start')).toContainText('至少 20 个有效样本')
   await expect(page.getByTestId('cold-start-eta')).toContainText('暂无法估算时间')
   await expect(page.locator('[data-slot="chart"]')).toHaveCount(0)
@@ -221,7 +221,7 @@ test('算法验证：冷启动说明、有样本时的矩阵/曲线/构成、权
   // 有样本：直接写入夹具后刷新
   await seed(slug, suffix)
   await page.reload()
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await expect(page.getByTestId('cold-start')).toHaveCount(0)
   await expect(page.getByTestId('readiness-cell')).toHaveCount(4)
   await expect(page.locator('[data-slot="chart"]')).toHaveCount(1)
@@ -260,7 +260,7 @@ test('算法验证：冷启动说明、有样本时的矩阵/曲线/构成、权
 
   // 数据中心：评分维度旁的回测命中率
   await page.goto(`${base}/data`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   // 等水合完成后标签切换才生效
   await expect(async () => {
     await page.getByRole('tab', { name: '评分维度管理' }).click()

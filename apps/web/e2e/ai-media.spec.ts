@@ -5,9 +5,12 @@ import type { AddressInfo } from 'node:net'
 import { expect, type Page, test } from '@playwright/test'
 import { DEFAULT_FREE_FEATURES } from '@product-res/entitlements'
 import { newId } from '@product-res/shared'
+import templateConfig from '../../../template.config.ts'
 import type { MediaTask } from '../src/features/ai-media/tasks-client.ts'
 import { fixtureDb, register, simulateClientIp } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
+
+test.skip(!templateConfig.ai.image, '本套件使用图片任务，模板配置关闭了 AI 图片')
 
 const RESULT_PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aPZkAAAAASUVORK5CYII=',

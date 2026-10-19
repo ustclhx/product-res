@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 import { expect, type Page, test } from '@playwright/test'
 import { newId } from '@product-res/shared'
-import { fixtureDb, register, simulateClientIp } from './fixtures.ts'
+import { fixtureDb, register, simulateClientIp, waitForHydration } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // add-costing-decisions 2.3 / 3.1：商品簇详情“核算”标签——在页面上录入供应商与阶梯报价，矩阵显示不可用原因并高亮最优，
@@ -244,7 +244,7 @@ test('核算标签：报价录入、矩阵最优与选定组合进入待决定',
   const { clusterId } = await seed(slug, key)
 
   await page.goto(`${base}/follow/${clusterId}`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByRole('tab', { name: /核算/ }).click()
   await expect(page).toHaveURL(/tab=costing/)
   const tab = page.getByTestId('costing-tab')
@@ -307,7 +307,7 @@ test('核算标签：报价录入、矩阵最优与选定组合进入待决定',
   await shot(page, '04-costing-selected')
 
   await page.goto(base)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await expect(
     page.getByText('Magnetic Spice Rack for Refrigerator', { exact: false }).first(),
   ).toBeVisible()

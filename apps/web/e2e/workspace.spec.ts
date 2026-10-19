@@ -9,7 +9,9 @@ import {
   loginOtp,
   seedWorkspaceSeats,
   simulateClientIp,
+  uiText,
   verifyInvitation,
+  waitForHydration,
 } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
@@ -19,30 +21,28 @@ test('workspace creation, invitation entry and personal switching obey tenancy f
   await simulateClientIp(page)
   await stubTurnstile(page)
   await page.goto('/register')
-  const form = page.getByRole('form', { name: 'Create an account' })
+  const form = page.getByRole('form', { name: uiText('auth_create_an_account') })
   const key = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
-  await form.getByLabel('Name', { exact: true }).fill('Workspace Owner')
-  await form.getByLabel('Email', { exact: true }).fill(`team-${key}@example.com`)
-  await form.getByLabel('Password', { exact: true }).fill('correct-horse-battery')
-  await form.getByRole('button', { name: 'Create account' }).click()
+  await form.getByLabel(uiText('auth_name'), { exact: true }).fill('Workspace Owner')
+  await form.getByLabel(uiText('auth_email'), { exact: true }).fill(`team-${key}@example.com`)
+  await form.getByLabel(uiText('auth_password'), { exact: true }).fill('correct-horse-battery')
+  await form.getByRole('button', { name: uiText('auth_create_account') }).click()
   await expect(page).toHaveURL(/\/app\/u-/)
   const personalUrl = page.url()
   const ownerEmail = `team-${key}@example.com`
   await page.goto('/account')
-  await page.waitForLoadState('networkidle')
-  await page.getByRole('button', { name: 'Send verification email' }).click()
-  await expect(
-    page.getByText('Verification email sent. Check your inbox and open the link.'),
-  ).toBeVisible()
+  await waitForHydration(page)
+  await page.getByRole('button', { name: uiText('account_verification_send') }).click()
+  await expect(page.getByText(uiText('account_verification_sent'))).toBeVisible()
   await page.goto(await emailLink(ownerEmail))
-  await expect(page.getByText('Your email address is verified.')).toBeVisible()
+  await expect(page.getByText(uiText('account_verification_verified'))).toBeVisible()
   await page.context().clearCookies()
   await login(page, ownerEmail)
   await expect(page).toHaveURL(APP_URL)
   if (!templateConfig.tenancy.multiTenant) {
     await expect(page.getByLabel('Switch workspace')).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Create team workspace' })).toHaveCount(0)
-    await page.getByRole('link', { name: 'Workspace settings' }).click()
+    await page.getByRole('link', { name: uiText('app_workspace_settings') }).click()
     await expect(page.getByRole('form', { name: 'Invite member' })).toHaveCount(0)
     const sql = fixtureDb()
     const id = randomUUID()
@@ -59,7 +59,9 @@ test('workspace creation, invitation entry and personal switching obey tenancy f
       await expect(page.getByRole('form', { name: 'Invite member' })).toHaveCount(0)
       await expect(page.getByLabel('Switch workspace')).toHaveCount(0)
       await page.goto('/account')
-      await expect(page.getByRole('button', { name: 'Save profile' })).toBeEnabled()
+      await expect(
+        page.getByRole('button', { name: uiText('account_profile_submit') }),
+      ).toBeEnabled()
       await page.screenshot({ path: test.info().outputPath('tenancy-disabled.png') })
     } finally {
       await sql`delete from member where organization_id = ${id}`
@@ -74,7 +76,7 @@ test('workspace creation, invitation entry and personal switching obey tenancy f
   await page.getByRole('button', { name: 'Create team', exact: true }).click()
   await expect(page).toHaveURL(new RegExp(`/app/browser-${key}$`))
   await seedWorkspaceSeats(`browser-${key}`)
-  await page.getByRole('link', { name: 'Workspace settings' }).click()
+  await page.getByRole('link', { name: uiText('app_workspace_settings') }).click()
   await page.getByLabel('Invite email').fill(`invite-${key}@example.com`)
   let invitationId = ''
   await page.route('**/api/auth/organization/invite-member', async (route) => {
@@ -89,17 +91,17 @@ test('workspace creation, invitation entry and personal switching obey tenancy f
   await expect(page).toHaveURL(personalUrl)
   await expect(page.getByTestId('workspace-name')).toHaveText('Personal')
   await page.goto(`/accept-invitation?id=${invitationId}`)
-  await expect(page.getByRole('alert')).toHaveText(
-    'Sign in with the email address that received this invitation.',
-  )
+  await expect(page.getByRole('alert')).toHaveText(uiText('workspace_error_invitation_recipient'))
   await expect(page.getByText('Browser Team')).toHaveCount(0)
   await page.context().clearCookies()
   await page.goto('/register')
-  const recipient = page.getByRole('form', { name: 'Create an account' })
-  await recipient.getByLabel('Name', { exact: true }).fill('Invited Member')
-  await recipient.getByLabel('Email', { exact: true }).fill(`invite-${key}@example.com`)
-  await recipient.getByLabel('Password', { exact: true }).fill('correct-horse-battery')
-  await recipient.getByRole('button', { name: 'Create account' }).click()
+  const recipient = page.getByRole('form', { name: uiText('auth_create_an_account') })
+  await recipient.getByLabel(uiText('auth_name'), { exact: true }).fill('Invited Member')
+  await recipient
+    .getByLabel(uiText('auth_email'), { exact: true })
+    .fill(`invite-${key}@example.com`)
+  await recipient.getByLabel(uiText('auth_password'), { exact: true }).fill('correct-horse-battery')
+  await recipient.getByRole('button', { name: uiText('auth_create_account') }).click()
   await expect(page).toHaveURL(/\/app\/u-/)
   await page.context().clearCookies()
   await page.goto(`/accept-invitation?id=${invitationId}`)
@@ -114,9 +116,9 @@ test('workspace creation, invitation entry and personal switching obey tenancy f
     await loginOtp(page, `invite-${key}@example.com`, page.url())
     await expect(page).toHaveURL(new RegExp(`/accept-invitation\\?id=${invitationId}$`))
   }
-  await page.getByRole('button', { name: 'Accept invitation' }).click()
+  await page.getByRole('button', { name: uiText('auth_accept_invitation') }).click()
   await expect(page).toHaveURL(new RegExp(`/app/browser-${key}$`))
-  await page.getByRole('link', { name: 'Workspace settings' }).click()
+  await page.getByRole('link', { name: uiText('app_workspace_settings') }).click()
   await expect(page.getByRole('form', { name: 'Invite member' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Remove', exact: true })).toHaveCount(0)
   const teamSettings = page.url()

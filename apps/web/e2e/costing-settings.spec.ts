@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { register, simulateClientIp } from './fixtures.ts'
+import { register, simulateClientIp, waitForHydration } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // add-costing-decisions 2.2 / 3.2 / 4.1：设置页物流方案与成本参数（类目回退），工作台首页与档案库的空状态。
@@ -12,12 +12,12 @@ test('物流方案与成本参数、工作台首页与选品档案库', async ({
   const base = new URL(page.url()).pathname.replace(/\/$/, '')
 
   await page.goto(base)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await expect(page.getByText('没有待决定的线索')).toBeVisible()
   await expect(page.getByText('今天还没有额度记录')).toBeVisible()
 
   await page.goto(`${base}/config`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByRole('tab', { name: '物流方案' }).click()
   await page.getByRole('button', { name: '新增方案' }).click()
   const profile = page.getByRole('form', { name: '物流方案' })
@@ -49,7 +49,7 @@ test('物流方案与成本参数、工作台首页与选品档案库', async ({
   await expect(category.getByText('平台默认')).toHaveCount(1)
 
   await page.goto(`${base}/archive`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await expect(page.getByText('还没有已决定的线索')).toBeVisible()
   await expect(page.getByText('暂无品类研究报告')).toBeVisible()
 })

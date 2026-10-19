@@ -9,6 +9,7 @@ const otherLocales = locales.filter((locale) => locale !== defaultLocale)
 const unconfigured = ['fr', 'de', 'ja', 'es'].find((locale) => !locales.includes(locale))
 
 test('默认语言使用无前缀地址，带默认语言前缀的地址 307 到无前缀地址', async ({ page, request }) => {
+  test.skip(!templateConfig.i18n.enabled, '模板配置关闭了多语言路由')
   await page.goto('/pricing')
   await expect(page.locator('html')).toHaveAttribute('lang', defaultLocale)
   await expect(page).toHaveURL(/\/pricing$/)
@@ -28,6 +29,7 @@ test('默认语言使用无前缀地址，带默认语言前缀的地址 307 到
 
 for (const locale of otherLocales) {
   test(`其他配置语言 /${locale}/... 以该语言显示`, async ({ page }) => {
+    test.skip(!templateConfig.i18n.enabled, '模板配置关闭了多语言路由')
     const errors: string[] = []
     page.on('pageerror', (error) => errors.push(error.message))
     const home = await page.goto(`/${locale}`)

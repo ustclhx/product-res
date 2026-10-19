@@ -3,14 +3,16 @@ import { expect, test } from '@playwright/test'
 import { capture, grant, hold } from '@product-res/credits'
 import { createDb } from '@product-res/db'
 import { readLocalEnv } from '@product-res/db/worktree-env'
-import { fixtureDb, register, simulateClientIp } from './fixtures.ts'
+import { fixtureDb, register, simulateClientIp, uiText } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 test('billing administration hides data from unauthenticated visitors', async ({ page }) => {
   await page.goto('/admin/billing')
-  await expect(page.getByRole('heading', { name: 'Billing administration' })).toHaveCount(0)
+  await expect(
+    page.getByRole('heading', { name: uiText('admin_billing_administration') }),
+  ).toHaveCount(0)
   await page.goto('/admin/billing/refunds')
-  await expect(page.getByRole('heading', { name: 'Refund reviews' })).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: uiText('admin_refund_reviews') })).toHaveCount(0)
 })
 
 test('fresh platform admin can list and reject without payment credentials', async ({ page }) => {
@@ -22,7 +24,7 @@ test('fresh platform admin can list and reject without payment credentials', asy
     await stubTurnstile(page)
     await register(page, email)
     await page.goto('/admin/billing/refunds')
-    await expect(page.getByRole('heading', { name: 'Refund reviews' })).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: uiText('admin_refund_reviews') })).toHaveCount(0)
     const [account] = await sql`select id from "user" where email=${email}`
     const [workspace] =
       await sql`select organization_id as id from member where user_id=${account?.id} and role='owner' limit 1`
@@ -64,18 +66,22 @@ test('fresh platform admin can list and reject without payment credentials', asy
       await db.$client.end()
     }
     await page.goto('/admin/billing/refunds')
-    const card = page.getByRole('article', { name: `Refund ${id}` })
-    await expect(card).toContainText('Requested: $5.00')
-    await expect(card).toContainText('Original credits: 100 · Remaining credits: 60')
+    const card = page.getByRole('article', { name: uiText('admin_refund', { id }) })
+    await expect(card).toContainText(`${uiText('admin_requested')} $5.00`)
+    await expect(card).toContainText(
+      `${uiText('admin_original_credits')} 100 ${uiText('admin_remaining_credits')} 60`,
+    )
     await expect
       .poll(async () => {
-        await card.getByLabel('Review note').fill('')
-        await card.getByLabel('Review note').fill('Fixture rejected by reviewer')
-        return card.getByRole('button', { name: 'Reject refund' }).isEnabled()
+        await card.getByLabel(uiText('admin_review_note_field')).fill('')
+        await card
+          .getByLabel(uiText('admin_review_note_field'))
+          .fill('Fixture rejected by reviewer')
+        return card.getByRole('button', { name: uiText('admin_reject_refund') }).isEnabled()
       })
       .toBe(true)
-    await card.getByRole('button', { name: 'Reject refund' }).click()
-    await expect(card).toContainText('Status: rejected')
+    await card.getByRole('button', { name: uiText('admin_reject_refund') }).click()
+    await expect(card).toContainText(`${uiText('admin_status_inline')} rejected`)
     const [saved] =
       await sql`select status,reviewer_id,requested_amount,reason from refund_request where id=${id}`
     expect(saved).toMatchObject({
@@ -85,7 +91,9 @@ test('fresh platform admin can list and reject without payment credentials', asy
       reason: 'Fixture refund request',
     })
     await page.goto('/admin/billing')
-    await expect(page.getByRole('heading', { name: 'Billing administration' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: uiText('admin_billing_administration') }),
+    ).toBeVisible()
     await expect(
       page
         .getByRole('row')
@@ -94,7 +102,9 @@ test('fresh platform admin can list and reject without payment credentials', asy
     ).toBeVisible()
     await sql`update "user" set role='user' where id=${account.id}`
     await page.reload()
-    await expect(page.getByRole('heading', { name: 'Billing administration' })).toHaveCount(0)
+    await expect(
+      page.getByRole('heading', { name: uiText('admin_billing_administration') }),
+    ).toHaveCount(0)
   } finally {
     await sql.end()
   }

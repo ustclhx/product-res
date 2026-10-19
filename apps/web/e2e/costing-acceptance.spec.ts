@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 import { expect, type Page, test } from '@playwright/test'
 import { newId } from '@product-res/shared'
-import { fixtureDb, register, simulateClientIp } from './fixtures.ts'
+import { fixtureDb, register, simulateClientIp, waitForHydration } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // add-costing-decisions 5.1 验收：一条线索 发现 → 核算 → 待决定 → 跟卖 → 档案库。
@@ -156,7 +156,7 @@ test('核算决定验收：线索 → 报价 → 设置 → 矩阵 → 待决定
 
   // 1. 商品簇详情“核算”标签录入供应商报价（此时尚无物流方案，矩阵为空）
   await page.goto(`${base}/follow/${clusterId}`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByRole('tab', { name: /核算/ }).click()
   await expect(page).toHaveURL(/tab=costing/)
   const tab = page.getByTestId('costing-tab')
@@ -185,7 +185,7 @@ test('核算决定验收：线索 → 报价 → 设置 → 矩阵 → 待决定
 
   // 2. 设置页：物流方案与成本参数
   await page.goto(`${base}/config`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByRole('tab', { name: '物流方案' }).click()
   await page.getByRole('button', { name: '新增方案' }).click()
   const profile = page.getByRole('form', { name: '物流方案' })
@@ -213,7 +213,7 @@ test('核算决定验收：线索 → 报价 → 设置 → 矩阵 → 待决定
 
   // 3. 矩阵选定最优组合，线索进入待决定
   await page.goto(`${base}/follow/${clusterId}?tab=costing`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await tab.getByLabel('计划数量（件）').fill('300')
   await tab.getByRole('button', { name: '重新计算' }).click()
   const matrix = tab.getByTestId('costing-matrix')
@@ -230,7 +230,7 @@ test('核算决定验收：线索 → 报价 → 设置 → 矩阵 → 待决定
 
   // 4. 工作台首页待决定队列出现该线索
   await page.goto(base)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   const row = page.getByTestId('queue-row').filter({ hasText: clusterName })
   await expect(row).toHaveCount(1)
   await expect(row.getByText(/毛利率/)).toBeVisible()
@@ -247,7 +247,7 @@ test('核算决定验收：线索 → 报价 → 设置 → 矩阵 → 待决定
 
   // 6. 选品档案库看到记录与决定时快照
   await page.goto(`${base}/archive`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   const archived = page.getByTestId('archive-row').filter({ hasText: clusterName })
   await expect(archived).toHaveCount(1)
   await expect(archived.getByText('跟卖').first()).toBeVisible()
@@ -261,6 +261,6 @@ test('核算决定验收：线索 → 报价 → 设置 → 矩阵 → 待决定
 
   // 已决定后核算锁定：详情页不再提供“选定此组合”
   await page.goto(`${base}/follow/${clusterId}?tab=costing`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await expect(page.getByRole('button', { name: '选定此组合，进入待决定' })).toHaveCount(0)
 })
