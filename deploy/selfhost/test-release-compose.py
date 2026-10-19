@@ -426,7 +426,7 @@ class Acceptance:
             self.docker('pull', reference, timeout=max(1, pull_deadline - time.monotonic()))
             image = json.loads(self.docker('image', 'inspect', reference))[0]
             require(image['Config']['Labels'].get('org.opencontainers.image.revision') == self.a, 'GHCR image revision differs')
-        self.mark('GHCR image set verified', sha=self.a, imageCount=len(self.release['images']), platform='linux/' + self.arch)
+        self.mark('GHCR eight-image set verified', sha=self.a, imageCount=8, platform='linux/' + self.arch)
         self.configure()
         self.deploy(self.a, self.bundle)
         require(self.state()['successful']['sha'] == self.a, 'initial success SHA differs')
