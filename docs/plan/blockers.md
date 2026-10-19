@@ -54,6 +54,9 @@
 
 5. ~~**CI「Selfhost disabled features」在 `259f8ee` 失败**~~ **已修复（PR #1）**：模板的关闭功能组合（billing/AI/i18n 关闭）浏览器验收在 `auth-workspace.selfhost.ts:238` 断言失败（空间设置页成员行 `名字 (邮箱) · owner` 文案不匹配，与 M0 改动工作区标题有关）。发布门只要求 CI 通过，不阻塞发布，但 main 会保持红色；待修复（适合派 Codex）。
 
+6. **品类洞察 AI 分析的执行位置**（add-insight-background-analysis，已合并）：分析在 web 进程后台（BackgroundTasks.waitUntil）执行，不在 jobs 消费者中——`startWorkspaceChat` 计费链路在 `apps/web`，jobs 不能依赖 web。停机时会排空；进程崩溃时本次分析丢失（积分由 hold sweeper 结算，快照显示超时可重试）。若要改为 jobs 消费者，需要先把文本对话计费链路移到 `packages/ai`（跨模块重构），替换点为 `RefreshDeps.background`。默认：暂不做。
+7. **worktree 跑 e2e 的 APP_URL**：worktree 的 `apps/web/.dev.vars` 复制自主检出，`APP_URL=http://localhost:3000` 与 worktree 端口不符时 Better Auth 报 Invalid origin；需手动改为 worktree 端口。可考虑让 `scripts/orca/setup.sh` 写入正确值。
+
 ## C. 数据源（M1b，凭据由你配置）
 
 - eBay Production、SP-API、Keepa、Jungle Scout、卖家精灵、DataForSEO 的账号/Key；Helium 10 是否有 API 或只能导出文件（需要真实导出样本）。凭据放服务器 `secrets/optional/<NAME>`。
