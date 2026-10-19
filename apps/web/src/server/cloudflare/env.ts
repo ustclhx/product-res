@@ -23,6 +23,7 @@ const bindingWith = <T>(...methods: string[]) =>
 // 支付模式由支付工厂单独校验，避免支付配置错误阻断公开页面与普通认证。
 export const webEnvSchema = envSchema.omit({ PAYMENT_MODE: true }).extend({
   BOOTSTRAP_ADMIN_EMAILS: z.string().optional(),
+  BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED: z.string().optional(),
   SIGNUP_ALLOWED_EMAILS: z.string().optional(),
   AI_TEXT_EGRESS: z.enum(['direct', 'gateway']).optional(),
   OPENAI_BASE_URL: z.string().optional(),

@@ -2,7 +2,15 @@ import { randomUUID } from 'node:crypto'
 import { expect, type Page, test } from '@playwright/test'
 import { DEFAULT_FREE_FEATURES } from '@product-res/entitlements'
 import { newId } from '@product-res/shared'
-import { fixtureDb, login, register, simulateClientIp, uiText } from './fixtures.ts'
+import {
+  activateWorkspace,
+  fixtureDb,
+  login,
+  register,
+  removeWorkspaceActivation,
+  simulateClientIp,
+  uiText,
+} from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // 对话列表与对话页（tasks.md 3.1）。本地没有真实模型：发送消息时拦截 POST /api/ai/chat，
@@ -91,6 +99,7 @@ test('another member of the workspace gets 404 for a conversation', async ({ pag
     await sql`insert into member (id, organization_id, user_id, role, created_at) values
       (${randomUUID()}, ${workspaceId}, ${owner.id}, 'owner', now()),
       (${randomUUID()}, ${workspaceId}, ${other.id}, 'admin', now())`
+    await activateWorkspace(sql, workspaceId)
     await sql`insert into ai_conversation (id, workspace_id, user_id, title, model_key)
       values (${conversationId}, ${workspaceId}, ${owner.id}, 'Owner secrets', '')`
     await sql`insert into ai_message (id, workspace_id, conversation_id, role, parts) values
@@ -112,6 +121,7 @@ test('another member of the workspace gets 404 for a conversation', async ({ pag
   } finally {
     await sql`delete from ai_message where conversation_id = ${conversationId}`
     await sql`delete from ai_conversation where id = ${conversationId}`
+    await removeWorkspaceActivation(sql, workspaceId)
     await sql`delete from member where organization_id = ${workspaceId}`
     await sql`delete from organization where id = ${workspaceId}`
     await sql.end()

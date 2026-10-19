@@ -3,10 +3,13 @@ import { expect, test } from '@playwright/test'
 import templateConfig from '../../../template.config.ts'
 import {
   APP_URL,
+  activateAccount,
+  activateWorkspace,
   emailLink,
   fixtureDb,
   login,
   loginOtp,
+  removeWorkspaceActivation,
   seedWorkspaceSeats,
   simulateClientIp,
   uiText,
@@ -30,6 +33,7 @@ test('workspace creation, invitation entry and personal switching obey tenancy f
   await expect(page).toHaveURL(/\/app\/u-/)
   const personalUrl = page.url()
   const ownerEmail = `team-${key}@example.com`
+  if (templateConfig.credits.requireGrantForAccess) await activateAccount(ownerEmail)
   await page.goto('/account')
   await waitForHydration(page)
   await page.getByRole('button', { name: uiText('account_verification_send') }).click()
@@ -52,6 +56,7 @@ test('workspace creation, invitation entry and personal switching obey tenancy f
       if (!owner) throw new Error('Registered owner missing from isolated database')
       await sql`insert into organization (id, name, slug, created_at, is_personal) values (${id}, 'Existing Team', ${slug}, now(), false)`
       await sql`insert into member (id, organization_id, user_id, role, created_at) values (${randomUUID()}, ${id}, ${owner.id}, 'owner', now())`
+      await activateWorkspace(sql, id)
       await page.goto(`/app/${slug}/settings`)
       await expect(page.getByRole('status').last()).toHaveText(
         'Team features are disabled. This workspace is read-only.',
@@ -64,6 +69,7 @@ test('workspace creation, invitation entry and personal switching obey tenancy f
       ).toBeEnabled()
       await page.screenshot({ path: test.info().outputPath('tenancy-disabled.png') })
     } finally {
+      await removeWorkspaceActivation(sql, id)
       await sql`delete from member where organization_id = ${id}`
       await sql`delete from organization where id = ${id}`
       await sql.end()

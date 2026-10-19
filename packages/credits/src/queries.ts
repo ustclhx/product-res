@@ -55,6 +55,19 @@ export async function getCreditBalance(
   return balance
 }
 
+/**
+ * 空间是否有过管理员发放的积分批次（任意状态）。内测准入以此判断：后台发放只接受正整数，
+ * 之后撤销或过期不取消开通，余额仍由积分规则约束。
+ */
+export async function hasAdminGrant(db: CreditsExecutor, workspaceId: string): Promise<boolean> {
+  const [row] = await db
+    .select({ id: creditGrant.id })
+    .from(creditGrant)
+    .where(and(eq(creditGrant.workspaceId, workspaceId), eq(creditGrant.source, 'admin')))
+    .limit(1)
+  return row !== undefined
+}
+
 /** All grant statuses are visible as batch history, newest first. */
 export async function getCreditBatches(
   db: CreditsExecutor,

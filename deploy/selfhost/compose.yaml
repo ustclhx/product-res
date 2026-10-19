@@ -32,7 +32,11 @@ x-app-env: &app-env
   SMTP_USER: ${SMTP_USER:-}
   # 首个管理员与注册白名单（逗号分隔邮箱）；白名单为空时任何人可注册
   BOOTSTRAP_ADMIN_EMAILS: ${BOOTSTRAP_ADMIN_EMAILS:-}
+  # true = 名单账号无需验证邮箱即提升（未接邮件服务时）；须配合只放行运维邮箱的白名单，提升后清空
+  BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED: ${BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED:-}
   SIGNUP_ALLOWED_EMAILS: ${SIGNUP_ALLOWED_EMAILS:-}
+  # paused = 数据 / 选品定时流水线到点直接返回（计划仍注册）；空 = 运行
+  DATA_PIPELINE_SCHEDULES: ${DATA_PIPELINE_SCHEDULES:-}
   # AI Provider 与数据源凭据：secrets/optional/<NAME> 单文件，缺失即未配置
   OPTIONAL_SECRETS_DIR: /run/secrets/optional
 

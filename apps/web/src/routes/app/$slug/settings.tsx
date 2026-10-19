@@ -1,10 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { requireActivatedPage } from '../../../features/workspace/activation.tsx'
 import { WorkspaceSettings } from '../../../features/workspace/components.tsx'
 import { getWorkspacePage } from '../../../features/workspace/workspace.functions.ts'
 
 export const Route = createFileRoute('/app/$slug/settings')({
   beforeLoad: async ({ params }) => ({
-    workspacePage: await getWorkspacePage({ data: { slug: params.slug } }),
+    workspacePage: requireActivatedPage(await getWorkspacePage({ data: { slug: params.slug } })),
   }),
   loader: ({ context }) => context.workspacePage,
   staleTime: 0,

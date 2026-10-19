@@ -18,6 +18,26 @@
 `081305013b022f457c561eecf5828b1959e13908` 的 bundle 包含全部 24 项运行材料，
 包括恢复/drill/副本入口和附加示例；旧 SHA 的材料保持原样。1.5/6.3/7 的恢复验收保持待办。
 
+## 内测开关（add-beta-access-gate）
+
+未接邮件服务（`EMAIL_TRANSPORT=log`）的内测部署用以下三项控制准入与后台流水线，均在 `.env` 中设置，
+`deploy.sh` 更新后生效；留空即恢复默认行为。
+
+| 开关 | 取值 | 作用 |
+|---|---|---|
+| `BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED` | `true` / 空 | `true` 时 `BOOTSTRAP_ADMIN_EMAILS` 中的账号无需验证邮箱，注册或登录即成为平台 admin（仍排除封禁账号）；其它值或空保持“已验证邮箱才提升”。 |
+| `credits.requireGrantForAccess`（`template.config.ts`，本项目为 `true`） | 模板配置 | 账号的个人空间需有管理员在后台“积分调整”发放的批次才能使用工作台；未开通时 `/app` 显示“账号待管理员开通”，工作台接口返回 403 `ACCOUNT_NOT_ACTIVATED`。平台 admin 始终放行；`/account`、退出登录与 `/admin` 不受影响。发放后用户刷新即可进入；之后撤销批次不会取消开通。 |
+| `DATA_PIPELINE_SCHEDULES` | `paused` / `running` / 空 | `paused` 时 `datasources-daily-v1`、`selection-daily-v1`、`selection-label-v1`、`selection-readiness-v1`、`selection-review-v1` 仍注册，到点只记一条 `pipeline.paused` 日志；`datasources-reconcile-v1`、队列消费与手动触发照常。其它取值启动即失败。 |
+
+**风险**：`BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED=true` 时，谁先以名单邮箱注册谁就是管理员。推荐顺序：
+
+1. 设置 `BOOTSTRAP_ADMIN_EMAILS=<运维邮箱>`、`SIGNUP_ALLOWED_EMAILS=<运维邮箱>`、`BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED=true` 并部署；
+2. 运维邮箱注册，确认 `/admin` 可进入（审计 `admin.user.bootstrap`）；
+3. 清空 `BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED`，按需放开 `SIGNUP_ALLOWED_EMAILS`，再次部署；
+4. 内测用户注册后，管理员在 `/admin/credits` 为其个人空间发放积分开通。
+
+数据源凭据验收前保持 `DATA_PIPELINE_SCHEDULES=paused`，验收通过后清空并部署。
+
 ## 本地开发镜像与基础启动
 
 从仓库根目录构建，源码与基础镜像均锁定。`APP_VERSION` 必须为对应源码的完整 40 位小写 Git SHA；没有 Git 的归档必须显式提供它，不能使用短 SHA 或版本号。所有 `FROM` 都固定 digest；镜像不携带部署凭据。只有构建阶段使用 root；运行及数据初始化均非 root。

@@ -124,7 +124,7 @@ it('retains enabled media hold recovery while unavailable files skip object clea
   const config = {
     ...disabled,
     billing: { ...disabled.billing, enabled: true },
-    credits: { enabled: true },
+    credits: { ...disabled.credits, enabled: true },
     ai: { ...disabled.ai, image: true },
   }
   const registered = scheduler()

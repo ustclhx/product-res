@@ -10,11 +10,15 @@ const mocks = vi.hoisted(() => ({
   sharedDownload: vi.fn(),
   declare: vi.fn(),
   complete: vi.fn(),
+  activation: vi.fn(),
 }))
 vi.mock('@product-res/auth', () => ({ requireFreshSession: mocks.freshSession }))
 vi.mock('@product-res/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@product-res/db')>()),
   scoped: () => ({ select: () => ({ limit: mocks.membership }) }),
+}))
+vi.mock('../../server/account-activation.ts', () => ({
+  assertAccountActivated: mocks.activation,
 }))
 vi.mock('@product-res/storage', () => ({
   getFileDownload: mocks.download,
@@ -56,6 +60,7 @@ beforeEach(() => {
   mocks.freshSession.mockResolvedValue({ user: { id: userId }, session: {} })
   findWorkspace.mockResolvedValue({ id: workspaceId, isPersonal: true, deletedAt: null })
   mocks.membership.mockResolvedValue([{ userId }])
+  mocks.activation.mockResolvedValue(undefined)
   mocks.download.mockResolvedValue(downloadUrl)
   mocks.sharedDownload.mockResolvedValue(downloadUrl)
 })
@@ -179,4 +184,15 @@ it('refuses unavailable Node file operations before reading auth or database or 
   expect(mocks.complete).not.toHaveBeenCalled()
   expect(mocks.download).not.toHaveBeenCalled()
   expect(mocks.sharedDownload).not.toHaveBeenCalled()
+})
+
+it('rejects members whose account is pending activation before signing', async () => {
+  mocks.activation.mockRejectedValue(
+    new AppError('ACCOUNT_NOT_ACTIVATED', 'Account is pending administrator activation', {
+      status: 403,
+    }),
+  )
+  const response = await handleFileDownload(request(), fileId, deps)
+  expect(response.status).toBe(403)
+  expect(mocks.download).not.toHaveBeenCalled()
 })

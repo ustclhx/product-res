@@ -87,6 +87,8 @@ export interface TemplateConfig<L extends string = string> {
   }
   readonly credits: {
     readonly enabled: boolean
+    /** 空间需有管理员发放的积分（或用户为平台 admin）才能使用工作台；用于内测准入，积分关闭时不生效 */
+    readonly requireGrantForAccess: boolean
   }
   readonly marketing: {
     readonly enabled: boolean
@@ -167,7 +169,7 @@ export const templateConfigDefaults = {
     overage: { maxRatio: 0.2, maxCredits: 50, dailyBudgetPerWorkspace: 200 },
     refundWindowDays: 30,
   },
-  credits: { enabled: true },
+  credits: { enabled: true, requireGrantForAccess: false },
   marketing: { enabled: true },
   ai: {
     text: {
