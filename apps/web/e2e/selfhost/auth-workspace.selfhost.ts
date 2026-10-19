@@ -147,6 +147,9 @@ test('fresh Node Compose: delivered verification, sign-out, password login and t
   const name = 'Selfhost Owner'
   const teamName = `Selfhost Team ${key}`
   const slug = `selfhost-${key}`
+  const header = page.getByRole('banner')
+  const settings = header.getByRole('link', { name: copy.settings, exact: true })
+  const content = page.getByRole('main')
 
   await page.goto('/register')
   const registration = page.getByRole('form', { name: copy.registerForm })
@@ -182,7 +185,7 @@ test('fresh Node Compose: delivered verification, sign-out, password login and t
   await page.getByRole('link', { name: copy.continue, exact: true }).click()
   await expect(page).toHaveURL(PERSONAL_URL)
   const personalURL = page.url()
-  await expect(page.getByTestId('current-user')).toHaveText(`${name} (${email})`)
+  await expect(header.getByTestId('current-user')).toHaveText(`${name} (${email})`)
   expect(await sessionIdentity(page)).toEqual({ email, verified: true })
   const oldCookies = await context.cookies()
   expect(oldCookies.some((cookie) => cookie.name.endsWith('session_token'))).toBe(true)
@@ -221,38 +224,49 @@ test('fresh Node Compose: delivered verification, sign-out, password login and t
     await page.goto('/')
     await expect(page).toHaveURL(personalURL)
   }
-  await expect(page.getByTestId('workspace-name')).toHaveText('Personal')
-  await expect(page.getByText(copy.personal, { exact: true })).toBeVisible()
-  await expect(page.getByText(copy.owner, { exact: true })).toBeVisible()
+  await expect(header.getByTestId('workspace-name')).toHaveText('Personal')
+  await expect(header.getByText(copy.personal, { exact: true })).toBeVisible()
+  await expect(header.getByText(copy.owner, { exact: true })).toBeVisible()
 
-  await page.getByRole('button', { name: 'Create team workspace', exact: true }).click()
-  const createTeam = page.getByRole('form', { name: 'Create team workspace' })
+  await header.getByRole('button', { name: 'Create team workspace', exact: true }).click()
+  const createTeam = header.getByRole('form', { name: 'Create team workspace' })
   await createTeam.getByLabel('Team name', { exact: true }).fill(teamName)
   await createTeam.getByLabel('Workspace URL', { exact: true }).fill(slug)
   await createTeam.getByRole('button', { name: 'Create team', exact: true }).click()
   await expect(page).toHaveURL(`${baseURL}/app/${slug}`)
-  await expect(page.getByTestId('workspace-name')).toHaveText(teamName)
-  await expect(page.getByText(copy.team, { exact: true })).toBeVisible()
-  await expect(page.getByTestId('current-user')).toHaveText(`${name} (${email})`)
-  await expect(page.getByText(copy.owner, { exact: true })).toBeVisible()
-  await page.getByRole('link', { name: copy.settings, exact: true }).click()
-  await expect(page.getByRole('form', { name: 'Invite member', exact: true })).toBeVisible()
-  await expect(page.getByText(`${name} (${email}) · owner`, { exact: true })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Delete team workspace', exact: true })).toBeVisible()
+  await expect(header.getByTestId('workspace-name')).toHaveText(teamName)
+  await expect(header.getByText(copy.team, { exact: true })).toBeVisible()
+  await expect(header.getByTestId('current-user')).toHaveText(`${name} (${email})`)
+  await expect(header.getByText(copy.owner, { exact: true })).toBeVisible()
+  // 设置入口应在顶栏直接可见，不能被收起的账号菜单隐藏。
+  await expect(settings).toBeVisible()
+  await expect(settings).toHaveAttribute('href', `/app/${slug}/settings`)
+  await settings.click()
+  await expect(page).toHaveURL(`${baseURL}/app/${slug}/settings`)
+  await expect(content.getByRole('form', { name: 'Invite member', exact: true })).toBeVisible()
+  const owner = content.getByRole('listitem').filter({ hasText: email })
+  await expect(owner).toBeVisible()
+  await expect(owner).toHaveText(`${name} (${email}) · owner`)
+  await expect(
+    content.getByRole('link', { name: 'Delete team workspace', exact: true }),
+  ).toBeVisible()
 
-  await page.getByLabel('Switch workspace', { exact: true }).selectOption({
+  await header.getByLabel('Switch workspace', { exact: true }).selectOption({
     label: 'Personal (personal)',
   })
   await expect(page).toHaveURL(personalURL)
-  await expect(page.getByTestId('workspace-name')).toHaveText('Personal')
-  await page.getByRole('link', { name: copy.settings, exact: true }).click()
-  await expect(page.getByRole('form', { name: 'Invite member', exact: true })).toHaveCount(0)
-  await expect(page.getByRole('link', { name: 'Delete team workspace', exact: true })).toHaveCount(
-    0,
-  )
-  await page.getByLabel('Switch workspace', { exact: true }).selectOption({ label: teamName })
+  await expect(header.getByTestId('workspace-name')).toHaveText('Personal')
+  await expect(settings).toBeVisible()
+  await expect(settings).toHaveAttribute('href', `${new URL(personalURL).pathname}/settings`)
+  await settings.click()
+  await expect(page).toHaveURL(`${personalURL}/settings`)
+  await expect(content.getByRole('form', { name: 'Invite member', exact: true })).toHaveCount(0)
+  await expect(
+    content.getByRole('link', { name: 'Delete team workspace', exact: true }),
+  ).toHaveCount(0)
+  await header.getByLabel('Switch workspace', { exact: true }).selectOption({ label: teamName })
   await expect(page).toHaveURL(`${baseURL}/app/${slug}`)
-  await expect(page.getByTestId('workspace-name')).toHaveText(teamName)
+  await expect(header.getByTestId('workspace-name')).toHaveText(teamName)
   expect(await sessionIdentity(page)).toEqual({ email, verified: true })
 
   // 使用浏览器 fetch 继承 host resolver，避免 APIRequestContext 的宿主机 DNS 要求。
