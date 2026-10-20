@@ -11,6 +11,10 @@ vi.mock('@product-res/marketdata', async (original) => ({
     ran.push('reconcile')
     return 0
   },
+  generateWeeklyAudits: async () => {
+    ran.push('accuracy-audit')
+    return []
+  },
 }))
 vi.mock('@product-res/follow', async (original) => ({
   ...(await original<typeof import('@product-res/follow')>()),
@@ -23,6 +27,7 @@ vi.mock('@product-res/follow', async (original) => ({
 const { registerDataSchedules } = await import('../src/datasources/sync.ts')
 const { registerNodeSelection } = await import('../src/selection/node.ts')
 const { registerSelectionReview } = await import('../src/review/selection-review.ts')
+const { registerAccuracyAudit } = await import('../src/accuracy/weekly-audit.ts')
 const { pausePipelineSchedules, PAUSABLE_PIPELINE_SCHEDULES } = await import(
   '../src/pipeline-pause.ts'
 )
@@ -44,6 +49,7 @@ function registerAll(scheduler: Scheduler) {
   registerDataSchedules(scheduler, { db, registry: createRegistry([]), secret: () => undefined })
   registerNodeSelection({ db, scheduler })
   registerSelectionReview(scheduler, db)
+  registerAccuracyAudit(scheduler, db)
 }
 
 afterEach(() => {

@@ -3,10 +3,11 @@ import { log } from '@product-res/shared/log'
 
 /**
  * `DATA_PIPELINE_SCHEDULES=paused` 时暂停的定时计划（add-beta-access-gate D3）：
- * 数据层每日流水线与选品 / 回看计划。`datasources-reconcile-v1` 只过期悬挂的额度预留、
+ * 数据层每日流水线、每周人工抽检与选品 / 回看计划。`datasources-reconcile-v1` 只过期悬挂的额度预留、
  * 不访问外部数据源，保持运行。
  */
 export const PAUSABLE_PIPELINE_SCHEDULES: ReadonlySet<string> = new Set([
+  'accuracy-audit-weekly-v1',
   'datasources-daily-v1',
   'selection-daily-v1',
   'selection-label-v1',

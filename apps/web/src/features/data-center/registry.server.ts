@@ -1,4 +1,4 @@
-import { createConnectors } from '@product-res/connectors'
+import { createConnectors, resolveDataForSeoTransport } from '@product-res/connectors'
 import { createMockConnector, createRegistry, type SourceConnector } from '@product-res/datasources'
 
 /**
@@ -30,4 +30,10 @@ export async function webSecrets() {
     secrets = createDataSourceSecrets(process.env)
   }
   return secrets
+}
+
+/** 数据源的经由渠道：DataForSEO 按凭据自动选择 aisa / direct；其他来源直接调用，返回 null */
+export function sourceChannel(sourceId: string, secret: (name: string) => string | undefined) {
+  if (sourceId !== 'dataforseo') return null
+  return resolveDataForSeoTransport(secret)?.kind ?? null
 }

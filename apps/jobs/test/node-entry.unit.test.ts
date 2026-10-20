@@ -33,6 +33,7 @@ vi.mock('@product-res/db', () => ({
 vi.mock('../src/datasources/node.ts', () => ({ registerNodeDataSources: vi.fn(async () => {}) }))
 vi.mock('../src/selection/node.ts', () => ({ registerNodeSelection: vi.fn() }))
 vi.mock('../src/review/selection-review.ts', () => ({ registerSelectionReview: vi.fn() }))
+vi.mock('../src/accuracy/weekly-audit.ts', () => ({ registerAccuracyAudit: vi.fn() }))
 vi.mock('../src/node/registration.ts', () => ({
   getNodeJobFeatures: () => ({ billing: false }),
   registerNodeJobsSchedules: (_scheduler: unknown, context: unknown) => {
