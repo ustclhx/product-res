@@ -97,6 +97,7 @@ export async function observe(db: Database, rows: readonly Obs[]): Promise<void>
         sourceId: r.sourceId ?? 'ebay-browse',
         value: r.value,
         method: 'official' as const,
+        tier: 1,
         fetchedAt: new Date(`${r.observedOn}T01:00:00Z`),
       })),
     )

@@ -1,0 +1,125 @@
+{
+  "version": "0.1.20260917",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "13.2935 sec.",
+  "cost": 0.005,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "00000000-0000-0000-0000-000000000000",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "13.2773 sec.",
+      "cost": 0.005,
+      "result_count": 1,
+      "path": ["v3", "merchant", "amazon", "asin", "live", "advanced"],
+      "data": {
+        "api": "merchant",
+        "function": "asin",
+        "se": "amazon",
+        "asin": "B0756FCPPN",
+        "language_code": "en_US",
+        "location_code": 2840,
+        "se_type": "asin",
+        "device": "desktop",
+        "os": "windows"
+      },
+      "result": [
+        {
+          "asin": "B0756FCPPN",
+          "type": "asin",
+          "se_domain": "amazon.com",
+          "location_code": 2840,
+          "language_code": "en_US",
+          "check_url": "https://www.amazon.com/dp/B0756FCPPN?language=en_US",
+          "datetime": "2026-10-20 06:17:33 +00:00",
+          "item_types": ["amazon_product_info"],
+          "items_count": 1,
+          "items": [
+            {
+              "type": "amazon_product_info",
+              "rank_group": 1,
+              "rank_absolute": 1,
+              "position": "right",
+              "title": "Skechers Men's Delson Camben",
+              "details": "Product details Product Dimensions\n:\n10 x 15 x 6 inches; 12.8 ounces\nItem model number\n:\n65474 BKGY\nDepartment\n:\nmens\nDate First Available\n:\nNovember 26, 2011\nManufacturer\n:\nSkechers\nASIN\n:\nB07568JYPN\nManufacturer’s warranty can be requested from customer service. Click here to make a request to customer service.\nBest Sellers Rank:  #19,248 in Clothing, Shoes & Jewelry ( See Top 100 in Clothing, Shoes & Jewelry )  #67 in Men's Fashion Sneakers\nCustomer Reviews:   4.6  4.6 out of 5 stars (38,908)",
+              "image_url": "https://m.media-amazon.com/images/I/81Ulo87iddL._AC_SX395_SY395_QL70_FMwebp_.jpg",
+              "author": "Visit the Skechers Store",
+              "data_asin": "B0756FCPPN",
+              "parent_asin": "B07568JYPN",
+              "product_asins": [
+                "B092556Y1Y",
+                "B0755ZRV82",
+                "B0F6QPFZRQ",
+                "B08HDJKHWF",
+                "B08GSQFF3F"
+              ],
+              "price_from": 46.37,
+              "price_to": null,
+              "percentage_discount": null,
+              "currency": "USD",
+              "is_amazon_choice": false,
+              "rating": {
+                "type": "rating_element",
+                "position": "left",
+                "rating_type": "Max5",
+                "value": 4.6,
+                "votes_count": 38908,
+                "rating_max": 5
+              },
+              "is_newer_model_available": false,
+              "is_prime_video": false,
+              "applicable_vouchers": null,
+              "newer_model": null,
+              "categories": [
+                {
+                  "category": "Clothing, Shoes & Jewelry",
+                  "url": "https://amazon.com/amazon-fashion/b/ref=dp_bc_1?ie=UTF8&node=7141123011"
+                },
+                {
+                  "category": "Men",
+                  "url": "https://amazon.com/Mens-Fashion/b/ref=dp_bc_2?ie=UTF8&node=7147441011"
+                },
+                {
+                  "category": "Shoes",
+                  "url": "https://amazon.com/Mens-Shoes/b/ref=dp_bc_3?ie=UTF8&node=679255011"
+                },
+                {
+                  "category": "Fashion Sneakers",
+                  "url": "https://amazon.com/Mens-Fashion-Sneakers/b/ref=dp_bc_4?ie=UTF8&node=679312011"
+                }
+              ],
+              "product_information": [
+                {
+                  "type": "product_information_details_item",
+                  "section_name": "Product details",
+                  "body": {
+                    "Product Dimensions": "10 x 15 x 6 inches; 12.8 ounces",
+                    "Item model number": "65474 BKGY",
+                    "Department": "mens",
+                    "Date First Available": "November 26, 2011",
+                    "Manufacturer": "Skechers",
+                    "ASIN": "B07568JYPN",
+                    "Best Sellers Rank": "#19,248 in Clothing, Shoes & Jewelry ( See Top 100 in Clothing, Shoes & Jewelry )  #67 in Men's Fashion Sneakers",
+                    "Customer Reviews": "4.6  4.6 out of 5 stars (38,908)"
+                  }
+                }
+              ],
+              "product_images_list": [
+                "https://m.media-amazon.com/images/I/81Ulo87iddL._AC_SL1500_.jpg",
+                "https://m.media-amazon.com/images/I/71G6-RikK9L._AC_SL1500_.jpg"
+              ],
+              "product_videos_list": null,
+              "description": "Product Description  Experience ultimate comfort and style with these versatile slip on shoes for men. The Delson Camben",
+              "is_available": true,
+              "top_local_reviews": null,
+              "top_global_reviews": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

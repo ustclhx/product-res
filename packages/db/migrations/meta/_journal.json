@@ -148,6 +148,13 @@
       "when": 1792355058441,
       "tag": "0020_marketplace_category",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792477926549,
+      "tag": "0021_accuracy_store_tracking",
+      "breakpoints": true
     }
   ]
 }

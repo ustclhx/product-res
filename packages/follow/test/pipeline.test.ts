@@ -78,6 +78,7 @@ const observe = (
     sourceId,
     value,
     method: 'official',
+    tier: 1,
     fetchedAt: new Date(`${observedOn}T01:00:00Z`),
   })
 

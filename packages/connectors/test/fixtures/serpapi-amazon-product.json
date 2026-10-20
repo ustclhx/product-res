@@ -1,0 +1,163 @@
+{
+  "search_metadata": {
+    "id": "redacted",
+    "status": "Success",
+    "created_at": "2026-10-20 06:21:11 UTC",
+    "processed_at": "2026-10-20 06:21:11 UTC",
+    "amazon_product_url": "https://www.amazon.com/dp/B0007QCQGI/?",
+    "total_time_taken": 10.55
+  },
+  "search_parameters": {
+    "engine": "amazon_product",
+    "asin": "B0007QCQGI",
+    "amazon_domain": "amazon.com",
+    "device": "desktop"
+  },
+  "product_results": {
+    "categories": [
+      {
+        "position": 1,
+        "name": "Clothing, Shoes & Jewelry",
+        "link": "https://www.amazon.com/amazon-fashion/b/ref=dp_bc_1?ie=UTF8&node=7141123011",
+        "node": "7141123011",
+        "serpapi_link": "https://serpapi.com/search.json?amazon_domain=amazon.com&device=desktop&engine=amazon&node=7141123011"
+      },
+      {
+        "position": 2,
+        "name": "Luggage & Travel Gear",
+        "link": "https://www.amazon.com/Luggage-Travel-Gear/b/ref=dp_bc_2?ie=UTF8&node=9479199011",
+        "node": "9479199011",
+        "serpapi_link": "https://serpapi.com/search.json?amazon_domain=amazon.com&device=desktop&engine=amazon&node=9479199011"
+      },
+      {
+        "position": 3,
+        "name": "Backpacks",
+        "link": "https://www.amazon.com/backpacks/b/ref=dp_bc_3?ie=UTF8&node=360832011",
+        "node": "360832011",
+        "serpapi_link": "https://serpapi.com/search.json?amazon_domain=amazon.com&device=desktop&engine=amazon&node=360832011"
+      },
+      {
+        "position": 4,
+        "name": "Casual Daypacks",
+        "link": "https://www.amazon.com/Casual-Daypacks/b/ref=dp_bc_4?ie=UTF8&node=2404179011",
+        "node": "2404179011",
+        "serpapi_link": "https://serpapi.com/search.json?amazon_domain=amazon.com&device=desktop&engine=amazon&node=2404179011"
+      }
+    ],
+    "asin": "B0007QCQGI",
+    "title": "JanSport SuperBreak One Backpacks - Durable, Lightweight Bookbag with 1 Main Compartment, Front Utility Pocket with Built-in Organizer - Premium Backpack, Black",
+    "link": "https://www.amazon.com/JanSport-Superbreak-Backpack-Jansport-Black/dp/B0007QCQGI/",
+    "link_clean": "https://www.amazon.com/dp/B0007QCQGI/",
+    "serpapi_link": "https://serpapi.com/search.json?amazon_domain=amazon.com&asin=B0007QCQGI&device=desktop&engine=amazon_product",
+    "badges": ["#1 Best Seller"],
+    "variant_combinations": [
+      {
+        "dimensions": {
+          "color": "70s Space Dye Fresh Mint",
+          "size": "One Size"
+        },
+        "asin": "B0CKY7Z4RB",
+        "serpapi_link": "https://serpapi.com/search.json?amazon_domain=amazon.com&asin=B0CKY7Z4RB&device=desktop&engine=amazon_product"
+      },
+      {
+        "dimensions": {
+          "color": "8 Bit Ombre",
+          "size": "One Size"
+        },
+        "asin": "B09F1MSTX8",
+        "serpapi_link": "https://serpapi.com/search.json?amazon_domain=amazon.com&asin=B09F1MSTX8&device=desktop&engine=amazon_product"
+      }
+    ],
+    "brand": "Visit the JanSport Store",
+    "thumbnail": "https://m.media-amazon.com/images/I/81RLV0AITEL._AC_SY300_SX300_QL70_FMwebp_.jpg",
+    "thumbnails": ["https://m.media-amazon.com/images/I/81RLV0AITEL._AC_SL1500_.jpg"],
+    "rating": 4.4,
+    "reviews": 45483,
+    "bought_last_month": "7K+ bought in past month",
+    "discount": "-17%",
+    "price": "$31.48",
+    "extracted_price": 31.48,
+    "old_price": "$37.75",
+    "extracted_old_price": 37.75,
+    "prime": true,
+    "delivery": [
+      "FREE delivery Sunday, October 25 on orders shipped by Amazon over $35",
+      "Or Prime members get FREE delivery Tomorrow, October 21."
+    ],
+    "stock": "In Stock",
+    "description": "These cool backpacks for teenagers have one main compartment to hold all of your books and essentials, and a front utili"
+  },
+  "purchase_options": {
+    "buy_new": {
+      "caption": "Buy New",
+      "price": "$31.48",
+      "extracted_price": 31.48,
+      "delivery": [
+        "FREE delivery Sunday, October 25 on orders shipped by Amazon over $35",
+        "Or Prime members get FREE delivery Tomorrow, October 21."
+      ],
+      "stock": "In Stock",
+      "features": {
+        "shipper_seller": {
+          "text": "Amazon.com",
+          "details": {
+            "heading": "Shipper / Seller",
+            "content": "Amazon.com"
+          }
+        },
+        "returns": {
+          "text": "FREE 30-day refund/replacement",
+          "details": {
+            "heading": "FREE 30-day refund/replacement"
+          },
+          "link": {
+            "text": "See exceptions",
+            "link": "https://www.amazon.com/gp/help/customer/display.html/?nodeId=GKQNFKFK5CF3C54B"
+          }
+        },
+        "gift_options": {
+          "text": "Available at checkout Available at checkout This item is a gift. Change",
+          "details": {
+            "content": "Add gift options at checkout"
+          }
+        }
+      }
+    },
+    "buy_used": {
+      "caption": "Used - Like New",
+      "price": "$20.46",
+      "extracted_price": 20.46,
+      "delivery": [
+        "FREE delivery Sunday, October 25 on orders shipped by Amazon over $35",
+        "Or Prime members get FREE delivery Tomorrow, October 21. Order within 11 hrs 23 mins."
+      ],
+      "stock": "In Stock",
+      "features": {
+        "ships_from": "Amazon",
+        "sold_by": "Amazon Resale"
+      }
+    }
+  },
+  "product_details": {
+    "brand_name": "JanSport",
+    "manufacturer": "JanSport",
+    "best_sellers_rank": [
+      {
+        "text": "#1,994 in Clothing, Shoes & Jewelry (See Top 100 in Clothing, Shoes & Jewelry)",
+        "extracted_rank": 1994,
+        "link": "https://www.amazon.com/gp/bestsellers/fashion/ref=pd_zg_ts_fashion",
+        "link_text": "See Top 100 in Clothing, Shoes & Jewelry"
+      },
+      {
+        "text": "#1 in Casual Daypack Backpacks",
+        "extracted_rank": 1,
+        "link": "https://www.amazon.com/gp/bestsellers/fashion/2404179011/ref=pd_zg_hrsr_fashion",
+        "link_text": "Casual Daypack Backpacks"
+      }
+    ],
+    "asin": "B0007QCQGI",
+    "customer_reviews": "4.6 out of 5 stars",
+    "rating": 4.6,
+    "reviews": 45483
+  }
+}

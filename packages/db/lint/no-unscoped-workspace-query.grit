@@ -13,6 +13,8 @@ language js
 
 pattern workspace_table() {
   or {
+    `accuracyAudit`,
+    `accuracyAuditItem`,
     `aiConversation`,
     `aiMessage`,
     `aiTask`,
@@ -56,6 +58,8 @@ pattern workspace_table() {
     `subscription`,
     `supplier`,
     `supplierQuote`,
+    `trackedProduct`,
+    `trackedStore`,
     `weightSuggestion`
   }
 }

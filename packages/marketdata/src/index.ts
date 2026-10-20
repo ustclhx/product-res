@@ -30,24 +30,30 @@ export {
 } from './imports.ts'
 export {
   DEFAULT_PRIORITIES,
+  type DisqualifiedCheck,
   derivedEntityId,
   dispersionOf,
   entityRef,
   getPriority,
   latestValue,
+  loadDisqualified,
   type MetricPoint,
+  noDisqualification,
   normalizePhrase,
   type ObservationOrigin,
   productIds,
+  type RankableValue,
   rankValues,
   readMetric,
   readMetrics,
   type SourceValue,
   setManualRate,
   setPriority,
+  setSourceQualification,
   upsertCategories,
   upsertEntities,
   upsertObservations,
+  upsertReviews,
 } from './observations.ts'
 export {
   DEFAULT_THRESHOLDS,
@@ -81,3 +87,9 @@ export {
   updateSourceConfig,
 } from './sources.ts'
 export { replayPayloads, runSyncTask, type SyncDeps, type SyncOutcome } from './sync.ts'
+export {
+  listTrackedProducts,
+  setTrackedProductTier,
+  type TrackProductInput,
+  trackProduct,
+} from './tracking.ts'

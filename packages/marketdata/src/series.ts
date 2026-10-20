@@ -3,12 +3,15 @@ import type { Database } from '@product-res/db'
 import { marketplaceKeyword, marketplaceProduct, observation } from '@product-res/db/schema'
 import { and, asc, eq, gte, ilike, inArray, lte, or, type SQL } from 'drizzle-orm'
 import {
+  type DisqualifiedCheck,
   dispersionOf,
   getPriority,
+  loadDisqualified,
   type MetricPoint,
   normalizePhrase,
   rankValues,
   type SourceValue,
+  toSourceValue,
 } from './observations.ts'
 
 /**
@@ -107,6 +110,8 @@ export async function readMetricSeries(
     readonly marketplace: Marketplace
     readonly from?: string | undefined
     readonly to?: string | undefined
+    /** 主值资格；未传时读取 source_qualification */
+    readonly disqualified?: DisqualifiedCheck | undefined
   },
 ): Promise<MetricSeriesMap> {
   const result: MetricSeriesMap = new Map()
@@ -116,6 +121,7 @@ export async function readMetricSeries(
   for (const metric of input.metrics) {
     priorities.set(metric, await getPriority(db, input.marketplace, metric))
   }
+  const disqualified = input.disqualified ?? (await loadDisqualified(db))
   const grouped = new Map<string, SourceValue[]>()
   for (let i = 0; i < ids.length; i += 500) {
     const rows = await db
@@ -134,15 +140,7 @@ export async function readMetricSeries(
     for (const row of rows) {
       const key = `${row.entityId}|${row.metric}|${row.observedOn}`
       const list = grouped.get(key) ?? []
-      list.push({
-        sourceId: row.sourceId,
-        value: row.value,
-        currency: row.currency,
-        method: row.method,
-        fetchedAt: row.fetchedAt,
-        rawPayloadId: row.rawPayloadId,
-        importId: row.importId,
-      })
+      list.push(toSourceValue(row, disqualified))
       grouped.set(key, list)
     }
   }

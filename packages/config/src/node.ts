@@ -148,7 +148,7 @@ function readOptionalSecret(dir: string, name: string): string | undefined | nul
 
 /** 数据源凭据名前缀；只读取这些前缀的 NAME 或 NAME_FILE，未知名称不会触发文件读取 */
 const DATA_SOURCE_SECRET =
-  /^(EBAY|KEEPA|JUNGLESCOUT|SELLERSPRITE|HELIUM10|DATAFORSEO|SPAPI|FX)_[A-Z0-9_]+$/
+  /^(EBAY|KEEPA|JUNGLESCOUT|SELLERSPRITE|HELIUM10|DATAFORSEO|AISA|SERPAPI|SPAPI|FX)_[A-Z0-9_]+$/
 
 /**
  * 读取数据源凭据（add-data-source-hub design D2）：优先 NAME，其次 NAME_FILE，最后 OPTIONAL_SECRETS_DIR/NAME（去掉一个末尾换行）。

@@ -244,6 +244,7 @@ describe('候选列表', () => {
           sourceId,
           value: 1000 + i * 200,
           method: 'estimate' as const,
+          tier: 3,
           fetchedAt,
         })),
       )

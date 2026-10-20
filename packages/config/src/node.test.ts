@@ -551,8 +551,13 @@ describe('createDataSourceSecrets', () => {
   it('从可选密钥目录读取，文件缺失为未配置', () => {
     const dir = mkdtempSync(join(tmpdir(), 'ds-optional-'))
     writeFileSync(join(dir, 'EBAY_CLIENT_SECRET'), 'ebay-secret\n')
+    writeFileSync(join(dir, 'AISA_API_KEY'), 'aisa-key\n')
+    writeFileSync(join(dir, 'SERPAPI_API_KEY'), 'serp-key')
     const secret = createDataSourceSecrets({ OPTIONAL_SECRETS_DIR: dir })
     expect(secret('EBAY_CLIENT_SECRET')).toBe('ebay-secret')
+    // AIsa 网关与 SerpApi（add-accuracy-store-tracking）
+    expect(secret('AISA_API_KEY')).toBe('aisa-key')
+    expect(secret('SERPAPI_API_KEY')).toBe('serp-key')
     expect(secret('KEEPA_API_KEY')).toBeUndefined()
   })
 })

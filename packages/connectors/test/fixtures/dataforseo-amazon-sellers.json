@@ -1,0 +1,122 @@
+{
+  "version": "0.1.20260917",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "9.8954 sec.",
+  "cost": 0.0033,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "00000000-0000-0000-0000-000000000000",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "9.8689 sec.",
+      "cost": 0.0033,
+      "result_count": 1,
+      "path": ["v3", "merchant", "amazon", "sellers", "live", "advanced"],
+      "data": {
+        "api": "merchant",
+        "function": "sellers",
+        "se": "amazon",
+        "asin": "B0756FCPPN",
+        "language_code": "en_US",
+        "location_code": 2840,
+        "se_type": "sellers",
+        "device": "desktop",
+        "os": "windows"
+      },
+      "result": [
+        {
+          "asin": "B0756FCPPN",
+          "type": "sellers",
+          "se_domain": "amazon.com",
+          "location_code": 2840,
+          "language_code": "en_US",
+          "check_url": "https://www.amazon.com/dp/B0756FCPPN/ref=olp_aod_redir_impl1?_encoding=UTF8&aod=1",
+          "datetime": "2026-10-20 06:17:29 +00:00",
+          "title": "Skechers Men's Delson Camben | Casual, Air-Cooled Memory Foam, Skech-Knit Mesh, Lightweight, Vegan",
+          "image": "https://m.media-amazon.com/images/I/41SZT9MWRzL.jpg",
+          "item_types": ["amazon_seller_main_item", "amazon_seller_item"],
+          "items_count": 2,
+          "items": [
+            {
+              "type": "amazon_seller_main_item",
+              "rank_group": 1,
+              "rank_absolute": 1,
+              "position": "left",
+              "seller_name": "Amazon.com",
+              "seller_url": null,
+              "ships_from": "Amazon.com",
+              "price": {
+                "current": 46.37,
+                "regular": null,
+                "max_value": null,
+                "currency": "USD",
+                "is_price_range": false,
+                "displayed_price": "$46.37"
+              },
+              "percentage_discount": null,
+              "applicable_vouchers": null,
+              "rating": {
+                "type": "rating_element",
+                "position": "left",
+                "rating_type": "Max5",
+                "value": 4.6,
+                "votes_count": 38908,
+                "rating_max": 5
+              },
+              "condition": "New",
+              "condition_description": null,
+              "delivery_info": {
+                "delivery_date_from": "2026-10-25T00:00:00+00:00",
+                "delivery_date_to": null,
+                "fastest_delivery_date_from": "2026-10-24T00:00:00+00:00",
+                "fastest_delivery_date_to": null,
+                "delivery_message": "FREE delivery Sunday, October 25 Or fastest delivery Saturday, October 24",
+                "delivery_price": null
+              }
+            },
+            {
+              "type": "amazon_seller_item",
+              "rank_group": 1,
+              "rank_absolute": 2,
+              "position": "left",
+              "seller_name": "Zappos",
+              "seller_url": "http://amazon.com/gp/aag/main?ie=UTF8&seller=AH1YFAUS3NHX2&isAmazonFulfilled=1&asin=B0756FCPPN&ref_=olp_merch_name_1",
+              "ships_from": "Amazon.com",
+              "price": {
+                "current": 63,
+                "regular": null,
+                "max_value": null,
+                "currency": "USD",
+                "is_price_range": false,
+                "displayed_price": "$63.00"
+              },
+              "percentage_discount": null,
+              "applicable_vouchers": null,
+              "rating": {
+                "type": "rating_element",
+                "position": "left",
+                "rating_type": "Max5",
+                "value": 5,
+                "votes_count": 468618,
+                "rating_max": 5
+              },
+              "condition": "New",
+              "condition_description": null,
+              "delivery_info": {
+                "delivery_date_from": "2026-10-25T00:00:00+00:00",
+                "delivery_date_to": null,
+                "fastest_delivery_date_from": "2026-11-10T06:17:29.0530283+00:00",
+                "fastest_delivery_date_to": null,
+                "delivery_message": "FREE delivery Sunday, October 25 Or Prime members get FREE delivery Tomorrow, October 21. Join Prime",
+                "delivery_price": null
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

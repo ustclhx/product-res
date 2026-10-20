@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm'
 import {
   bigint,
   boolean,
+  check,
   customType,
   date,
   index,
@@ -11,6 +12,7 @@ import {
   numeric,
   pgTable,
   primaryKey,
+  smallint,
   text,
   timestamp,
   uniqueIndex,
@@ -162,7 +164,10 @@ export const marketplaceProduct = pgTable(
     imageUrl: text('image_url'),
     url: text('url'),
     sellerId: text('seller_id'),
+    /** 上架时间；Amazon 取详情页 Date First Available */
     listedAt: timestamp('listed_at', { withTimezone: true }),
+    /** 父体 ID（Amazon parent ASIN）；变体归并用 */
+    parentPlatformId: text('parent_platform_id'),
     firstSeenAt: timestamp('first_seen_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: updatedAt(),
   },
@@ -199,9 +204,14 @@ export const marketplaceKeyword = pgTable(
   (t) => [uniqueIndex('marketplace_keyword_key_idx').on(t.marketplace, t.phrase)],
 )
 
+/** 可信度层级取值：0 真值、1 平台官方、2 页面展示、3 第三方估算、4 系统推算 */
+export const OBSERVATION_TIERS = [0, 1, 2, 3, 4] as const
+
 /**
  * 观测值长表：实体 × 指标 × 日期 × 来源 → 数值。同一来源同日重复写入以最新为准；
  * 多来源并存不覆盖；缺失就是没有行，不写 0。
+ * 区间型信号（如 Amazon bought 徽标）写 value_low / value_high，value 为对数中点
+ * （add-accuracy-store-tracking design D1）。
  */
 export const observation = pgTable(
   'observation',
@@ -215,6 +225,14 @@ export const observation = pgTable(
     value: numeric('value', { precision: 24, scale: 6, mode: 'number' }).notNull(),
     currency: text('currency'),
     method: text('method', { enum: ['official', 'estimate', 'derived', 'import'] }).notNull(),
+    /** 可信度层级；主值先比层级（数字小者优先）。迁移按 method 回填 */
+    tier: smallint('tier').notNull(),
+    /** 区间下界；点值为空 */
+    valueLow: numeric('value_low', { precision: 24, scale: 6, mode: 'number' }),
+    /** 区间上界（不含）；点值或上界开放时为空 */
+    valueHigh: numeric('value_high', { precision: 24, scale: 6, mode: 'number' }),
+    /** 经由渠道（aisa / direct）；直接调用来源时为空 */
+    channel: text('channel'),
     rawPayloadId: uuid('raw_payload_id'),
     importId: uuid('import_id'),
     fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull(),
@@ -224,7 +242,27 @@ export const observation = pgTable(
     index('observation_metric_day_idx').on(t.metric, t.observedOn),
     index('observation_import_idx').on(t.importId),
     index('observation_source_day_idx').on(t.sourceId, t.observedOn),
+    check('observation_tier_range', sql`${t.tier} between 0 and 4`),
   ],
+)
+
+/**
+ * 来源 × 指标的主值资格（add-accuracy-store-tracking design D7）：部署级。
+ * 人工抽检（4.1）计算一致率后写入；样本 ≥ 20 且一致率 < 95% 时 disqualified = true，
+ * 读取主值时跳过该来源（packages/marketdata loadDisqualified）。没有行表示有资格。
+ */
+export const sourceQualification = pgTable(
+  'source_qualification',
+  {
+    sourceId: text('source_id').notNull(),
+    metric: text('metric').notNull(),
+    disqualified: boolean('disqualified').notNull().default(false),
+    /** 最近一次评估的一致率（0–1）与样本数 */
+    agreementRate: numeric('agreement_rate', { precision: 6, scale: 5, mode: 'number' }),
+    samples: integer('samples').notNull().default(0),
+    evaluatedAt: timestamp('evaluated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.sourceId, t.metric] })],
 )
 
 /** 指标来源优先级：平台 × 指标 → 来源列表（第一个有值的为主值） */

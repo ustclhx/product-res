@@ -1,8 +1,11 @@
 import { ConnectorError, classifyStatus } from './errors.ts'
 
-/** URL 中常见的凭据参数；请求摘要与日志中替换为 [REDACTED] */
+/**
+ * URL 中常见的凭据参数；请求摘要与日志中替换为 [REDACTED]。
+ * SerpApi、Keepa 等把密钥放在查询参数（api_key / key），存档与日志都只能看到脱敏后的 URL。
+ */
 const SECRET_PARAMS =
-  /^(key|api_?key|access_?token|token|secret|client_?secret|password|sig|signature|auth)$/i
+  /^(key|api[_-]?key|x[_-]api[_-]?key|access[_-]?token|token|secret|client[_-]?secret|password|sig|signature|auth)$/i
 
 /** 去掉 URL 中的凭据：用户信息与敏感查询参数 */
 export function redactUrl(raw: string): string {
@@ -63,7 +66,7 @@ export async function httpRequest(
     clearTimeout(timer)
     const aborted = error instanceof Error && error.name === 'AbortError'
     throw new ConnectorError('retryable', aborted ? 'HTTP_TIMEOUT' : 'HTTP_NETWORK_ERROR', {
-      cause: error,
+      cause: redactCause(error, req.url, summary.url),
     })
   }
   let body: string
@@ -77,6 +80,14 @@ export async function httpRequest(
   const kind = classifyStatus(response.status)
   if (kind) throw new ConnectorError(kind, `HTTP_${response.status}`, { status: response.status })
   return { status: response.status, headers: response.headers, body, request: summary }
+}
+
+/** 网络错误的消息可能带完整 URL（含查询参数中的密钥）；日志记录 cause 前替换为脱敏 URL */
+function redactCause(error: unknown, rawUrl: string, redacted: string) {
+  if (!(error instanceof Error) || !error.message.includes(rawUrl)) return error
+  const safe = new Error(error.message.split(rawUrl).join(redacted))
+  safe.name = error.name
+  return safe
 }
 
 async function readLimited(response: Response, maxBytes: number) {
