@@ -38,6 +38,8 @@ import {
  */
 const DIRECT_API = 'https://api.dataforseo.com/v3'
 export const AISA_DATAFORSEO_API = 'https://api.aisa.one/apis/v1/dataforseo'
+/** AIsa 钱包余额（免费，Bearer 同一 key） */
+const AISA_BALANCE_API = 'https://api.aisa.one/v1/credits/balance'
 const LOCATION_US = 2840
 
 export type DataForSeoTransport = 'direct' | 'aisa'
@@ -345,7 +347,30 @@ export function createDataForSeoConnector(
         return { sourceId: 'dataforseo', checkedAt, credentials: 'missing', checks: [] }
       const channel = { name: 'channel', ok: true, detail: transport.kind }
       try {
-        // 免费接口：账户信息（经 AIsa 时上游 cost 为 0）
+        // 免费接口：直连查 DataForSEO 账户；经 AIsa 查网关余额（AIsa 目录不含 appendix/user_data，2026-10-20 核验）
+        if (transport.kind === 'aisa') {
+          const res = await httpRequest(
+            ctx.fetch,
+            { url: AISA_BALANCE_API, headers: { authorization: transport.authorization } },
+            transport.classify,
+          )
+          const micros = parseJson<{ available_balance_micros_usd?: number }>(
+            res.body,
+          ).available_balance_micros_usd
+          return {
+            sourceId: 'dataforseo',
+            checkedAt,
+            credentials: 'valid',
+            checks: [
+              channel,
+              {
+                name: 'balance',
+                ok: micros !== undefined,
+                detail: micros === undefined ? undefined : `$${(micros / 1_000_000).toFixed(2)}`,
+              },
+            ],
+          }
+        }
         const res = await httpRequest(
           ctx.fetch,
           {

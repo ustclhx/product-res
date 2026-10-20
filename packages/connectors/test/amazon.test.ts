@@ -161,6 +161,30 @@ describe('DataForSEO 经 AIsa 传输（2.1）', () => {
   })
 })
 
+describe('DataForSEO 经 AIsa 探测', () => {
+  it('查询 AIsa 钱包余额（免费），不调用 AIsa 目录中不存在的 appendix/user_data', async () => {
+    const calls: Captured[] = []
+    const ctx = context(
+      { AISA_API_KEY: 'aisa-secret' },
+      () => ({ status: 200, body: JSON.stringify({ available_balance_micros_usd: 49_988_400 }) }),
+      calls,
+    )
+    const receipt = await createDataForSeoConnector().probe(ctx)
+    expect(calls.map((c) => c.url)).toEqual(['https://api.aisa.one/v1/credits/balance'])
+    expect(calls[0]?.headers.authorization).toBe('Bearer aisa-secret')
+    expect(receipt.credentials).toBe('valid')
+    expect(receipt.checks).toContainEqual({ name: 'balance', ok: true, detail: '$49.99' })
+    expect(JSON.stringify(receipt)).not.toContain('aisa-secret')
+  })
+
+  it('余额接口 401 判为凭据失效', async () => {
+    const receipt = await createDataForSeoConnector().probe(
+      context({ AISA_API_KEY: 'k' }, () => ({ status: 401, body: '{}' })),
+    )
+    expect(receipt.credentials).toBe('invalid')
+  })
+})
+
 describe('DataForSEO Amazon 归一化（2.2，真实响应夹具）', () => {
   it('搜索结果：每个 ASIN 的价格、评分、评论数、标识与 bought 区间，层级 T2、渠道 aisa', () => {
     const batch = normalizeDataForSeo(payload(search, fixture('dataforseo-amazon-products.json')))
