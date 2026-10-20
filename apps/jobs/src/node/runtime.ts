@@ -25,6 +25,7 @@ import { type JobObserver, logJobObserver } from '../observer.ts'
 import { pausePipelineSchedules } from '../pipeline-pause.ts'
 import { registerSelectionReview } from '../review/selection-review.ts'
 import { registerNodeSelection } from '../selection/node.ts'
+import { registerNodeStoreTracking } from '../stores/node.ts'
 import { createNodeMediaHandler } from './media.ts'
 import { createNodeMediaWorkflowHttpHandler } from './media-http.ts'
 import { getNodeJobFeatures, registerNodeJobsSchedules } from './registration.ts'
@@ -172,6 +173,8 @@ export async function startNodeJobs(config: NodeEnv, options: NodeJobsOptions) {
         // 影子验证（add-shadow-validation）：05:00 打标签、周一 05:30 重算准备度、Keepa 回放队列
         registerNodeSelection({ db, scheduler: pipelineScheduler, queues, dataSync })
         registerSelectionReview(pipelineScheduler, db)
+        // 店铺追踪（add-accuracy-store-tracking）：03:00 SGT 评估与投递；手动“立即跑一轮”队列不受暂停影响
+        registerNodeStoreTracking({ scheduler: pipelineScheduler, queues, dataSync })
         await queues.prepare()
         await scheduler.prepare()
       },

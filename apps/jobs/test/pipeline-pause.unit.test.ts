@@ -23,6 +23,7 @@ vi.mock('@product-res/follow', async (original) => ({
 const { registerDataSchedules } = await import('../src/datasources/sync.ts')
 const { registerNodeSelection } = await import('../src/selection/node.ts')
 const { registerSelectionReview } = await import('../src/review/selection-review.ts')
+const { registerNodeStoreTracking } = await import('../src/stores/node.ts')
 const { pausePipelineSchedules, PAUSABLE_PIPELINE_SCHEDULES } = await import(
   '../src/pipeline-pause.ts'
 )
@@ -44,6 +45,11 @@ function registerAll(scheduler: Scheduler) {
   registerDataSchedules(scheduler, { db, registry: createRegistry([]), secret: () => undefined })
   registerNodeSelection({ db, scheduler })
   registerSelectionReview(scheduler, db)
+  registerNodeStoreTracking({
+    scheduler,
+    queues: { register: () => {} },
+    dataSync: { db, registry: createRegistry([]), secret: () => undefined },
+  })
 }
 
 afterEach(() => {

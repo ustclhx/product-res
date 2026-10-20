@@ -9,10 +9,12 @@ import {
   marketplaceProduct,
   scoped,
   seasonalNode,
+  trackedStore,
 } from '@product-res/db'
 import { normalizePhrase } from '@product-res/marketdata'
 import { addDays } from '@product-res/selection'
 import { and, eq, gte, inArray, ne, type SQL } from 'drizzle-orm'
+import { storeSellerTargets } from './stores/collect.ts'
 
 /** and() 的参数都存在时结果一定存在 */
 const all = (...conditions: SQL[]) => and(...conditions) as SQL
@@ -76,15 +78,24 @@ export async function loadCollectionTargets(
   db: Database,
   options: { readonly asOf: string; readonly keywords: boolean },
 ): Promise<CollectionTargets> {
-  const workspaces = await db
-    .selectDistinct({ workspaceId: direction.workspaceId })
-    .from(direction)
-    .where(eq(direction.enabled, true))
+  const [withDirections, withStores] = await Promise.all([
+    db
+      .selectDistinct({ workspaceId: direction.workspaceId })
+      .from(direction)
+      .where(eq(direction.enabled, true)),
+    db
+      .selectDistinct({ workspaceId: trackedStore.workspaceId })
+      .from(trackedStore)
+      .where(and(eq(trackedStore.status, 'active'), eq(trackedStore.platform, 'ebay'))),
+  ])
+  const workspaces = [...new Set([...withDirections, ...withStores].map((r) => r.workspaceId))]
   const sellers: SellerTarget[] = []
   const members: { productId: string; hasLead: boolean }[] = []
   const keywords: string[] = []
-  for (const { workspaceId } of workspaces) {
+  for (const workspaceId of workspaces) {
     const s = scoped(db, workspaceId)
+    // 店铺池的 eBay 店铺（add-accuracy-store-tracking D4）：与方向的对标店铺合并，按卖家 × 搜索条件去重
+    sellers.push(...(await storeSellerTargets(db, workspaceId)))
     const directions = await s.select(direction, { where: eq(direction.enabled, true) })
     if (directions.length === 0) continue
     const byId = new Map(directions.map((d) => [d.id, d]))

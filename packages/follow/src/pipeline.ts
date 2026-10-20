@@ -78,6 +78,7 @@ import { log } from '@product-res/shared/log'
 import { and, desc, eq, inArray, lt, lte, type SQL, sql } from 'drizzle-orm'
 import { GRADE_TO_DB, METHOD_FROM_DB, METHOD_TO_DB } from './mapping.ts'
 import { currentScoringSetting, toScoringSettings } from './settings.ts'
+import { mergedBenchmarks } from './stores/pool.ts'
 
 /**
  * 跟卖选品每日流水线（design D7，tasks 3.1）：对每个空间的每个启用方向
@@ -237,6 +238,14 @@ export async function loadWorkspaceContext(
     const list = benchmarks.get(seller.directionId) ?? []
     list.push({ marketplace: seller.marketplace, sellerId: seller.sellerPlatformId })
     benchmarks.set(seller.directionId, list)
+  }
+  // 店铺池中关联到方向的店铺与方向的对标店铺合并（读取时合并，不迁移；同一店铺只计一次）
+  for (const [directionId, stores] of await mergedBenchmarks(db, workspaceId)) {
+    const list = benchmarks.get(directionId) ?? []
+    for (const store of stores)
+      if (!list.some((b) => b.marketplace === store.marketplace && b.sellerId === store.sellerId))
+        list.push(store)
+    benchmarks.set(directionId, list)
   }
   return {
     db,

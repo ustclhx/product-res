@@ -86,7 +86,13 @@ export {
   setSourceEnabled,
   updateSourceConfig,
 } from './sources.ts'
-export { replayPayloads, runSyncTask, type SyncDeps, type SyncOutcome } from './sync.ts'
+export {
+  replayPayloads,
+  runSyncTask,
+  type SyncBatchHook,
+  type SyncDeps,
+  type SyncOutcome,
+} from './sync.ts'
 export {
   listTrackedProducts,
   setTrackedProductTier,

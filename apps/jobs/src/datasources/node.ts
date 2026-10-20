@@ -2,6 +2,7 @@ import { createDataSourceSecrets } from '@product-res/config/node'
 import { createMockConnector } from '@product-res/datasources'
 import type { Database } from '@product-res/db'
 import type { DeadLetterSink, QueueBatch, QueueProducer, Scheduler } from '@product-res/platform'
+import { createStoreBatchHook } from '../stores/round.ts'
 import { createQueueDispatcher, type DailyMessage } from './plan.ts'
 import {
   consumeDataSync,
@@ -39,7 +40,10 @@ export async function registerNodeDataSources(input: {
     ...(input.producer
       ? { dispatcher: createQueueDispatcher(input.db, DATASYNC_QUEUE, input.producer) }
       : {}),
+    // 店铺追踪（add-accuracy-store-tracking 3.2）：批次写入后记录店铺新品归属并投递报价
+    onBatch: (message, batch) => storeHook(message, batch),
   }
+  const storeHook = createStoreBatchHook(context)
   await prepareDataSources(input.db, context.registry)
   input.queues.register(DATASYNC_QUEUE, (batch, sink) => consumeDataSync(batch, context, sink), {
     concurrency: 4,
