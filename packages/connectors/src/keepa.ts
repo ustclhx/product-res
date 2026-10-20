@@ -17,6 +17,7 @@ import {
  * - csv 数组：[keepa 时间, 值, ...]，价格单位为分，-1 表示无数据
  * - keepa 时间 = 自 2011-01-01 起的分钟数
  * BSR 原样保存，不在连接器内换算销量。
+ * 价格、BSR、评论等是 Keepa 抓取的 Amazon 页面展示值，层级记 T2（add-accuracy-store-tracking D1）。
  */
 const API = 'https://api.keepa.com'
 const DOMAIN: Partial<Record<Marketplace, number>> = {
@@ -279,6 +280,7 @@ export function normalizeKeepa(payload: RawPayload): NormalizedBatch {
             value,
             ...(series.currency && currency ? { currency } : {}),
             method: 'official',
+            tier: 2,
           })
       } else {
         const value = series.convert(product.stats?.current?.[series.index])
@@ -290,6 +292,7 @@ export function normalizeKeepa(payload: RawPayload): NormalizedBatch {
           value,
           ...(series.currency && currency ? { currency } : {}),
           method: 'official',
+          tier: 2,
         })
       }
     }

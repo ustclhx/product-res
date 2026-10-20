@@ -90,6 +90,8 @@ async function seedMarket() {
         value: o.value,
         currency: o.currency,
         method: o.method,
+        // 与迁移回填一致：按获取方式推出可信度层级
+        tier: ({ official: 1, import: 2, estimate: 3, derived: 4 } as const)[o.method],
         fetchedAt: NOW,
       })),
     )

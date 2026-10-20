@@ -1,19 +1,24 @@
-import type {
-  AcquisitionMethod,
-  EntityKey,
-  Marketplace,
-  NormalizedCategory,
-  NormalizedEntity,
-  NormalizedObservation,
+import {
+  type AcquisitionMethod,
+  type EntityKey,
+  type Marketplace,
+  type NormalizedCategory,
+  type NormalizedEntity,
+  type NormalizedObservation,
+  type NormalizedReview,
+  type Tier,
+  tierOf,
 } from '@product-res/datasources'
 import type { Database } from '@product-res/db'
 import {
   marketplaceCategory,
   marketplaceKeyword,
   marketplaceProduct,
+  marketplaceReview,
   marketplaceSeller,
   metricPriority,
   observation,
+  sourceQualification,
 } from '@product-res/db/schema'
 import { and, asc, eq, gte, inArray, lte, sql } from 'drizzle-orm'
 
@@ -66,6 +71,7 @@ export async function upsertEntities(db: Database, entities: readonly Normalized
           url: e.facts?.url,
           sellerId: e.facts?.sellerId,
           listedAt: toDate(e.facts?.listedAt),
+          parentPlatformId: e.facts?.parentId,
         })),
       )
       .onConflictDoUpdate({
@@ -79,6 +85,7 @@ export async function upsertEntities(db: Database, entities: readonly Normalized
           url: sql`coalesce(excluded.url, ${marketplaceProduct.url})`,
           sellerId: sql`coalesce(excluded.seller_id, ${marketplaceProduct.sellerId})`,
           listedAt: sql`coalesce(excluded.listed_at, ${marketplaceProduct.listedAt})`,
+          parentPlatformId: sql`coalesce(excluded.parent_platform_id, ${marketplaceProduct.parentPlatformId})`,
           updatedAt: sql`now()`,
         },
       })
@@ -173,6 +180,10 @@ export async function upsertObservations(
       value: row.value,
       currency: row.currency ?? null,
       method: row.method,
+      tier: tierOf(row),
+      valueLow: row.valueLow ?? null,
+      valueHigh: row.valueHigh ?? null,
+      channel: row.channel ?? null,
       rawPayloadId: origin.rawPayloadId ?? null,
       importId: origin.importId ?? null,
       fetchedAt: origin.fetchedAt,
@@ -194,6 +205,10 @@ export async function upsertObservations(
           value: sql`excluded.value`,
           currency: sql`excluded.currency`,
           method: sql`excluded.method`,
+          tier: sql`excluded.tier`,
+          valueLow: sql`excluded.value_low`,
+          valueHigh: sql`excluded.value_high`,
+          channel: sql`excluded.channel`,
           rawPayloadId: sql`excluded.raw_payload_id`,
           importId: sql`excluded.import_id`,
           fetchedAt: sql`excluded.fetched_at`,
@@ -205,9 +220,20 @@ export async function upsertObservations(
 
 export interface SourceValue {
   readonly sourceId: string
+  /** 点值；区间时为对数中点，展示须用 valueLow / valueHigh */
   readonly value: number
   readonly currency: string | null
   readonly method: AcquisitionMethod
+  /** 可信度层级（0 真值 … 4 推算） */
+  readonly tier: Tier
+  /** 区间下界；点值为 null */
+  readonly valueLow: number | null
+  /** 区间上界；点值或上界开放时为 null */
+  readonly valueHigh: number | null
+  /** 经由渠道（aisa / direct）；直接调用来源为 null */
+  readonly channel: string | null
+  /** 该来源对该指标已被人工抽检判定失去主值资格 */
+  readonly disqualified: boolean
   readonly fetchedAt: Date
   readonly rawPayloadId: string | null
   readonly importId: string | null
@@ -215,9 +241,12 @@ export interface SourceValue {
 
 export interface MetricPoint {
   readonly observedOn: string
-  /** 优先级最高且有值的来源 */
+  /**
+   * 主值：层级号最小者优先，同层级按来源优先级，再按获取时间；跳过失去主值资格的来源。
+   * 只有失去资格的来源有值时仍返回，此时 primary.disqualified 为 true。
+   */
   readonly primary: SourceValue
-  /** 全部来源，按优先级排序 */
+  /** 全部来源，按主值规则排序（有资格的在前） */
   readonly values: readonly SourceValue[]
   /** 来源间离散度：(max − min) ÷ min；只有一个来源时为 null（未交叉验证） */
   readonly dispersion: number | null
@@ -226,9 +255,14 @@ export interface MetricPoint {
 /** 默认来源优先级（add-source-connectors design D9）；团队可在数据中心修改 */
 export const DEFAULT_PRIORITIES: Readonly<Record<string, readonly string[]>> = {
   sales_estimate_monthly: ['jungle-scout', 'sellersprite', 'helium10', 'keepa'],
-  price: ['amazon-spapi', 'keepa', 'dataforseo', 'ebay-browse'],
+  price: ['amazon-spapi', 'keepa', 'dataforseo', 'serpapi', 'ebay-browse'],
   seller_count: ['amazon-spapi', 'keepa', 'dataforseo'],
-  bsr: ['keepa', 'amazon-spapi'],
+  // 同为 T2 时以主采集（DataForSEO 经 AIsa）为主，SerpApi 只做交叉验证（add-accuracy-store-tracking D3）
+  bsr: ['keepa', 'amazon-spapi', 'dataforseo', 'serpapi'],
+  bsr_sub: ['dataforseo', 'serpapi'],
+  bought_month: ['dataforseo', 'serpapi'],
+  rating: ['keepa', 'dataforseo', 'serpapi'],
+  review_count: ['keepa', 'dataforseo', 'serpapi'],
   // 手填汇率优先于公开来源（specs/connector-fx「人工覆盖」）
   fx_rate: ['manual', 'fx-ecb'],
   search_volume_monthly: ['sellersprite', 'jungle-scout', 'helium10', 'dataforseo'],
@@ -257,18 +291,86 @@ export async function setPriority(
     })
 }
 
-/** 按优先级排序：列在优先级中的按顺序，未列出的按获取时间倒序排在后面 */
-export function rankValues(values: readonly SourceValue[], priority: readonly string[]) {
+/** 参与主值排序的最小字段；tier 缺省时按 method 推出 */
+export interface RankableValue {
+  readonly sourceId: string
+  readonly method: AcquisitionMethod
+  readonly tier?: Tier | number | null | undefined
+  readonly disqualified?: boolean | undefined
+  readonly fetchedAt: Date
+}
+
+/**
+ * 主值排序（add-accuracy-store-tracking design D1）：
+ * 1. 失去主值资格的来源排在最后；
+ * 2. 层级号小者优先（T0 真值优先于 T1 官方，依次类推）；
+ * 3. 同层级按来源优先级（metric_priority，未列出的排在后面）；
+ * 4. 再按获取时间倒序。
+ * 之后有校准误差时，第 3 步改为按误差排序（P3）。
+ */
+export function rankValues<T extends RankableValue>(
+  values: readonly T[],
+  priority: readonly string[],
+): T[] {
   const rank = (id: string) => {
     const index = priority.indexOf(id)
     return index < 0 ? priority.length : index
   }
   return [...values].sort(
-    (a, b) => rank(a.sourceId) - rank(b.sourceId) || b.fetchedAt.getTime() - a.fetchedAt.getTime(),
+    (a, b) =>
+      Number(a.disqualified ?? false) - Number(b.disqualified ?? false) ||
+      tierOf(a) - tierOf(b) ||
+      rank(a.sourceId) - rank(b.sourceId) ||
+      b.fetchedAt.getTime() - a.fetchedAt.getTime(),
   )
 }
 
-export function dispersionOf(values: readonly SourceValue[]) {
+/** 主值资格判断：来源 × 指标 → 是否失去资格 */
+export type DisqualifiedCheck = (sourceId: string, metric: string) => boolean
+
+export const noDisqualification: DisqualifiedCheck = () => false
+
+/**
+ * 读取主值资格表（source_qualification，由人工抽检 4.1 写入）。
+ * 约定：表中 disqualified = true 的 (source_id, metric) 失去主值资格；没有行即有资格。
+ */
+export async function loadDisqualified(db: Database): Promise<DisqualifiedCheck> {
+  const rows = await db
+    .select({ sourceId: sourceQualification.sourceId, metric: sourceQualification.metric })
+    .from(sourceQualification)
+    .where(eq(sourceQualification.disqualified, true))
+  if (rows.length === 0) return noDisqualification
+  const keys = new Set(rows.map((r) => `${r.sourceId}|${r.metric}`))
+  return (sourceId, metric) => keys.has(`${sourceId}|${metric}`)
+}
+
+/** 写入某来源某指标的主值资格评估结果（人工抽检提交后调用） */
+export async function setSourceQualification(
+  db: Database,
+  input: {
+    readonly sourceId: string
+    readonly metric: string
+    readonly disqualified: boolean
+    readonly agreementRate: number | null
+    readonly samples: number
+    readonly evaluatedAt: Date
+  },
+) {
+  await db
+    .insert(sourceQualification)
+    .values({ ...input })
+    .onConflictDoUpdate({
+      target: [sourceQualification.sourceId, sourceQualification.metric],
+      set: {
+        disqualified: input.disqualified,
+        agreementRate: input.agreementRate,
+        samples: input.samples,
+        evaluatedAt: input.evaluatedAt,
+      },
+    })
+}
+
+export function dispersionOf(values: readonly Pick<SourceValue, 'value'>[]) {
   if (values.length < 2) return null
   const nums = values.map((v) => v.value)
   const min = Math.min(...nums)
@@ -290,6 +392,8 @@ export async function readMetric(
     readonly marketplace: Marketplace
     readonly from?: string
     readonly to?: string
+    /** 主值资格；未传时读取 source_qualification */
+    readonly disqualified?: DisqualifiedCheck
   },
 ): Promise<MetricPoint[]> {
   const rows = await db
@@ -305,23 +409,44 @@ export async function readMetric(
       ),
     )
     .orderBy(asc(observation.observedOn))
-  return toPoints(rows, await getPriority(db, input.marketplace, input.metric))
+  return toPoints(
+    rows,
+    await getPriority(db, input.marketplace, input.metric),
+    input.disqualified ?? (await loadDisqualified(db)),
+  )
+}
+
+/** 观测行 → 读取结果中的来源值（含层级、区间、渠道与主值资格） */
+export function toSourceValue(
+  row: typeof observation.$inferSelect,
+  disqualified: DisqualifiedCheck,
+): SourceValue {
+  return {
+    sourceId: row.sourceId,
+    value: row.value,
+    currency: row.currency,
+    method: row.method,
+    tier: row.tier as Tier,
+    valueLow: row.valueLow,
+    valueHigh: row.valueHigh,
+    channel: row.channel,
+    disqualified: disqualified(row.sourceId, row.metric),
+    fetchedAt: row.fetchedAt,
+    rawPayloadId: row.rawPayloadId,
+    importId: row.importId,
+  }
 }
 
 /** 已按日期升序的观测行 → 每日主值、全部来源与离散度 */
-function toPoints(rows: readonly (typeof observation.$inferSelect)[], priority: readonly string[]) {
+function toPoints(
+  rows: readonly (typeof observation.$inferSelect)[],
+  priority: readonly string[],
+  disqualified: DisqualifiedCheck,
+) {
   const byDay = new Map<string, SourceValue[]>()
   for (const row of rows) {
     const list = byDay.get(row.observedOn) ?? []
-    list.push({
-      sourceId: row.sourceId,
-      value: row.value,
-      currency: row.currency,
-      method: row.method,
-      fetchedAt: row.fetchedAt,
-      rawPayloadId: row.rawPayloadId,
-      importId: row.importId,
-    })
+    list.push(toSourceValue(row, disqualified))
     byDay.set(row.observedOn, list)
   }
   return [...byDay.entries()].map(([observedOn, values]): MetricPoint => {
@@ -348,6 +473,8 @@ export async function readMetrics(
     readonly marketplace: Marketplace
     readonly from?: string
     readonly to?: string
+    /** 主值资格；未传时读取 source_qualification */
+    readonly disqualified?: DisqualifiedCheck
   },
 ): Promise<Map<string, Map<string, MetricPoint[]>>> {
   const result = new Map<string, Map<string, MetricPoint[]>>()
@@ -372,6 +499,7 @@ export async function readMetrics(
       ),
     ),
   )
+  const disqualified = input.disqualified ?? (await loadDisqualified(db))
   const grouped = new Map<string, Map<string, (typeof rows)[number][]>>()
   for (const row of rows) {
     const byMetric = grouped.get(row.entityId) ?? new Map()
@@ -381,7 +509,7 @@ export async function readMetrics(
   for (const [entityId, byMetric] of grouped) {
     const series = new Map<string, MetricPoint[]>()
     for (const [metric, list] of byMetric)
-      series.set(metric, toPoints(list, priorities.get(metric) ?? []))
+      series.set(metric, toPoints(list, priorities.get(metric) ?? [], disqualified))
     result.set(entityId, series)
   }
   return result
@@ -456,6 +584,8 @@ export async function setManualRate(
         observedOn: input.observedOn,
         value: input.value,
         method: 'import',
+        // 人工覆盖与官方来源同层级，再按优先级 ['manual', 'fx-ecb'] 取手填值（specs/connector-fx）
+        tier: 1,
       },
     ],
     ids,
@@ -483,4 +613,50 @@ export async function upsertCategories(db: Database, categories: readonly Normal
       })
   }
   return categories.length
+}
+
+/**
+ * 写入评论正文（marketplace_review，部署级）：商品 × 平台评论 ID 唯一，重复写入覆盖。
+ * 评论引用的商品必须已在 ids 中（先调用 upsertEntities）。
+ */
+export async function upsertReviews(
+  db: Database,
+  reviews: readonly NormalizedReview[],
+  ids: ReadonlyMap<string, string>,
+  origin: { readonly sourceId: string; readonly fetchedAt: Date },
+) {
+  if (reviews.length === 0) return 0
+  const dedup = new Map<string, typeof marketplaceReview.$inferInsert>()
+  for (const review of reviews) {
+    const productId = ids.get(entityRef(review.product))
+    if (!productId) throw new Error(`Entity not upserted: ${entityRef(review.product)}`)
+    const rating =
+      review.rating === undefined ? null : Math.min(5, Math.max(1, Math.round(review.rating)))
+    dedup.set(`${productId}|${review.reviewId}`, {
+      productId,
+      reviewId: review.reviewId,
+      rating,
+      title: review.title ?? null,
+      body: review.body ?? null,
+      reviewedOn: review.reviewedOn ?? null,
+      sourceId: origin.sourceId,
+      fetchedAt: origin.fetchedAt,
+    })
+  }
+  const values = [...dedup.values()]
+  await db
+    .insert(marketplaceReview)
+    .values(values)
+    .onConflictDoUpdate({
+      target: [marketplaceReview.productId, marketplaceReview.reviewId],
+      set: {
+        rating: sql`excluded.rating`,
+        title: sql`excluded.title`,
+        body: sql`excluded.body`,
+        reviewedOn: sql`excluded.reviewed_on`,
+        sourceId: sql`excluded.source_id`,
+        fetchedAt: sql`excluded.fetched_at`,
+      },
+    })
+  return values.length
 }

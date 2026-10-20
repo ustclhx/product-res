@@ -37,6 +37,15 @@ export {
 } from './import/mapping.ts'
 export { isEmptyCell, parseDate, parseNumber } from './import/values.ts'
 export { parseXlsx, XlsxSheetNotFoundError, type XlsxTable } from './import/xlsx.ts'
+export {
+  AMAZON_BOUGHT_FIRST_TIER,
+  amazonBoughtInterval,
+  formatInterval,
+  type IntervalValue,
+  logMidpoint,
+  nextAmazonBoughtTier,
+  parseBoughtText,
+} from './intervals.ts'
 export { isMetric, METRICS, type MetricDefinition, type MetricName } from './metrics.ts'
 export { createMockConnector, type MockBehavior } from './mock.ts'
 export { createRegistry, type SourceRegistry } from './registry.ts'

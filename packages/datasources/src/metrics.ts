@@ -6,7 +6,7 @@ import type { EntityType } from './types.ts'
  */
 export interface MetricDefinition {
   readonly label: string
-  readonly unit: 'count' | 'money' | 'rank' | 'ratio' | 'index' | 'rate'
+  readonly unit: 'count' | 'money' | 'rank' | 'ratio' | 'index' | 'rate' | 'flag'
   readonly entity: EntityType
 }
 
@@ -18,7 +18,15 @@ export const METRICS = {
   sold_quantity_daily: { label: '日销量', unit: 'count', entity: 'product' },
   sales_estimate_monthly: { label: '月销量估算', unit: 'count', entity: 'product' },
   revenue_estimate_monthly: { label: '月销售额估算', unit: 'money', entity: 'product' },
+  /** 主类目 BSR（design 中的 bsr_main 即此指标，与 Keepa 同口径） */
   bsr: { label: 'BSR 排名', unit: 'rank', entity: 'product' },
+  /** 第一个子类目 BSR */
+  bsr_sub: { label: '子类目 BSR', unit: 'rank', entity: 'product' },
+  /** Amazon "N+ bought in past month" 徽标，区间值（value_low / value_high），value 为对数中点 */
+  bought_month: { label: '近一月购买（徽标区间）', unit: 'count', entity: 'product' },
+  is_best_seller: { label: 'Best Seller 标识', unit: 'flag', entity: 'product' },
+  is_amazon_choice: { label: "Amazon's Choice 标识", unit: 'flag', entity: 'product' },
+  lowest_price: { label: '最低报价', unit: 'money', entity: 'product' },
   rating: { label: '评分', unit: 'index', entity: 'product' },
   review_count: { label: '评论数', unit: 'count', entity: 'product' },
   seller_count: { label: '卖家数', unit: 'count', entity: 'product' },

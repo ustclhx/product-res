@@ -1,0 +1,489 @@
+{
+  "version": "0.1.20260917",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "13.5771 sec.",
+  "cost": 0.0033,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "00000000-0000-0000-0000-000000000000",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "12.3301 sec.",
+      "cost": 0.0033,
+      "result_count": 1,
+      "path": ["v3", "merchant", "amazon", "products", "live", "advanced"],
+      "data": {
+        "api": "merchant",
+        "function": "products",
+        "se": "amazon",
+        "keyword": "kids backpack",
+        "language_code": "en_US",
+        "location_code": 2840,
+        "se_type": "products",
+        "device": "desktop",
+        "os": "windows"
+      },
+      "result": [
+        {
+          "keyword": "kids backpack",
+          "type": "organic",
+          "se_domain": "amazon.com",
+          "location_code": 2840,
+          "language_code": "en_US",
+          "check_url": "https://www.amazon.com/s?k=kids+backpack&language=en_US",
+          "datetime": "2026-10-20 06:17:34 +00:00",
+          "spell": null,
+          "item_types": ["amazon_serp", "amazon_paid", "related_searches"],
+          "se_results_count": 71695,
+          "categories": null,
+          "items_count": 15,
+          "items": [
+            {
+              "type": "amazon_serp",
+              "rank_group": 1,
+              "rank_absolute": 1,
+              "domain": "www.amazon.com",
+              "title": "Affiliate School Backpack 28L",
+              "url": "https://www.amazon.com/adidas-Affiliate-Backpack-durable-laptop/dp/B0FRM2YBKD",
+              "image_url": "https://m.media-amazon.com/images/I/81bUWEUhLlL._AC_UL320_.jpg",
+              "bought_past_month": 300,
+              "price_from": 19.52,
+              "price_to": null,
+              "currency": "USD",
+              "special_offers": null,
+              "data_asin": "B0FRM2YBKD",
+              "rating": {
+                "type": "rating_element",
+                "position": "left",
+                "rating_type": "Max5",
+                "value": 4.8,
+                "votes_count": 669,
+                "rating_max": 5
+              },
+              "is_amazon_choice": true,
+              "is_best_seller": false,
+              "delivery_info": {
+                "delivery_message": "FREE delivery Sun, Oct 25 on $35 of items shipped by Amazon Or fastest delivery Sat, Oct 24",
+                "delivery_price": null
+              },
+              "labels": null
+            },
+            {
+              "type": "amazon_serp",
+              "rank_group": 2,
+              "rank_absolute": 2,
+              "domain": "www.amazon.com",
+              "title": "SuperBreak One Backpacks - Durable, Lightweight Bookbag with 1 Main Compartment, Front Utility Pocket with Built-in Organizer - Premium Backpack, Black",
+              "url": "https://www.amazon.com/JanSport-Superbreak-Backpack-Jansport-Black/dp/B0007QCQGI",
+              "image_url": "https://m.media-amazon.com/images/I/81RLV0AITEL._AC_UL320_.jpg",
+              "bought_past_month": 7000,
+              "price_from": 31.48,
+              "price_to": null,
+              "currency": "USD",
+              "special_offers": null,
+              "data_asin": "B0007QCQGI",
+              "rating": {
+                "type": "rating_element",
+                "position": "left",
+                "rating_type": "Max5",
+                "value": 4.6,
+                "votes_count": 45400,
+                "rating_max": 5
+              },
+              "is_amazon_choice": false,
+              "is_best_seller": true,
+              "delivery_info": {
+                "delivery_message": "FREE delivery Sun, Oct 25 on $35 of items shipped by Amazon Or fastest delivery Sat, Oct 24",
+                "delivery_price": null
+              },
+              "labels": null
+            },
+            {
+              "type": "amazon_serp",
+              "rank_group": 3,
+              "rank_absolute": 3,
+              "domain": "www.amazon.com",
+              "title": "Girls Backpack, Backpack for Teens Multiple Pockets Lightweight Kids Bookbag for Primary School, Purple",
+              "url": "https://www.amazon.com/ATBVSGY-Backpack-Multiple-Pockets-Lightweight/dp/B0H839PB3K",
+              "image_url": "https://m.media-amazon.com/images/I/71SRvY8ZWTL._AC_UL320_.jpg",
+              "bought_past_month": null,
+              "price_from": 24.39,
+              "price_to": null,
+              "currency": "USD",
+              "special_offers": null,
+              "data_asin": "B0H839PB3K",
+              "rating": {
+                "type": "rating_element",
+                "position": "left",
+                "rating_type": "Max5",
+                "value": 4.8,
+                "votes_count": 26,
+                "rating_max": 5
+              },
+              "is_amazon_choice": false,
+              "is_best_seller": false,
+              "delivery_info": {
+                "delivery_message": "FREE delivery Sun, Oct 25 on $35 of items shipped by Amazon Or fastest delivery Sat, Oct 24",
+                "delivery_price": null
+              },
+              "labels": null
+            },
+            {
+              "type": "amazon_serp",
+              "rank_group": 4,
+              "rank_absolute": 5,
+              "domain": "www.amazon.com",
+              "title": "Marvel Spidey Kids Backpack for School, Girls, Boys | 12L",
+              "url": "https://www.amazon.com/Simple-Modern-Backpack-Kindergarten-Fletcher/dp/B0B4KMZRC3",
+              "image_url": "https://m.media-amazon.com/images/I/91r33d4Sm8L._AC_UL320_.jpg",
+              "bought_past_month": 1000,
+              "price_from": 49.99,
+              "price_to": null,
+              "currency": "USD",
+              "special_offers": null,
+              "data_asin": "B0B4KMZRC3",
+              "rating": {
+                "type": "rating_element",
+                "position": "left",
+                "rating_type": "Max5",
+                "value": 4.7,
+                "votes_count": 6300,
+                "rating_max": 5
+              },
+              "is_amazon_choice": false,
+              "is_best_seller": true,
+              "delivery_info": {
+                "delivery_message": "FREE delivery Sun, Oct 25 Or fastest delivery Sat, Oct 24",
+                "delivery_price": null
+              },
+              "labels": null
+            },
+            {
+              "type": "amazon_serp",
+              "rank_group": 5,
+              "rank_absolute": 6,
+              "domain": "www.amazon.com",
+              "title": "Minecraft Creeper All-Over Print 18\" Backpack",
+              "url": "https://www.amazon.com/Minecraft-Creeper-All-Over-Print-Backpack/dp/B0D3BHN7V3",
+              "image_url": "https://m.media-amazon.com/images/I/71+WWmsIHYL._AC_UL320_.jpg",
+              "bought_past_month": 50,
+              "price_from": 19.99,
+              "price_to": null,
+              "currency": "USD",
+              "special_offers": null,
+              "data_asin": "B0D3BHN7V3",
+              "rating": {
+                "type": "rating_element",
+                "position": "left",
+                "rating_type": "Max5",
+                "value": 4.5,
+                "votes_count": 1000,
+                "rating_max": 5
+              },
+              "is_amazon_choice": false,
+              "is_best_seller": false,
+              "delivery_info": {
+                "delivery_message": "FREE delivery Sun, Oct 25 on $35 of items shipped by Amazon Or fastest delivery Sat, Oct 24",
+                "delivery_price": null
+              },
+              "labels": null
+            },
+            {
+              "type": "amazon_serp",
+              "rank_group": 6,
+              "rank_absolute": 7,
+              "domain": "www.amazon.com",
+              "title": "Kids Backpack for Girls - Girls Backpack 3-8 Ages Butterfly for Kids 15 Inch School Bookbag for Kindergarten Elementary School Bookbag for Girl 1st 2nd Grade",
+              "url": "https://www.amazon.com/RHCPFOVR-Kids-Backpack-Girls-Kindergarten/dp/B0DQXQZKM8",
+              "image_url": "https://m.media-amazon.com/images/I/81DKlFW8qML._AC_UL320_.jpg",
+              "bought_past_month": 400,
+              "price_from": 18.99,
+              "price_to": null,
+              "currency": "USD",
+              "special_offers": null,
+              "data_asin": "B0DQXQZKM8",
+              "rating": {
+                "type": "rating_element",
+                "position": "left",
+                "rating_type": "Max5",
+                "value": 4.7,
+                "votes_count": 463,
+                "rating_max": 5
+              },
+              "is_amazon_choice": false,
+              "is_best_seller": false,
+              "delivery_info": {
+                "delivery_message": "FREE delivery Sun, Oct 25 on $35 of items shipped by Amazon Or fastest delivery Sat, Oct 24",
+                "delivery_price": null
+              },
+              "labels": null
+            },
+            {
+              "type": "amazon_serp",
+              "rank_group": 7,
+              "rank_absolute": 8,
+              "domain": "www.amazon.com",
+              "title": "Toddler Backpack for Girls 3-6, Cute Quilted Preschool Bag",
+              "url": "https://www.amazon.com/shiprabags-Toddler-Backpack-Quilted-Preschool/dp/B0HF446WY7",
+              "image_url": "https://m.media-amazon.com/images/I/81VaOpfp7LL._AC_UL320_.jpg",
+              "bought_past_month": null,
+              "price_from": 22.99,
+              "price_to": null,
+              "currency": "USD",
+              "special_offers": null,
+              "data_asin": "B0HF446WY7",
+              "rating": {
+                "type": "rating_element",
+                "position": "left",
+                "rating_type": "Max5",
+                "value": 4.8,
+                "votes_count": 9,
+                "rating_max": 5
+              },
+              "is_amazon_choice": false,
+              "is_best_seller": false,
+              "delivery_info": {
+                "delivery_message": "FREE delivery Sun, Oct 25 on $35 of items shipped by Amazon Or fastest delivery Sat, Oct 24",
+                "delivery_price": null
+              },
+              "labels": null
+            },
+            {
+              "type": "amazon_serp",
+              "rank_group": 8,
+              "rank_absolute": 9,
+              "domain": "www.amazon.com",
+              "title": "Corduroy Girls Backpack Set，Cute School Backpack for Teens Girls Kids Bookbags for Elementary High School Women Laptop Bags Daypacks Set With Lunch Bag and Pencil Case (Beige Strawberry, 3 Set)",
+              "url": "https://www.amazon.com/Corduroy-Backpack-Set%EF%BC%8CCute-Elementary-Strawberry/dp/B0GVQ6RW7K",
+              "image_url": "https://m.media-amazon.com/images/I/81LgvwYodwL._AC_UL320_.jpg",
+              "bought_past_month": 200,
+              "price_from": 14.99,
+              "price_to": null,
+              "currency": "USD",
+              "special_offers": null,
+              "data_asin": "B0GVQ6RW7K",
+              "rating": {
+                "type": "rating_element",
+                "position": "left",
+                "rating_type": "Max5",
+                "value": 4.6,
+                "votes_count": 79,
+                "rating_max": 5
+              },
+              "is_amazon_choice": false,
+              "is_best_seller": false,
+              "delivery_info": {
+                "delivery_message": "FREE delivery Sun, Oct 25 on $35 of items shipped by Amazon Or fastest delivery Sat, Oct 24",
+                "delivery_price": null
+              },
+              "labels": null
+            },
+            {
+              "type": "amazon_serp",
+              "rank_group": 9,
+              "rank_absolute": 10,
+              "domain": "www.amazon.com",
+              "title": "Classic 17 inch Backpacks with Adjustable Padded Straps | School Backpacks for Girls, Boys (Aqua)",
+              "url": "https://www.amazon.com/Trail-maker-Classic-Backpacks-Adjustable/dp/B0F2NNBKJV",
+              "image_url": "https://m.media-amazon.com/images/I/81iE1MGX+zL._AC_UL320_.jpg",
+              "bought_past_month": 100,
+              "price_from": 9.99,
+              "price_to": null,
+              "currency": "USD",
+              "special_offers": null,
+              "data_asin": "B0F2NNBKJV",
+              "rating": {
+                "type": "rating_element",
+                "position": "left",
+                "rating_type": "Max5",
+                "value": 4.1,
+                "votes_count": 1600,
+                "rating_max": 5
+              },
+              "is_amazon_choice": false,
+              "is_best_seller": false,
+              "delivery_info": {
+                "delivery_message": "FREE delivery Sun, Oct 25 on $35 of items shipped by Amazon Or fastest delivery Sat, Oct 24",
+                "delivery_price": null
+              },
+              "labels": null
+            },
+            {
+              "type": "amazon_serp",
+              "rank_group": 10,
+              "rank_absolute": 11,
+              "domain": "www.amazon.com",
+              "title": "Creator School Backpack 21L",
+              "url": "https://www.amazon.com/adidas-School-Creator-Backpack-Essential/dp/B0B64RNHLS",
+              "image_url": "https://m.media-amazon.com/images/I/81r8N0EPwQL._AC_UL320_.jpg",
+              "bought_past_month": null,
+              "price_from": 41.71,
+              "price_to": null,
+              "currency": "USD",
+              "special_offers": null,
+              "data_asin": "B0B64RNHLS",
+              "rating": {
+                "type": "rating_element",
+                "position": "left",
+                "rating_type": "Max5",
+                "value": 4.7,
+                "votes_count": 7800,
+                "rating_max": 5
+              },
+              "is_amazon_choice": false,
+              "is_best_seller": false,
+              "delivery_info": {
+                "delivery_message": "FREE delivery Mon, Oct 26",
+                "delivery_price": null
+              },
+              "labels": null
+            },
+            {
+              "type": "amazon_serp",
+              "rank_group": 13,
+              "rank_absolute": 14,
+              "domain": "www.amazon.com",
+              "title": "Backpack for Girls School Bag Kids Bookbag Teen Backpack Set Daypack with Lunch Bag and Pencil Case",
+              "url": "https://www.amazon.com/LEDAOU-Backpack-Bookbag-School-Pencil/dp/B0GMQTL7NV",
+              "image_url": "https://m.media-amazon.com/images/I/81e9Z0YiQxL._AC_UL320_.jpg",
+              "bought_past_month": null,
+              "price_from": 9.99,
+              "price_to": null,
+              "currency": "USD",
+              "special_offers": null,
+              "data_asin": "B0GMQTL7NV",
+              "rating": {
+                "type": "rating_element",
+                "position": "left",
+                "rating_type": "Max5",
+                "value": 4.7,
+                "votes_count": 1300,
+                "rating_max": 5
+              },
+              "is_amazon_choice": false,
+              "is_best_seller": false,
+              "delivery_info": {
+                "delivery_message": "FREE delivery Sun, Oct 25 on $35 of items shipped by Amazon Or fastest delivery Sat, Oct 24",
+                "delivery_price": null
+              },
+              "labels": null
+            },
+            {
+              "type": "amazon_serp",
+              "rank_group": 35,
+              "rank_absolute": 36,
+              "domain": "www.amazon.com",
+              "title": "School Backpack for Girls Kids, Cherry Pink, Floral Style",
+              "url": "https://www.amazon.com/Cunno-Backpack-Bookbag-Waterproof-Students/dp/B0F4C8T73R",
+              "image_url": "https://m.media-amazon.com/images/I/81EDDDsT4xL._AC_UL320_.jpg",
+              "bought_past_month": null,
+              "price_from": 7.59,
+              "price_to": null,
+              "currency": "USD",
+              "special_offers": null,
+              "data_asin": "B0F4C8T73R",
+              "rating": {
+                "type": "rating_element",
+                "position": "left",
+                "rating_type": "Max5",
+                "value": 3.9,
+                "votes_count": 9,
+                "rating_max": 5
+              },
+              "is_amazon_choice": false,
+              "is_best_seller": false,
+              "delivery_info": {
+                "delivery_message": "FREE delivery Sun, Oct 25 on $35 of items shipped by Amazon Or fastest delivery Sat, Oct 24",
+                "delivery_price": null
+              },
+              "labels": null
+            },
+            {
+              "type": "amazon_paid",
+              "rank_group": 1,
+              "rank_absolute": 4,
+              "domain": "www.amazon.com",
+              "title": "17\" Unicorn Backpack for Girls, 3D Holographic Princess Backpack | Large Capacity Girls Backpack Cute Pink Bookbag for Teens Girls Kids Back to School Gift",
+              "url": "https://www.amazon.com/DOYULIK-Unicorn-Backpack-Holographic-Princess/dp/B0H4R5K8RD",
+              "image_url": "https://m.media-amazon.com/images/I/71WNi8qaCVL._AC_UL640_QL65_.jpg",
+              "bought_past_month": null,
+              "price_from": 29.99,
+              "price_to": null,
+              "currency": "USD",
+              "special_offers": null,
+              "data_asin": "B0H4R5K8RD",
+              "rating": {
+                "type": "rating_element",
+                "position": "left",
+                "rating_type": "Max5",
+                "value": 4.8,
+                "votes_count": 70,
+                "rating_max": 5
+              },
+              "is_amazon_choice": false,
+              "is_best_seller": false,
+              "delivery_info": {
+                "delivery_message": "FREE delivery Sun, Oct 25 on $35 of items shipped by Amazon Or fastest delivery Sat, Oct 24",
+                "delivery_price": null
+              },
+              "labels": null
+            },
+            {
+              "type": "amazon_paid",
+              "rank_group": 2,
+              "rank_absolute": 50,
+              "domain": "www.amazon.com",
+              "title": "DIGOBAY Backpack for Girls 3PCS School Backpack with Lunch Box Pencil Pouch | Bookbags for Teens Girls Kids Daypack for Elementary Primary Middle High School College Travel School bag Set, Blue",
+              "url": "https://www.amazon.com/DIGOBAY-Backpacks-Backpack-Elementary-Primary/dp/B0DP4QMK28",
+              "image_url": "https://m.media-amazon.com/images/I/71K7GbssX6L._AC_UL640_QL65_.jpg",
+              "bought_past_month": 50,
+              "price_from": 34.99,
+              "price_to": null,
+              "currency": "USD",
+              "special_offers": null,
+              "data_asin": "B0DP4QMK28",
+              "rating": {
+                "type": "rating_element",
+                "position": "left",
+                "rating_type": "Max5",
+                "value": 4.5,
+                "votes_count": 292,
+                "rating_max": 5
+              },
+              "is_amazon_choice": false,
+              "is_best_seller": false,
+              "delivery_info": {
+                "delivery_message": "FREE delivery Sun, Oct 25 on $35 of items shipped by Amazon Or fastest delivery Sat, Oct 24",
+                "delivery_price": null
+              },
+              "labels": null
+            },
+            {
+              "type": "related_searches",
+              "rank_group": 1,
+              "rank_absolute": 51,
+              "position": "left",
+              "items": [
+                {
+                  "type": "related_searches_element",
+                  "title": "kids backpack boys"
+                },
+                {
+                  "type": "related_searches_element",
+                  "title": "kids backpack with lunch box"
+                },
+                {
+                  "type": "related_searches_element",
+                  "title": "backpack"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

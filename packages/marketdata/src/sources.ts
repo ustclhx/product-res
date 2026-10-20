@@ -120,13 +120,14 @@ export function isPaused(row: Pick<SourceRow, 'pausedReason' | 'pausedUntil'>, n
   return row.pausedUntil === null || row.pausedUntil > now
 }
 
-/** 凭据状态：页面只显示状态，不显示值 */
+/** 凭据状态：页面只显示状态，不显示值；有多组可选凭据时任一组齐全即算已配置 */
 export function credentialStatus(
   connector: SourceConnector,
   secret: (name: string) => string | undefined,
   row: SourceRow | undefined,
 ): 'missing' | 'unverified' | 'valid' | 'invalid' {
-  if (connector.secrets.some((name) => !secret(name))) return 'missing'
+  const sets = connector.credentialSets ?? [connector.secrets]
+  if (!sets.some((set) => set.every((name) => secret(name)))) return 'missing'
   const probe = row?.lastProbe as ProbeReceipt | null | undefined
   if (!probe) return 'unverified'
   return probe.credentials === 'valid' ? 'valid' : 'invalid'

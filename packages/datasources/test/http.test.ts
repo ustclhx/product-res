@@ -10,9 +10,30 @@ describe('redactUrl', () => {
       'https://api.test/x?key=%5BREDACTED%5D&q=shoes&access_token=%5BREDACTED%5D',
     )
   })
+
+  it('查询参数中的 api_key 各种写法都脱敏（SerpApi 把密钥放在查询参数）', () => {
+    const url = redactUrl(
+      'https://serpapi.com/search.json?engine=amazon_product&asin=B0&api_key=sk-123&apiKey=aa1&api-key=bb2',
+    )
+    expect(url).not.toMatch(/sk-123|aa1|bb2/)
+    expect(url).toContain('engine=amazon_product')
+    expect(url).toContain('asin=B0')
+  })
 })
 
 describe('httpRequest', () => {
+  it('网络错误的 cause 不含原始密钥', async () => {
+    const failing = (async (url: string) => {
+      throw new TypeError(`fetch failed: ${url}`)
+    }) as unknown as typeof fetch
+    const error = await httpRequest(failing, {
+      url: 'https://serpapi.com/search.json?engine=amazon_product&api_key=sk-secret',
+    }).catch((e) => e)
+    expect(error).toMatchObject({ kind: 'retryable', code: 'HTTP_NETWORK_ERROR' })
+    expect(String((error.cause as Error).message)).not.toContain('sk-secret')
+    expect(String((error.cause as Error).message)).toContain('REDACTED')
+  })
+
   it('2xx 返回正文与脱敏后的请求摘要', async () => {
     const res = await httpRequest(respond(200, '{"ok":true}'), {
       url: 'https://api.test/a?api_key=s',
