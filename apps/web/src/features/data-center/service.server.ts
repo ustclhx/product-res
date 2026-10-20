@@ -8,10 +8,12 @@ import {
   parseImportFile,
   type SourceConnector,
   suggestMapping,
+  tierOf,
 } from '@product-res/datasources'
 import type { Database } from '@product-res/db'
 import { dataImport, observation, rawPayload, syncRun } from '@product-res/db/schema'
 import {
+  accuracyKpis,
   commitImport,
   createDbArchive,
   credentialStatus,
@@ -36,7 +38,7 @@ import { AppError } from '@product-res/shared'
 import { and, count, desc, eq, gte, isNull } from 'drizzle-orm'
 import type { DecisionActor } from '../costing/decisions.server.ts'
 import { QUOTE_IMPORT_SOURCE } from '../costing/quote-template.ts'
-import { webConnectors, webSecrets } from './registry.server.ts'
+import { sourceChannel, webConnectors, webSecrets } from './registry.server.ts'
 
 /** “今天”按新加坡时间（团队所在时区）计算 */
 function todayStartSgt(now: Date) {
@@ -91,6 +93,8 @@ export async function dataCenterOverview(db: Database, now = new Date()) {
           ? { reason: row.pausedReason, until: row.pausedUntil?.toISOString() ?? null }
           : null,
         credentials: credentialStatus(connector, secret, row),
+        // 经由渠道（DataForSEO 有 AIsa 凭据时经 AIsa）；直接调用为 null
+        channel: sourceChannel(connector.id, secret),
         config: (row?.config ?? {}) as SourceConfig,
         budget: await currentUsage(db, connector.id, spec, now).then((usage) => ({
           ...usage,
@@ -128,6 +132,8 @@ export async function dataCenterOverview(db: Database, now = new Date()) {
       runsToday: runsToday?.value ?? 0,
       imports: imports?.value ?? 0,
     },
+    // 准确率 KPI（近 4 次人工抽检，部署级来源 × 字段）
+    accuracy: await accuracyKpis(db),
     sources,
   }
 }
@@ -366,6 +372,10 @@ export async function previewSource(db: Database, sourceId: string) {
       value: o.value,
       currency: o.currency ?? null,
       method: o.method,
+      tier: tierOf(o),
+      valueLow: o.valueLow ?? null,
+      valueHigh: o.valueHigh ?? null,
+      channel: o.channel ?? null,
     })),
     schema: metrics.map((name) => {
       const def = METRICS[name as keyof typeof METRICS]

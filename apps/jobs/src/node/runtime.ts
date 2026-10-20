@@ -18,6 +18,7 @@ import {
 import { log, newRequestId, withLogContext } from '@product-res/shared/log'
 import { createNodeStorage } from '@product-res/storage/node'
 import templateConfig from '../../../../template.config.ts'
+import { registerAccuracyAudit } from '../accuracy/weekly-audit.ts'
 import { registerNodeDataSources } from '../datasources/node.ts'
 import { DATASYNC_QUEUE } from '../datasources/sync.ts'
 import { consumeJobsBatch, type JobsContext } from '../handlers.ts'
@@ -175,6 +176,8 @@ export async function startNodeJobs(config: NodeEnv, options: NodeJobsOptions) {
         registerSelectionReview(pipelineScheduler, db)
         // 店铺追踪（add-accuracy-store-tracking）：03:00 SGT 评估与投递；手动“立即跑一轮”队列不受暂停影响
         registerNodeStoreTracking({ scheduler: pipelineScheduler, queues, dataSync })
+        // 人工抽检（add-accuracy-store-tracking）：每周一 06:00 SGT 生成本周抽检清单
+        registerAccuracyAudit(pipelineScheduler, db)
         await queues.prepare()
         await scheduler.prepare()
       },
