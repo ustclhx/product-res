@@ -91,6 +91,7 @@ export function DirectionsPage({ slug, initial }: { slug: string; initial: Direc
           direction={d}
           nodes={data.nodes}
           sellers={data.sellers.filter((s) => s.directionId === d.id)}
+          trackedStores={data.trackedStores.filter((s) => s.directionIds.includes(d.id))}
           canWrite={data.canWrite}
           onEdit={() => setEditing(d)}
           onChanged={reload}
@@ -322,6 +323,7 @@ function DirectionCard({
   direction: d,
   nodes,
   sellers,
+  trackedStores,
   canWrite,
   onEdit,
   onChanged,
@@ -330,6 +332,7 @@ function DirectionCard({
   direction: DirectionRow
   nodes: DirectionsData['nodes']
   sellers: SellerRow[]
+  trackedStores: DirectionsData['trackedStores']
   canWrite: boolean
   onEdit: () => void
   onChanged: () => Promise<void>
@@ -425,6 +428,27 @@ function DirectionCard({
             ))}
           </ul>
         )}
+        {trackedStores.length > 0 ? (
+          <div className="grid gap-1" data-testid="direction-tracked-stores">
+            <p className="text-xs text-muted-foreground">
+              来自店铺追踪（{trackedStores.length}），同样参与同行扩散，在店铺追踪页管理：
+            </p>
+            <ul className="flex flex-wrap gap-1.5">
+              {trackedStores.map((s) => (
+                <li key={s.id}>
+                  <Link
+                    to="/app/$slug/stores/$storeId"
+                    params={{ slug, storeId: s.id }}
+                    className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs hover:text-primary"
+                  >
+                    {s.displayName ?? s.sellerKey}
+                    <span className="text-muted-foreground">{marketplaceLabel(s.marketplace)}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         {canWrite ? <SeedForm slug={slug} direction={d} busy={busy} run={run} /> : null}
       </div>
 

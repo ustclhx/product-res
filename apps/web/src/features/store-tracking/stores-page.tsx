@@ -1,0 +1,346 @@
+import { Button, DataTable, type DataTableColumn } from '@product-res/ui'
+import { Link } from '@tanstack/react-router'
+import { type FormEvent, useEffect, useState } from 'react'
+import { m } from '../../paraglide/messages.js'
+import { Section } from '../data-center/shared.tsx'
+import { marketplaceLabel } from '../follow/marketplaces.ts'
+import { controlClass, EmptyState, ErrorText, Field, useAction } from '../workbench/fields.tsx'
+import {
+  addTrackedStore,
+  getStoresPage,
+  parseStoreUrl,
+  runStoreRound,
+  setTrackedStoreStatus,
+} from './store-tracking.functions.ts'
+import type { StoreRowView } from './store-tracking.server.ts'
+import {
+  formatPercent,
+  formatTime,
+  kindLabel,
+  platformLabel,
+  StoreSettingsFields,
+  type StoreSettingsValue,
+  sourceLabel,
+  statusLabel,
+  toSettingsInput,
+} from './store-ui.tsx'
+
+export type StoresData = Awaited<ReturnType<typeof getStoresPage>>
+
+const EMPTY_SETTINGS: StoreSettingsValue = {
+  kind: 'benchmark',
+  directionIds: [],
+  keywords: [],
+  displayName: '',
+  reason: '',
+}
+
+type Parsed = Awaited<ReturnType<typeof parseStoreUrl>>
+
+/** 粘贴链接 → 解析预览 → 设置 → 加入店铺池 */
+function AddStoreForm({
+  slug,
+  directions,
+  onDone,
+}: {
+  slug: string
+  directions: StoresData['directions']
+  onDone: () => Promise<void>
+}) {
+  const [url, setUrl] = useState('')
+  const [parsed, setParsed] = useState<Parsed | null>(null)
+  const [settings, setSettings] = useState(EMPTY_SETTINGS)
+  const [formKey, setFormKey] = useState(0)
+  const { busy, error, run } = useAction(onDone)
+
+  async function preview(value: string) {
+    if (!value.trim()) {
+      setParsed(null)
+      return
+    }
+    setParsed(await parseStoreUrl({ data: { slug, url: value } }))
+  }
+
+  async function submit(e: FormEvent) {
+    e.preventDefault()
+    const ok = await run(() =>
+      addTrackedStore({ data: { slug, url, ...toSettingsInput(settings) } }),
+    )
+    if (ok) {
+      setUrl('')
+      setParsed(null)
+      setSettings(EMPTY_SETTINGS)
+      setFormKey((k) => k + 1)
+    }
+  }
+
+  const platform = parsed?.ok ? parsed.platform : null
+  return (
+    <form aria-label={m.store_tracking_add_title()} className="grid gap-3" onSubmit={submit}>
+      <Field label={m.store_tracking_link_label()} hint={m.store_tracking_link_hint()}>
+        {(id) => (
+          <input
+            id={id}
+            className={controlClass}
+            value={url}
+            placeholder={m.store_tracking_link_placeholder()}
+            maxLength={2048}
+            onChange={(e) => setUrl(e.target.value)}
+            onBlur={(e) => void preview(e.target.value)}
+          />
+        )}
+      </Field>
+      {parsed ? (
+        parsed.ok ? (
+          <p className="text-xs text-success-strong" data-testid="store-link-parsed">
+            {m.store_tracking_parsed({
+              platform: platformLabel(parsed.platform),
+              marketplace: marketplaceLabel(parsed.marketplace),
+              sellerKey: parsed.sellerKey,
+            })}
+          </p>
+        ) : (
+          <p role="alert" className="text-xs text-destructive" data-testid="store-link-error">
+            {parsed.message}
+          </p>
+        )
+      ) : null}
+      <StoreSettingsFields
+        key={formKey}
+        value={settings}
+        onChange={setSettings}
+        directions={directions.filter(
+          (d) => !parsed?.ok || d.marketplaces.includes(parsed.marketplace),
+        )}
+        platform={platform}
+      />
+      <ErrorText>{error}</ErrorText>
+      <div>
+        <Button type="submit" size="sm" disabled={busy || !url.trim()}>
+          {m.store_tracking_add_submit()}
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+function columns(
+  slug: string,
+  canWrite: boolean,
+  act: (id: string, status: StoreRowView['status']) => void,
+  busy: boolean,
+): DataTableColumn<StoreRowView>[] {
+  return [
+    {
+      id: 'store',
+      header: m.store_tracking_col_store(),
+      className: 'min-w-[200px]',
+      cell: (s) => (
+        <div className="grid gap-0.5">
+          <Link
+            to="/app/$slug/stores/$storeId"
+            params={{ slug, storeId: s.id }}
+            className="text-[13px] font-medium hover:text-primary"
+          >
+            {s.displayName}
+          </Link>
+          <span className="text-xs text-muted-foreground">{s.sellerKey}</span>
+        </div>
+      ),
+    },
+    {
+      id: 'platform',
+      header: m.store_tracking_col_platform(),
+      cell: (s) => (
+        <div className="grid gap-0.5 text-[13px]">
+          <span>{marketplaceLabel(s.marketplace)}</span>
+          {sourceLabel(s.source) ? (
+            <span className="text-xs text-warning-strong">{sourceLabel(s.source)}</span>
+          ) : null}
+        </div>
+      ),
+    },
+    { id: 'kind', header: m.store_tracking_col_kind(), cell: (s) => kindLabel(s.kind) },
+    {
+      id: 'new',
+      header: m.store_tracking_col_new(),
+      cell: (s) => (
+        <div className="grid gap-0.5 text-[13px] tabular-nums">
+          <span>
+            {s.new7d} / {s.new30d}
+          </span>
+          {s.pending > 0 ? (
+            <span className="text-xs text-muted-foreground">
+              {m.store_tracking_pending({ count: String(s.pending) })}
+            </span>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      id: 'hit',
+      header: m.store_tracking_col_hit_rate(),
+      cell: (s) => <span className="tabular-nums">{formatPercent(s.hitRate)}</span>,
+    },
+    {
+      id: 'sync',
+      header: m.store_tracking_col_last_sync(),
+      cell: (s) => <span className="text-xs">{formatTime(s.lastSyncAt)}</span>,
+    },
+    { id: 'status', header: m.store_tracking_col_status(), cell: (s) => statusLabel(s.status) },
+    {
+      id: 'actions',
+      header: m.store_tracking_col_actions(),
+      cell: (s) =>
+        canWrite ? (
+          <div className="flex gap-1">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => act(s.id, s.status === 'active' ? 'paused' : 'active')}
+            >
+              {s.status === 'active' ? m.store_tracking_pause() : m.store_tracking_resume()}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => {
+                if (window.confirm(m.store_tracking_remove_confirm())) act(s.id, 'removed')
+              }}
+            >
+              {m.store_tracking_remove()}
+            </Button>
+          </div>
+        ) : null,
+    },
+  ]
+}
+
+/** 店铺追踪：店铺池列表、添加与手动触发（design D8） */
+export function StoresPage({ slug, initial }: { slug: string; initial: StoresData }) {
+  const [data, setData] = useState(initial)
+  // 路由返回缓存数据后会在后台重新加载：加载结果更新时同步到页面
+  useEffect(() => setData(initial), [initial])
+  const [roundNote, setRoundNote] = useState('')
+  const reload = async () => setData(await getStoresPage({ data: { slug } }))
+  const action = useAction(reload)
+  const round = useAction(async () => {})
+  const cols = columns(
+    slug,
+    data.canWrite,
+    (id, status) => void action.run(() => setTrackedStoreStatus({ data: { slug, id, status } })),
+    action.busy,
+  )
+  const hasEbay = data.stores.some((s) => s.platform === 'ebay')
+  const hasAmazon = data.stores.some((s) => s.platform === 'amazon')
+  const ebayMissing =
+    data.sources['ebay-browse'] === 'not-configured' ||
+    data.sources['ebay-browse'] === 'unregistered'
+  const amazonMissing =
+    data.sources.dataforseo === 'not-configured' || data.sources.dataforseo === 'unregistered'
+
+  async function triggerRound() {
+    setRoundNote('')
+    await round.run(async () => {
+      const result = await runStoreRound({ data: { slug } })
+      setRoundNote(
+        result.queued ? m.store_tracking_round_queued() : m.store_tracking_round_already(),
+      )
+    })
+  }
+
+  return (
+    <div className="grid gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div className="grid max-w-3xl gap-1">
+          <h1 className="text-lg font-semibold">{m.store_tracking_title()}</h1>
+          <p className="text-[13px] text-muted-foreground">{m.store_tracking_intro()}</p>
+        </div>
+        {data.canWrite ? (
+          <div className="grid justify-items-end gap-1">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={round.busy || !data.roundAvailable}
+              title={
+                data.roundAvailable
+                  ? m.store_tracking_run_round_hint()
+                  : m.store_tracking_round_unavailable()
+              }
+              onClick={() => void triggerRound()}
+            >
+              {m.store_tracking_run_round()}
+            </Button>
+            {roundNote ? (
+              <p role="status" className="text-xs text-muted-foreground">
+                {roundNote}
+              </p>
+            ) : null}
+            <ErrorText>{round.error}</ErrorText>
+          </div>
+        ) : null}
+      </div>
+
+      {hasEbay && ebayMissing ? (
+        <p className="rounded-md bg-warning-soft px-3 py-2 text-xs text-warning-strong" role="note">
+          {m.store_tracking_ebay_not_configured()}
+        </p>
+      ) : null}
+      {hasAmazon && amazonMissing ? (
+        <p className="rounded-md bg-warning-soft px-3 py-2 text-xs text-warning-strong" role="note">
+          {m.store_tracking_amazon_not_configured()}
+        </p>
+      ) : null}
+      {!data.canWrite ? (
+        <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+          {m.store_tracking_read_only()}
+        </p>
+      ) : null}
+
+      {data.canWrite ? (
+        <Section title={m.store_tracking_add_title()}>
+          <AddStoreForm slug={slug} directions={data.directions} onDone={reload} />
+        </Section>
+      ) : null}
+
+      <Section title={m.store_tracking_table_label()}>
+        {data.stores.length === 0 ? (
+          <EmptyState title={m.store_tracking_empty()}>{m.store_tracking_empty_hint()}</EmptyState>
+        ) : (
+          <DataTable
+            label={m.store_tracking_table_label()}
+            columns={cols}
+            rows={data.stores}
+            getRowId={(s) => s.id}
+            page={{
+              pageIndex: 0,
+              pageSize: Math.max(1, data.stores.length),
+              rowCount: data.stores.length,
+            }}
+            onPageChange={() => {}}
+            labels={{
+              empty: m.store_tracking_empty(),
+              previous: m.store_tracking_previous(),
+              next: m.store_tracking_next(),
+              page: (page, pageCount) =>
+                pageCount === null
+                  ? m.store_tracking_page({ page: String(page) })
+                  : m.store_tracking_page_of({ page: String(page), pageCount: String(pageCount) }),
+            }}
+          />
+        )}
+        <ErrorText>{action.error}</ErrorText>
+        {data.removedCount > 0 ? (
+          <p className="text-xs text-muted-foreground">
+            {m.store_tracking_removed_count({ count: String(data.removedCount) })}
+          </p>
+        ) : null}
+      </Section>
+    </div>
+  )
+}

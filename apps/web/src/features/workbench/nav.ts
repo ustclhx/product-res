@@ -3,6 +3,8 @@ export const WORKBENCH_NAV = [
   { key: 'home', label: '工作台', to: '/app/$slug', exact: true },
   { key: 'follow', label: '跟卖选品', to: '/app/$slug/follow', exact: false },
   { key: 'category', label: '品牌选品', to: '/app/$slug/category', exact: false },
+  // 店铺追踪（add-accuracy-store-tracking design D8）
+  { key: 'stores', label: '店铺追踪', to: '/app/$slug/stores', exact: false },
   { key: 'archive', label: '选品档案库', to: '/app/$slug/archive', exact: false },
   { key: 'validation', label: '算法验证', to: '/app/$slug/validation', exact: false },
   { key: 'data', label: '数据中心', to: '/app/$slug/data', exact: false },

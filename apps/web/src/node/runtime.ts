@@ -3,7 +3,12 @@ import { loadEnv } from '@product-res/config'
 import { loadNodeEnv, type NodeEnv, nodeStorageConfig } from '@product-res/config/node'
 import { createDb, type Database } from '@product-res/db'
 import type { EmailQueueMessage } from '@product-res/email/queue'
-import { type ReplayMessage, SELECTION_REPLAY_QUEUE } from '@product-res/follow'
+import {
+  type ReplayMessage,
+  SELECTION_REPLAY_QUEUE,
+  STORE_TRACKING_QUEUE,
+  type StoreRoundMessage,
+} from '@product-res/follow'
 import type { KeyValueStore, RequestMetadata, TaskHealth } from '@product-res/platform'
 import {
   createNodeBackgroundTasks,
@@ -94,6 +99,8 @@ export async function createNodeWebProcess(
   const eventsQueue = createNodeQueueProducer<unknown>(db, 'product-res-events').producer
   // 回放消息由 jobs 的 selection 队列消费者处理（apps/jobs/src/selection/node.ts）
   const replayQueue = createNodeQueueProducer<ReplayMessage>(db, SELECTION_REPLAY_QUEUE).producer
+  // 店铺追踪手动一轮由 jobs 的店铺追踪队列消费者处理（apps/jobs/src/stores/node.ts）
+  const storeQueue = createNodeQueueProducer<StoreRoundMessage>(db, STORE_TRACKING_QUEUE).producer
   const jobsHealthSchema = z.object({
     queue: z.object({ status: z.enum(['up', 'down', 'unavailable']) }),
     scheduler: z.object({
@@ -189,6 +196,7 @@ export async function createNodeWebProcess(
       emailQueue: { available: true, value: emailQueue },
       eventsQueue: { available: true, value: eventsQueue },
       selectionReplayQueue: { available: true, value: replayQueue },
+      storeTrackingQueue: { available: true, value: storeQueue },
       health: { cache: () => cache.ping(), tasks: taskHealth },
       files: storage ? { available: true, value: storage } : { available: false },
       ai: {

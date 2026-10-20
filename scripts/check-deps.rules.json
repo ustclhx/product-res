@@ -116,6 +116,7 @@
     "apps/jobs/test/node-entry.unit.test.ts": ["node"],
     "apps/jobs/test/node-wire.integration.test.ts": ["node"],
     "apps/jobs/test/node-datasync.integration.test.ts": ["node"],
+    "apps/jobs/test/node-stores.integration.test.ts": ["node"],
     "packages/platform/test/node/task-health.test.ts": ["node"],
     "packages/platform/test/node/scheduler.integration.test.ts": ["node"],
     "packages/platform/test/node/fixtures/scheduler-worker.ts": ["node"],

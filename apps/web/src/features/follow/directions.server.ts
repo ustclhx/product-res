@@ -7,7 +7,9 @@ import {
   ensureSelectionDefaults,
   scoped,
   seasonalNode,
+  trackedStore,
 } from '@product-res/db'
+import { detachDirection } from '@product-res/follow'
 import { searchCategories } from '@product-res/marketdata'
 import { AppError } from '@product-res/shared'
 import { and, asc, eq, inArray, ne, type SQL } from 'drizzle-orm'
@@ -88,17 +90,31 @@ export async function directionsPage(actor: WorkbenchActor) {
   const { db, workspaceId } = actor
   await ensureSelectionDefaults(db, workspaceId)
   const s = scoped(db, workspaceId)
-  const [directions, sellers, nodes] = await Promise.all([
+  const [directions, sellers, nodes, stores] = await Promise.all([
     s.select(direction).orderBy(asc(direction.createdAt)),
     s.select(directionSeller).orderBy(asc(directionSeller.createdAt)),
     s
       .select(seasonalNode, { fields: { id: seasonalNode.id, name: seasonalNode.name } })
       .orderBy(asc(seasonalNode.startMonth), asc(seasonalNode.startDay)),
+    // 店铺追踪中关联到方向的店铺（add-accuracy-store-tracking D4）：与对标店铺池合并展示，在店铺追踪页管理
+    s
+      .select(trackedStore, {
+        fields: {
+          id: trackedStore.id,
+          marketplace: trackedStore.marketplace,
+          sellerKey: trackedStore.sellerKey,
+          displayName: trackedStore.displayName,
+          directionIds: trackedStore.directionIds,
+        },
+        where: eq(trackedStore.status, 'active'),
+      })
+      .orderBy(asc(trackedStore.createdAt)),
   ])
   return {
     directions: directions.map(toDirectionRow),
     sellers: sellers.map(toSellerRow),
     nodes,
+    trackedStores: stores,
   }
 }
 
@@ -168,6 +184,7 @@ export async function deleteDirection(actor: WorkbenchActor, id: string) {
   if ((await s.count(cluster, eq(cluster.directionId, id))) > 0)
     throw conflict('该方向已有商品簇和线索，只能停用')
   await s.deleteById(direction, id)
+  await detachDirection(actor.db, actor.workspaceId, id)
 }
 
 export interface SeedSellerInput {

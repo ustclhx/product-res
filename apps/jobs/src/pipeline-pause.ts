@@ -3,7 +3,7 @@ import { log } from '@product-res/shared/log'
 
 /**
  * `DATA_PIPELINE_SCHEDULES=paused` 时暂停的定时计划（add-beta-access-gate D3）：
- * 数据层每日流水线、每周人工抽检与选品 / 回看计划。`datasources-reconcile-v1` 只过期悬挂的额度预留、
+ * 数据层每日流水线、每周人工抽检、选品 / 回看计划与店铺追踪。`datasources-reconcile-v1` 只过期悬挂的额度预留、
  * 不访问外部数据源，保持运行。
  */
 export const PAUSABLE_PIPELINE_SCHEDULES: ReadonlySet<string> = new Set([
@@ -13,6 +13,8 @@ export const PAUSABLE_PIPELINE_SCHEDULES: ReadonlySet<string> = new Set([
   'selection-label-v1',
   'selection-readiness-v1',
   'selection-review-v1',
+  // 店铺追踪（add-accuracy-store-tracking）：手动“立即跑一轮”走队列，不受暂停影响
+  'store-tracking-daily-v1',
 ])
 
 /**

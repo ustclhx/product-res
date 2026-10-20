@@ -14,6 +14,7 @@ import {
   expireStaleReservations,
   runQualityChecks,
   runSyncTask,
+  type SyncBatchHook,
   type SyncTrigger,
 } from '@product-res/marketdata'
 import type { DeadLetterSink, QueueBatch, Scheduler } from '@product-res/platform'
@@ -31,6 +32,8 @@ export interface DataSyncMessage {
   readonly task: FetchTask
   readonly mode: ReservationMode
   readonly trigger: SyncTrigger
+  /** 投递方：店铺追踪的搜索结果需要继续投递报价归属（apps/jobs/src/stores） */
+  readonly origin?: 'store-tracking' | undefined
 }
 
 export interface DataSyncContext {
@@ -43,6 +46,14 @@ export interface DataSyncContext {
   readonly archiveRetentionDays?: number
   /** 每日采集任务的幂等投递；未装配时只生成计划并记录日志 */
   readonly dispatcher?: DataSyncDispatcher
+  /**
+   * 同步批次写入后的回调（店铺追踪：store_listing 归属、搜索结果的报价投递）。
+   * 由装配方注入，避免数据层依赖店铺追踪。
+   */
+  readonly onBatch?: (
+    message: DataSyncMessage,
+    input: Parameters<SyncBatchHook>[0],
+  ) => Promise<void>
 }
 
 function connectorContext(context: DataSyncContext): ConnectorContext {
@@ -88,6 +99,8 @@ export async function consumeDataSync(
         message.ack()
         return
       }
+      const hook = context.onBatch
+      const body = message.body
       try {
         const outcome = await runSyncTask(
           { db: context.db, archive, ctx },
@@ -96,6 +109,7 @@ export async function consumeDataSync(
           {
             mode: message.body.mode,
             trigger: message.body.trigger,
+            ...(hook ? { onBatch: (input) => hook(body, input) } : {}),
           },
         )
         if (

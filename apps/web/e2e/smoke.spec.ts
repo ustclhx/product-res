@@ -4,7 +4,16 @@ import templateConfig from '../../../template.config.ts'
 import { APP_URL, activateAccount, login, register, simulateClientIp } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
-const NAV = ['工作台', '跟卖选品', '品牌选品', '选品档案库', '算法验证', '数据中心', '设置']
+const NAV = [
+  '工作台',
+  '跟卖选品',
+  '品牌选品',
+  '店铺追踪',
+  '选品档案库',
+  '算法验证',
+  '数据中心',
+  '设置',
+]
 
 test('register, see the workbench navigation, sign out and back in', async ({
   page,

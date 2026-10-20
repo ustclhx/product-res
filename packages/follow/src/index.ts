@@ -75,6 +75,7 @@ export {
   toScoringSettings,
   validateScoringInput,
 } from './settings.ts'
+export * from './stores/index.ts'
 export {
   BASELINE,
   type BaselineResult,

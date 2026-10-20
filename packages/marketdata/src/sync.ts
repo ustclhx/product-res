@@ -3,6 +3,7 @@ import {
   ConnectorError,
   type FetchTask,
   isConnectorError,
+  type NormalizedBatch,
   nextReset,
   type ReservationMode,
   type SourceConnector,
@@ -27,6 +28,17 @@ export interface SyncDeps {
   readonly archive: RawArchive
   readonly ctx: ConnectorContext
 }
+
+/**
+ * 每个原始响应写入观测之后的回调（店铺追踪据此记录店铺新品归属与报价）。
+ * ids 为本批实体的 entityRef → 表 ID；回调失败只记日志，不影响同步结果与结算。
+ */
+export type SyncBatchHook = (input: {
+  readonly task: FetchTask
+  readonly batch: NormalizedBatch
+  readonly ids: ReadonlyMap<string, string>
+  readonly fetchedAt: Date
+}) => Promise<void>
 
 export type SyncOutcome =
   | {
@@ -55,7 +67,11 @@ export async function runSyncTask(
   deps: SyncDeps,
   connector: SourceConnector,
   task: FetchTask,
-  options: { readonly mode: ReservationMode; readonly trigger: SyncTrigger },
+  options: {
+    readonly mode: ReservationMode
+    readonly trigger: SyncTrigger
+    readonly onBatch?: SyncBatchHook | undefined
+  },
 ): Promise<SyncOutcome> {
   const { db, archive, ctx } = deps
   const now = ctx.now()
@@ -127,6 +143,15 @@ export async function runSyncTask(
       if (batch.categories?.length) written += await upsertCategories(db, batch.categories)
       if (batch.reviews?.length)
         await upsertReviews(db, batch.reviews, ids, { sourceId: connector.id, fetchedAt })
+      if (options.onBatch)
+        await options.onBatch({ task, batch, ids, fetchedAt }).catch((error: unknown) =>
+          log.error('datasource.batch_hook_failed', {
+            sourceId: connector.id,
+            kind: task.kind,
+            runId,
+            error,
+          }),
+        )
       cursor = batch.nextCursor ?? cursor
       if (payload.remainingQuota !== undefined)
         await reconcileExternalRemaining(db, connector.id, spec, payload.remainingQuota, now)
