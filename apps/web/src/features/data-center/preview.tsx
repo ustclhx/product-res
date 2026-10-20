@@ -1,6 +1,8 @@
 import { cn, SourceBadge } from '@product-res/ui'
 import { useEffect, useState } from 'react'
+import { m } from '../../paraglide/messages.js'
 import { getDataPreview } from './data-center.functions.ts'
+import { ChannelTag, IntervalCell, TierTag } from './observation-cells.tsx'
 import { errorText, formatTime, Section, SimpleTable } from './shared.tsx'
 
 type Preview = Awaited<ReturnType<typeof getDataPreview>>
@@ -106,23 +108,20 @@ export function DataPreview({
           ) : null}
           {view === 'table' ? (
             <SimpleTable
-              head={['平台 ID', '站点', '指标', '日期', '数值', '获取方式']}
+              head={[
+                '平台 ID',
+                '站点',
+                '指标',
+                '日期',
+                '数值',
+                m.accuracy_interval(),
+                m.accuracy_tier(),
+                '获取方式',
+              ]}
               empty={preview.rows.length === 0}
             >
               {preview.rows.map((row) => (
-                <tr key={`${row.platformId}-${row.metric}-${row.observedOn}`}>
-                  <td className="px-3 py-2 font-mono">{row.platformId}</td>
-                  <td className="px-3 py-2">{row.marketplace}</td>
-                  <td className="px-3 py-2">{row.metric}</td>
-                  <td className="px-3 py-2">{row.observedOn}</td>
-                  <td className="px-3 py-2 font-mono">
-                    {row.value}
-                    {row.currency ? ` ${row.currency}` : ''}
-                  </td>
-                  <td className="px-3 py-2">
-                    <SourceBadge method={row.method} />
-                  </td>
-                </tr>
+                <PreviewRow key={`${row.platformId}-${row.metric}-${row.observedOn}`} row={row} />
               ))}
             </SimpleTable>
           ) : null}
@@ -147,5 +146,49 @@ export function DataPreview({
         </>
       )}
     </Section>
+  )
+}
+
+/** 观测预览的一行：区间列按 "100–200" / "10K+" 显示，层级列显示 T0–T4（design D8） */
+export function PreviewRow({
+  row,
+}: {
+  row: {
+    platformId: string
+    marketplace: string
+    metric: string
+    observedOn: string
+    value: number
+    currency: string | null
+    method: 'official' | 'estimate' | 'derived' | 'import'
+    tier: number
+    valueLow: number | null
+    valueHigh: number | null
+    channel: string | null
+  }
+}) {
+  return (
+    <tr>
+      <td className="px-3 py-2 font-mono">{row.platformId}</td>
+      <td className="px-3 py-2">{row.marketplace}</td>
+      <td className="px-3 py-2">{row.metric}</td>
+      <td className="px-3 py-2">{row.observedOn}</td>
+      <td className="px-3 py-2 font-mono">
+        {row.value}
+        {row.currency ? ` ${row.currency}` : ''}
+      </td>
+      <td className="px-3 py-2">
+        <IntervalCell low={row.valueLow} high={row.valueHigh} />
+      </td>
+      <td className="px-3 py-2">
+        <span className="flex flex-wrap gap-1">
+          <TierTag tier={row.tier} />
+          <ChannelTag channel={row.channel} />
+        </span>
+      </td>
+      <td className="px-3 py-2">
+        <SourceBadge method={row.method} />
+      </td>
+    </tr>
   )
 }

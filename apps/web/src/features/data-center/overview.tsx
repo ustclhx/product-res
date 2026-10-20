@@ -1,7 +1,10 @@
 import { Button, Input, StatCard, Tag } from '@product-res/ui'
 import { useState } from 'react'
+import { m } from '../../paraglide/messages.js'
+import { AccuracyKpiCard } from './accuracy-kpi.tsx'
 import { probeDataSource, saveDataSource } from './data-center.functions.ts'
 import { FileSourceCard } from './file-source-card.tsx'
+import { ChannelTag } from './observation-cells.tsx'
 import {
   errorText,
   formatNumber,
@@ -32,16 +35,19 @@ export function Overview({
   data,
   onChanged,
   onImport,
+  onOpenAccuracy,
 }: {
   slug: string
   data: DataCenterData
   onChanged: () => Promise<void>
+  /** 准确率 KPI 卡片跳到「人工抽检」标签 */
+  onOpenAccuracy?: () => void
   /** 文件导入类型的数据源：跳到导入标签并预选该数据源 */
   onImport: (sourceId: string) => void
 }) {
   return (
     <div className="grid gap-4">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         <StatCard
           label="已启用数据源"
           value={`${data.kpis.enabledSources} / ${data.kpis.totalSources}`}
@@ -53,6 +59,11 @@ export function Overview({
           hint="新加坡时间"
         />
         <StatCard label="有效导入批次" value={formatNumber(data.kpis.imports)} />
+        <AccuracyKpiCard
+          kpis={data.accuracy}
+          sourceLabel={(id) => data.sources.find((s) => s.id === id)?.label ?? id}
+          {...(onOpenAccuracy ? { onOpen: onOpenAccuracy } : {})}
+        />
       </div>
       <Section title="数据源">
         {data.sources.length === 0 ? (
@@ -116,6 +127,7 @@ function SourceCard({
             {source.enabled ? '已启用' : '已停用'}
           </Tag>
           <Tag tone={credentials.tone}>{credentials.label}</Tag>
+          <ChannelTag channel={source.channel} />
           {source.paused ? <Tag tone="danger">已暂停：{source.paused.reason}</Tag> : null}
         </div>
       </div>
@@ -160,6 +172,7 @@ function SourceCard({
           max={source.budget.safetyLine}
           warnAt={source.budget.safetyLine * 0.9}
         />
+        <SourceSpend budget={source.budget} />
         <span className="text-muted-foreground">重置时间 {formatTime(source.budget.resetsAt)}</span>
       </div>
       <div className="flex flex-wrap items-end gap-2">
@@ -215,4 +228,38 @@ function SourceCard({
       ) : null}
     </article>
   )
+}
+
+/**
+ * 月度额度来源的花费 / 用量摘要（AIsa 按美元、SerpApi 按次）：本月已用与距硬上限的剩余。
+ * 非月度额度不显示（进度条已足够）。
+ */
+export function SourceSpend({
+  budget,
+}: {
+  budget: { unit: string; period: string; used: number; hardCap: number }
+}) {
+  if (budget.period !== 'month') return null
+  const remaining = Math.max(0, budget.hardCap - budget.used)
+  if (budget.unit === 'usd-micro')
+    return (
+      <span data-testid="source-spend" className="font-medium">
+        {m.accuracy_spend_month({
+          used: amount(budget.unit, budget.used),
+          remaining: amount(budget.unit, remaining),
+          cap: amount(budget.unit, budget.hardCap),
+        })}
+      </span>
+    )
+  if (budget.unit === 'call')
+    return (
+      <span data-testid="source-spend" className="font-medium">
+        {m.accuracy_calls_month({
+          used: formatNumber(budget.used),
+          remaining: formatNumber(remaining),
+          cap: formatNumber(budget.hardCap),
+        })}
+      </span>
+    )
+  return null
 }

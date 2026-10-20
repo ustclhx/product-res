@@ -1,5 +1,7 @@
 import { cn } from '@product-res/ui'
 import { useState } from 'react'
+import { m } from '../../paraglide/messages.js'
+import { AccuracyAudit } from './accuracy.tsx'
 import { getDataCenter } from './data-center.functions.ts'
 import { FileImport } from './import.tsx'
 import { Overview } from './overview.tsx'
@@ -16,6 +18,8 @@ const TABS = [
   ['import', '文件导入'],
   ['quality', '数据质量'],
   ['scoring', '评分维度管理'],
+  // 文案见 messages/<locale>/accuracy.json
+  ['accuracy', 'accuracy_tab'],
 ] as const
 export type DataCenterTab = (typeof TABS)[number][0]
 
@@ -24,6 +28,7 @@ export function DataCenterPage({ slug, initial }: { slug: string; initial: DataC
   const [tab, setTab] = useState<DataCenterTab>('overview')
   const [data, setData] = useState(initial)
   const [importSource, setImportSource] = useState<string | undefined>()
+  const sourceLabel = (id: string) => data.sources.find((s) => s.id === id)?.label ?? id
   const apiSources = data.sources
     .filter((s) => s.access === 'api')
     .map((s) => ({ id: s.id, label: s.label }))
@@ -50,7 +55,7 @@ export function DataCenterPage({ slug, initial }: { slug: string; initial: DataC
             )}
             onClick={() => setTab(key)}
           >
-            {label}
+            {key === 'accuracy' ? m.accuracy_tab() : label}
           </button>
         ))}
       </div>
@@ -59,6 +64,7 @@ export function DataCenterPage({ slug, initial }: { slug: string; initial: DataC
           slug={slug}
           data={data}
           onChanged={async () => setData(await getDataCenter({ data: { slug } }))}
+          onOpenAccuracy={() => setTab('accuracy')}
           onImport={(sourceId) => {
             setImportSource(sourceId)
             setTab('import')
@@ -70,6 +76,7 @@ export function DataCenterPage({ slug, initial }: { slug: string; initial: DataC
       {tab === 'import' ? <FileImport slug={slug} initialSourceId={importSource} /> : null}
       {tab === 'quality' ? <QualityIssues slug={slug} /> : null}
       {tab === 'scoring' ? <ScoringSettings slug={slug} /> : null}
+      {tab === 'accuracy' ? <AccuracyAudit slug={slug} sourceLabel={sourceLabel} /> : null}
     </div>
   )
 }

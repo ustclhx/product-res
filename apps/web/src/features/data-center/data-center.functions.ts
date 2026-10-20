@@ -1,24 +1,15 @@
 import { DATA_KINDS } from '@product-res/datasources'
-import { AppError } from '@product-res/shared'
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { withWorkspace } from '../../server/middleware.ts'
 import { actorOf } from '../workbench/actor.ts'
+import { assertWriter } from './access.ts'
 
 /**
  * 数据中心（specs/data-center）。市场数据是部署级共享数据：读取要求是空间成员，
  * 修改数据源配置、触发同步和导入要求可写空间中的 owner / admin。
  */
 const slug = z.object({ slug: z.string().min(1).max(64) })
-
-function assertWriter(context: { workspaceReadOnly: boolean; member: { role: string } }) {
-  if (context.workspaceReadOnly)
-    throw new AppError('WORKSPACE_READ_ONLY', 'Workspace is read-only', { status: 403 })
-  if (context.member.role !== 'owner' && context.member.role !== 'admin')
-    throw new AppError('FORBIDDEN', 'Only owners and admins can change data sources', {
-      status: 403,
-    })
-}
 
 const service = () => import('./service.server.ts')
 

@@ -18,6 +18,7 @@ import {
 import { log, newRequestId, withLogContext } from '@product-res/shared/log'
 import { createNodeStorage } from '@product-res/storage/node'
 import templateConfig from '../../../../template.config.ts'
+import { registerAccuracyAudit } from '../accuracy/weekly-audit.ts'
 import { registerNodeDataSources } from '../datasources/node.ts'
 import { DATASYNC_QUEUE } from '../datasources/sync.ts'
 import { consumeJobsBatch, type JobsContext } from '../handlers.ts'
@@ -172,6 +173,8 @@ export async function startNodeJobs(config: NodeEnv, options: NodeJobsOptions) {
         // 影子验证（add-shadow-validation）：05:00 打标签、周一 05:30 重算准备度、Keepa 回放队列
         registerNodeSelection({ db, scheduler: pipelineScheduler, queues, dataSync })
         registerSelectionReview(pipelineScheduler, db)
+        // 人工抽检（add-accuracy-store-tracking）：每周一 06:00 SGT 生成本周抽检清单
+        registerAccuracyAudit(pipelineScheduler, db)
         await queues.prepare()
         await scheduler.prepare()
       },

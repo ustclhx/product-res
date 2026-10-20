@@ -12,6 +12,11 @@ export const KIND_LABELS: Record<string, string> = {
   'fee-estimate': '费用预估',
   taxonomy: '类目',
   'fx-rate': '汇率',
+  'amazon-search': 'Amazon 关键词搜索',
+  'amazon-asin': 'Amazon 商品详情',
+  'amazon-offers': 'Amazon 卖家报价',
+  'amazon-keyword-volume': 'Amazon 关键词搜索量',
+  'amazon-product': 'Amazon 商品页（交叉验证）',
 }
 
 export const RUN_STATUS: Record<
