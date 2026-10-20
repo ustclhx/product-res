@@ -26,7 +26,7 @@
 
 ## A. 部署（product.ezarouter.cc / 43.106.17.72）
 
-**已上线（2026-10-19）**：`https://product.ezarouter.cc` 运行 `a80b697`（上一个成功版本 `9eb1710`），入口为随发布交付的 Cloudflare Tunnel（`--compose-file compose.tunnel.yaml`），宿主无 80/443 监听；客户端 IP 与伪造 XFF 验收通过。**仍待你处理**：邮件服务（Resend 或 SMTP，当前 log 模式，无法验证邮箱 → 管理员无法自动提升）；模板 PR ustclhx/saas-template#250 是否合并。下面 1（DNS）与 5（安全组）因改用 Tunnel 不再需要。
+**已上线（2026-10-20，内测）**：`https://product.ezarouter.cc` 运行 `0768303`（add-beta-access-gate），入口为随发布交付的 Cloudflare Tunnel（`--compose-file compose.tunnel.yaml`），宿主无 80/443 监听。内测不接邮件（log 模式）：邮箱+密码开放注册；运维邮箱已经 `BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED` 一次性提升为管理员，提升后该开关与 `SIGNUP_ALLOWED_EMAILS` 已从服务器 `.env` 移除；新账号需管理员在 `/admin` 发放积分后才能使用工作台（`credits.requireGrantForAccess`）。数据/选品定时流水线以 `DATA_PIPELINE_SCHEDULES=paused` 暂停，数据源凭据验收后删除该键并以同 SHA 重新部署。**仍待处理**：正式上线前接邮件服务（Resend 或 SMTP）；模板 PR ustclhx/saas-template#250 由其他会话 review 合并。下面 1（DNS）与 5（安全组）因改用 Tunnel 不再需要。
 
 **2026-10-19 进展**：服务器密钥与 PG 证书已由 Codex 生成（权限核对通过）；`350fb0f361c86cbcc4b8e6a1d154d5adcab556de` 的 CI 与正式发布（run 39214405096）均成功，image-set 与 release bundle 已产出。下面 2、3、7 已完成。主机预检：80/443 无占用（仅 11 个已退出的旧 cloudflared 容器，保留不动）；与文档基线的差异待你决定是否处理——内存约 3.4 GiB（文档下限 4 GiB，另有 2 GiB swap）、Ubuntu 22.04（验证过的是 24.04/Debian 12）、Docker 29.6 / Compose v5.3（验证过的是 28.5 / 2.40）。
 
