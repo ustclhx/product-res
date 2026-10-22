@@ -31,6 +31,21 @@ export {
   normalizeCategoryTree,
   normalizeEbay,
 } from './ebay.ts'
+export {
+  createEbayPublicKeyStore,
+  derToP1363,
+  EBAY_ACCOUNT_DELETION_PATH,
+  EBAY_ACCOUNT_DELETION_TOPIC,
+  type EbayPublicKey,
+  type EbayPublicKeyStore,
+  type EbaySignatureHeader,
+  ebayChallengeResponse,
+  isValidEbayVerificationToken,
+  parseEbaySignatureHeader,
+  sha256Hex,
+  verifyEbaySignature,
+} from './ebay-notification.ts'
+export { type EbayAppToken, requestEbayAppToken } from './ebay-token.ts'
 export { createFileImportSource, createHelium10Source } from './file-import.ts'
 export { createFxConnector, normalizeRates } from './fx.ts'
 export { createKeepaConnector, keepaTimeToDate, normalizeKeepa } from './keepa.ts'

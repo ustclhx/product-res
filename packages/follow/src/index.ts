@@ -18,6 +18,15 @@ export {
   taskKey,
 } from './collect.ts'
 export {
+  deleteEbayUserData,
+  EBAY_ACCOUNT_DELETION_ACTION,
+  type EbayAccountDeletionCounts,
+  type EbayAccountDeletionInput,
+  type EbayAccountDeletionResult,
+  ebayUserHash,
+  ebayUserKeys,
+} from './ebay-account-deletion.ts'
+export {
   GRADE_FROM_DB,
   GRADE_TO_DB,
   type LeadGradeValue,
