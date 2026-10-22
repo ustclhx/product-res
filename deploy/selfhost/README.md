@@ -38,6 +38,33 @@
 
 数据源凭据验收前保持 `DATA_PIPELINE_SCHEDULES=paused`，验收通过后清空并部署。
 
+## eBay 账号删除通知（add-ebay-account-deletion）
+
+启用 eBay Production keyset 前必须订阅 Marketplace Account Deletion 通知（本项目持久化 eBay 卖家用户名，
+不能申请豁免）。端点：`https://product.ezarouter.cc/api/webhooks/ebay/account-deletion`，即
+`APP_URL` 的 origin 加固定路径；eBay 后台填写的地址必须与它逐字一致（https、无末尾斜杠、无查询参数）。
+
+1. **生成 verification token**：eBay 要求 32–80 位，只含 `A-Z a-z 0-9 _ -`。例如
+   `openssl rand -hex 32`（64 位十六进制）。写入 `secrets/optional/EBAY_VERIFICATION_TOKEN`
+   （单行，文件 0600、属主 1000，与其他 `EBAY_*` 凭据同目录；compose 已把该目录只读挂给 web）。
+2. **验签凭据**：POST 通知用 Production `EBAY_CLIENT_ID` / `EBAY_CLIENT_SECRET`（同目录）申请应用令牌，
+   再调用 Notification API `getPublicKey` 取公钥，按 kid 进程内缓存 1 小时；不计入 Browse 每日额度。
+3. **重启 web**（`deploy.sh` 更新或重启 web 服务）：密钥按名称缓存，写入新文件后需重启生效。
+   未配置或格式不合规时 GET / POST 都返回 503，日志 `ebay.account_deletion.unconfigured`。
+4. **eBay 开发者后台** → Alerts & Notifications → Marketplace Account Deletion：
+   填写告警邮箱、上面的 endpoint 与 verification token，逐项保存。保存 endpoint 时 eBay 会发送
+   `GET ?challenge_code=...`，本端点返回 200 `{"challengeResponse": sha256hex(challengeCode + token + endpoint)}`，
+   后台显示保存成功即验证通过。
+5. **Send Test Notification**：预期后台显示成功；web 日志依次没有 `signature_rejected`，并出现
+   `ebay.account_deletion.processed`（只含 `userHash`、各表计数与 notificationId，不含用户名）；
+   `audit_log` 新增一行 `action = 'ebay.account_deletion'`、`target_id = <notificationId>`。
+   测试用户通常不在本库中，计数为 0 属正常。
+
+返回码：验签失败（缺头、未知 kid、签名不匹配）412；公钥接口不可达或 client 凭据缺失 503；删除事务失败 500。
+后三者 eBay 会重发，持续 24 小时未确认会标记端点故障并发邮件，30 天未修复判为不合规。
+删除范围与已知残留（`raw_payload` 正文中顺带出现的用户名随 90 天保留期清除）见
+`openspec/changes/add-ebay-account-deletion/design.md` D4、D5。
+
 ## 本地开发镜像与基础启动
 
 从仓库根目录构建，源码与基础镜像均锁定。`APP_VERSION` 必须为对应源码的完整 40 位小写 Git SHA；没有 Git 的归档必须显式提供它，不能使用短 SHA 或版本号。所有 `FROM` 都固定 digest；镜像不携带部署凭据。只有构建阶段使用 root；运行及数据初始化均非 root。

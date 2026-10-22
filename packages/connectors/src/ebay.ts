@@ -10,6 +10,7 @@ import {
   type RawPayload,
   type SourceConnector,
 } from '@product-res/datasources'
+import { EBAY_API, type EbayAppToken, ebayTokenFresh, requestEbayAppToken } from './ebay-token.ts'
 
 /**
  * eBay Browse 连接器（add-source-connectors design D2）。依据官方文档实现，字段以 Production 核验为准：
@@ -17,15 +18,9 @@ import {
  * - 商品快照：getItems（每批 20 个），返回 estimatedAvailabilities；是否含 estimatedSoldQuantity 待核验
  * 应用令牌（client credentials）在进程内缓存到过期前 5 分钟。
  */
-const API = 'https://api.ebay.com'
-const SCOPE = 'https://api.ebay.com/oauth/api_scope'
+const API = EBAY_API
 const MARKETPLACE = 'EBAY_US'
 const BATCH = 20
-
-interface Token {
-  value: string
-  expiresAt: number
-}
 
 interface EbayAmount {
   value?: string
@@ -66,26 +61,16 @@ interface Item extends ItemSummary {
 }
 
 export function createEbayBrowseConnector(): SourceConnector {
-  let token: Token | undefined
+  let token: EbayAppToken | undefined
 
   async function accessToken(ctx: ConnectorContext) {
     const now = ctx.now().getTime()
-    if (token && token.expiresAt - 5 * 60_000 > now) return token.value
-    const id = ctx.secret('EBAY_CLIENT_ID')
-    const secret = ctx.secret('EBAY_CLIENT_SECRET')
-    if (!id || !secret) throw new ConnectorError('auth', 'EBAY_CREDENTIALS_MISSING')
-    const res = await httpRequest(ctx.fetch, {
-      method: 'POST',
-      url: `${API}/identity/v1/oauth2/token`,
-      headers: {
-        authorization: `Basic ${btoa(`${id}:${secret}`)}`,
-        'content-type': 'application/x-www-form-urlencoded',
-      },
-      body: `grant_type=client_credentials&scope=${encodeURIComponent(SCOPE)}`,
-    })
-    const body = parseJson<{ access_token?: string; expires_in?: number }>(res.body)
-    if (!body.access_token) throw new ConnectorError('auth', 'EBAY_TOKEN_MISSING')
-    token = { value: body.access_token, expiresAt: now + (body.expires_in ?? 7200) * 1000 }
+    if (ebayTokenFresh(token, now)) return token.value
+    token = await requestEbayAppToken(
+      ctx.fetch,
+      { clientId: ctx.secret('EBAY_CLIENT_ID'), clientSecret: ctx.secret('EBAY_CLIENT_SECRET') },
+      now,
+    )
     return token.value
   }
 
