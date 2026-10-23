@@ -13,6 +13,8 @@ const blankAsUnset = new Set([
   'DATA_PIPELINE_SCHEDULES',
   'EMAIL_FROM',
   'EMAIL_REPLY_TO',
+  // 空串回落到 resolvePaymentMode 的“未设置”分支：线上仍报缺失，不会被默认成 test
+  'PAYMENT_MODE',
   'SMTP_HOST',
   'SMTP_PORT',
   'SMTP_TLS_MODE',

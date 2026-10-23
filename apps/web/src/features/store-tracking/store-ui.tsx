@@ -1,9 +1,10 @@
 import { Button, Tag, type Tone } from '@product-res/ui'
+import { Link } from '@tanstack/react-router'
 import { type FormEvent, useState } from 'react'
 import { m } from '../../paraglide/messages.js'
 import { marketplaceLabel, splitList } from '../follow/marketplaces.ts'
 import { CheckboxGroup, controlClass, ErrorText, Field } from '../workbench/fields.tsx'
-import type { SourceState, StoreRowView } from './store-tracking.server.ts'
+import type { DisabledSource, SourceState, StoreRowView } from './store-tracking.server.ts'
 
 /** 店铺追踪页面共用的标签、格式化与设置表单（文案见 messages/<locale>/store-tracking.json） */
 
@@ -53,6 +54,43 @@ export function tierReasonLabel(reason: string | null) {
 }
 
 export const platformLabel = (platform: string) => (platform === 'ebay' ? 'eBay' : 'Amazon')
+
+/** 所需数据源停用的醒目提示，链接到数据中心对应来源卡片 */
+export function DisabledSourceNotice({
+  slug,
+  sources,
+}: {
+  slug: string
+  sources: readonly DisabledSource[]
+}) {
+  if (sources.length === 0) return null
+  return (
+    <div
+      className="grid gap-1 rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-[13px] font-medium text-warning-strong"
+      role="alert"
+      data-testid="store-source-disabled"
+    >
+      {sources.map((s) => (
+        <p key={`${s.platform}|${s.id}`}>
+          {s.role === 'cross'
+            ? m.store_tracking_source_disabled_cross({ source: s.label })
+            : m.store_tracking_source_disabled_notice({
+                source: s.label,
+                platform: platformLabel(s.platform),
+              })}{' '}
+          <Link
+            to="/app/$slug/data"
+            params={{ slug }}
+            hash={`source-${s.id}`}
+            className="underline hover:text-primary"
+          >
+            {m.store_tracking_source_disabled_link()}
+          </Link>
+        </p>
+      ))}
+    </div>
+  )
+}
 
 export function sourceLabel(state: SourceState) {
   if (state === 'not-configured' || state === 'unregistered')

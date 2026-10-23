@@ -34,6 +34,19 @@ describe('httpRequest', () => {
     expect(String((error.cause as Error).message)).toContain('REDACTED')
   })
 
+  it('redirect=manual 时 3xx 原样交给调用方，默认仍按错误分类', async () => {
+    const redirecting = (async (_url: string, init?: RequestInit) => {
+      expect(init?.redirect).toBe('manual')
+      return new Response(null, { status: 307, headers: { location: 'https://other.test/' } })
+    }) as unknown as typeof fetch
+    const res = await httpRequest(redirecting, { url: 'https://api.test/a', redirect: 'manual' })
+    expect(res.status).toBe(307)
+    expect(res.headers.get('location')).toBe('https://other.test/')
+    await expect(
+      httpRequest(respond(307, ''), { url: 'https://api.test/a' }),
+    ).rejects.toMatchObject({ kind: 'permanent' })
+  })
+
   it('2xx 返回正文与脱敏后的请求摘要', async () => {
     const res = await httpRequest(respond(200, '{"ok":true}'), {
       url: 'https://api.test/a?api_key=s',

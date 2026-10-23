@@ -31,6 +31,11 @@ export interface HttpRequest {
   readonly timeoutMs?: number
   /** 响应体上限，默认 8 MiB；超过视为无效响应 */
   readonly maxBytes?: number
+  /**
+   * 跳转策略，默认 follow。manual 时 3xx 原样返回给调用方，由调用方校验 Location，
+   * 用于只允许固定站点的抓取（防 SSRF 跳到其他域名）。
+   */
+  readonly redirect?: 'follow' | 'manual'
 }
 
 export interface HttpResponse {
@@ -60,6 +65,7 @@ export async function httpRequest(
       method,
       ...(req.headers ? { headers: req.headers } : {}),
       ...(req.body === undefined ? {} : { body: req.body }),
+      ...(req.redirect ? { redirect: req.redirect } : {}),
       signal: controller.signal,
     })
   } catch (error) {
@@ -77,6 +83,8 @@ export async function httpRequest(
   }
   const custom = classify?.(response.status, body)
   if (custom) throw custom
+  if (req.redirect === 'manual' && response.status >= 300 && response.status < 400)
+    return { status: response.status, headers: response.headers, body, request: summary }
   const kind = classifyStatus(response.status)
   if (kind) throw new ConnectorError(kind, `HTTP_${response.status}`, { status: response.status })
   return { status: response.status, headers: response.headers, body, request: summary }

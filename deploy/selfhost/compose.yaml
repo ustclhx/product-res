@@ -37,6 +37,8 @@ x-app-env: &app-env
   SIGNUP_ALLOWED_EMAILS: ${SIGNUP_ALLOWED_EMAILS:-}
   # paused = 数据 / 选品定时流水线到点直接返回（计划仍注册）；空 = 运行
   DATA_PIPELINE_SCHEDULES: ${DATA_PIPELINE_SCHEDULES:-}
+  # 支付模式 test | live；空 = 未设置（billing 开启时线上必须显式设置，不默认 test）
+  PAYMENT_MODE: ${PAYMENT_MODE:-}
   # AI Provider 与数据源凭据：secrets/optional/<NAME> 单文件，缺失即未配置
   OPTIONAL_SECRETS_DIR: /run/secrets/optional
 

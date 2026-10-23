@@ -45,6 +45,13 @@ export {
   sha256Hex,
   verifyEbaySignature,
 } from './ebay-notification.ts'
+export {
+  EBAY_STORE_ORIGIN,
+  type EbayStoreResolution,
+  ebayStorePageUrl,
+  extractEbayStoreUsername,
+  resolveEbayStoreUsername,
+} from './ebay-store.ts'
 export { type EbayAppToken, requestEbayAppToken } from './ebay-token.ts'
 export { createFileImportSource, createHelium10Source } from './file-import.ts'
 export { createFxConnector, normalizeRates } from './fx.ts'

@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { EnvValidationError } from './env.ts'
+import { EnvValidationError, resolvePaymentMode } from './env.ts'
 import {
   createDataSourceSecrets,
   loadNodeEnv,
@@ -238,6 +238,21 @@ describe('Node runtime config', () => {
     expect(loaded.EMAIL_FROM).toBeUndefined()
     expect(loaded.SMTP_HOST).toBeUndefined()
     expect(loaded.SMTP_TLS_MODE).toBe('starttls')
+  })
+
+  it('支付模式：Compose 空串按未设置，线上仍报缺失而非 invalid，也不默认 test', () => {
+    const blank = loadNodeEnv({ dotenvPath: false, env: { ...valid, PAYMENT_MODE: '' } })
+    expect(blank.PAYMENT_MODE).toBeUndefined()
+    try {
+      resolvePaymentMode({ ...blank, SENTRY_ENVIRONMENT: 'production' })
+      expect.unreachable()
+    } catch (error) {
+      expect(error).toBeInstanceOf(EnvValidationError)
+      expect((error as EnvValidationError).missing).toEqual(['PAYMENT_MODE'])
+      expect((error as EnvValidationError).invalid).toEqual([])
+    }
+    const set = loadNodeEnv({ dotenvPath: false, env: { ...valid, PAYMENT_MODE: 'test' } })
+    expect(resolvePaymentMode(set)).toBe('test')
   })
 
   it('内测开关：Compose 空串按未设置，管理员引导开关透传，流水线暂停值严格校验', () => {

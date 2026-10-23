@@ -6,6 +6,7 @@ import {
   decideTier,
   lastChangeOn,
   matchOffers,
+  orderEnrollment,
   parseStoreLink,
   planStoreTasks,
   roseWithin,
@@ -312,6 +313,99 @@ describe('店铺采集计划', () => {
       'c',
       'd',
       'e',
+    ])
+  })
+})
+
+// 实测修正（2026-10-23）：名额不被头部店铺占满。
+describe('加入追踪的公平顺序', () => {
+  const items = (prefix: string, n: number, firstSeenOn = '2026-10-20') =>
+    Array.from({ length: n }, (_, i) => ({
+      productId: `${prefix}${String(i).padStart(3, '0')}`,
+      firstSeenOn,
+      listedOn: `2026-10-${String(1 + (i % 20)).padStart(2, '0')}`,
+    }))
+  const take = (list: ReturnType<typeof orderEnrollment>, room: number) => list.slice(0, room)
+
+  it('头部店铺候选再多，各店铺也按轮询分到名额', () => {
+    const order = orderEnrollment({
+      stores: [
+        { storeId: 's1', items: items('a', 900) },
+        { storeId: 's2', items: items('b', 90) },
+        { storeId: 's3', items: items('c', 7) },
+      ],
+      leads: [],
+      tracked: new Set(),
+      room: 100,
+    })
+    const picked = take(order, 100)
+    const count = (id: string) => picked.filter((c) => c.originRef === id).length
+    // s3 只有 7 个，余下名额在 s1、s2 间继续轮询
+    expect(count('s3')).toBe(7)
+    expect(count('s1')).toBeGreaterThanOrEqual(33)
+    expect(count('s2')).toBeGreaterThanOrEqual(33)
+    expect(Math.abs(count('s1') - count('s2'))).toBeLessThanOrEqual(1)
+  })
+
+  it('店铺内首次发现日新到旧，其次上架日新到旧，未知上架日排后', () => {
+    const order = orderEnrollment({
+      stores: [
+        {
+          storeId: 's1',
+          items: [
+            { productId: 'old', firstSeenOn: '2026-10-01', listedOn: '2026-10-01' },
+            { productId: 'unknown', firstSeenOn: '2026-10-20', listedOn: null },
+            { productId: 'listed-late', firstSeenOn: '2026-10-20', listedOn: '2026-10-19' },
+            { productId: 'listed-early', firstSeenOn: '2026-10-20', listedOn: '2026-10-02' },
+          ],
+        },
+      ],
+      leads: [],
+      tracked: new Set(),
+      room: 10,
+    })
+    expect(order.map((c) => c.productId)).toEqual(['listed-late', 'listed-early', 'unknown', 'old'])
+  })
+
+  it('线索商品排在每店保底 floor(room/店铺数) 之后、剩余轮询之前；已追踪与重复跳过', () => {
+    const order = orderEnrollment({
+      stores: [
+        { storeId: 's1', items: items('a', 10) },
+        { storeId: 's2', items: items('b', 10) },
+      ],
+      leads: ['lead1', 'a000', 'tracked', 'lead2'],
+      tracked: new Set(['tracked', 'b001']),
+      room: 6,
+    })
+    const picked = take(order, 6)
+    // 保底 3 + 3，线索紧随其后
+    expect(picked.filter((c) => c.origin === 'store')).toHaveLength(6)
+    expect(order.slice(6, 8)).toEqual([
+      { productId: 'lead1', origin: 'lead', originRef: null },
+      { productId: 'lead2', origin: 'lead', originRef: null },
+    ])
+    expect(order.map((c) => c.productId)).not.toContain('b001')
+    expect(order.map((c) => c.productId)).not.toContain('tracked')
+    expect(order.filter((c) => c.productId === 'a000')).toHaveLength(1)
+    expect(order).toHaveLength(10 + 9 + 2)
+  })
+
+  it('名额少于店铺数时线索先于店铺，店铺按顺序各取一个', () => {
+    const order = orderEnrollment({
+      stores: [
+        { storeId: 's1', items: items('a', 3) },
+        { storeId: 's2', items: items('b', 3) },
+        { storeId: 's3', items: items('c', 3) },
+      ],
+      leads: ['lead1'],
+      tracked: new Set(),
+      room: 2,
+    })
+    expect(order.slice(0, 4).map((c) => c.originRef ?? c.productId)).toEqual([
+      'lead1',
+      's1',
+      's2',
+      's3',
     ])
   })
 })
