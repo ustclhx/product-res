@@ -93,3 +93,19 @@ config/db 不反向依赖 platform。业务包之间允许依赖，检查器没�
   评分算法、连接器）、需要设计感与审美判断的 UI 任务。
 - **supervisor 职责**：拆分与派发、持续监控 worker 是否停住并及时答复、review 后合并、
   验收通过后勾选 tasks、合并后核对 main 的 CI 与发布流水线。Codex 产出同样经 Claude review 后合并。
+
+<!-- BEGIN:flow-managed -->
+## Flow 工作区上下文
+
+> 由 `flow agents sync` 生成，请勿手动修改本区块。
+
+- 所属 workspace：`ws/product-res`（product-res，产品）
+- 项目卡片：brain 条目 `projects/product-res`（`flow kb get projects/product-res`）
+- 关键资源：
+  - data-source `resources/data-sources/product-res-health`：product-res 健康检查，GET /api/health，返回数据库状态与版本 SHA
+  - domain `resources/domains/product.ezarouter.cc`：product.ezarouter.cc，product-res 的生产域名（ezarouter.cc 的子域名）
+  - repo `resources/repos/product-res`：product-res 仓库，product-res 的代码仓库
+  - service `resources/services/product-res-selfhost`：product-res 自托管 Compose 实例，web 与 jobs 以 Docker Compose 自托管运行，镜像来自 GHCR
+- 访问知识库：MCP 工具 `kb_search`、`kb_get`、`kb_query`、`ws_brief`；或 CLI `flow kb search <词>`、`flow ws brief ws/product-res`
+- 写入规则：工作日志用 `kb_journal`；随手记用 `capture`；事实类修改用 `kb_propose` 提交提案，必须附出处；不得直接修改 decision 和 personal 条目。
+<!-- END:flow-managed -->
