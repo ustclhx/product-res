@@ -147,3 +147,16 @@
 - **来源停用提示：** 数据中心停用店铺所需来源（eBay → ebay-browse；Amazon → dataforseo 发现、serpapi 交叉验证）后，店铺页只会显示“没有新品”。
   - 列表页与详情页顶部显示醒目提示，并链接到数据中心对应来源卡片（`#source-<id>`）；
   - “立即跑一轮”在追踪中店铺所需来源全部停用时不入队（不占本小时名额），返回 `sources-disabled` 并显示同样提示。
+
+### 追踪上限按平台分开（2026-10-24）
+
+第三轮实测：eBay 店铺有 897 个新品因 100 个上限未能入池。eBay Browse 免费（每日 5000 次，安全线 4500），快照逐个调用 getItem；Amazon 走付费来源（AIsa / SerpApi）。因此改为按平台分别设上限：
+
+| 平台 | 上限 |
+|---|---|
+| eBay | `productCapEbay` = 500 |
+| Amazon | `productCapAmazon` = 100 |
+
+- **计数口径：** 已追踪商品按 `marketplace_product.marketplace` 的前缀归属平台，分别计数。
+- **入池规则：** 每个平台内仍按 `orderEnrollment`（店铺内新到旧、店铺间轮询保底，其次线索）入池。
+- **额度估算：** 500 个 eBay 商品全部为热点时，每日快照约 500 次；加上店铺扫描，仍远低于安全线。

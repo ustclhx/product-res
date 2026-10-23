@@ -8,8 +8,12 @@ import { addDays, diffDays } from '@product-res/selection'
 
 /** 测试规模的默认值（proposal「测试规模」）；调度入口可按部署覆盖 */
 export const STORE_TRACKING_DEFAULTS = {
-  /** 被追踪商品上限（每个空间） */
-  productCap: 100,
+  /**
+   * 被追踪商品上限（每个空间、按平台分开）：eBay Browse 免费且每日 5000 次，逐个 getItem 快照，
+   * 500 个热点每日约 500 次；Amazon 走付费来源（AIsa / SerpApi），保持测试规模 100
+   */
+  productCapEbay: 500,
+  productCapAmazon: 100,
   /** Amazon 报价调用每日上限，超出顺延 */
   offerCallsPerDay: 30,
   /** Amazon 店铺关键词搜索周期（天） */

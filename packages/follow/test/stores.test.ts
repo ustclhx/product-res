@@ -3,6 +3,7 @@ import {
   direction,
   lead,
   leadEvent,
+  marketplaceProduct,
   marketplaceSeller,
   observation,
   scoped,
@@ -12,7 +13,7 @@ import {
 } from '@product-res/db'
 import { listTrackedProducts, trackProduct, upsertEntities } from '@product-res/marketdata'
 import { AppError, newId } from '@product-res/shared'
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, like } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   addStore,
@@ -365,8 +366,22 @@ describe.skipIf(!url)('店铺追踪', () => {
     expect(targets.searches).toEqual([{ marketplace: 'amazon-us', keyword: 'spice rack' }])
   })
 
-  it('被追踪商品不超过上限；样本不足的店铺指标为空', async () => {
-    const before = (await listTrackedProducts(db, ws)).length
+  it('被追踪商品按平台不超过上限；样本不足的店铺指标为空', async () => {
+    const trackedBefore = await listTrackedProducts(db, ws)
+    const amazonIds = await db
+      .select({ id: marketplaceProduct.id })
+      .from(marketplaceProduct)
+      .where(
+        and(
+          inArray(
+            marketplaceProduct.id,
+            trackedBefore.map((t) => t.productId),
+          ),
+          like(marketplaceProduct.marketplace, 'amazon-%'),
+        ),
+      )
+    const before = trackedBefore.length
+    const amazonBefore = amazonIds.length
     const ids = await products(
       [6, 7].map((n) => ({ platformId: asin(n), marketplace: 'amazon-us' })),
     )
@@ -384,7 +399,7 @@ describe.skipIf(!url)('店铺追踪', () => {
       day,
       now,
       workspaceId: ws,
-      settings: { productCap: before + 1 },
+      settings: { productCapAmazon: amazonBefore + 1 },
     })
     expect(result.workspaces[0]).toMatchObject({ enrolled: 1, overCap: 1 })
     expect(await listTrackedProducts(db, ws)).toHaveLength(before + 1)
