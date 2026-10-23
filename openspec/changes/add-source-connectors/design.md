@@ -79,7 +79,7 @@ eBay 价格、可售量、已售量只有 Browse 一个来源。
 
 | 数据源 | 日期 | 结论 |
 |---|---|---|
-| eBay `estimatedSoldQuantity` | — | 待核验 |
+| eBay `estimatedSoldQuantity` | 2026-10-23 | getItem 返回（官方）；getItems 需额外授权（403）→ 快照默认逐个 getItem，见 `docs/receipts/ebay-browse-2026-10-23.md` |
 | DataForSEO Amazon 评论 | — | 待核验 |
 | 卖家精灵评论内容 | — | 待核验 |
 | 汇率（ECB） | 2026-10-18 | 通过，见 `docs/receipts/fx-ecb-2026-10-18.md` |

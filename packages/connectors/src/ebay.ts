@@ -15,7 +15,9 @@ import { EBAY_API, type EbayAppToken, ebayTokenFresh, requestEbayAppToken } from
 /**
  * eBay Browse 连接器（add-source-connectors design D2）。依据官方文档实现，字段以 Production 核验为准：
  * - 卖家新品：item_summary/search + filter=sellers:{id} + sort=newlyListed，遇到已见过的商品停止翻页（由调度传 knownIds）
- * - 商品快照：getItems（每批 20 个），返回 estimatedAvailabilities；是否含 estimatedSoldQuantity 待核验
+ * - 商品快照：默认逐个 getItem（返回 estimatedSoldQuantity，官方已售量）。getItems 批量接口需要额外授权，
+ *   本应用 Production keyset 调用返回 403 Access denied（2026-10-23 核验，docs/receipts/ebay-browse-2026-10-23.md），
+ *   只有显式 `scope.mode === 'batch'` 时才用
  * 应用令牌（client credentials）在进程内缓存到过期前 5 分钟。
  */
 const API = EBAY_API
@@ -114,44 +116,32 @@ export function createEbayBrowseConnector(): SourceConnector {
       if (!ctx.secret('EBAY_CLIENT_ID') || !ctx.secret('EBAY_CLIENT_SECRET'))
         return { sourceId: 'ebay-browse', checkedAt, credentials: 'missing', checks: [] }
       try {
-        // 核验：搜索一个常见词取 3 个商品，再批量查询详情，检查已售量字段
+        // 核验：搜索一个常见词取 1 个商品，再查单个详情，检查可售量与已售量字段（不调用需额外授权的 getItems）
         const task: FetchTask = { kind: 'product-snapshot', marketplace: 'ebay-us', scope: {} }
         const search = parseJson<{ itemSummaries?: ItemSummary[] }>(
-          (await get(ctx, task, '/buy/browse/v1/item_summary/search?q=phone%20case&limit=3')).body,
+          (await get(ctx, task, '/buy/browse/v1/item_summary/search?q=phone%20case&limit=1')).body,
         )
-        const ids = (search.itemSummaries ?? []).map((s) => s.itemId).filter(Boolean) as string[]
-        const items =
-          parseJson<{ items?: Item[] }>(
-            (
-              await get(
-                ctx,
-                task,
-                `/buy/browse/v1/item/?item_ids=${ids.map(encodeURIComponent).join(',')}`,
-              )
-            ).body,
-          ).items ?? []
-        const single = ids[0]
+        const id = (search.itemSummaries ?? []).map((s) => s.itemId).find(Boolean)
+        const single = id
           ? parseJson<Item>(
-              (await get(ctx, task, `/buy/browse/v1/item/${encodeURIComponent(ids[0])}`)).body,
+              (await get(ctx, task, `/buy/browse/v1/item/${encodeURIComponent(id)}`)).body,
             )
           : undefined
-        const has = (list: Item[], field: 'estimatedSoldQuantity' | 'estimatedAvailableQuantity') =>
-          list.some((i) => i.estimatedAvailabilities?.some((a) => a[field] !== undefined))
+        const has = (
+          item: Item | undefined,
+          field: 'estimatedSoldQuantity' | 'estimatedAvailableQuantity',
+        ) => item?.estimatedAvailabilities?.some((a) => a[field] !== undefined) ?? false
         return {
           sourceId: 'ebay-browse',
           checkedAt,
           credentials: 'valid',
           checks: [
-            { name: 'search', ok: ids.length > 0 },
+            { name: 'search', ok: id !== undefined },
             {
-              name: 'getItems.estimatedAvailableQuantity',
-              ok: has(items, 'estimatedAvailableQuantity'),
+              name: 'getItem.estimatedAvailableQuantity',
+              ok: has(single, 'estimatedAvailableQuantity'),
             },
-            { name: 'getItems.estimatedSoldQuantity', ok: has(items, 'estimatedSoldQuantity') },
-            {
-              name: 'getItem.estimatedSoldQuantity',
-              ok: single ? has([single], 'estimatedSoldQuantity') : false,
-            },
+            { name: 'getItem.estimatedSoldQuantity', ok: has(single, 'estimatedSoldQuantity') },
           ],
         }
       } catch (error) {
@@ -170,7 +160,7 @@ export function createEbayBrowseConnector(): SourceConnector {
       if (task.kind === 'taxonomy') return 2
       if (task.kind === 'product-snapshot') {
         const ids = idsOf(task)
-        return task.scope.mode === 'single' ? ids.length : Math.ceil(ids.length / BATCH)
+        return task.scope.mode === 'batch' ? Math.ceil(ids.length / BATCH) : ids.length
       }
       return 1
     },
@@ -193,7 +183,7 @@ export function createEbayBrowseConnector(): SourceConnector {
       if (task.kind === 'product-snapshot') {
         const ids = idsOf(task)
         if (ids.length === 0) throw new ConnectorError('permanent', 'EBAY_IDS_REQUIRED')
-        if (task.scope.mode === 'single') {
+        if (task.scope.mode !== 'batch') {
           const payloads: RawPayload[] = []
           for (const id of ids)
             payloads.push(await get(ctx, task, `/buy/browse/v1/item/${encodeURIComponent(id)}`))

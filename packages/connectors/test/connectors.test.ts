@@ -128,18 +128,41 @@ describe('eBay Browse（文档样例）', () => {
     expect(dailySalesFromTotals(126, 120)).toBeNull()
   })
 
-  it('getItems 按 20 个一批计费；单个查询模式按个数', () => {
+  it('默认逐个 getItem 按个数计费；显式 batch 模式按 20 个一批', () => {
     const ebay = createEbayBrowseConnector()
     const ids = Array.from({ length: 41 }, (_, i) => String(i))
-    expect(ebay.plan({ kind: 'product-snapshot', marketplace: 'ebay-us', scope: { ids } })).toBe(3)
+    expect(ebay.plan({ kind: 'product-snapshot', marketplace: 'ebay-us', scope: { ids } })).toBe(41)
     expect(
       ebay.plan({
         kind: 'product-snapshot',
         marketplace: 'ebay-us',
-        scope: { ids, mode: 'single' },
+        scope: { ids, mode: 'batch' },
       }),
-    ).toBe(41)
+    ).toBe(3)
     expect(ebay.budget).toMatchObject({ hardCap: 5000, safetyLine: 4500 })
+  })
+
+  it('快照默认逐个调用 getItem，不调用需额外授权的 getItems', async () => {
+    const urls: string[] = []
+    const item = { itemId: 'v1|1|0', estimatedAvailabilities: [{ estimatedSoldQuantity: 3 }] }
+    await createEbayBrowseConnector().fetch(
+      { kind: 'product-snapshot', marketplace: 'ebay-us', scope: { ids: ['v1|1|0', 'v1|2|0'] } },
+      {
+        fetch: (async (url: string) => {
+          urls.push(url)
+          if (url.includes('/oauth2/token'))
+            return new Response(JSON.stringify({ access_token: 't', expires_in: 7200 }))
+          return new Response(JSON.stringify(item))
+        }) as unknown as typeof fetch,
+        secret: (n) => ({ EBAY_CLIENT_ID: 'id', EBAY_CLIENT_SECRET: 'sec' })[n],
+        now: () => new Date(),
+      },
+    )
+    const api = urls.filter((u) => u.includes('/buy/browse/'))
+    expect(api).toEqual([
+      'https://api.ebay.com/buy/browse/v1/item/v1%7C1%7C0',
+      'https://api.ebay.com/buy/browse/v1/item/v1%7C2%7C0',
+    ])
   })
 
   it('未配置凭据时核验报告“未配置”，不发请求', async () => {
