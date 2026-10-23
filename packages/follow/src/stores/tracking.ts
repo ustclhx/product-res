@@ -303,6 +303,19 @@ async function leadProducts(db: Database, workspaceId: string, day: string) {
   return out
 }
 
+/** 商品所属平台：marketplace 形如 ebay-us / amazon-us，前缀即平台 */
+async function productPlatforms(db: Database, ids: readonly string[]) {
+  const out = new Map<string, string>()
+  const unique = [...new Set(ids)]
+  if (unique.length === 0) return out
+  const rows = await db
+    .select({ id: marketplaceProduct.id, marketplace: marketplaceProduct.marketplace })
+    .from(marketplaceProduct)
+    .where(inArray(marketplaceProduct.id, unique))
+  for (const r of rows) out.set(r.id, r.marketplace.split('-')[0] ?? '')
+  return out
+}
+
 async function evaluateWorkspace(
   db: Database,
   workspaceId: string,
@@ -347,51 +360,61 @@ async function evaluateWorkspace(
     }
   }
 
-  // 2. 加入追踪：店铺新品（含待确认的 Amazon 新品）店铺内新到旧、店铺间轮询并先给每店保底，
-  //    其次线索商品；总数不超过上限（规则见 rules.ts orderEnrollment）
+  // 2. 加入追踪：按平台分别计上限（eBay 免费、Amazon 付费，见 rules.ts STORE_TRACKING_DEFAULTS）。
+  //    每个平台内：店铺新品（含待确认的 Amazon 新品）店铺内新到旧、店铺间轮询并先给每店保底，
+  //    其次线索商品（规则见 rules.ts orderEnrollment）
   const tracked = await listTrackedProducts(db, workspaceId)
   const trackedIds = new Set(tracked.map((t) => t.productId))
   const fromLeads = await leadProducts(db, workspaceId, day)
-  let room = Math.max(0, settings.productCap - trackedIds.size)
-  const candidates = orderEnrollment({
-    stores: storeViews.map(({ store, views }) => ({
-      storeId: store.id,
-      items: views
-        .filter((v) => v.isNew !== false && !v.listing.delistedOn)
-        .map((v) => ({
-          productId: v.productId,
-          firstSeenOn: v.listing.firstSeenOn,
-          listedOn: v.listedOn,
-        })),
-    })),
-    leads: [...fromLeads.keys()],
-    tracked: trackedIds,
-    room,
-  })
+  const platformOf = await productPlatforms(db, [...trackedIds, ...fromLeads.keys()])
   let enrolled = 0
   let overCap = 0
-  for (const c of candidates) {
-    if (trackedIds.has(c.productId)) continue
-    if (room <= 0) {
-      overCap++
-      continue
-    }
-    const hot = signaled.has(c.productId) || c.origin === 'lead'
-    const { created } = await trackProduct(db, workspaceId, {
-      productId: c.productId,
-      origin: c.origin,
-      originRef: c.originRef,
-      tier: hot ? 'hot' : 'normal',
-      reason: hot ? (c.origin === 'lead' ? 'new-lead' : 'sale-signal') : `added:${c.origin}`,
+  for (const platform of ['ebay', 'amazon'] as const) {
+    const cap = platform === 'ebay' ? settings.productCapEbay : settings.productCapAmazon
+    const inPlatform = tracked.filter((t) => platformOf.get(t.productId) === platform).length
+    let room = Math.max(0, cap - inPlatform)
+    const candidates = orderEnrollment({
+      stores: storeViews
+        .filter(({ store }) => store.platform === platform)
+        .map(({ store, views }) => ({
+          storeId: store.id,
+          items: views
+            .filter((v) => v.isNew !== false && !v.listing.delistedOn)
+            .map((v) => ({
+              productId: v.productId,
+              firstSeenOn: v.listing.firstSeenOn,
+              listedOn: v.listedOn,
+            })),
+        })),
+      leads: [...fromLeads.keys()].filter((id) => platformOf.get(id) === platform),
+      tracked: trackedIds,
+      room,
     })
-    trackedIds.add(c.productId)
-    if (created) {
-      enrolled++
-      room--
+    let platformOver = 0
+    for (const c of candidates) {
+      if (trackedIds.has(c.productId)) continue
+      if (room <= 0) {
+        platformOver++
+        continue
+      }
+      const hot = signaled.has(c.productId) || c.origin === 'lead'
+      const { created } = await trackProduct(db, workspaceId, {
+        productId: c.productId,
+        origin: c.origin,
+        originRef: c.originRef,
+        tier: hot ? 'hot' : 'normal',
+        reason: hot ? (c.origin === 'lead' ? 'new-lead' : 'sale-signal') : `added:${c.origin}`,
+      })
+      trackedIds.add(c.productId)
+      if (created) {
+        enrolled++
+        room--
+      }
     }
+    if (platformOver > 0)
+      log.info('stores.tracking_cap_reached', { workspaceId, platform, overCap: platformOver, cap })
+    overCap += platformOver
   }
-  if (overCap > 0)
-    log.info('stores.tracking_cap_reached', { workspaceId, overCap, cap: settings.productCap })
 
   // 3. 升降档
   const rows = await listTrackedProducts(db, workspaceId)
