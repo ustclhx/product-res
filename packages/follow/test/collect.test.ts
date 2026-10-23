@@ -124,9 +124,10 @@ describe('采集计划（纯函数）', () => {
       ],
       keywords: [],
     }
-    // 3 次卖家扫描 + 2 批线索快照 + 5 批其他快照 = 10 次；只剩 6 次额度
-    const plan = planCollections(many, allSources(6), { keywords: false })
-    expect(plan.tasks.reduce((n, t) => n + t.cost, 0)).toBeLessThanOrEqual(6)
+    // eBay 快照逐个 getItem 计费（每批 20 个 = 20 次）：
+    // 3 次卖家扫描 + 2 批线索快照（40 次）+ 5 批其他快照（100 次）；只剩 63 次额度
+    const plan = planCollections(many, allSources(63), { keywords: false })
+    expect(plan.tasks.reduce((n, t) => n + t.cost, 0)).toBeLessThanOrEqual(63)
     expect(plan.tasks.map((t) => t.priority)).toEqual([0, 0, 0, 1, 1, 2])
     expect(plan.truncated).toEqual({ 'ebay-browse': 4 })
     // 额度为 0（已到安全线）：一个都不投递
