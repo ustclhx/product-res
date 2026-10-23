@@ -14,6 +14,7 @@ import {
 } from './store-tracking.functions.ts'
 import type { StoreRowView } from './store-tracking.server.ts'
 import {
+  DisabledSourceNotice,
   formatPercent,
   formatTime,
   kindLabel,
@@ -93,11 +94,13 @@ function AddStoreForm({
       {parsed ? (
         parsed.ok ? (
           <p className="text-xs text-success-strong" data-testid="store-link-parsed">
-            {m.store_tracking_parsed({
-              platform: platformLabel(parsed.platform),
-              marketplace: marketplaceLabel(parsed.marketplace),
-              sellerKey: parsed.sellerKey,
-            })}
+            {parsed.form === 'ebay-store'
+              ? m.store_tracking_parsed_store_name({ storeName: parsed.sellerKey })
+              : m.store_tracking_parsed({
+                  platform: platformLabel(parsed.platform),
+                  marketplace: marketplaceLabel(parsed.marketplace),
+                  sellerKey: parsed.sellerKey,
+                })}
           </p>
         ) : (
           <p role="alert" className="text-xs text-destructive" data-testid="store-link-error">
@@ -226,6 +229,7 @@ export function StoresPage({ slug, initial }: { slug: string; initial: StoresDat
   // 路由返回缓存数据后会在后台重新加载：加载结果更新时同步到页面
   useEffect(() => setData(initial), [initial])
   const [roundNote, setRoundNote] = useState('')
+  const [roundDisabled, setRoundDisabled] = useState<StoresData['disabledSources']>([])
   const reload = async () => setData(await getStoresPage({ data: { slug } }))
   const action = useAction(reload)
   const round = useAction(async () => {})
@@ -245,11 +249,14 @@ export function StoresPage({ slug, initial }: { slug: string; initial: StoresDat
 
   async function triggerRound() {
     setRoundNote('')
+    setRoundDisabled([])
     await round.run(async () => {
       const result = await runStoreRound({ data: { slug } })
-      setRoundNote(
-        result.queued ? m.store_tracking_round_queued() : m.store_tracking_round_already(),
-      )
+      if (result.queued) setRoundNote(m.store_tracking_round_queued())
+      else if (result.reason === 'sources-disabled') {
+        setRoundNote(m.store_tracking_round_sources_disabled())
+        setRoundDisabled(result.disabledSources)
+      } else setRoundNote(m.store_tracking_round_already())
     })
   }
 
@@ -286,6 +293,10 @@ export function StoresPage({ slug, initial }: { slug: string; initial: StoresDat
         ) : null}
       </div>
 
+      <DisabledSourceNotice
+        slug={slug}
+        sources={roundDisabled.length > 0 ? roundDisabled : data.disabledSources}
+      />
       {hasEbay && ebayMissing ? (
         <p className="rounded-md bg-warning-soft px-3 py-2 text-xs text-warning-strong" role="note">
           {m.store_tracking_ebay_not_configured()}

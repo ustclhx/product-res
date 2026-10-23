@@ -103,5 +103,10 @@
   "store_tracking_reason_bought_up": "7 天内 bought 区间上升",
   "store_tracking_reason_sold_up": "7 天内已售增加",
   "store_tracking_reason_stale": "30 天无变化",
-  "store_tracking_reason_added": "加入追踪"
+  "store_tracking_reason_added": "加入追踪",
+  "store_tracking_source_disabled_notice": "数据源 {source} 已停用，{platform} 店铺不会采集。",
+  "store_tracking_source_disabled_cross": "数据源 {source} 已停用，Amazon 热点商品不会做交叉验证采集。",
+  "store_tracking_source_disabled_link": "前往数据中心启用",
+  "store_tracking_round_sources_disabled": "店铺所需的数据源已全部停用，本轮不会采集，未加入队列。",
+  "store_tracking_parsed_store_name": "已识别 eBay 店铺 {storeName}；加入时会从店铺页确认卖家用户名，无法确认时请改贴 ebay.com/usr/<用户名> 链接。"
 }

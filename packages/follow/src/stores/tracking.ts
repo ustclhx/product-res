@@ -29,6 +29,7 @@ import {
   type DayValue,
   decideTier,
   lastChangeOn,
+  orderEnrollment,
   roseWithin,
   type SaleSignal,
   STORE_TRACKING_DEFAULTS,
@@ -346,18 +347,27 @@ async function evaluateWorkspace(
     }
   }
 
-  // 2. 加入追踪：店铺新品（含待确认的 Amazon 新品）优先，其次线索商品；总数不超过上限
+  // 2. 加入追踪：店铺新品（含待确认的 Amazon 新品）店铺内新到旧、店铺间轮询并先给每店保底，
+  //    其次线索商品；总数不超过上限（规则见 rules.ts orderEnrollment）
   const tracked = await listTrackedProducts(db, workspaceId)
   const trackedIds = new Set(tracked.map((t) => t.productId))
   const fromLeads = await leadProducts(db, workspaceId, day)
-  const candidates: { productId: string; origin: 'store' | 'lead'; originRef: string | null }[] = []
-  for (const { store, views } of storeViews)
-    for (const v of views)
-      if (v.isNew !== false && !v.listing.delistedOn)
-        candidates.push({ productId: v.productId, origin: 'store', originRef: store.id })
-  for (const productId of fromLeads.keys())
-    candidates.push({ productId, origin: 'lead', originRef: null })
   let room = Math.max(0, settings.productCap - trackedIds.size)
+  const candidates = orderEnrollment({
+    stores: storeViews.map(({ store, views }) => ({
+      storeId: store.id,
+      items: views
+        .filter((v) => v.isNew !== false && !v.listing.delistedOn)
+        .map((v) => ({
+          productId: v.productId,
+          firstSeenOn: v.listing.firstSeenOn,
+          listedOn: v.listedOn,
+        })),
+    })),
+    leads: [...fromLeads.keys()],
+    tracked: trackedIds,
+    room,
+  })
   let enrolled = 0
   let overCap = 0
   for (const c of candidates) {

@@ -114,7 +114,11 @@ function SourceCard({
   }
   const unit = UNIT_LABEL[source.budget.unit] ?? source.budget.unit
   return (
-    <article className="grid gap-3 rounded-lg border p-4" data-testid={`source-${source.id}`}>
+    <article
+      id={`source-${source.id}`}
+      className="grid scroll-mt-4 gap-3 rounded-lg border p-4"
+      data-testid={`source-${source.id}`}
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="grid gap-0.5">
           <h3 className="font-medium">{source.label}</h3>

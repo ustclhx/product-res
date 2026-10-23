@@ -9,6 +9,7 @@ import { ErrorText, useAction } from '../workbench/fields.tsx'
 import { getStoreDetail, updateTrackedStore } from './store-tracking.functions.ts'
 import type { ListingItem } from './store-tracking.server.ts'
 import {
+  DisabledSourceNotice,
   formatPercent,
   formatTime,
   StoreBadges,
@@ -187,6 +188,8 @@ export function StoreDetailPage({ slug, initial }: { slug: string; initial: Stor
           {m.store_tracking_col_last_sync()}: {formatTime(store.lastSyncAt)}
         </p>
       </div>
+
+      <DisabledSourceNotice slug={slug} sources={data.disabledSources} />
 
       <Section title={m.store_tracking_coverage_title()}>
         <div className="grid gap-1 text-[13px]" data-testid="store-coverage">

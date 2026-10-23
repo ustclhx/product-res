@@ -124,3 +124,26 @@
 - **Amazon 覆盖率：** 只靠关键词发现 Amazon 店铺新品，覆盖率有限，页面会如实标注。跑通后据此决定是否接入 Keepa。
 - **上游变化：** DataForSEO 和 SerpApi 的页面抓取字段可能随 Amazon 改版而变化。人工抽检与"关键字段缺失率"质量检查用于及时发现。
 - **费用：** 测试规模约 $27/月，AIsa 额度 $50/月。账本的硬上限按 $45/月配置，留出人工刷新的余量。
+
+## 实测修正（2026-10-23）
+
+首轮真实测试（10 个 eBay 店铺）后的修正，归入本 change，tasks.md 不新增编号。
+
+- **PAYMENT_MODE 透传：** 自托管 `deploy/selfhost/compose.yaml` 的 x-app-env 原先没有 `PAYMENT_MODE`，billing 开启时 jobs 的 `jobs-ten-minute-maintenance-v1` 每次报 `billing.runtime_invalid missing=["PAYMENT_MODE"]`。
+  - compose 以 `${PAYMENT_MODE:-}` 透传，`.env.example` 说明取值；本项目支付渠道为空，生产设 `PAYMENT_MODE=test`。
+  - Node 配置加载（`packages/config/src/node.ts`）把 `PAYMENT_MODE` 加入 blankAsUnset：Compose 传入的空串按“未设置”处理，交给 `resolvePaymentMode` 报 missing，而不是 invalid。
+  - 不改变“线上未显式设置不默认 test”的规则：只有 `SENTRY_ENVIRONMENT=development` 才默认 test。
+- **追踪名额的公平分配（`orderEnrollment`，rules.ts）：** 原实现按店铺顺序拼接候选，一轮发现 997 个新品时 100 个名额被头两个店铺占满。现在：
+  1. 店铺内按首次发现日、上架日新到旧排序（上架日未知排后）；
+  2. 店铺之间轮询，先给每个有候选的店铺保底 `floor(剩余名额 / 有候选的店铺数)`，候选不足保底的店铺按实际数量；
+  3. 线索商品（origin lead）排在保底之后；
+  4. 剩余名额继续店铺轮询。
+  - 保底按本轮剩余名额而不是总上限计算：已追踪商品不按店铺回收，用总上限会让保底超过可用名额。剩余名额少于店铺数时保底为 0，线索商品先加入，店铺按顺序各取一个。
+- **eBay `/str/` 链接解析为卖家用户名：** 10 个店铺中 7 个的店铺名与用户名不同（如 `/str/watchgenies` → `dexclusive-fashion`），而 Browse 的 `sellers:{}` 过滤只认用户名。
+  - 添加店铺时，`/str/<店铺名>` 由 web 注入的解析器（`@product-res/connectors` 的 `resolveEbayStoreUsername`）抓取店铺页，从 SSR 数据中取唯一的 `"username":"..."`。
+  - 只请求 `https://www.ebay.com/str/<店铺名>`，浏览器 UA，超时 8 秒、响应上限 4 MiB；`redirect: manual`，只跟随同站 `/str/` 跳转（最多 2 次），验证码页与站外跳转一律视为失败。
+  - 成功时保存为 `/usr/<用户名>`（sellerKey 为用户名），显示名默认保留店铺名；没找到、出现多个不同用户名、被拦截或不可达时返回 `STORE_USERNAME_UNRESOLVED`（422），提示用户改贴 `ebay.com/usr/<用户名>`，不猜测。
+  - 已入池的 `/str/` 店铺不自动迁移，由用户移除后改用 `/usr/` 链接重新添加。
+- **来源停用提示：** 数据中心停用店铺所需来源（eBay → ebay-browse；Amazon → dataforseo 发现、serpapi 交叉验证）后，店铺页只会显示“没有新品”。
+  - 列表页与详情页顶部显示醒目提示，并链接到数据中心对应来源卡片（`#source-<id>`）；
+  - “立即跑一轮”在追踪中店铺所需来源全部停用时不入队（不占本小时名额），返回 `sources-disabled` 并显示同样提示。

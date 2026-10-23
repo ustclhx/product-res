@@ -60,14 +60,47 @@ async function checkDirections(db: Database, workspaceId: string, ids: readonly 
   return unique
 }
 
-/** 粘贴链接加入店铺池；已移除的同一店铺重新启用并更新设置，追踪中的重复添加返回 409 */
-export async function addStore(db: Database, workspaceId: string, input: AddStoreInput) {
+/**
+ * eBay 店铺名 → 卖家用户名；返回 null 表示无法确认（由 web 注入 connectors 的店铺页解析）。
+ * follow 不直接发外部请求，调用方负责固定站点与超时。
+ */
+export type EbayStoreResolver = (storeName: string) => Promise<string | null>
+
+export const STORE_USERNAME_UNRESOLVED =
+  '无法从 eBay 店铺页确认卖家用户名，请改为粘贴 ebay.com/usr/<用户名> 链接'
+
+/**
+ * `/str/<店铺名>` 常与卖家用户名不同，而 Browse 只按用户名过滤（实测修正 2026-10-23）：
+ * 解析成功时改存 `/usr/<用户名>`、显示名默认保留店铺名；失败时拒绝添加，不猜测。
+ */
+async function resolveStoreLink(input: AddStoreInput, resolveEbayStore?: EbayStoreResolver) {
   const parsed = parseStoreLink(input.url)
   if (!parsed.ok)
     throw new AppError('STORE_LINK_UNRECOGNIZED', STORE_LINK_ERRORS[parsed.reason], {
       status: 400,
       details: { reason: parsed.reason },
     })
+  if (parsed.form !== 'ebay-store') return { parsed, storeName: null }
+  const username = resolveEbayStore ? await resolveEbayStore(parsed.sellerKey) : null
+  if (!username)
+    throw new AppError('STORE_USERNAME_UNRESOLVED', STORE_USERNAME_UNRESOLVED, {
+      status: 422,
+      details: { storeName: parsed.sellerKey },
+    })
+  const user = parseStoreLink(`https://www.ebay.com/usr/${encodeURIComponent(username)}`)
+  if (!user.ok)
+    throw new AppError('STORE_USERNAME_UNRESOLVED', STORE_USERNAME_UNRESOLVED, { status: 422 })
+  return { parsed: user, storeName: parsed.sellerKey }
+}
+
+/** 粘贴链接加入店铺池；已移除的同一店铺重新启用并更新设置，追踪中的重复添加返回 409 */
+export async function addStore(
+  db: Database,
+  workspaceId: string,
+  input: AddStoreInput,
+  options: { readonly resolveEbayStore?: EbayStoreResolver } = {},
+) {
+  const { parsed, storeName } = await resolveStoreLink(input, options.resolveEbayStore)
   const directionIds = await checkDirections(db, workspaceId, input.directionIds ?? [])
   const keywords = cleanKeywords(input.keywords)
   const s = scoped(db, workspaceId)
@@ -75,7 +108,7 @@ export async function addStore(db: Database, workspaceId: string, input: AddStor
     kind: input.kind,
     directionIds,
     keywords,
-    displayName: text(input.displayName) ?? parsed.sellerKey,
+    displayName: text(input.displayName) ?? storeName ?? parsed.sellerKey,
     reason: text(input.reason),
     url: parsed.url,
   }

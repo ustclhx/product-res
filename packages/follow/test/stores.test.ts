@@ -138,6 +138,43 @@ describe.skipIf(!url)('店铺追踪', () => {
     ])
   })
 
+  it('/str/ 链接：解析出卖家用户名后按 /usr/ 保存，显示名保留店铺名；解析失败不建记录', async () => {
+    const storeName = `watch${tag.toLowerCase()}`
+    const username = `seller-${tag.toLowerCase()}`
+    await expect(
+      addStore(db, other, { url: `https://www.ebay.com/str/${storeName}`, kind: 'watch' }),
+    ).rejects.toMatchObject({ code: 'STORE_USERNAME_UNRESOLVED', status: 422 })
+    await expect(
+      addStore(
+        db,
+        other,
+        { url: `https://www.ebay.com/str/${storeName}`, kind: 'watch' },
+        { resolveEbayStore: async () => null },
+      ),
+    ).rejects.toMatchObject({ code: 'STORE_USERNAME_UNRESOLVED' })
+    expect(await listStores(db, other)).toEqual([])
+    const asked: string[] = []
+    const { store } = await addStore(
+      db,
+      other,
+      { url: `ebay.com/str/${storeName}`, kind: 'watch' },
+      {
+        resolveEbayStore: async (name) => {
+          asked.push(name)
+          return username
+        },
+      },
+    )
+    expect(asked).toEqual([storeName])
+    expect(store).toMatchObject({
+      platform: 'ebay',
+      sellerKey: username,
+      displayName: storeName,
+      url: `https://www.ebay.com/usr/${username}`,
+    })
+    await setStoreStatus(db, other, store.id, 'removed')
+  })
+
   it('移除后保留记录，再次添加重新启用', async () => {
     const { store } = await addStore(db, ws, {
       url: `https://www.ebay.com/usr/${ebaySeller}`,

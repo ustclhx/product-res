@@ -103,5 +103,10 @@
   "store_tracking_reason_bought_up": "Bought interval rose within 7 days",
   "store_tracking_reason_sold_up": "Sold count rose within 7 days",
   "store_tracking_reason_stale": "No change for 30 days",
-  "store_tracking_reason_added": "Added to tracking"
+  "store_tracking_reason_added": "Added to tracking",
+  "store_tracking_source_disabled_notice": "Data source {source} is disabled, so {platform} stores will not be collected.",
+  "store_tracking_source_disabled_cross": "Data source {source} is disabled, so hot Amazon products will not be cross-checked.",
+  "store_tracking_source_disabled_link": "Enable it in the Data center",
+  "store_tracking_round_sources_disabled": "Every data source these stores need is disabled, so this round would collect nothing and was not queued.",
+  "store_tracking_parsed_store_name": "Recognized eBay store {storeName}. Its seller username is confirmed from the store page when you add it; if that fails, paste an ebay.com/usr/<username> link instead."
 }

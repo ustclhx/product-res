@@ -1,14 +1,23 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
+import { m } from '../../paraglide/messages.js'
 import { type StoreDetailData, StoreDetailPage } from './store-detail-page.tsx'
 import type { StoreRowView } from './store-tracking.server.ts'
 import { type StoresData, StoresPage } from './stores-page.tsx'
 
 // 页面里的 Link 只需渲染为普通链接
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to, params }: { children: unknown; to: string; params?: object }) => (
-    <a href={`${to}#${JSON.stringify(params ?? {})}`}>{children as never}</a>
-  ),
+  Link: ({
+    children,
+    to,
+    params,
+    hash,
+  }: {
+    children: unknown
+    to: string
+    params?: object
+    hash?: string
+  }) => <a href={`${to}#${hash ?? JSON.stringify(params ?? {})}`}>{children as never}</a>,
 }))
 
 const amazon: StoreRowView = {
@@ -53,6 +62,7 @@ const list: StoresData = {
   removedCount: 1,
   directions: [],
   sources: { dataforseo: 'ok', 'ebay-browse': 'not-configured', serpapi: 'not-configured' },
+  disabledSources: [],
   canWrite: true,
   roundAvailable: true,
 }
@@ -82,6 +92,32 @@ describe('店铺追踪列表', () => {
     expect(html).not.toContain('加入店铺池')
     expect(html).not.toContain('立即跑一轮')
     expect(html).toContain('你可以查看店铺池')
+  })
+
+  it('所需数据源停用时页面顶部醒目提示并链接到数据中心对应来源', () => {
+    const html = renderToStaticMarkup(
+      <StoresPage
+        slug="s"
+        initial={{
+          ...list,
+          disabledSources: [
+            { id: 'ebay-browse', label: 'eBay Browse', platform: 'ebay', role: 'discovery' },
+            { id: 'serpapi', label: 'SerpApi', platform: 'amazon', role: 'cross' },
+          ],
+        }}
+      />,
+    )
+    expect(html).toContain('数据源 eBay Browse 已停用，eBay 店铺不会采集。')
+    expect(html).toContain('数据源 SerpApi 已停用，Amazon 热点商品不会做交叉验证采集。')
+    expect(html).toContain('href="/app/$slug/data#source-ebay-browse"')
+    expect(html).toContain('href="/app/$slug/data#source-serpapi"')
+    expect(html).toContain('data-testid="store-source-disabled"')
+  })
+
+  it('/str/ 链接的解析预览说明会确认卖家用户名', () => {
+    expect(m.store_tracking_parsed_store_name({ storeName: 'watchgenies' })).toContain(
+      'ebay.com/usr/<用户名>',
+    )
   })
 
   it('空店铺池', () => {
@@ -139,6 +175,7 @@ const detail: StoreDetailData = {
   },
   coverage: { method: 'search-offer', found30d: 2 },
   directions: [],
+  disabledSources: [],
   canWrite: false,
 }
 
@@ -183,5 +220,21 @@ describe('店铺详情', () => {
     expect(html).toContain('eBay Browse 官方接口')
     expect(html).toContain('eBay 来源未配置')
     expect(html).toContain('还没有发现该店铺的商品')
+  })
+
+  it('详情页：店铺所需来源停用时顶部提示', () => {
+    const html = renderToStaticMarkup(
+      <StoreDetailPage
+        slug="s"
+        initial={{
+          ...detail,
+          disabledSources: [
+            { id: 'dataforseo', label: 'DataForSEO', platform: 'amazon', role: 'discovery' },
+          ],
+        }}
+      />,
+    )
+    expect(html).toContain('数据源 DataForSEO 已停用，Amazon 店铺不会采集。')
+    expect(html).toContain('前往数据中心启用')
   })
 })

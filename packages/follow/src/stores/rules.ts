@@ -274,3 +274,76 @@ export function computeStoreMetrics(
     sample,
   }
 }
+
+export interface EnrollStoreItem {
+  readonly productId: string
+  /** 首次发现日 */
+  readonly firstSeenOn: string
+  /** 上架日；未知为 null */
+  readonly listedOn: string | null
+}
+
+export interface EnrollCandidate {
+  readonly productId: string
+  readonly origin: 'store' | 'lead'
+  /** 店铺新品为店铺 id，线索商品为 null */
+  readonly originRef: string | null
+}
+
+const newestFirst = (a: EnrollStoreItem, b: EnrollStoreItem) =>
+  b.firstSeenOn.localeCompare(a.firstSeenOn) ||
+  (b.listedOn ?? '').localeCompare(a.listedOn ?? '') ||
+  a.productId.localeCompare(b.productId)
+
+/**
+ * 加入追踪的公平顺序（design「实测修正 2026-10-23」）。按店铺原顺序拼接时，
+ * 一轮发现上千新品的头部店铺会占满名额，因此：
+ * 1. 每个店铺内部按首次发现日、上架日新到旧排序；
+ * 2. 店铺之间轮询，先让每个有候选的店铺拿到保底 floor(room / 店铺数)；
+ * 3. 线索商品排在保底之后；
+ * 4. 剩余名额继续店铺轮询。
+ * 已追踪或重复的商品跳过；调用方按返回顺序加入，直到名额用完。
+ */
+export function orderEnrollment(input: {
+  readonly stores: readonly {
+    readonly storeId: string
+    readonly items: readonly EnrollStoreItem[]
+  }[]
+  readonly leads: readonly string[]
+  readonly tracked: ReadonlySet<string>
+  readonly room: number
+}): EnrollCandidate[] {
+  const seen = new Set(input.tracked)
+  const queues = input.stores
+    .map(({ storeId, items }) => {
+      const ids: string[] = []
+      for (const item of [...items].sort(newestFirst)) {
+        if (seen.has(item.productId)) continue
+        seen.add(item.productId)
+        ids.push(item.productId)
+      }
+      return { storeId, ids, next: 0 }
+    })
+    .filter((q) => q.ids.length > 0)
+  const out: EnrollCandidate[] = []
+  const roundRobin = (limit: number) => {
+    let progressed = true
+    while (progressed) {
+      progressed = false
+      for (const q of queues) {
+        if (q.next >= q.ids.length || q.next >= limit) continue
+        out.push({ productId: q.ids[q.next++] as string, origin: 'store', originRef: q.storeId })
+        progressed = true
+      }
+    }
+  }
+  const quota = queues.length === 0 ? 0 : Math.floor(Math.max(0, input.room) / queues.length)
+  roundRobin(quota)
+  for (const productId of input.leads) {
+    if (seen.has(productId)) continue
+    seen.add(productId)
+    out.push({ productId, origin: 'lead', originRef: null })
+  }
+  roundRobin(Number.POSITIVE_INFINITY)
+  return out
+}

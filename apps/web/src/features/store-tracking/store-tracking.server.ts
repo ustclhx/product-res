@@ -1,3 +1,4 @@
+import { resolveEbayStoreUsername } from '@product-res/connectors'
 import { direction, jobMessage, scoped, syncRun, type TrackedStore } from '@product-res/db'
 import {
   addStore,
@@ -27,6 +28,7 @@ import { credentialStatus, getSource, isPaused, listTrackedProducts } from '@pro
 import type { Capability, QueueProducer } from '@product-res/platform'
 import { addDays } from '@product-res/selection'
 import { AppError } from '@product-res/shared'
+import { log } from '@product-res/shared/log'
 import { and, eq, gte, inArray } from 'drizzle-orm'
 import { webConnectors, webSecrets } from '../data-center/registry.server.ts'
 import { assertWorkbenchWriter } from '../workbench/access.ts'
@@ -112,6 +114,51 @@ async function sourceStates(db: WorkbenchActor['db'], now: Date) {
 
 const sourceOf = (platform: string) =>
   platform === 'ebay' ? STORE_SOURCES.ebay : STORE_SOURCES.amazon
+
+/** 店铺所需数据源：eBay 只靠 Browse；Amazon 发现靠 DataForSEO，热点交叉验证靠 SerpApi */
+const REQUIRED_SOURCES: Readonly<Record<'ebay' | 'amazon', readonly string[]>> = {
+  ebay: [STORE_SOURCES.ebay],
+  amazon: [STORE_SOURCES.amazon, STORE_SOURCES.cross],
+}
+
+export interface DisabledSource {
+  id: string
+  label: string
+  platform: 'ebay' | 'amazon'
+  /** 发现来源停用即该平台店铺不再采集；交叉验证来源停用只影响热点 Amazon 商品 */
+  role: 'discovery' | 'cross'
+}
+
+/**
+ * 追踪中店铺所需、但在数据中心被停用的来源（实测修正 2026-10-23）。停用是人为操作，
+ * 店铺页面若不提示，用户只会看到“没有新品”。
+ */
+export function disabledSourcesFor(
+  platforms: Iterable<'ebay' | 'amazon'>,
+  sources: Record<string, SourceState>,
+): DisabledSource[] {
+  const registry = webConnectors()
+  const out: DisabledSource[] = []
+  for (const platform of new Set(platforms))
+    for (const id of REQUIRED_SOURCES[platform])
+      if (sources[id] === 'disabled')
+        out.push({
+          id,
+          label: registry.get(id)?.label ?? id,
+          platform,
+          role: id === STORE_SOURCES.cross ? 'cross' : 'discovery',
+        })
+  return out
+}
+
+/** 追踪中店铺所需的来源是否全部停用（此时手动一轮不会采集任何数据） */
+function allRequiredDisabled(
+  platforms: Iterable<'ebay' | 'amazon'>,
+  sources: Record<string, SourceState>,
+) {
+  const required = [...new Set([...platforms].flatMap((p) => REQUIRED_SOURCES[p]))]
+  return required.length > 0 && required.every((id) => sources[id] === 'disabled')
+}
 
 /** 最近一次发现任务的完成时间：eBay 卖家新品按卖家，Amazon 搜索按店铺搜索词 */
 async function lastSyncTimes(
@@ -290,6 +337,10 @@ export async function storesPage(actor: WorkbenchActor, now = new Date()) {
       marketplaces: d.marketplaces,
     })),
     sources,
+    disabledSources: disabledSourcesFor(
+      stores.filter((s) => s.status === 'active').map((s) => s.platform),
+      sources,
+    ),
   }
 }
 
@@ -332,7 +383,17 @@ export async function storeDetail(actor: WorkbenchActor, id: string, now = new D
       name: d.name,
       marketplaces: d.marketplaces,
     })),
+    disabledSources:
+      store.status === 'removed' ? [] : disabledSourcesFor([store.platform], sources),
   }
+}
+
+/** 店铺页解析失败只记录原因，不把页面内容写进日志 */
+async function resolveEbayStore(storeName: string) {
+  const result = await resolveEbayStoreUsername(storeName)
+  if (result.ok) return result.username
+  log.warn('stores.ebay_store_unresolved', { reason: result.reason })
+  return null
 }
 
 /** 解析预览：页面粘贴链接后先看解析结果，不写库 */
@@ -346,7 +407,7 @@ export async function createTrackedStore(
   input: StoreSettingsInput & { url: string },
 ) {
   assertWorkbenchWriter(actor)
-  const { store } = await addStore(actor.db, actor.workspaceId, input)
+  const { store } = await addStore(actor.db, actor.workspaceId, input, { resolveEbayStore })
   return { id: store.id }
 }
 
@@ -388,7 +449,18 @@ export async function requestStoreRound(
     .from(jobMessage)
     .where(and(eq(jobMessage.queue, STORE_TRACKING_QUEUE), eq(jobMessage.idempotencyKey, key)))
     .limit(1)
-  if (existing) return { queued: false, reason: 'already-queued' as const }
+  if (existing) return { queued: false as const, reason: 'already-queued' as const }
+  // 所需来源全部停用时这一轮不会采集任何数据：不占用本小时的名额，直接提示去数据中心启用
+  const platforms = (await listStores(actor.db, actor.workspaceId))
+    .filter((s) => s.status === 'active')
+    .map((s) => s.platform)
+  const sources = await sourceStates(actor.db, now)
+  if (allRequiredDisabled(platforms, sources))
+    return {
+      queued: false as const,
+      reason: 'sources-disabled' as const,
+      disabledSources: disabledSourcesFor(platforms, sources),
+    }
   await queue.value.send({
     v: 1,
     type: 'store-tracking-round',
