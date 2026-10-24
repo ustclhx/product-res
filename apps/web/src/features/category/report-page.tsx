@@ -31,6 +31,7 @@ export type ReportData = Awaited<ReturnType<typeof getCategoryReport>>
 
 /** “分析中”时的轮询间隔 */
 const ANALYSIS_POLL_MS = 4000
+const REPORT_ROUTE_ID = '/app/$slug/category/$studyId'
 
 /** 品类洞察报告（对照 docs/design/workbench-overview.html「品牌选品 · 品类洞察」） */
 export function CategoryReportPage({ slug, data }: { slug: string; data: ReportData }) {
@@ -56,8 +57,10 @@ export function CategoryReportPage({ slug, data }: { slug: string; data: ReportD
     snapshot?.modules.suggestions.status === 'running'
   useEffect(() => {
     if (!analyzing) return
+    // 只让报告路由失效：父级 /app/$slug 的 beforeLoad 走客户端缓存，loader 只回传上下文，
+    // 每轮轮询只重取 getCategoryReport 一个请求
     const timer = setInterval(() => {
-      void router.invalidate()
+      void router.invalidate({ filter: (match) => match.routeId === REPORT_ROUTE_ID })
     }, ANALYSIS_POLL_MS)
     return () => clearInterval(timer)
   }, [analyzing, router])

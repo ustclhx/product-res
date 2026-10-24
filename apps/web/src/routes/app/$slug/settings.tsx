@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { requireActivatedPage } from '../../../features/workspace/activation.tsx'
 import { WorkspaceSettings } from '../../../features/workspace/components.tsx'
-import { getWorkspacePage } from '../../../features/workspace/workspace.functions.ts'
+import { loadWorkspacePage } from '../../../features/workspace/load-page.ts'
 
 export const Route = createFileRoute('/app/$slug/settings')({
+  // 成员、邀请与席位需要最新数据：总是重新获取，并顺带刷新布局缓存
   beforeLoad: async ({ params }) => ({
-    workspacePage: requireActivatedPage(await getWorkspacePage({ data: { slug: params.slug } })),
+    workspacePage: requireActivatedPage(await loadWorkspacePage(params.slug, { fresh: true })),
   }),
   loader: ({ context }) => context.workspacePage,
   staleTime: 0,

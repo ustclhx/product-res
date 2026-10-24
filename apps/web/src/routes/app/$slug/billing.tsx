@@ -13,6 +13,7 @@ import {
 } from '../../../features/billing/customer.functions.ts'
 import { getCustomerRefunds } from '../../../features/billing/refund.functions.ts'
 import { RefundSection } from '../../../features/billing/refund-section.tsx'
+import { clearWorkspacePageCache } from '../../../features/workspace/load-page.ts'
 import { m } from '../../../paraglide/messages.js'
 import { templateConfig } from '../../../server/template-config.ts'
 
@@ -86,6 +87,8 @@ function BillingPage() {
           ? 'Plan change scheduled for the end of your paid period.'
           : 'Subscription updated.',
       )
+      // 订阅变化会影响只读状态与席位，布局缓存一并失效
+      clearWorkspacePageCache()
       await router.invalidate()
     } catch {
       setMessage('Unable to update billing. Please try again.')
