@@ -103,12 +103,13 @@ async function seed(slug: string, key: string) {
         value: prices[i],
         currency: 'USD',
         method: 'official',
+        tier: 1,
         fetched_at: new Date(),
       })
     }
     // 汇率 USD/CNY 主值（手填优先于欧洲央行）
-    await sql`insert into observation (entity_type, entity_id, metric, observed_on, source_id, value, method, fetched_at)
-      values ('currency', ${derivedEntityId('currency:global:USD/CNY')}, 'fx_rate', ${day(-1)}, 'manual', 7.1, 'import', now())
+    await sql`insert into observation (entity_type, entity_id, metric, observed_on, source_id, value, method, tier, fetched_at)
+      values ('currency', ${derivedEntityId('currency:global:USD/CNY')}, 'fx_rate', ${day(-1)}, 'manual', 7.1, 'import', 2, now())
       on conflict do nothing`
 
     const clusterId = newId()

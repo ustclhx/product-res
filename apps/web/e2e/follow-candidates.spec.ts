@@ -112,6 +112,7 @@ async function seed(slug: string, key: string) {
           source_id: 'dataforseo',
           value: Math.round((trend[m - 1] ?? 0) * (year === 2026 ? 1.12 : 1)),
           method: 'official',
+          tier: 1,
           fetched_at: new Date(),
         })
       }
@@ -373,6 +374,7 @@ async function seed(slug: string, key: string) {
             value: Math.round((base + wave) * 100) / 100,
             currency: 'USD',
             method: amazon ? 'estimate' : 'official',
+            tier: amazon ? 3 : 1,
             fetched_at: new Date(Date.now() - d * 86_400_000),
           })
           if (amazon) {
@@ -385,6 +387,7 @@ async function seed(slug: string, key: string) {
                 source_id: 'keepa',
                 value: Math.round(12 + Math.abs(Math.sin(d / 5)) * 18 + d / 3),
                 method: 'estimate',
+                tier: 3,
                 fetched_at: new Date(Date.now() - d * 86_400_000),
               })
             if (d % 15 === 0)
@@ -396,6 +399,7 @@ async function seed(slug: string, key: string) {
                 source_id: 'jungle-scout',
                 value: Math.round((3240 - d * 9) / (i + 1)),
                 method: 'estimate',
+                tier: 3,
                 fetched_at: new Date(Date.now() - d * 86_400_000),
               })
           } else {
@@ -407,6 +411,7 @@ async function seed(slug: string, key: string) {
               source_id: 'ebay-browse',
               value: 1840 - Math.round(d * (14 + i * 4) + Math.sin(d) * 6),
               method: 'official',
+              tier: 1,
               fetched_at: new Date(Date.now() - d * 86_400_000),
             })
           }
@@ -422,6 +427,7 @@ async function seed(slug: string, key: string) {
           source_id: 'keepa',
           value: 2980,
           method: 'estimate',
+          tier: 3,
           fetched_at: new Date(Date.now() - 3 * 3_600_000),
         })
     }

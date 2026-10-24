@@ -31,9 +31,10 @@ async function seed(slug: string, suffix: string) {
       values (gen_random_uuid(), 'amazon-us', ${fx.keyword}) returning id`
     for (const o of fx.observations)
       await sql`insert into observation
-        (entity_type, entity_id, metric, observed_on, source_id, value, currency, method, fetched_at)
+        (entity_type, entity_id, metric, observed_on, source_id, value, currency, method, tier, fetched_at)
         values (${o.entityType}, ${o.platformId ? (ids.get(o.platformId) as string) : (kw?.id as string)},
-          ${o.metric}, ${o.observedOn}, ${o.sourceId}, ${o.value}, ${o.currency}, ${o.method}, now())`
+          ${o.metric}, ${o.observedOn}, ${o.sourceId}, ${o.value}, ${o.currency}, ${o.method},
+          ${{ official: 1, import: 2, estimate: 3, derived: 4 }[o.method]}, now())`
     for (const r of fx.reviews)
       await sql`insert into marketplace_review
         (id, product_id, review_id, rating, title, body, reviewed_on, source_id)
