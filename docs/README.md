@@ -17,6 +17,7 @@
 | [07-infrastructure.md](./07-infrastructure.md) | 自建 Postgres、Hyperdrive + Tunnel、备份、环境、部署、CI |
 | [08-roadmap.md](./08-roadmap.md) | 分阶段开发计划与验收标准、待决事项 |
 | [09-parallel-plan.md](./09-parallel-plan.md) | 用 Orca 并行开发：worktree 隔离、共享文件规则、并行波次与合并流程 |
+| [frontend-navigation.md](./frontend-navigation.md) | 前端导航延迟：工作空间页客户端缓存、悬停预加载与 TanStack Router 复用语义 |
 
 ## 本地配置入口
 
