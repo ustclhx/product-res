@@ -69,9 +69,9 @@ async function seedMarket(category: string, key: string) {
       sourceId = 'ebay-browse',
     ) => {
       await sql`insert into observation
-        (entity_type, entity_id, metric, observed_on, source_id, value, method, fetched_at)
+        (entity_type, entity_id, metric, observed_on, source_id, value, method, tier, fetched_at)
         values ('product', ${entityId}, ${metric}, ${day(offset)}::date, ${sourceId}, ${value},
-          'official', now() - (${-offset} || ' days')::interval - interval '2 hours')`
+          'official', 1, now() - (${-offset} || ' days')::interval - interval '2 hours')`
     }
     const a = ids[`spice-a-${key}`] as string
     const b = ids[`spice-b-${key}`] as string
