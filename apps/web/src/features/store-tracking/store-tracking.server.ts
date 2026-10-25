@@ -1,5 +1,13 @@
 import { resolveEbayStoreUsername } from '@product-res/connectors'
-import { direction, jobMessage, scoped, syncRun, type TrackedStore } from '@product-res/db'
+import {
+  direction,
+  jobMessage,
+  marketplaceProduct,
+  scoped,
+  syncRun,
+  type TrackedStore,
+  trackedProduct,
+} from '@product-res/db'
 import {
   addStore,
   getStore,
@@ -29,7 +37,7 @@ import type { Capability, QueueProducer } from '@product-res/platform'
 import { addDays } from '@product-res/selection'
 import { AppError } from '@product-res/shared'
 import { log } from '@product-res/shared/log'
-import { and, eq, gte, inArray } from 'drizzle-orm'
+import { and, desc, eq, gte, inArray } from 'drizzle-orm'
 import { webConnectors, webSecrets } from '../data-center/registry.server.ts'
 import { assertWorkbenchWriter } from '../workbench/access.ts'
 import type { WorkbenchActor } from '../workbench/actor.ts'
@@ -341,6 +349,65 @@ export async function storesPage(actor: WorkbenchActor, now = new Date()) {
       stores.filter((s) => s.status === 'active').map((s) => s.platform),
       sources,
     ),
+  }
+}
+
+/** 追踪商品列表的条数上限：用于选择复制 / 移动的根条目，按档位与最近变更排序 */
+export const TRACKED_PRODUCT_LIST_LIMIT = 300
+
+export interface TrackedProductRowView {
+  id: string
+  productId: string
+  title: string | null
+  marketplace: string | null
+  url: string | null
+  tier: string
+  origin: string
+  lastSnapshotOn: string | null
+}
+
+/**
+ * 被追踪商品（tracked_product）列表：数据流转开启时在店铺追踪页展示，供多选复制 / 移动
+ * （add-workspace-data-transfer tasks 6.2）。商品标题来自部署级 marketplace_product。
+ */
+export async function trackedProductList(actor: WorkbenchActor): Promise<{
+  rows: TrackedProductRowView[]
+  truncated: boolean
+}> {
+  const list = await scoped(actor.db, actor.workspaceId)
+    .select(trackedProduct)
+    .orderBy(desc(trackedProduct.tierChangedAt), desc(trackedProduct.id))
+    .limit(TRACKED_PRODUCT_LIST_LIMIT + 1)
+  const page = list.slice(0, TRACKED_PRODUCT_LIST_LIMIT)
+  const products = page.length
+    ? await actor.db
+        .select({
+          id: marketplaceProduct.id,
+          title: marketplaceProduct.title,
+          marketplace: marketplaceProduct.marketplace,
+          url: marketplaceProduct.url,
+        })
+        .from(marketplaceProduct)
+        .where(
+          inArray(
+            marketplaceProduct.id,
+            page.map((p) => p.productId),
+          ),
+        )
+    : []
+  const byId = new Map(products.map((p) => [p.id, p]))
+  return {
+    rows: page.map((p) => ({
+      id: p.id,
+      productId: p.productId,
+      title: byId.get(p.productId)?.title ?? null,
+      marketplace: byId.get(p.productId)?.marketplace ?? null,
+      url: byId.get(p.productId)?.url ?? null,
+      tier: p.tier,
+      origin: p.origin,
+      lastSnapshotOn: p.lastSnapshotOn,
+    })),
+    truncated: list.length > TRACKED_PRODUCT_LIST_LIMIT,
   }
 }
 

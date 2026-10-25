@@ -1,7 +1,14 @@
 import { Button, Input, Tag } from '@product-res/ui'
 import { Link } from '@tanstack/react-router'
 import { type FormEvent, type ReactNode, useState } from 'react'
+import { m } from '../../paraglide/messages.js'
 import { Section } from '../data-center/shared.tsx'
+import {
+  canTransfer,
+  SelectBox,
+  TransferBar,
+  useTransferSelection,
+} from '../transfer/transfer-actions.tsx'
 import {
   CheckboxGroup,
   controlClass,
@@ -42,6 +49,8 @@ export function DirectionsPage({ slug, initial }: { slug: string; initial: Direc
   const [data, setData] = useState(initial)
   const [editing, setEditing] = useState<DirectionRow | 'new' | null>(null)
   const reload = async () => setData(await getDirectionsPage({ data: { slug } }))
+  const selection = useTransferSelection(data.directions.map((d) => d.id))
+  const transferable = canTransfer(data.transfer)
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-end justify-between gap-2">
@@ -65,6 +74,14 @@ export function DirectionsPage({ slug, initial }: { slug: string; initial: Direc
         ) : null}
       </div>
       <ReadOnlyNotice show={!data.canWrite} />
+      {transferable ? (
+        <TransferBar
+          slug={slug}
+          root="direction"
+          availability={data.transfer}
+          selection={selection}
+        />
+      ) : null}
       {editing !== null ? (
         <DirectionForm
           slug={slug}
@@ -93,6 +110,8 @@ export function DirectionsPage({ slug, initial }: { slug: string; initial: Direc
           sellers={data.sellers.filter((s) => s.directionId === d.id)}
           trackedStores={data.trackedStores.filter((s) => s.directionIds.includes(d.id))}
           canWrite={data.canWrite}
+          selected={transferable ? selection.has(d.id) : undefined}
+          onSelect={(on) => selection.toggle(d.id, on)}
           onEdit={() => setEditing(d)}
           onChanged={reload}
         />
@@ -325,6 +344,8 @@ function DirectionCard({
   sellers,
   trackedStores,
   canWrite,
+  selected,
+  onSelect,
   onEdit,
   onChanged,
 }: {
@@ -334,6 +355,9 @@ function DirectionCard({
   sellers: SellerRow[]
   trackedStores: DirectionsData['trackedStores']
   canWrite: boolean
+  /** 数据流转多选：undefined 表示不可选 */
+  selected?: boolean | undefined
+  onSelect: (selected: boolean) => void
   onEdit: () => void
   onChanged: () => Promise<void>
 }) {
@@ -353,6 +377,13 @@ function DirectionCard({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="grid gap-1">
           <div className="flex flex-wrap items-center gap-2">
+            {selected !== undefined ? (
+              <SelectBox
+                checked={selected}
+                onChange={onSelect}
+                label={m.transfer_actions_select_item({ name: d.name })}
+              />
+            ) : null}
             <h2 className="text-sm font-semibold">{d.name}</h2>
             <Tag tone={d.enabled ? 'success' : 'neutral'}>{d.enabled ? '启用中' : '已停用'}</Tag>
           </div>

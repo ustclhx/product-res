@@ -65,6 +65,8 @@ const list: StoresData = {
   disabledSources: [],
   canWrite: true,
   roundAvailable: true,
+  trackedProducts: null,
+  transfer: { copy: false, move: false },
 }
 
 describe('店铺追踪列表', () => {

@@ -4,6 +4,7 @@ import {
   auditLog,
   createDb,
   direction,
+  member,
   organization,
   scoped,
   user,
@@ -12,15 +13,19 @@ import {
 import type { WorkspaceTransferWorkflowParams } from '@product-res/follow/transfer'
 import type { Workflow, WorkflowInstance } from '@product-res/platform'
 import { AppError, newId } from '@product-res/shared'
-import { and, eq } from 'drizzle-orm'
-import { describe, expect, it } from 'vitest'
+import { and, eq, inArray, or } from 'drizzle-orm'
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
   activeTransferBanner,
   cancelWorkspaceTransfer,
   retryWorkspaceTransfer,
+  selectiveTransferPreview,
+  startWorkspaceCopy,
+  startWorkspaceMove,
   startWorkspaceUpgrade,
   type TransferActor,
   type TransferDeps,
+  transferTargets,
   upgradePreview,
   workspaceTransferDetail,
   workspaceTransfers,
@@ -291,5 +296,217 @@ describe('数据流转服务端入口', () => {
       .set({ status: 'completed' })
       .where(eq(workspaceTransfer.id, started.transferId))
     expect(await activeTransferBanner(db(), actor.userId, mine)).toBeNull()
+  })
+
+  // 以下用例每个测试只开一个连接：db() 每次新建连接池，用例多时会耗尽共享 PG 的连接数
+  let conn: ReturnType<typeof db> | undefined
+  beforeEach(() => {
+    conn = undefined
+  })
+  const one = () => {
+    conn ??= db()
+    return conn
+  }
+  const sdeps = (workflow?: Workflow<WorkspaceTransferWorkflowParams>, overrides = {}) =>
+    ({ ...deps(workflow, overrides), db: one() }) as TransferDeps
+
+  /** 团队空间：成员按角色加入；返回空间 id */
+  async function team(name: string, members: { userId: string; role: string }[]) {
+    const id = newId()
+    await one()
+      .insert(organization)
+      .values({ id, name, slug: `tm-${id.slice(-12)}`, isPersonal: false })
+    for (const m of members)
+      await one()
+        .insert(member)
+        .values({ id: newId(), organizationId: id, userId: m.userId, role: m.role })
+    return id
+  }
+
+  async function plainUser(label: string) {
+    const id = newId()
+    await one()
+      .insert(user)
+      .values({ id, name: label, email: `${id}@transfer.test` })
+    await ensurePersonalWorkspace(one(), { id })
+    return id
+  }
+
+  const teamActor = (userId: string, ws: string, role: string): TransferActor => ({
+    userId,
+    sessionId: newId(),
+    workspace: { id: ws, isPersonal: false },
+    role,
+  })
+
+  const transfersOf = async (...ids: string[]) =>
+    one()
+      .select()
+      .from(workspaceTransfer)
+      .where(
+        or(
+          inArray(workspaceTransfer.sourceWorkspaceId, ids),
+          inArray(workspaceTransfer.targetWorkspaceId, ids),
+        ),
+      )
+
+  it('复制：同一幂等键只建一个流转并在事务内投递；member 403，admin 可复制团队数据但不能移出', async () => {
+    const owner = await plainUser('Owner')
+    const admin = await plainUser('Admin')
+    const viewer = await plainUser('Viewer')
+    const source = await team('Source', [
+      { userId: owner, role: 'owner' },
+      { userId: admin, role: 'admin' },
+      { userId: viewer, role: 'member' },
+    ])
+    const target = await team('Target', [
+      { userId: owner, role: 'owner' },
+      { userId: admin, role: 'admin' },
+      { userId: viewer, role: 'admin' },
+    ])
+    const [dir] = await scoped(one(), source).insert(direction, { name: '圣诞装饰' }).returning()
+    const selection = { roots: { direction: [dir?.id as string] } }
+    const { workflow, created } = fakeWorkflow()
+    const input = { targetWorkspaceId: target, selection, idempotencyKey: `c-${newId()}` }
+
+    await expect(
+      startWorkspaceCopy(sdeps(workflow), teamActor(viewer, source, 'member'), input),
+    ).rejects.toMatchObject({ code: 'TRANSFER_FORBIDDEN', status: 403 })
+    await expect(
+      startWorkspaceMove(sdeps(workflow), teamActor(admin, source, 'admin'), {
+        ...input,
+        idempotencyKey: `m-${newId()}`,
+      }),
+    ).rejects.toMatchObject({ code: 'TRANSFER_FORBIDDEN', status: 403 })
+    expect(await transfersOf(source)).toHaveLength(0)
+
+    const first = await startWorkspaceCopy(
+      sdeps(workflow),
+      teamActor(admin, source, 'admin'),
+      input,
+    )
+    const again = await startWorkspaceCopy(
+      sdeps(workflow),
+      teamActor(admin, source, 'admin'),
+      input,
+    )
+    expect(first).toMatchObject({
+      created: true,
+      sourceWorkspaceId: source,
+      targetWorkspaceId: target,
+    })
+    expect(again).toMatchObject({ transferId: first.transferId, created: false })
+    expect(created).toEqual([{ id: first.transferId, params: { transferId: first.transferId } }])
+    const rows = await transfersOf(source)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({ kind: 'copy', requestedBy: admin, selection })
+    // 源空间已有进行中的流转：再发起移动被拒绝
+    await expect(
+      startWorkspaceMove(sdeps(workflow), teamActor(owner, source, 'owner'), {
+        ...input,
+        idempotencyKey: `m-${newId()}`,
+      }),
+    ).rejects.toMatchObject({ code: 'TRANSFER_IN_PROGRESS' })
+    // 开关关闭：入口不存在
+    await expect(
+      startWorkspaceCopy(
+        sdeps(workflow, {
+          tenancy: { multiTenant: true, dataTransfer: false, maxWorkspacesPerUser: 5 },
+        }),
+        teamActor(admin, source, 'admin'),
+        { ...input, idempotencyKey: `off-${newId()}` },
+      ),
+    ).rejects.toMatchObject({ status: 404 })
+  })
+
+  it('复制 Workflow 不可用：整体回滚，不留下流转', async () => {
+    const owner = await plainUser('Owner')
+    const source = await team('Src', [{ userId: owner, role: 'owner' }])
+    const target = await team('Dst', [{ userId: owner, role: 'admin' }])
+    const [dir] = await scoped(one(), source).insert(direction, { name: '露营' }).returning()
+    await expect(
+      startWorkspaceCopy(
+        sdeps(fakeWorkflow({ fail: true }).workflow),
+        teamActor(owner, source, 'owner'),
+        {
+          targetWorkspaceId: target,
+          selection: { roots: { direction: [dir?.id as string] } },
+          idempotencyKey: `f-${newId()}`,
+        },
+      ),
+    ).rejects.toMatchObject({ code: 'WORKFLOW_UNAVAILABLE' })
+    expect(await transfersOf(source, target)).toHaveLength(0)
+  })
+
+  it('预览不落库：返回闭包行数与冲突，之后两边都没有流转记录', async () => {
+    const actor = await personal()
+    const target = await team('Team', [{ userId: actor.userId, role: 'admin' }])
+    await scoped(one(), target).insert(direction, { name: '万圣节装饰' })
+    const [dir] = await scoped(one(), actor.userId).select(direction)
+    const preview = await selectiveTransferPreview(sdeps(fakeWorkflow().workflow), actor, {
+      kind: 'copy',
+      targetWorkspaceId: target,
+      selection: { roots: { direction: [dir?.id as string] } },
+    })
+    expect(preview).toMatchObject({ kind: 'copy', roots: { direction: 1 }, tooLarge: false })
+    expect(preview.tables.direction).toBe(1)
+    expect(preview.conflicts).toMatchObject([
+      { table: 'direction', action: 'rename', label: '万圣节装饰' },
+    ])
+    expect(await transfersOf(actor.userId, target)).toHaveLength(0)
+  })
+
+  it('目标空间：只列出有写权限、未在流转中的其他空间；不含当前空间与 member 空间', async () => {
+    const actor = await personal()
+    const other = await plainUser('Other')
+    const writable = await team('B-Writable', [{ userId: actor.userId, role: 'admin' }])
+    const owned = await team('A-Owned', [{ userId: actor.userId, role: 'owner' }])
+    const readonlyMember = await team('C-Member', [
+      { userId: actor.userId, role: 'member' },
+      { userId: other, role: 'owner' },
+    ])
+    const busy = await team('D-Busy', [
+      { userId: actor.userId, role: 'owner' },
+      { userId: other, role: 'admin' },
+    ])
+    const deleted = await team('E-Deleted', [{ userId: actor.userId, role: 'owner' }])
+    await one()
+      .update(organization)
+      .set({ deletedAt: new Date() })
+      .where(eq(organization.id, deleted))
+    // busy 正在与 other 的个人空间流转
+    await one()
+      .insert(workspaceTransfer)
+      .values({
+        kind: 'copy',
+        sourceWorkspaceId: other,
+        targetWorkspaceId: busy,
+        requestedBy: other,
+        idempotencyKey: `busy-${newId()}`,
+      })
+    const list = await transferTargets(sdeps(), actor)
+    expect(list.map((t) => t.id)).toEqual([owned, writable])
+    expect(list[0]).toMatchObject({ name: 'A-Owned', role: 'owner', isPersonal: false })
+    expect(list.map((t) => t.id)).not.toContain(readonlyMember)
+
+    // 从团队空间看：本人个人空间可作为目标；multiTenant=false 时团队空间不可作为目标
+    const fromTeam = await transferTargets(sdeps(), teamActor(actor.userId, owned, 'owner'))
+    expect(fromTeam.map((t) => t.id)).toEqual([actor.userId, writable])
+    expect(fromTeam[0]?.isPersonal).toBe(true)
+    const single = await transferTargets(
+      sdeps(undefined, {
+        tenancy: { multiTenant: false, dataTransfer: true, maxWorkspacesPerUser: 5 },
+      }),
+      teamActor(actor.userId, owned, 'owner'),
+    )
+    expect(single.map((t) => t.id)).toEqual([actor.userId])
+    await expect(
+      transferTargets(
+        sdeps(undefined, {
+          tenancy: { multiTenant: true, dataTransfer: false, maxWorkspacesPerUser: 5 },
+        }),
+        actor,
+      ),
+    ).rejects.toMatchObject({ status: 404 })
   })
 })

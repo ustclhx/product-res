@@ -1,6 +1,8 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { withWorkspace } from '../../server/middleware.ts'
+import { templateConfig } from '../../server/template-config.ts'
+import { transferAvailability } from '../transfer/availability.ts'
 import { canWriteWorkbench } from '../workbench/access.ts'
 import { actorOf } from '../workbench/actor.ts'
 import { decisionInput, outcomeInput } from './inputs.ts'
@@ -50,7 +52,12 @@ export const getArchivePage = createServerFn({ method: 'GET' })
       // 品类研究归档（add-category-insight）：与决定档案同页展示
       import('../category/category.server.ts').then((m) => m.listArchivedStudies(actor)),
     ])
-    return { ...page, studies, canWrite: canWriteWorkbench(context) }
+    return {
+      ...page,
+      studies,
+      canWrite: canWriteWorkbench(context),
+      transfer: transferAvailability(context, templateConfig),
+    }
   })
 
 export const getDecisionDetail = createServerFn({ method: 'GET' })

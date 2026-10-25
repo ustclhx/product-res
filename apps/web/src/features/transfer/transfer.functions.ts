@@ -10,7 +10,7 @@ import { assertRealSession } from '../admin/impersonation.ts'
 import type { TransferActor, TransferDeps } from './transfer.server.ts'
 
 /**
- * 数据流转 Server Functions（add-workspace-data-transfer tasks 4.1 服务端入口；页面由 W4 接入）。
+ * 数据流转 Server Functions（add-workspace-data-transfer tasks 4.1 服务端入口，6.2 复制 / 预览 / 目标空间）。
  * 写操作（发起、取消、续跑）在 withWorkspace 之外再做 requireFreshSession 并拒绝模拟登录：
  * 平台管理员不经此入口代为流转（D6）。读操作沿用 withWorkspace 的成员校验。
  */
@@ -77,6 +77,47 @@ export const startWorkspaceMove = createServerFn({ method: 'POST' })
       targetWorkspaceId: data.targetWorkspaceId,
       selection: data.selection,
       idempotencyKey: data.idempotencyKey,
+    }),
+  )
+
+export const startWorkspaceCopy = createServerFn({ method: 'POST' })
+  .middleware([withWorkspace])
+  .inputValidator(
+    slug.extend({
+      targetWorkspaceId: z.uuid(),
+      selection: z.record(z.string(), z.unknown()),
+      idempotencyKey,
+    }),
+  )
+  .handler(async ({ context, data }) =>
+    (await service()).startWorkspaceCopy(deps(), await freshActor(context), {
+      targetWorkspaceId: data.targetWorkspaceId,
+      selection: data.selection,
+      idempotencyKey: data.idempotencyKey,
+    }),
+  )
+
+/** 复制 / 移动对话框：可选目标空间（只读，沿用 withWorkspace 的成员校验） */
+export const getTransferTargets = createServerFn({ method: 'GET' })
+  .middleware([withWorkspace])
+  .inputValidator(slug)
+  .handler(async ({ context }) => (await service()).transferTargets(deps(), actorOf(context)))
+
+/** 复制 / 移动对话框的预览（不落库）；权限与发起相同，由引擎按 D6 校验 */
+export const getTransferPreview = createServerFn({ method: 'POST' })
+  .middleware([withWorkspace])
+  .inputValidator(
+    slug.extend({
+      kind: z.enum(['copy', 'move']),
+      targetWorkspaceId: z.uuid(),
+      selection: z.record(z.string(), z.unknown()),
+    }),
+  )
+  .handler(async ({ context, data }) =>
+    (await service()).selectiveTransferPreview(deps(), actorOf(context), {
+      kind: data.kind,
+      targetWorkspaceId: data.targetWorkspaceId,
+      selection: data.selection,
     }),
   )
 

@@ -1,6 +1,8 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { withWorkspace } from '../../server/middleware.ts'
+import { templateConfig } from '../../server/template-config.ts'
+import { transferAvailability } from '../transfer/availability.ts'
 import { canWriteWorkbench } from '../workbench/access.ts'
 import { actorOf } from '../workbench/actor.ts'
 import { DIRECTION_MARKETPLACES } from './marketplaces.ts'
@@ -25,6 +27,7 @@ export const getDirectionsPage = createServerFn({ method: 'GET' })
   .handler(async ({ context }) => ({
     ...(await (await service()).directionsPage(actorOf(context))),
     canWrite: canWriteWorkbench(context),
+    transfer: transferAvailability(context, templateConfig),
   }))
 
 /** 方向配置的类目搜索（eBay 站点）；没有类目数据时返回空列表，页面保持手填 */

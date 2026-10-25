@@ -17,10 +17,13 @@ import {
   getWorkspaceTransferDetail,
   holdTransferStart,
   listWorkspaceTransfers,
+  previewTransfer,
   type StartResult,
+  startCopy,
   startMove,
   startUpgrade,
   type TransferDetail,
+  type TransferPreview,
   type TransferSummary,
   upgradeTableCounts,
   type WorkspaceTransferWorkflowParams,
@@ -142,6 +145,99 @@ export async function startWorkspaceMove(
     deps.config,
     enqueue(workflow),
   )
+}
+
+/**
+ * 发起选择性复制（D1、D6）：当前空间为源，源空间数据不变。团队源需 owner / admin，
+ * 个人源只能是本人的个人空间；与移动相同的幂等、事务内投递规则。
+ */
+export async function startWorkspaceCopy(
+  deps: TransferDeps,
+  actor: TransferActor,
+  input: StartMoveInput,
+): Promise<StartResult> {
+  assertTransferEnabled(deps.config)
+  const workflow = workflowOf(deps)
+  return startCopy(
+    deps.db,
+    {
+      userId: actor.userId,
+      sourceWorkspaceId: actor.workspace.id,
+      targetWorkspaceId: input.targetWorkspaceId,
+      selection: input.selection,
+      idempotencyKey: input.idempotencyKey,
+    },
+    deps.config,
+    enqueue(workflow),
+  )
+}
+
+export interface SelectivePreviewInput {
+  readonly kind: 'copy' | 'move'
+  readonly targetWorkspaceId: string
+  readonly selection: unknown
+}
+
+/** 复制 / 移动对话框的预览：闭包行数、冲突决定、评分版本与外部额度提示（不落库） */
+export async function selectiveTransferPreview(
+  deps: TransferDeps,
+  actor: TransferActor,
+  input: SelectivePreviewInput,
+): Promise<TransferPreview> {
+  assertTransferEnabled(deps.config)
+  return previewTransfer(
+    deps.db,
+    {
+      kind: input.kind,
+      userId: actor.userId,
+      sourceWorkspaceId: actor.workspace.id,
+      targetWorkspaceId: input.targetWorkspaceId,
+      selection: input.selection,
+    },
+    deps.config,
+  )
+}
+
+export interface TransferTarget {
+  readonly id: string
+  readonly name: string
+  readonly slug: string
+  readonly isPersonal: boolean
+  readonly role: string
+}
+
+/**
+ * 可选的目标空间（D6）：当前用户为 owner / admin 的其他未删除空间；个人空间只能是本人的；
+ * multiTenant=false 时团队空间只读不可作为目标；已有进行中流转的空间不列出。
+ * 只用于界面过滤，发起时引擎按数据库当前成员关系再校验。
+ */
+export async function transferTargets(
+  deps: TransferDeps,
+  actor: TransferActor,
+): Promise<TransferTarget[]> {
+  assertTransferEnabled(deps.config)
+  const list = (await deps.db.execute(
+    sql`select o.id, o.name, o.slug, o.is_personal, m.role
+      from member m join organization o on o.id = m.organization_id
+      where m.user_id = ${actor.userId} and o.deleted_at is null and o.id <> ${actor.workspace.id}
+        and m.role in ('owner', 'admin')
+        and (case when o.is_personal then o.id = ${actor.userId} else ${deps.config.tenancy.multiTenant} end)
+        and not exists (
+          select 1 from ${workspaceTransfer} t
+          where t.status in (${sql.join(
+            WORKSPACE_TRANSFER_ACTIVE_STATUSES.map((s) => sql`${s}`),
+            sql`, `,
+          )})
+            and (t.source_workspace_id = o.id or t.target_workspace_id = o.id))
+      order by o.is_personal desc, o.name, o.id`,
+  )) as unknown as { id: string; name: string; slug: string; is_personal: boolean; role: string }[]
+  return list.map((w) => ({
+    id: w.id,
+    name: w.name,
+    slug: w.slug,
+    isPersonal: w.is_personal,
+    role: w.role,
+  }))
 }
 
 export interface UpgradePreview {

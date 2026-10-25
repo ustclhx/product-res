@@ -4,6 +4,13 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { m } from '../../paraglide/messages.js'
 import { Section } from '../data-center/shared.tsx'
 import { marketplaceLabel } from '../follow/marketplaces.ts'
+import {
+  canTransfer,
+  SelectBox,
+  TransferBar,
+  type TransferSelectionState,
+  useTransferSelection,
+} from '../transfer/transfer-actions.tsx'
 import { controlClass, EmptyState, ErrorText, Field, useAction } from '../workbench/fields.tsx'
 import {
   addTrackedStore,
@@ -12,7 +19,7 @@ import {
   runStoreRound,
   setTrackedStoreStatus,
 } from './store-tracking.functions.ts'
-import type { StoreRowView } from './store-tracking.server.ts'
+import type { StoreRowView, TrackedProductRowView } from './store-tracking.server.ts'
 import {
   DisabledSourceNotice,
   formatPercent,
@@ -127,13 +134,42 @@ function AddStoreForm({
   )
 }
 
+/** 数据流转多选列（add-workspace-data-transfer 6.2）；不可流转时不加列 */
+export function selectColumn<T extends { id: string }>(
+  selection: TransferSelectionState | undefined,
+  name: (row: T) => string,
+): DataTableColumn<T>[] {
+  if (!selection) return []
+  return [
+    {
+      id: 'select',
+      header: (
+        <SelectBox
+          checked={selection.allSelected}
+          onChange={selection.setAll}
+          label={m.transfer_actions_select_all()}
+        />
+      ),
+      cell: (row) => (
+        <SelectBox
+          checked={selection.has(row.id)}
+          onChange={(on) => selection.toggle(row.id, on)}
+          label={m.transfer_actions_select_item({ name: name(row) })}
+        />
+      ),
+    },
+  ]
+}
+
 function columns(
   slug: string,
   canWrite: boolean,
   act: (id: string, status: StoreRowView['status']) => void,
   busy: boolean,
+  selection: TransferSelectionState | undefined,
 ): DataTableColumn<StoreRowView>[] {
   return [
+    ...selectColumn<StoreRowView>(selection, (s) => s.displayName),
     {
       id: 'store',
       header: m.store_tracking_col_store(),
@@ -233,11 +269,14 @@ export function StoresPage({ slug, initial }: { slug: string; initial: StoresDat
   const reload = async () => setData(await getStoresPage({ data: { slug } }))
   const action = useAction(reload)
   const round = useAction(async () => {})
+  const transferable = canTransfer(data.transfer)
+  const storeSelection = useTransferSelection(data.stores.map((s) => s.id))
   const cols = columns(
     slug,
     data.canWrite,
     (id, status) => void action.run(() => setTrackedStoreStatus({ data: { slug, id, status } })),
     action.busy,
+    transferable ? storeSelection : undefined,
   )
   const hasEbay = data.stores.some((s) => s.platform === 'ebay')
   const hasAmazon = data.stores.some((s) => s.platform === 'amazon')
@@ -320,6 +359,14 @@ export function StoresPage({ slug, initial }: { slug: string; initial: StoresDat
       ) : null}
 
       <Section title={m.store_tracking_table_label()}>
+        {transferable ? (
+          <TransferBar
+            slug={slug}
+            root="store"
+            availability={data.transfer}
+            selection={storeSelection}
+          />
+        ) : null}
         {data.stores.length === 0 ? (
           <EmptyState title={m.store_tracking_empty()}>{m.store_tracking_empty_hint()}</EmptyState>
         ) : (
@@ -352,6 +399,122 @@ export function StoresPage({ slug, initial }: { slug: string; initial: StoresDat
           </p>
         ) : null}
       </Section>
+
+      {transferable && data.trackedProducts ? (
+        <TrackedProductsSection
+          slug={slug}
+          rows={data.trackedProducts.rows}
+          truncated={data.trackedProducts.truncated}
+          availability={data.transfer}
+        />
+      ) : null}
     </div>
+  )
+}
+
+const TIER_LABELS: Record<string, () => string> = {
+  hot: m.transfer_actions_tier_hot,
+  normal: m.transfer_actions_tier_normal,
+  cold: m.transfer_actions_tier_cold,
+}
+const ORIGIN_LABELS: Record<string, () => string> = {
+  store: m.transfer_actions_origin_store,
+  lead: m.transfer_actions_origin_lead,
+  manual: m.transfer_actions_origin_manual,
+}
+
+const productName = (p: TrackedProductRowView) => p.title ?? p.productId
+
+/** 被追踪商品：只在数据流转可用时展示，供多选复制 / 移动（add-workspace-data-transfer 6.2） */
+function TrackedProductsSection({
+  slug,
+  rows,
+  truncated,
+  availability,
+}: {
+  slug: string
+  rows: TrackedProductRowView[]
+  truncated: boolean
+  availability: StoresData['transfer']
+}) {
+  const selection = useTransferSelection(rows.map((r) => r.id))
+  const cols: DataTableColumn<TrackedProductRowView>[] = [
+    ...selectColumn<TrackedProductRowView>(selection, productName),
+    {
+      id: 'product',
+      header: m.transfer_actions_col_product(),
+      className: 'min-w-[240px]',
+      cell: (p) => (
+        <div className="grid gap-0.5">
+          {p.url ? (
+            <a
+              href={p.url}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="text-[13px] font-medium hover:text-primary"
+            >
+              {productName(p)}
+            </a>
+          ) : (
+            <span className="text-[13px] font-medium">{productName(p)}</span>
+          )}
+          {p.marketplace ? (
+            <span className="text-xs text-muted-foreground">{marketplaceLabel(p.marketplace)}</span>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      id: 'tier',
+      header: m.transfer_actions_col_tier(),
+      cell: (p) => TIER_LABELS[p.tier]?.() ?? p.tier,
+    },
+    {
+      id: 'origin',
+      header: m.transfer_actions_col_origin(),
+      cell: (p) => ORIGIN_LABELS[p.origin]?.() ?? p.origin,
+    },
+    {
+      id: 'snapshot',
+      header: m.transfer_actions_col_last_snapshot(),
+      cell: (p) => <span className="text-xs tabular-nums">{p.lastSnapshotOn ?? '—'}</span>,
+    },
+  ]
+  return (
+    <Section title={m.transfer_actions_tracked_products_title()}>
+      <p className="text-xs text-muted-foreground">{m.transfer_actions_tracked_products_intro()}</p>
+      <TransferBar
+        slug={slug}
+        root="trackedProduct"
+        availability={availability}
+        selection={selection}
+      />
+      {rows.length === 0 ? (
+        <EmptyState title={m.transfer_actions_tracked_products_empty()} />
+      ) : (
+        <DataTable
+          label={m.transfer_actions_tracked_products_title()}
+          columns={cols}
+          rows={rows}
+          getRowId={(p) => p.id}
+          page={{ pageIndex: 0, pageSize: Math.max(1, rows.length), rowCount: rows.length }}
+          onPageChange={() => {}}
+          labels={{
+            empty: m.transfer_actions_tracked_products_empty(),
+            previous: m.store_tracking_previous(),
+            next: m.store_tracking_next(),
+            page: (page, pageCount) =>
+              pageCount === null
+                ? m.store_tracking_page({ page: String(page) })
+                : m.store_tracking_page_of({ page: String(page), pageCount: String(pageCount) }),
+          }}
+        />
+      )}
+      {truncated ? (
+        <p className="text-xs text-muted-foreground">
+          {m.transfer_actions_tracked_products_truncated({ count: String(rows.length) })}
+        </p>
+      ) : null}
+    </Section>
   )
 }

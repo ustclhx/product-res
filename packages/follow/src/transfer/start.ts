@@ -16,6 +16,7 @@ import {
   parseSelection,
   rows,
   type TransferConfig,
+  type TransferSelection,
   type Tx,
   transferError,
   uuidList,
@@ -178,6 +179,28 @@ const ROOT_TABLES = {
   decision: 'decision',
 } as const
 
+/** 按根条目类型统计属于源空间的所选行数（不属于源空间的 id 不计入） */
+export async function countSelectedRoots(
+  tx: Tx,
+  sourceWorkspaceId: string,
+  selection: TransferSelection,
+): Promise<Partial<Record<keyof typeof ROOT_TABLES, number>>> {
+  const out: Partial<Record<keyof typeof ROOT_TABLES, number>> = {}
+  for (const [root, table] of Object.entries(ROOT_TABLES) as [keyof typeof ROOT_TABLES, string][]) {
+    const list = selection.roots?.[root]
+    if (!list?.length) continue
+    const meta = tableMeta(table)
+    const [row] = await rows<{ n: number }>(
+      tx,
+      sql`select count(*)::int as n from ${sql.raw(`"${meta.name}"`)}
+        where ${sql.raw(`"${meta.ws}"`)} = ${sourceWorkspaceId}
+          and id = any(${uuidList(list)})`,
+    )
+    out[root] = row?.n ?? 0
+  }
+  return out
+}
+
 /** 选择性移动（D1、D2）：根条目须属于源空间；权限按 D6（移出团队数据需 owner） */
 export function startMove(
   db: Database,
@@ -232,19 +255,9 @@ async function startSelective(
       { revoked: false },
     )
     await assertNoActiveTransfer(tx, ids)
-    let found_ = 0
-    for (const [root, table] of Object.entries(ROOT_TABLES)) {
-      const list = selection.roots?.[root as keyof typeof ROOT_TABLES]
-      if (!list?.length) continue
-      const meta = tableMeta(table)
-      const [row] = await rows<{ n: number }>(
-        tx,
-        sql`select count(*)::int as n from ${sql.raw(`"${meta.name}"`)}
-          where ${sql.raw(`"${meta.ws}"`)} = ${input.sourceWorkspaceId}
-            and id = any(${uuidList(list)})`,
-      )
-      found_ += row?.n ?? 0
-    }
+    const found_ = Object.values(
+      await countSelectedRoots(tx, input.sourceWorkspaceId, selection),
+    ).reduce((a, b) => a + b, 0)
     if (found_ === 0 && !selection.roots?.configPack)
       throw transferError('TRANSFER_EMPTY_SELECTION', '所选条目不在源空间中', 400)
     const [transfer] = await tx
