@@ -1,5 +1,6 @@
 import { cn } from '@product-res/ui'
 import type { ReactNode } from 'react'
+import { workbenchErrorText } from '../workbench/errors.ts'
 
 export const KIND_LABELS: Record<string, string> = {
   'seller-new-listings': '卖家新品',
@@ -113,5 +114,5 @@ export function ProgressBar({
 }
 
 export function errorText(error: unknown) {
-  return error instanceof Error && error.message ? error.message : '操作失败，请重试'
+  return workbenchErrorText(error)
 }

@@ -12,6 +12,7 @@ import {
   organization,
   scoped,
   user,
+  workspaceTransfer,
 } from '@product-res/db'
 import { newId } from '@product-res/shared'
 import { eq, inArray } from 'drizzle-orm'
@@ -160,4 +161,40 @@ it('到期未回看的跟卖决定发通知并写幂等标记；已回看、未�
   // 次日 notYet 到期，发它自己的一条
   expect(after.map((n) => n.title).sort()).toEqual(['跟卖回看：到期水杯', '跟卖回看：未到期'])
   expect(await scoped(db(), b.ws).count(notification)).toBe(1)
+})
+
+it('流转中的源与目标均不发送回看提醒，结束后恢复且不改变去重', async () => {
+  const source = await seedSpace()
+  const target = await seedSpace()
+  await source.decided('流转源', { plannedListingOn: '2026-07-01' })
+  await target.decided('流转目标', { plannedListingOn: '2026-07-01' })
+  const transferId = newId()
+  try {
+    await db().insert(workspaceTransfer).values({
+      id: transferId,
+      kind: 'move',
+      sourceWorkspaceId: source.ws,
+      targetWorkspaceId: target.ws,
+      requestedBy: source.owner,
+      idempotencyKey: transferId,
+      status: 'running',
+    })
+    await runSelectionReview(db(), NOW)
+    for (const ws of [source.ws, target.ws]) {
+      expect(await scoped(db(), ws).count(notification)).toBe(0)
+      expect(await scoped(db(), ws).count(leadEvent)).toBe(0)
+    }
+    await db()
+      .update(workspaceTransfer)
+      .set({ status: 'completed' })
+      .where(eq(workspaceTransfer.id, transferId))
+    await runSelectionReview(db(), NOW)
+    await runSelectionReview(db(), NOW)
+    for (const ws of [source.ws, target.ws]) {
+      expect(await scoped(db(), ws).count(notification)).toBe(1)
+      expect(await scoped(db(), ws).count(leadEvent)).toBe(1)
+    }
+  } finally {
+    await db().delete(workspaceTransfer).where(eq(workspaceTransfer.id, transferId))
+  }
 })

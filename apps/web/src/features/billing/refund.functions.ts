@@ -76,7 +76,7 @@ export const requestCustomerRefund = createServerFn({ method: 'POST' })
   )
   .handler(async ({ context, data }) => {
     try {
-      if (context.workspaceReadOnly)
+      if (context.workspaceTeamReadOnly)
         throw new AppError('WORKSPACE_READ_ONLY', 'Workspace is read-only', { status: 403 })
       const events = requireCapability(getWebRuntime().eventsQueue, 'Events queue')
       requireCapability(getWebRuntime().emailQueue, 'Email queue')

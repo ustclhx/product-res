@@ -10,6 +10,7 @@ import {
   recommendationLabel,
   type SelectionDimension,
   scoped,
+  transferringWorkspaceIds,
   weightSuggestion,
 } from '@product-res/db'
 import { type MetricPoint, productsByIds, readMetricSeries } from '@product-res/marketdata'
@@ -382,7 +383,9 @@ export async function runSelectionLabels(
     .from(recommendation)
     .where(lte(recommendation.frozenOn, addDays(today, -Math.min(...LABEL_WINDOWS))))
   const out: LabelRunResult[] = []
+  const transferring = await transferringWorkspaceIds(db)
   for (const { workspaceId } of workspaces) {
+    if (transferring.has(workspaceId)) continue
     try {
       out.push(await labelDueRecommendations(db, workspaceId, { ...options, today }))
     } catch (error) {
@@ -629,7 +632,9 @@ export async function runReadinessWeekly(
     .selectDistinct({ workspaceId: recommendation.workspaceId })
     .from(recommendation)
   const out: ReadinessRunResult[] = []
+  const transferring = await transferringWorkspaceIds(db)
   for (const { workspaceId } of workspaces) {
+    if (transferring.has(workspaceId)) continue
     try {
       out.push(await recomputeReadiness(db, workspaceId, options))
     } catch (error) {
@@ -637,4 +642,34 @@ export async function runReadinessWeekly(
     }
   }
   return out
+}
+
+/**
+ * 选择性移动后重建空间准备度。旧组合可能已不再有推荐，先清掉派生统计再按当前样本重算。
+ * 由 W3 finalize 在流转锁内调用；此处不接入流转引擎。
+ */
+export async function rebuildWorkspaceReadiness(
+  db: Database,
+  workspaceId: string,
+  options: LabelOptions,
+): Promise<ReadinessRunResult> {
+  await scoped(db, workspaceId).delete(readinessStat, undefined)
+  return recomputeReadiness(db, workspaceId, options)
+}
+
+/** 移出部分样本后，源空间未处理的整空间拟合建议失效；已处理的建议保留历史归属。 */
+export async function dismissPendingWeightSuggestions(
+  db: Database,
+  workspaceId: string,
+  requestedBy: string,
+  now: Date,
+): Promise<number> {
+  const rows = await scoped(db, workspaceId)
+    .update(
+      weightSuggestion,
+      { status: 'dismissed', resolvedBy: requestedBy, resolvedAt: now },
+      eq(weightSuggestion.status, 'proposed'),
+    )
+    .returning({ id: weightSuggestion.id })
+  return rows.length
 }

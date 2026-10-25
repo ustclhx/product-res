@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { assertNotReadOnly } from '../data-center/access.ts'
 import { assertWorkbenchWriter, canWriteWorkbench } from './access.ts'
 
 describe('assertWorkbenchWriter', () => {
@@ -25,4 +26,22 @@ describe('assertWorkbenchWriter', () => {
     )
     expect(canWriteWorkbench(ctx)).toBe(false)
   })
+})
+
+it('流转错误优先于只读；数据中心普通成员的填写也被锁住，结束后恢复', () => {
+  const context = {
+    workspaceReadOnly: true,
+    workspaceTransferring: true,
+    member: { role: 'owner' },
+  }
+  expect(() => assertWorkbenchWriter(context)).toThrow(
+    expect.objectContaining({ code: 'WORKSPACE_TRANSFERRING', status: 403 }),
+  )
+  expect(canWriteWorkbench(context)).toBe(false)
+  expect(() => assertNotReadOnly({ ...context, member: { role: 'member' } })).toThrow(
+    expect.objectContaining({ code: 'WORKSPACE_TRANSFERRING' }),
+  )
+  const unlocked = { ...context, workspaceReadOnly: false, workspaceTransferring: false }
+  expect(() => assertWorkbenchWriter(unlocked)).not.toThrow()
+  expect(() => assertNotReadOnly({ ...unlocked, member: { role: 'member' } })).not.toThrow()
 })

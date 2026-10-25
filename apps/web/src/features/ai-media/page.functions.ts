@@ -55,7 +55,7 @@ export const getMediaSubmitPage = createServerFn({ method: 'GET' })
     return {
       workspaceId: context.workspace.id,
       workspaceSlug: context.workspace.slug,
-      readOnly: context.workspaceReadOnly,
+      readOnly: context.workspaceTeamReadOnly,
       models,
       files,
     }

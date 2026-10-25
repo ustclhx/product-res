@@ -23,7 +23,7 @@ import {
 export const getWorkspacePage = createServerFn({ method: 'GET' })
   .middleware([withWorkspaceMembership])
   .handler(async ({ context }) => {
-    const { db, workspace, member, workspaceReadOnly } = context
+    const { db, workspace, member, workspaceTeamReadOnly } = context
     const { user } = await requireFreshSession({
       auth: getWebRuntime().auth,
       db,
@@ -41,7 +41,7 @@ export const getWorkspacePage = createServerFn({ method: 'GET' })
     const members = await workspaceMembers(db, workspace.id)
     const canManage =
       !workspace.isPersonal &&
-      !workspaceReadOnly &&
+      !workspaceTeamReadOnly &&
       (member.role === 'owner' || member.role === 'admin')
     return {
       activation: 'active' as const,
@@ -53,7 +53,7 @@ export const getWorkspacePage = createServerFn({ method: 'GET' })
         isPersonal: workspace.isPersonal,
       },
       role: member.role,
-      readOnly: workspaceReadOnly,
+      readOnly: workspaceTeamReadOnly,
       canManage,
       multiTenant: templateConfig.tenancy.multiTenant,
       spaces: templateConfig.tenancy.multiTenant ? await userWorkspaces(db, user.id) : [],

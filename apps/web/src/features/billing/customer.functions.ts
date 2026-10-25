@@ -86,7 +86,7 @@ export const getCustomerBilling = createServerFn({ method: 'GET' })
     )),
     catalog: await customerCatalog(context.db, runtime(context.db).readiness),
     role: context.member.role,
-    readOnly: context.workspaceReadOnly,
+    readOnly: context.workspaceTeamReadOnly,
   }))
 export const getCustomerUsage = createServerFn({ method: 'GET' })
   .middleware([withCredits, withWorkspace])
@@ -118,7 +118,7 @@ export const checkoutCustomer = createServerFn({ method: 'POST' })
     }),
   )
   .handler(({ context, data }) =>
-    safe(context.workspaceReadOnly, async () => {
+    safe(context.workspaceTeamReadOnly, async () => {
       const result = await createCheckout(service(context.db), {
         ip: getWebRuntime().requestMeta.clientIp,
         provider: data.provider,
@@ -146,7 +146,7 @@ export const manageCustomerSubscription = createServerFn({ method: 'POST' })
     }),
   )
   .handler(({ context, data }) =>
-    safe(context.workspaceReadOnly, async () => {
+    safe(context.workspaceTeamReadOnly, async () => {
       const ctx = service(context.db)
       const input = {
         ip: getWebRuntime().requestMeta.clientIp,
@@ -178,7 +178,7 @@ export const confirmCustomerCheckout = createServerFn({ method: 'POST' })
   .middleware([withBilling, withWorkspace, withRealSession])
   .inputValidator(workspace.extend({ provider, providerRef: z.string().min(1).max(255) }))
   .handler(({ context, data }) =>
-    safe(context.workspaceReadOnly, async () => {
+    safe(context.workspaceTeamReadOnly, async () => {
       await confirmCheckout(service(context.db), {
         provider: data.provider,
         providerRef: data.providerRef,

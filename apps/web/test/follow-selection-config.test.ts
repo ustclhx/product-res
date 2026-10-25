@@ -6,14 +6,17 @@ import {
   DEFAULT_US_NODES,
   direction,
   directionSeller,
+  isWorkspaceTransferring,
   organization,
   riskRule,
   scoped,
   scoringSetting,
   seasonalNode,
+  user,
+  workspaceTransfer,
 } from '@product-res/db'
 import { newId } from '@product-res/shared'
-import { inArray } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   configPage,
@@ -34,7 +37,7 @@ import {
   setDirectionEnabled,
   updateDirection,
 } from '../src/features/follow/directions.server.ts'
-import type { WorkbenchActor } from '../src/features/workbench/actor.ts'
+import { actorOf, type WorkbenchActor } from '../src/features/workbench/actor.ts'
 
 // tasks.md 2.2 / 2.3：选品方向、店铺池、节点日历、品牌库、风险规则的增删改与写权限。
 const db = () => createDb(env.HYPERDRIVE)
@@ -338,4 +341,51 @@ describe('设置：节点日历、品牌库、风险规则', () => {
     await deleteRule(owner, rule.id)
     expect((await configPage(owner)).rules).toEqual([])
   })
+})
+
+it('真实流转记录锁住两边的方向写入，结束后恢复', async () => {
+  const source = await space()
+  const target = await space()
+  const requester = newId()
+  const transferId = newId()
+  await db()
+    .insert(user)
+    .values({ id: requester, name: 'Transfer', email: `${requester}@transfer.test` })
+  try {
+    await db().insert(workspaceTransfer).values({
+      id: transferId,
+      kind: 'move',
+      sourceWorkspaceId: source.workspaceId,
+      targetWorkspaceId: target.workspaceId,
+      requestedBy: requester,
+      idempotencyKey: transferId,
+      status: 'running',
+    })
+    // 与 withWorkspace 相同，逐请求读取流转锁，再经 actorOf 传给 service。
+    const freshActor = async (actor: WorkbenchActor) => {
+      const transferring = await isWorkspaceTransferring(db(), actor.workspaceId)
+      return actorOf({
+        ...actor,
+        workspace: { id: actor.workspaceId },
+        workspaceReadOnly: transferring,
+        workspaceTransferring: transferring,
+      })
+    }
+    for (const actor of [source, target])
+      await expect(createDirection(await freshActor(actor), baseDirection)).rejects.toMatchObject({
+        code: 'WORKSPACE_TRANSFERRING',
+        status: 403,
+      })
+    await db()
+      .update(workspaceTransfer)
+      .set({ status: 'completed' })
+      .where(eq(workspaceTransfer.id, transferId))
+    for (const actor of [source, target])
+      expect(await createDirection(await freshActor(actor), baseDirection)).toMatchObject({
+        name: baseDirection.name,
+      })
+  } finally {
+    await db().delete(workspaceTransfer).where(eq(workspaceTransfer.id, transferId))
+    await db().delete(user).where(eq(user.id, requester))
+  }
 })

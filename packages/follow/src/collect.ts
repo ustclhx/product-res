@@ -10,6 +10,7 @@ import {
   scoped,
   seasonalNode,
   trackedStore,
+  transferringWorkspaceIds,
 } from '@product-res/db'
 import { normalizePhrase } from '@product-res/marketdata'
 import { addDays } from '@product-res/selection'
@@ -92,7 +93,9 @@ export async function loadCollectionTargets(
   const sellers: SellerTarget[] = []
   const members: { productId: string; hasLead: boolean }[] = []
   const keywords: string[] = []
+  const transferring = await transferringWorkspaceIds(db)
   for (const workspaceId of workspaces) {
+    if (transferring.has(workspaceId)) continue
     const s = scoped(db, workspaceId)
     // 店铺池的 eBay 店铺（add-accuracy-store-tracking D4）：与方向的对标店铺合并，按卖家 × 搜索条件去重
     sellers.push(...(await storeSellerTargets(db, workspaceId)))

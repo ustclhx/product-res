@@ -81,7 +81,7 @@ export const listConversations = createServerFn({ method: 'GET' })
         .orderBy(desc(aiConversation.id))
         .limit(LIST_LIMIT)
     const [active, archived] = await Promise.all([list(false), list(true)])
-    return { active, archived, readOnly: context.workspaceReadOnly }
+    return { active, archived, readOnly: context.workspaceTeamReadOnly }
   })
 
 export const getConversation = createServerFn({ method: 'GET' })
@@ -123,7 +123,7 @@ export const getConversation = createServerFn({ method: 'GET' })
           message.role === 'assistant' && templateConfig.ai.text.reasoning.display,
         ),
       })),
-      readOnly: context.workspaceReadOnly,
+      readOnly: context.workspaceTeamReadOnly,
     }
   })
 
@@ -132,7 +132,7 @@ export const createConversation = createServerFn({ method: 'POST' })
   .middleware([withBilling, withWorkspace])
   .inputValidator(workspace)
   .handler(({ context }) =>
-    mutation(context.workspaceReadOnly, async () => {
+    mutation(context.workspaceTeamReadOnly, async () => {
       const [row] = await scoped(context.db, context.workspace.id)
         .insert(aiConversation, { userId: context.user.id, title: '', modelKey: '' })
         .returning({ id: aiConversation.id })
@@ -145,7 +145,7 @@ export const renameConversation = createServerFn({ method: 'POST' })
   .middleware([withBilling, withWorkspace])
   .inputValidator(conversationInput.extend({ title: conversationTitleSchema }))
   .handler(({ context, data }) =>
-    mutation(context.workspaceReadOnly, () =>
+    mutation(context.workspaceTeamReadOnly, () =>
       updateOwn(context.db, context.workspace.id, context.user.id, data.conversationId, {
         title: data.title,
       }),
@@ -156,7 +156,7 @@ export const setConversationArchived = createServerFn({ method: 'POST' })
   .middleware([withBilling, withWorkspace])
   .inputValidator(conversationInput.extend({ archived: z.boolean() }))
   .handler(({ context, data }) =>
-    mutation(context.workspaceReadOnly, () =>
+    mutation(context.workspaceTeamReadOnly, () =>
       updateOwn(context.db, context.workspace.id, context.user.id, data.conversationId, {
         archived: data.archived,
       }),

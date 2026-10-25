@@ -8,6 +8,7 @@ import {
   type TrackedStore,
   trackedProduct,
   trackedStore,
+  transferringWorkspaceIds,
 } from '@product-res/db'
 import { normalizePhrase } from '@product-res/marketdata'
 import { addDays } from '@product-res/selection'
@@ -181,7 +182,9 @@ export async function loadStoreCollectionTargets(
     tier: 'hot' | 'normal'
     crossPriority: number
   }[] = []
+  const transferring = await transferringWorkspaceIds(db)
   for (const workspaceId of workspaceIds) {
+    if (transferring.has(workspaceId)) continue
     const s = scoped(db, workspaceId)
     const stores = await s.select(trackedStore, { where: eq(trackedStore.status, 'active') })
     const directions = stores.length > 0 ? await directionMap(db, workspaceId) : new Map()
