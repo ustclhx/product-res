@@ -127,6 +127,25 @@ describe('atomic deletion in workerd', () => {
       status: 404,
     })
   })
+  it('rejects deleting a team workspace while a data transfer is in progress', async () => {
+    const a = app()
+    const owner = await actor(a, 'transferring')
+    const id = await team(a, owner)
+    const transfer = newId()
+    await a.db
+      .$client`insert into workspace_transfer (id,kind,source_workspace_id,target_workspace_id,requested_by,idempotency_key,status) values (${transfer},'move',${owner.id},${id},${owner.id},${transfer},'running')`
+    try {
+      await expect(
+        deleteTeamWorkspace({ ...owner.options, workspaceId: id }),
+      ).rejects.toMatchObject({ code: 'WORKSPACE_TRANSFERRING', status: 409 })
+      await a.db.$client`update workspace_transfer set status='compensated' where id=${transfer}`
+      expect(await deleteTeamWorkspace({ ...owner.options, workspaceId: id })).toEqual({
+        deleted: true,
+      })
+    } finally {
+      await a.db.$client`delete from workspace_transfer where id=${transfer}`
+    }
+  })
   it('anonymizes and removes only owned credentials, invalidates old links, allows new email registration', async () => {
     const a = app()
     const owner = await actor(a, 'credentials')

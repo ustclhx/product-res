@@ -20,6 +20,7 @@ export {
 export {
   deleteEbayUserData,
   EBAY_ACCOUNT_DELETION_ACTION,
+  EBAY_ACCOUNT_DELETION_LOCK,
   type EbayAccountDeletionCounts,
   type EbayAccountDeletionInput,
   type EbayAccountDeletionResult,
