@@ -2,7 +2,12 @@ import { Button, useAppForm } from '@product-res/ui'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { type ReactNode, useState } from 'react'
 import { z } from 'zod'
-import { authClient, goToApp, signInCallbackURL } from '../../features/auth/auth-client.ts'
+import {
+  authClient,
+  goToApp,
+  redirectSearch,
+  signInCallbackURL,
+} from '../../features/auth/auth-client.ts'
 import {
   AuthDivider,
   AuthLayout,
@@ -125,7 +130,9 @@ function enabledModes(options: AuthUiOptions): Mode[] {
 
 function LoginPage() {
   const options = Route.useLoaderData()
-  const { error: callbackError } = Route.useSearch()
+  const { error: callbackError, redirect } = Route.useSearch()
+  // 注册入口保留回跳地址（例如邀请链接），注册完成后回到原页面
+  const registerHref = `/register${redirectSearch(redirect ? `?redirect=${encodeURIComponent(redirect)}` : '')}`
   const modes = enabledModes(options)
   const [mode, setMode] = useState<Mode | undefined>(modes[0])
   const otherModes = modes.filter((m) => m !== mode)
@@ -139,9 +146,9 @@ function LoginPage() {
         options.emailPassword ? (
           <p>
             {COPY.noAccount}{' '}
-            <Link to="/register" className={authLinkClassName}>
+            <a href={registerHref} className={authLinkClassName}>
               {COPY.register}
-            </Link>
+            </a>
           </p>
         ) : null
       }

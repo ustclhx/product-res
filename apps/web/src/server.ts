@@ -18,7 +18,7 @@ import {
   createCloudflareWorkflow,
 } from '@product-res/platform/cloudflare'
 import { AppError } from '@product-res/shared'
-import { log, withLogContext } from '@product-res/shared/log'
+import { log, redactUrlPath, withLogContext } from '@product-res/shared/log'
 import { getFileDownload } from '@product-res/storage'
 import { createCloudflareStorage } from '@product-res/storage/cloudflare'
 import { createStartHandler, defaultStreamHandler } from '@tanstack/react-start/server'
@@ -113,7 +113,7 @@ async function logged(request: Request, handle: () => Promise<Response>): Promis
     const response = isPublicApiPath(path) ? await normalizePublicApiNotFound(handled) : handled
     log.info('http.request', {
       method,
-      path,
+      path: redactUrlPath(path),
       status: response.status,
       durationMs: Date.now() - started,
     })
@@ -121,7 +121,7 @@ async function logged(request: Request, handle: () => Promise<Response>): Promis
   } catch (error) {
     log.error('http.request', {
       method,
-      path,
+      path: redactUrlPath(path),
       status: error instanceof AppError ? error.status : 500,
       durationMs: Date.now() - started,
       error,

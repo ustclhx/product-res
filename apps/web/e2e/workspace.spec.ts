@@ -5,6 +5,7 @@ import {
   APP_URL,
   activateAccount,
   activateWorkspace,
+  createTeamWorkspace,
   emailLink,
   fixtureDb,
   login,
@@ -12,15 +13,20 @@ import {
   removeWorkspaceActivation,
   seedWorkspaceSeats,
   simulateClientIp,
+  switchWorkspace,
   uiText,
   verifyInvitation,
   waitForHydration,
 } from './fixtures.ts'
 import { stubTurnstile } from './turnstile.ts'
 
+const inviteForm = uiText('workspace_email_invite_title')
+
 test('workspace creation, invitation entry and personal switching obey tenancy flag', async ({
   page,
 }) => {
+  // 开启团队空间后整条成员管理流程较长（注册、开通、邀请、转让、移除）
+  test.setTimeout(120_000)
   await simulateClientIp(page)
   await stubTurnstile(page)
   await page.goto('/register')
@@ -44,10 +50,9 @@ test('workspace creation, invitation entry and personal switching obey tenancy f
   await login(page, ownerEmail)
   await expect(page).toHaveURL(APP_URL)
   if (!templateConfig.tenancy.multiTenant) {
-    await expect(page.getByLabel('Switch workspace')).toHaveCount(0)
-    await expect(page.getByRole('button', { name: 'Create team workspace' })).toHaveCount(0)
+    await expect(page.getByTestId('workspace-menu')).toHaveCount(0)
     await page.getByRole('link', { name: uiText('app_workspace_settings') }).click()
-    await expect(page.getByRole('form', { name: 'Invite member' })).toHaveCount(0)
+    await expect(page.getByRole('form', { name: inviteForm })).toHaveCount(0)
     const sql = fixtureDb()
     const id = randomUUID()
     const slug = `readonly-${key}`
@@ -58,11 +63,9 @@ test('workspace creation, invitation entry and personal switching obey tenancy f
       await sql`insert into member (id, organization_id, user_id, role, created_at) values (${randomUUID()}, ${id}, ${owner.id}, 'owner', now())`
       await activateWorkspace(sql, id)
       await page.goto(`/app/${slug}/settings`)
-      await expect(page.getByRole('status').last()).toHaveText(
-        'Team features are disabled. This workspace is read-only.',
-      )
-      await expect(page.getByRole('form', { name: 'Invite member' })).toHaveCount(0)
-      await expect(page.getByLabel('Switch workspace')).toHaveCount(0)
+      await expect(page.getByText(uiText('workspace_read_only'))).toBeVisible()
+      await expect(page.getByRole('form', { name: inviteForm })).toHaveCount(0)
+      await expect(page.getByTestId('workspace-menu')).toHaveCount(0)
       await page.goto('/account')
       await expect(
         page.getByRole('button', { name: uiText('account_profile_submit') }),
@@ -76,14 +79,10 @@ test('workspace creation, invitation entry and personal switching obey tenancy f
     }
     return
   }
-  await page.getByRole('button', { name: 'Create team workspace' }).click()
-  await page.getByLabel('Team name', { exact: true }).fill('Browser Team')
-  await page.getByLabel('Workspace URL', { exact: true }).fill(`browser-${key}`)
-  await page.getByRole('button', { name: 'Create team', exact: true }).click()
-  await expect(page).toHaveURL(new RegExp(`/app/browser-${key}$`))
+  await createTeamWorkspace(page, 'Browser Team', `browser-${key}`)
   await seedWorkspaceSeats(`browser-${key}`)
   await page.getByRole('link', { name: uiText('app_workspace_settings') }).click()
-  await page.getByLabel('Invite email').fill(`invite-${key}@example.com`)
+  await page.getByLabel(uiText('workspace_invite_email')).fill(`invite-${key}@example.com`)
   let invitationId = ''
   await page.route('**/api/auth/organization/invite-member', async (route) => {
     const response = await route.fetch()
@@ -91,9 +90,9 @@ test('workspace creation, invitation entry and personal switching obey tenancy f
     invitationId = invitation.id
     await route.fulfill({ response })
   })
-  await page.getByRole('button', { name: 'Send invitation' }).click()
+  await page.getByRole('button', { name: uiText('workspace_send_invite') }).click()
   await expect(page.getByText(`invite-${key}@example.com`, { exact: false })).toBeVisible()
-  await page.getByLabel('Switch workspace').selectOption({ label: 'Personal (personal)' })
+  await switchWorkspace(page, 'Personal')
   await expect(page).toHaveURL(personalUrl)
   await expect(page.getByTestId('workspace-name')).toHaveText('Personal')
   await page.goto(`/accept-invitation?id=${invitationId}`)
@@ -125,39 +124,44 @@ test('workspace creation, invitation entry and personal switching obey tenancy f
   await page.getByRole('button', { name: uiText('auth_accept_invitation') }).click()
   await expect(page).toHaveURL(new RegExp(`/app/browser-${key}$`))
   await page.getByRole('link', { name: uiText('app_workspace_settings') }).click()
-  await expect(page.getByRole('form', { name: 'Invite member' })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Remove', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('form', { name: inviteForm })).toHaveCount(0)
+  await expect(
+    page.getByRole('button', { name: uiText('workspace_remove'), exact: true }),
+  ).toHaveCount(0)
   const teamSettings = page.url()
   await page.context().clearCookies()
   await login(page, ownerEmail)
   await page.goto(teamSettings)
-  await page.getByLabel('Role for Invited Member').selectOption('admin')
-  await expect(
-    page.getByText(`Invited Member (invite-${key}@example.com) · admin`, { exact: true }),
-  ).toBeVisible()
-  await page.getByLabel('Invite email').fill(`revoke-${key}@example.com`)
-  await page.getByRole('button', { name: 'Send invitation' }).click()
+  await page
+    .getByLabel(uiText('workspace_role_for', { name: 'Invited Member' }))
+    .selectOption('admin')
+  const invited = page.getByRole('listitem').filter({ hasText: `invite-${key}@example.com` })
+  await expect(invited.locator('[data-slot="tag"]').first()).toHaveText(
+    uiText('workspace_role_admin'),
+  )
+  await page.getByLabel(uiText('workspace_invite_email')).fill(`revoke-${key}@example.com`)
+  await page.getByRole('button', { name: uiText('workspace_send_invite') }).click()
   const revoked = page.getByRole('listitem').filter({ hasText: `revoke-${key}@example.com` })
-  await revoked.getByRole('button', { name: 'Revoke invitation' }).click()
+  await revoked.getByRole('button', { name: uiText('workspace_revoke_invitation') }).click()
   await expect(revoked).toContainText('canceled')
   page.on('dialog', (dialog) => dialog.accept())
-  await page.getByRole('button', { name: 'Transfer ownership' }).click()
-  await expect(
-    page.getByText(`Invited Member (invite-${key}@example.com) · owner`, { exact: true }),
-  ).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Transfer ownership' })).toHaveCount(0)
+  await page.getByRole('button', { name: uiText('workspace_transfer') }).click()
+  await expect(invited.locator('[data-slot="tag"]').first()).toHaveText(
+    uiText('workspace_role_owner'),
+  )
+  await expect(page.getByRole('button', { name: uiText('workspace_transfer') })).toHaveCount(0)
   await page.context().clearCookies()
   await simulateClientIp(page)
   if (templateConfig.auth.emailOtp) await loginOtp(page, `invite-${key}@example.com`)
   else await login(page, `invite-${key}@example.com`)
   await page.goto(teamSettings)
   const oldOwner = page.getByRole('listitem').filter({ hasText: ownerEmail })
-  await oldOwner.getByRole('button', { name: 'Remove', exact: true }).click()
+  await oldOwner.getByRole('button', { name: uiText('workspace_remove'), exact: true }).click()
   await expect(oldOwner).toHaveCount(0)
   await page.screenshot({ path: test.info().outputPath('team-member-management.png') })
   await page.context().clearCookies()
   await login(page, ownerEmail)
   await page.goto(teamSettings)
-  await expect(page.getByRole('form', { name: 'Invite member' })).toHaveCount(0)
+  await expect(page.getByRole('form', { name: inviteForm })).toHaveCount(0)
   await expect(page.getByText('Browser Team', { exact: true })).toHaveCount(0)
 })

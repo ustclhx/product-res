@@ -112,6 +112,7 @@
 - `teamWorkspaces` 对原生 organization 写接口统一校验数据库会话、成员角色和开关；owner 锁按用户 ID 排序，再取空间事务锁。创建与转让均检查团队 owner 数量上限，团队 slug 不能使用保留字或个人空间的 `u-` 前缀。关闭多租户后团队只读，个人空间仍可修改名称。
 - owner / admin 可以邀请和管理普通成员，授予或撤销 owner 角色仅允许 owner；不能移除、退出或降级最后一个 owner。转让先把目标设为 owner，再把发起者降为 admin。个人空间的成员关系不可修改。
 - 接受邀请必须匹配当前数据库中的收件邮箱，并且该邮箱已经验证；全局允许未验证邮箱登录不等于允许接受邀请。未验证收件人返回 403 `INVITATION_EMAIL_UNVERIFIED`，成员和邀请不发生变更；签名 Cookie 中旧的验证状态不能覆盖数据库。邀请页面在验证前不展示空间名称或角色，提供真实验证邮件入口并回到原邀请 URL。
+- **邀请链接**（`packages/auth/src/invite-links.ts`，openspec/changes/add-team-invite-links）：团队空间 owner / admin 生成可多人使用的 `/join/<token>` 链接，选择加入角色（member / admin，数据库约束禁止 owner）、有效期 1 / 7 / 30 天与可选人数上限，可随时作废。token 为 256 位随机值，`workspace_invite_link` 只存 SHA-256 哈希，完整链接只在生成时返回一次。加入不要求邮箱验证（内测无邮件），与邮件邀请、直接加成员共用 `owner:` → `ws:` 锁与席位计数；创建人不再是 owner / admin 时链接自动失效，团队软删时全部作废。预览与加入按 IP 与用户走 `RL_AUTH`，请求日志与 Sentry 中 `/join/` 路径经 `redactUrlPath` 脱敏，PostHog 不采集 `/join`。审计：`workspace.invite_link_created` / `workspace.invite_link_revoked` / `workspace.member_added`（meta 带 `inviteLinkId`）。
 
 ### 当前空间的解析
 - 优先级：URL 中的 `$slug` → session.active_organization_id → 用户的个人空间（后两者只用于 `/app` 的重定向）。
@@ -119,7 +120,7 @@
 
 ### 席位
 - 接受邀请、新增成员时与 AI 任务提交一样，先取空间级事务锁 `pg_advisory_xact_lock(hashtextextended('ws:' || $ws, 0))`，再在同一事务内检查 `count(member) < maxSeats` 并插入，避免并发接受邀请导致超员。
-- P1 的 `ResolveMaxSeats(workspaceId, sql)` 提供同一事务读取本地权益的接入点；web 共用 `resolveWorkspaceMaxSeats`，当前返回 `null`（不限席位），有限套餐数据由 P2 接入。接受邀请与直接新增成员共用锁和计数，测试验证最后一个席位并发时仅一人成功。
+- P1 的 `ResolveMaxSeats(workspaceId, sql)` 提供同一事务读取本地权益的接入点；web 共用 `resolveWorkspaceMaxSeats`，按有效订阅 / `free` 套餐的 `maxSeats` 计算（内测 `free` 为 10 席，见 add-team-invite-links D1）。接受邀请与直接新增成员共用锁和计数，测试验证最后一个席位并发时仅一人成功。
 - 降级到席位更少的套餐时不自动移除成员：超员期间禁止新增成员，并在空间设置页提示 owner 处理。
 
 ### 数据隔离

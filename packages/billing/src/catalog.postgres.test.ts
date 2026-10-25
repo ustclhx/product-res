@@ -74,7 +74,10 @@ describe('catalog on isolated PostgreSQL', () => {
           .from(plan)
           .where(inArray(plan.key, ['free', 'pro', 'team', 'credit_pack']))
         const catalogIds = plans.map((p) => p.id)
-        expect(plans.find((p) => p.key === 'free')?.features).toEqual(DEFAULT_FREE_FEATURES)
+        expect(plans.find((p) => p.key === 'free')?.features).toEqual({
+          ...DEFAULT_FREE_FEATURES,
+          maxSeats: 10,
+        })
         expect(
           plans.filter((p) => ['free', 'pro', 'team', 'credit_pack'].includes(p.key)),
         ).toHaveLength(4)

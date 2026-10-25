@@ -33,6 +33,10 @@ export const getWorkspacePage = createServerFn({ method: 'GET' })
       return {
         activation: 'pending' as const,
         user: { id: user.id, name: user.name, email: user.email },
+        // 新建的团队空间未开通时，让用户能回到其它空间（add-team-invite-links D1）
+        otherSpaces: templateConfig.tenancy.multiTenant
+          ? (await userWorkspaces(db, user.id)).filter((s) => s.id !== workspace.id)
+          : [],
       }
     const members = await workspaceMembers(db, workspace.id)
     const canManage =

@@ -20,6 +20,24 @@ export {
   USER_BANNED,
 } from './fresh-session.ts'
 export {
+  type CreateInviteLinkInput,
+  createInviteLink,
+  INVITE_LINK_DEFAULT_TTL_DAYS,
+  INVITE_LINK_MAX_USES_LIMIT,
+  INVITE_LINK_TTL_DAYS,
+  type InviteLinkActor,
+  type InviteLinkDeps,
+  type InviteLinkPreview,
+  type InviteLinkRole,
+  type InviteLinkStatus,
+  type InviteLinkSummary,
+  isInviteLinkToken,
+  joinWithInviteLink,
+  listInviteLinks,
+  previewInviteLink,
+  revokeInviteLink,
+} from './invite-links.ts'
+export {
   ensurePersonalWorkspace,
   findPersonalWorkspace,
   PERSONAL_SLUG_PREFIX,

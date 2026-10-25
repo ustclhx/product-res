@@ -98,6 +98,7 @@ export function testUsers(prefix: string) {
         .$client`delete from audit_log where actor_user_id in ${sql(ids)} or workspace_id in ${sql(orgs)}
           or (target_type = 'user' and target_id in ${sql(ids)})`
       await sql`delete from invitation where organization_id in ${sql(orgs)} or inviter_id in ${sql(ids)}`
+      await sql`delete from workspace_invite_link where workspace_id in ${sql(orgs)} or created_by in ${sql(ids)}`
       await sql`delete from member where organization_id in ${sql(orgs)} or user_id in ${sql(ids)}`
       await sql`delete from organization where id in ${sql(orgs)}`
       await sql`delete from account where user_id in ${sql(ids)}`
@@ -105,6 +106,9 @@ export function testUsers(prefix: string) {
     },
   }
 }
+
+/** audit_log 对 app 只追加，读取 / 清理审计行用 migrator 连接 */
+export const migratorDb = () => createDb(env.HYPERDRIVE_MIGRATOR)
 
 let ipCounter = 0
 /** 每次调用返回一个新的客户端 IP，避免不同场景共用 RL_AUTH 的 IP 计数 */

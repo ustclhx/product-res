@@ -13,7 +13,8 @@ export const EXAMPLE_CATALOG = [
     credits: 0,
     creditExpiryDays: null,
     rollover: false,
-    features: DEFAULT_FREE_FEATURES,
+    // 内测没有支付渠道：free 给 10 席，团队空间才能加人（add-team-invite-links D1，迁移 0022 同步已有行）
+    features: { ...DEFAULT_FREE_FEATURES, maxSeats: 10 },
     sort: 0,
     active: true,
     prices: [],

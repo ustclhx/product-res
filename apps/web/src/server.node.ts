@@ -1,5 +1,5 @@
 import { AppError } from '@product-res/shared'
-import { log, withLogContext } from '@product-res/shared/log'
+import { log, redactUrlPath, withLogContext } from '@product-res/shared/log'
 import { createStartHandler, defaultStreamHandler } from '@tanstack/react-start/server'
 import { gateAdminRequest } from './features/admin/gate.ts'
 import {
@@ -43,7 +43,7 @@ export default {
               : response
             log.info('http.request', {
               method: request.method,
-              path,
+              path: redactUrlPath(path),
               status: result.status,
               durationMs: Date.now() - started,
             })

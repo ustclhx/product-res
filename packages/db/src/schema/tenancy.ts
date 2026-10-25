@@ -1,5 +1,15 @@
-import { relations } from 'drizzle-orm'
-import { boolean, index, pgTable, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core'
+import { relations, sql } from 'drizzle-orm'
+import {
+  boolean,
+  check,
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+  uuid,
+} from 'drizzle-orm/pg-core'
 import { user } from './auth.ts'
 
 /**
@@ -73,6 +83,40 @@ export const invitation = pgTable(
   ],
 )
 
+/**
+ * 团队空间邀请链接（openspec/changes/add-team-invite-links D2）：可多人使用、可限次、可作废。
+ * token 只存 SHA-256 哈希；状态由 revoked_at / expires_at / used_count 推导，不存冗余状态列。
+ * 角色在数据库层面限定为 member / admin，链接不能授予 owner。
+ */
+export const workspaceInviteLink = pgTable(
+  'workspace_invite_link',
+  {
+    id: uuid('id').primaryKey(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'restrict' }),
+    tokenHash: text('token_hash').notNull(),
+    role: text('role').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    // null = 不限次数（仍受席位上限约束）
+    maxUses: integer('max_uses'),
+    usedCount: integer('used_count').notNull().default(0),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    revokedBy: uuid('revoked_by').references(() => user.id, { onDelete: 'restrict' }),
+    createdBy: uuid('created_by')
+      .notNull()
+      .references(() => user.id, { onDelete: 'restrict' }),
+    ...timestamps,
+  },
+  (t) => [
+    unique('workspace_invite_link_token_hash_unique').on(t.tokenHash),
+    index('workspace_invite_link_workspace_id_id_idx').on(t.workspaceId, t.id.desc()),
+    check('workspace_invite_link_role_check', sql`${t.role} in ('member', 'admin')`),
+    check('workspace_invite_link_max_uses_check', sql`${t.maxUses} is null or ${t.maxUses} > 0`),
+    check('workspace_invite_link_used_count_check', sql`${t.usedCount} >= 0`),
+  ],
+)
+
 export const organizationRelations = relations(organization, ({ many }) => ({
   members: many(member),
   invitations: many(invitation),
@@ -97,3 +141,4 @@ export const invitationRelations = relations(invitation, ({ one }) => ({
 export type Organization = typeof organization.$inferSelect
 export type Member = typeof member.$inferSelect
 export type Invitation = typeof invitation.$inferSelect
+export type WorkspaceInviteLink = typeof workspaceInviteLink.$inferSelect

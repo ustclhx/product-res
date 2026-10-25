@@ -19,6 +19,8 @@ it.skipIf(!url)(
     const key = newId()
     const planId = newId()
     const priceId = newId()
+    // 已提交的 free 席位随部署数据而定（迁移 0022 / seed 可能为 10），事务外应始终看到它
+    const committed = (await getEntitlements(db, ws)).features.maxSeats
     try {
       await db.$client
         .begin(async (tx) => {
@@ -33,7 +35,7 @@ it.skipIf(!url)(
           await tx`update subscription set status='past_due', past_due_since=now()-interval '8 days' where workspace_id=${ws}`
           expect(await resolveWorkspaceMaxSeats(ws, tx)).toBe(1)
           // A separate client cannot see these uncommitted rows, proving the test exercises tx.
-          expect((await getEntitlements(db, ws)).features.maxSeats).toBe(1)
+          expect((await getEntitlements(db, ws)).features.maxSeats).toBe(committed)
           throw new Error('rollback fixture')
         })
         .catch(rollbackFixture)
