@@ -371,7 +371,9 @@ it('真实流转记录锁住两边的方向写入，结束后恢复', async () =
         workspaceTransferring: transferring,
       })
     }
-    for (const actor of [source, target])
+    // spec「流转中编辑方向」：目标空间的 admin 新建方向同样被拒
+    const targetAdmin: WorkbenchActor = { ...target, member: { role: 'admin' } }
+    for (const actor of [source, target, targetAdmin])
       await expect(createDirection(await freshActor(actor), baseDirection)).rejects.toMatchObject({
         code: 'WORKSPACE_TRANSFERRING',
         status: 403,
