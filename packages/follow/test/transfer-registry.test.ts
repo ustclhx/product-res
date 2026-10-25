@@ -187,8 +187,37 @@ describe('引用列', () => {
         if (r.closure) expect(r.unmapped, `${entry.name}.${r.column.name}`).toBe('fail')
         if (r.unmapped === 'set-null') expect(r.column.notNull).toBe(false)
         if (r.unmapped === 'drop-element') expect(r.kind).toBe('uuid-array')
+        if (r.unmapped === 'drop-key') expect(r.kind).toBe('jsonb-key')
+        if (r.kind === 'jsonb-key') {
+          // 回填在批次结束时进行：不能作为闭包父行，映射不到时删键；键在同一列内唯一
+          expect(r.closure, `${entry.name}.${r.column.name}`).toBeUndefined()
+          expect(r.unmapped).toBe('drop-key')
+          expect(r.column.getSQLType()).toBe('jsonb')
+          expect(r.key).toMatch(/^[A-Za-z]+$/)
+          expect(r.targets).toHaveLength(1)
+        } else expect(r.key).toBeUndefined()
       }
+      const keys = entry.references
+        .filter((r) => r.kind === 'jsonb-key')
+        .map((r) => `${r.column.name}.${r.key}`)
+      expect(new Set(keys).size).toBe(keys.length)
     }
+  })
+
+  it('lead_event.payload 中的空间行 id 声明为 jsonb-key', () => {
+    const entry = FLOWING_TRANSFER_TABLES.find((e) => e.name === 'lead_event')
+    expect(
+      Object.fromEntries(
+        (entry?.references ?? [])
+          .filter((r) => r.kind === 'jsonb-key')
+          .map((r) => [r.key, r.targets[0]]),
+      ),
+    ).toEqual({
+      decisionId: 'decision',
+      scenarioId: 'costing_scenario',
+      studyId: 'category_study',
+      snapshotId: 'category_study_snapshot',
+    })
   })
 })
 
@@ -244,7 +273,8 @@ describe('顺序', () => {
 
   it('父先子后且批次不早于其引用的表', () => {
     for (const entry of FLOWING_TRANSFER_TABLES) {
-      for (const r of entry.references) {
+      // jsonb-key 在每个批次结束时回填，被引用的表可以更晚落地
+      for (const r of entry.references.filter((ref) => ref.kind !== 'jsonb-key')) {
         for (const target of r.targets) {
           if (target === entry.name) continue
           const label = `${entry.name}.${r.column.name} → ${target}`
@@ -262,7 +292,10 @@ describe('顺序', () => {
     const edges = new Map(
       FLOWING_TRANSFER_TABLES.map((entry) => [
         entry.name,
-        entry.references.flatMap((r) => r.targets).filter((t) => t !== entry.name),
+        entry.references
+          .filter((r) => r.kind !== 'jsonb-key')
+          .flatMap((r) => r.targets)
+          .filter((t) => t !== entry.name),
       ]),
     )
     const state = new Map<string, 'visiting' | 'done'>()

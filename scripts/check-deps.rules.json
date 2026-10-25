@@ -18,6 +18,7 @@
     "apps/jobs/test/media-workflow.test.ts": ["cloudflare:workers"],
     "apps/jobs/test/metrics-daily.test.ts": ["cloudflare:test", "cloudflare:workers"],
     "apps/jobs/test/selection-review.test.ts": ["cloudflare:workers"],
+    "apps/jobs/test/transfer-copy-review.test.ts": ["cloudflare:workers"],
     "apps/jobs/test/sentry.test.ts": ["cloudflare:test", "cloudflare:workers"],
     "apps/jobs/test/workspace-cleanup.test.ts": ["cloudflare:test", "cloudflare:workers"],
     "apps/web/e2e/staging-acceptance/local-media.ts": ["cloudflare:workers"],

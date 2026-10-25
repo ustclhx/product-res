@@ -2,7 +2,7 @@
 // 经 @product-res/follow/transfer 单独导出：注册表在加载时引用全部 schema 表，放进主入口会让
 // 只 mock 部分 @product-res/db 的测试（如 apps/jobs node-entry）失败。
 // 服务函数的参数与返回值都可 JSON 序列化，供 Workflow 逐步调用：
-// startUpgrade / startMove → planTransfer → runBatch（逐批）→ finalizeTransfer；
+// startUpgrade / startMove / startCopy → planTransfer → runBatch（逐批）→ finalizeTransfer；
 // 失败或取消时 beginCompensation → compensateBatch（逆序）→ completeCompensation（或 compensateTransfer）。
 export { assertTransferAccess, lockTransferWorkspaces } from './access.ts'
 export { type BatchResult, runBatch, type SourceRowSnapshot, touchesSellerData } from './batch.ts'
@@ -48,10 +48,12 @@ export {
   transferTablesInBatch,
 } from './registry.ts'
 export {
+  type StartCopyInput,
   type StartHooks,
   type StartMoveInput,
   type StartResult,
   type StartUpgradeInput,
+  startCopy,
   startMove,
   startUpgrade,
 } from './start.ts'

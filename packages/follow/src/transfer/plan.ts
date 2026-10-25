@@ -21,7 +21,7 @@ import {
 import { batchFamily, closureRefs, col, ident, keyOf, type TableMeta, tableMeta } from './meta.ts'
 import { estimateQuota, type QuotaEstimate } from './quota.ts'
 import { FLOWING_TRANSFER_TABLES, TRANSFER_ROOTS } from './registry.ts'
-import { TRANSFER_BATCH_ORDER } from './types.ts'
+import { type FlowingTransferTable, TRANSFER_BATCH_ORDER } from './types.ts'
 
 /**
  * plan 步骤（design D2、D4、D4.5、D8、D9 与「决定」，tasks 3.2）。
@@ -127,15 +127,13 @@ export async function planTransfer(
       config,
       { revoked: true },
     )
-    if (transfer.kind === 'copy')
-      throw transferError('TRANSFER_KIND_UNSUPPORTED', '复制尚未实现', 400)
     const selection = transfer.selection as TransferSelection
     let conflicts: TransferConflictDecision[] = []
     if (transfer.kind === 'upgrade') {
       await assertTargetEmpty(tx, transfer)
       await planUpgrade(tx, transfer)
     } else {
-      await planMoveClosure(tx, transfer, selection)
+      await planSelectiveClosure(tx, transfer, selection)
       conflicts = await resolveConflicts(tx, transfer, selection)
     }
     const tables = Object.fromEntries(
@@ -176,9 +174,9 @@ export async function planTransfer(
       total,
       batches,
       conflicts,
-      scoringVersions: transfer.kind === 'move' ? await scoringSnapshot(tx, transfer) : [],
+      scoringVersions: transfer.kind !== 'upgrade' ? await scoringSnapshot(tx, transfer) : [],
       quota:
-        transfer.kind === 'move'
+        transfer.kind !== 'upgrade'
           ? await estimateQuota(tx, transfer, conflicts)
           : { additionalBrowseCallsPerDay: 0, threshold: 0, exceeds: false },
       entitlements: { checked: options.checkEntitlements !== undefined, violations },
@@ -209,7 +207,7 @@ export async function transition(
   if (updated.length === 0) throw transferError('TRANSFER_STATE', '流转状态已变化，放弃本步', 409)
 }
 
-/** D8：超过阈值只允许升级与移动，复制要求缩小范围（复制批次 tasks 3.4 接入） */
+/** D8：超过阈值只允许升级与移动，复制要求缩小范围 */
 export function assertCopyWithinLimit(kind: WorkspaceTransfer['kind'], total: number) {
   if (kind === 'copy' && total > TRANSFER_COPY_ROW_LIMIT)
     throw transferError('TRANSFER_TOO_LARGE', '复制范围过大，请缩小选择', 400, { total })
@@ -298,7 +296,8 @@ async function planUpgrade(tx: Tx, transfer: WorkspaceTransfer) {
 }
 
 /**
- * 选择性移动的闭包（D2）：
+ * 选择性移动 / 复制的闭包（D2）。触发方式按操作取注册表的 move 或 copy 列
+ * （复制不带影子验证样本，D4.6）：
  * 1. 根条目：方向、店铺、追踪商品、品类研究；核算方案 / 档案以线索所在的整个簇为根
  *    （含 merged_into_id 相连的簇），簇所属方向不随簇移动；
  * 2. 按注册表的闭包引用向下展开（父先子后）；
@@ -306,7 +305,13 @@ async function planUpgrade(tx: Tx, transfer: WorkspaceTransfer) {
  * 4. 被闭包引用的配置（seasonal_node、supplier、logistics_profile、risk_rule）：复制或合并，源行保留；
  *    配置包整表；线索根另带整份 cost_param。
  */
-async function planMoveClosure(tx: Tx, transfer: WorkspaceTransfer, selection: TransferSelection) {
+async function planSelectiveClosure(
+  tx: Tx,
+  transfer: WorkspaceTransfer,
+  selection: TransferSelection,
+) {
+  const triggers = (entry: FlowingTransferTable) =>
+    transfer.kind === 'copy' ? entry.copy : entry.move
   const roots = selection.roots ?? {}
   const src = transfer.sourceWorkspaceId
   if (roots.direction?.length)
@@ -373,9 +378,9 @@ async function planMoveClosure(tx: Tx, transfer: WorkspaceTransfer, selection: T
     const meta = tableMeta(table)
     await planRows(tx, transfer, meta, sql`t.id = any(${uuidList(ids)})`, sql`${meta.entry.batch}`)
   }
-  // 闭包展开：只沿“随根流转”的表（move 含 closure）向下，方向本身只来自根条目
+  // 闭包展开：只沿“随根流转”的表（触发方式含 closure）向下，方向本身只来自根条目
   for (const entry of FLOWING_TRANSFER_TABLES) {
-    if (!entry.move.includes('closure') || entry.name === 'direction') continue
+    if (!triggers(entry).includes('closure') || entry.name === 'direction') continue
     if (closureRefs(entry).length === 0) continue
     const meta = tableMeta(entry.name)
     await planRows(
@@ -399,9 +404,10 @@ async function planMoveClosure(tx: Tx, transfer: WorkspaceTransfer, selection: T
   // 被闭包引用的配置
   for (const entry of FLOWING_TRANSFER_TABLES) {
     for (const ref of entry.references) {
+      if (ref.kind === 'jsonb-key') continue
       for (const target of ref.targets) {
         const targetMeta = tableMeta(target)
-        if (!targetMeta.entry.move.includes('referenced')) continue
+        if (!triggers(targetMeta.entry).includes('referenced')) continue
         const meta = tableMeta(entry.name)
         const value = col('r', ref.column.name)
         const values = ref.kind === 'uuid-array' ? sql`unnest(${value})::text` : sql`${value}::text`
