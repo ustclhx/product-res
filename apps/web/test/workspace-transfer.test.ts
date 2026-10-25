@@ -15,6 +15,7 @@ import { AppError, newId } from '@product-res/shared'
 import { and, eq } from 'drizzle-orm'
 import { describe, expect, it } from 'vitest'
 import {
+  activeTransferBanner,
   cancelWorkspaceTransfer,
   retryWorkspaceTransfer,
   startWorkspaceUpgrade,
@@ -262,5 +263,33 @@ describe('数据流转服务端入口', () => {
         workspace: { id: newId(), isPersonal: false },
       }),
     ).rejects.toMatchObject({ code: 'TRANSFER_FORBIDDEN' })
+  })
+
+  it('只读横幅：进行中的流转两边都显示，详情链接只给 owner / admin 与发起人，结束后消失', async () => {
+    const actor = await personal()
+    const { workflow } = fakeWorkflow()
+    const started = await startWorkspaceUpgrade(deps(workflow), actor, {
+      name: 'Team',
+      slug: `bn-${actor.userId.slice(-12)}`,
+      idempotencyKey: 'k',
+    })
+    const mine = { userId: actor.userId, role: 'owner' }
+    expect(await activeTransferBanner(db(), actor.userId, mine)).toEqual({
+      id: started.transferId,
+      kind: 'upgrade',
+      status: 'pending',
+      viewable: true,
+    })
+    expect(
+      await activeTransferBanner(db(), started.targetWorkspaceId, {
+        userId: newId(),
+        role: 'member',
+      }),
+    ).toMatchObject({ id: started.transferId, viewable: false })
+    await db()
+      .update(workspaceTransfer)
+      .set({ status: 'completed' })
+      .where(eq(workspaceTransfer.id, started.transferId))
+    expect(await activeTransferBanner(db(), actor.userId, mine)).toBeNull()
   })
 })
