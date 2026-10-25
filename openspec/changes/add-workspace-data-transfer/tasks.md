@@ -4,16 +4,16 @@
 
 ## 1. 前置评估
 
-- [ ] 1.1 按届时 schema 复核 design D3 的逐表分类与唯一约束清单，新增的空间级表必须补充分类（加一条检查：带 `workspace_id` 的表都出现在流转注册表中，否则测试失败）。
+- [x] 1.1 按届时 schema 复核 design D3 的逐表分类与唯一约束清单，新增的空间级表必须补充分类（加一条检查：带 `workspace_id` 的表都出现在流转注册表中，否则测试失败）。
 - [ ] 1.2 评估店铺追踪采集按 `(platform, seller_key)` / `product_id` 跨空间去重，决定是否作为前置改动；确认 `source_qualification` 汇总不因抽检归属变化而重复计数。
 
 ## 2. 数据模型
 
-- [ ] 2.1 `packages/db/src/schema/transfer.ts`：`workspace_transfer`、`workspace_transfer_batch`、`workspace_transfer_id_map` 及唯一 / 部分唯一索引，一个迁移；模板配置开关（默认关闭，`multiTenant=false` 时强制关闭）。
+- [x] 2.1 `packages/db/src/schema/transfer.ts`：`workspace_transfer`、`workspace_transfer_batch`、`workspace_transfer_id_map` 及唯一 / 部分唯一索引，一个迁移；模板配置开关（默认关闭，`multiTenant=false` 时强制关闭）。
 
 ## 3. 流转服务
 
-- [ ] 3.1 流转表注册表：每张参与流转的表声明闭包父子关系、自然键、冲突策略、需重写的外键 / 数组 / 引用列。
+- [x] 3.1 流转表注册表：每张参与流转的表声明闭包父子关系、自然键、冲突策略、需重写的外键 / 数组 / 引用列。
 - [ ] 3.2 `plan`：闭包计算、冲突预览、行数与目标权益校验、评分版本快照、外部额度增量估算。
 - [ ] 3.3 移动批次：原地更新 `workspace_id`、冲突行合并与引用改写、源行快照写入 ID 映射。
 - [ ] 3.4 复制批次：新 id 生成与 ID 映射、父先子后插入、外键 / 数组 / `origin_ref` / `merged_into_id` / `risk_finding.ref` 重写。

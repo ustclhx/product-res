@@ -73,7 +73,7 @@
 | `cluster_signal` | selection | 移动 | 复制 | 主键 `(cluster_id, observed_on, dimension)` 随父 |
 | `lead` | selection | 移动 | 复制 | 唯一 `(cluster_id, lead_on)` 随父；`setting_version` 见 D4.5 |
 | `lead_event` | selection | 移动 | 复制 | 业务事件流（含 `review-reminder` 幂等标记），`actor_user_id` 原样保留 |
-| `risk_finding` | selection | 移动 | 复制 | 唯一 `(cluster_id, kind, ref)` 随父；`ref` 可能是 `risk_rule.id`，需重映射 |
+| `risk_finding` | selection | 移动 | 复制 | 唯一 `(cluster_id, kind, ref)` 随父；`ref` 可能是 `risk_rule.id`，需重映射（`ref` 非空且参与唯一键，映射不到时原样保留而不是置空；被引用的规则随闭包落地） |
 | `tracked_store` | tracking | 移动 | 复制 | 唯一 `(workspace_id, marketplace, seller_key)`，D4.2 |
 | `tracked_product` | tracking | 移动 | 复制 | 唯一 `(workspace_id, product_id)`，D4.2 |
 | `supplier` | costing | 移动 | 复制（被引用时） | 无唯一；按 `(name, coalesce(url,''), platform)` 去重合并 |
@@ -87,7 +87,7 @@
 | `category_study_snapshot` | insight | 移动 | 复制 | `modules` 引用部署级观测，不变 |
 | `recommendation` | validation | 移动 | 不流转 | 影子验证样本，D4.6 |
 | `recommendation_label` | validation | 移动 | 不流转 | 随样本 |
-| `readiness_stat` | validation | 移动（仅升级） | 不流转 | 派生统计；move 后在两边重算 |
+| `readiness_stat` | validation | 移动（仅升级） | 不流转 | 派生统计；唯一 `(workspace_id, marketplace, direction_id, signal_type, computed_on)` 含空间列，但只在升级时移动（目标为空）；move 后在两边重算 |
 | `weight_suggestion` | validation | 移动（仅升级） | 不流转 | 基于整空间样本拟合，部分流转后失效 |
 | `accuracy_audit` | accuracy | 移动（仅升级） | 不流转 | 唯一 `(workspace_id, week_of)`，D4.7 |
 | `accuracy_audit_item` | accuracy | 移动（仅升级） | 不流转 | 随抽检 |
@@ -158,8 +158,9 @@
 新 schema 文件 `packages/db/src/schema/transfer.ts`：
 
 - `workspace_transfer`：`id`、`kind (upgrade|copy|move)`、`source_workspace_id`、`target_workspace_id`、`requested_by`、`idempotency_key`、`selection jsonb`（根条目与冲突选项）、`plan jsonb`（闭包统计、冲突预览、评分版本快照）、`status (pending|running|completed|failed|compensating|compensated|cancelled)`、`counts jsonb`、`error_code`、`created_at`、`started_at`、`finished_at`。唯一 `(requested_by, idempotency_key)`；部分唯一索引保证每个空间同时最多一个进行中的流转（分别对 source、target 建 `where status in ('pending','running','compensating')`）。
-- `workspace_transfer_batch`：`transfer_id`、`seq`、`batch_key`（如 `config`、`direction:<id>`、`store-pool`）、`status (pending|done|compensated)`、`counts`；唯一 `(transfer_id, batch_key)`。
-- `workspace_transfer_id_map`：`transfer_id`、`table_name`、`source_id`、`target_id`、`action (moved|copied|merged|skipped|renamed)`；主键 `(transfer_id, table_name, source_id)`。复合主键表（`cluster_signal`）以拼接键记录。
+- `workspace_transfer_batch`：`id`、`transfer_id`、`seq`、`batch_key`（如 `config`、`direction:<id>`、`store-pool`）、`status (pending|done|compensated)`、`counts`、`created_at`、`updated_at`；唯一 `(transfer_id, batch_key)`。
+- `workspace_transfer_id_map`：`transfer_id`、`table_name`、`source_id`、`target_id`、`action (planned|moved|copied|merged|skipped|renamed)`、`batch_key`（补偿按批次逆序撤销时定位）、`source_row jsonb`（移动合并时保存被删除的源行，D8）、`updated_at`；主键 `(transfer_id, table_name, source_id)`。复合主键表（`cluster_signal`）以拼接键记录，因此 id 列为 `text`。
+- `workspace_transfer` 另有检查约束 `source_workspace_id <> target_workspace_id`，以及按源 / 目标空间列出记录的索引。
 
 这些表同时关联两个空间，刻意不用 `workspace_id` 列名，不经 `scoped()`；只由流转服务访问，服务在入口显式校验两边成员关系（与 `ebay-account-deletion` 这类跨空间操作同样说明理由）。
 
@@ -170,7 +171,7 @@
 - **入口**：Server Function 在一个事务里写 `workspace_transfer(pending)` 并经 `TransactionalEnqueue` / `Workflow.create({ id: transfer.id })` 启动，回滚则不投递。客户端提供幂等键（打开对话框时生成），重复提交返回同一流转。
 - **Workflow 步骤**（`step.do`，可重试）：
   1. `plan`：快照事务内计算闭包、冲突、行数，写 `plan` 与 `id_map(planned)`、批次列表。超过阈值（如 5 万行）只允许升级与移动，复制要求缩小范围。
-  2. `batch:<key>`：按“配置 → 方向（每方向一批）→ 店铺池 → 追踪商品 → 品类研究 → 验证 / 抽检（仅升级）”顺序，每批一个数据库事务：取 `ws:<source>`、`ws:<target>` 两把 advisory lock（按 id 排序获取避免死锁），校验权限，执行插入或原地更新，写 `id_map` 结果与 `batch.status = done`。批次开始先检查 `done` 即跳过，保证重试与续跑幂等。单批行数过大时按主键分页再切子批，子批键写入 `batch_key`。
+  2. `batch:<key>`：按“配置 → 方向（每方向一批）→ 店铺池 → 追踪商品 → 品类研究 → 验证 / 抽检（仅升级）”顺序（`recommendation` / `recommendation_label` 对 `cluster`、`direction` 是 restrict 外键，归入方向批次与簇同事务移动；验证批次只含 `readiness_stat`、`weight_suggestion`、`accuracy_audit*`），每批一个数据库事务：取 `ws:<source>`、`ws:<target>` 两把 advisory lock（按 id 排序获取避免死锁），校验权限，执行插入或原地更新，写 `id_map` 结果与 `batch.status = done`。批次开始先检查 `done` 即跳过，保证重试与续跑幂等。单批行数过大时按主键分页再切子批，子批键写入 `batch_key`。
   3. `finalize`：标记 `completed`，写审计，升级时切换会话活跃空间并重算两边的 `readiness_stat`（仅 move 时需要）。
 - **流转锁**：流转处于 pending / running / compensating 时，两个空间对工作台写入只读（在 `withWorkspace` 解析出 `workspaceReadOnly` 时并入此条件，错误码 `WORKSPACE_TRANSFERRING`）；`selection-daily-v1`、`selection-label-v1`、`selection-readiness-v1`、`selection-review-v1`、店铺追踪采集、每周抽检等按空间循环的任务跳过这些空间，`ensureSelectionDefaults` 不在流转中的空间写预置数据。
 - **补偿回滚**：失败（不可重试错误、权限失效、超时）或用户在完成前取消时进入 `compensating`，按批次逆序撤销：复制批次删除 `id_map` 中 `copied` 的目标行（子先父后）；移动批次把 `moved` 的行改回源空间，`merged` 的源行从映射记录恢复（移动合并时源行先写入 `id_map` 的 `source_row jsonb` 再删除）。完成后 `compensated`。`completed` 的流转不提供回滚，用户可发起反向移动。
