@@ -97,7 +97,15 @@ export async function finalizeTransfer(db: Database, transferId: string): Promis
     })
     // 审计与迁移同事务（tasks 5.1）；重试时上面已提前返回，不重复写
     await auditTransferCompleted(tx, transfer, counts)
-    if (transfer.kind === 'move') await afterMove(tx, transfer, now)
+    // 源空间未处理的整空间权重建议失效（tasks 4.2）：单条更新，与 completed 同事务；
+    // 准备度重算较重，放到完成后的独立步骤 refreshAfterMove，失败不影响完成状态
+    if (transfer.kind === 'move')
+      await dismissPendingWeightSuggestions(
+        asDatabase(tx),
+        transfer.sourceWorkspaceId,
+        transfer.requestedBy,
+        now,
+      )
     return { status: 'completed' as const, sessionTokens }
   })
 }
@@ -110,6 +118,7 @@ export async function beginCompensation(
   db: Database,
   transferId: string,
   errorCode: string,
+  options: { readonly cancelledBy?: string } = {},
 ): Promise<WorkspaceTransfer['status']> {
   return db.transaction(async (tx) => {
     const [transfer] = await tx
@@ -130,6 +139,7 @@ export async function beginCompensation(
     await auditTransfer(tx, transfer, 'failed', {
       counts: await countActions(tx, transfer.id),
       errorCode: transfer.errorCode ?? errorCode,
+      ...(options.cancelledBy ? { cancelledBy: options.cancelledBy } : {}),
     })
     return 'compensating' as const
   })
@@ -321,16 +331,20 @@ export async function compensateTransfer(
 const asDatabase = (tx: Tx) => tx as unknown as Database
 
 /**
- * move 完成后（tasks 4.2，design D3 readiness_stat / weight_suggestion）：两边的准备度都基于残缺样本，
- * 在流转锁内重算；源空间未处理的权重建议作废（resolved_by 记发起人）。与 completed 同事务，重试幂等。
+ * move 完成后（tasks 4.2，design D3 readiness_stat）：两边的准备度都基于残缺样本，在流转锁内按现有样本重算。
+ * 与 completed 分开、作为 Workflow 的独立可重试步骤：重算失败不回滚已完成的流转；重算按现有样本整体重建，
+ * 重复执行结果相同。非 move 或未完成的流转直接返回 false。
  */
-async function afterMove(tx: Tx, transfer: WorkspaceTransfer, now: Date) {
-  await rebuildWorkspaceReadiness(asDatabase(tx), transfer.sourceWorkspaceId, { now })
-  await rebuildWorkspaceReadiness(asDatabase(tx), transfer.targetWorkspaceId, { now })
-  await dismissPendingWeightSuggestions(
-    asDatabase(tx),
-    transfer.sourceWorkspaceId,
-    transfer.requestedBy,
-    now,
-  )
+export async function refreshAfterMove(db: Database, transferId: string): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const head = await loadTransfer(tx, transferId)
+    if (head.kind !== 'move' || head.status !== 'completed') return false
+    await lockTransferWorkspaces(tx, [head.sourceWorkspaceId, head.targetWorkspaceId], {
+      sellerData: false,
+    })
+    const now = new Date()
+    await rebuildWorkspaceReadiness(asDatabase(tx), head.sourceWorkspaceId, { now })
+    await rebuildWorkspaceReadiness(asDatabase(tx), head.targetWorkspaceId, { now })
+    return true
+  })
 }

@@ -33,6 +33,7 @@ import { getNodeJobFeatures, registerNodeJobsSchedules } from './registration.ts
 import {
   createNodeTransferHandler,
   createNodeTransferWorkflowHttpHandler,
+  transferInstanceGuard,
   WORKSPACE_TRANSFER_WORKFLOW,
   type WorkspaceTransferWorkflowParams,
 } from './transfer.ts'
@@ -265,6 +266,7 @@ export async function startNodeJobs(config: NodeEnv, options: NodeJobsOptions) {
       ? { available: true, value: transferWorkflow }
       : { available: false },
     secret: config.BETTER_AUTH_SECRET,
+    accepts: transferInstanceGuard(db),
   })
   const sockets = new Set<Socket>()
   let stopping = false

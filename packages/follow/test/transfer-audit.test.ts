@@ -10,6 +10,7 @@ import {
   listTransferBatches,
   listWorkspaceTransfers,
   planTransfer,
+  refreshAfterMove,
   runBatch,
   startMove,
   startUpgrade,
@@ -202,6 +203,9 @@ describe.skipIf(!url)('数据流转审计与派生统计', () => {
     )
     await runAll(started.transferId)
     await finalizeTransfer(db, started.transferId)
+    // 准备度重算是完成后的独立步骤；重复执行结果相同
+    expect(await refreshAfterMove(db, started.transferId)).toBe(true)
+    expect(await refreshAfterMove(db, started.transferId)).toBe(true)
 
     const [suggestion] = await db
       .select()

@@ -99,6 +99,11 @@ export const workspaceTransfer = pgTable(
      */
     sessionTokens: jsonb('session_tokens').$type<string[]>().notNull().default([]),
     errorCode: text('error_code'),
+    /**
+     * 当前负责推进该流转的 Workflow 实例 id（首个实例为流转 id，续跑实例为 `<流转 id>-<uuid>`）；
+     * 续跑 / 取消在行锁下条件更新，只有当前实例已终止时才另起实例
+     */
+    workflowInstanceId: text('workflow_instance_id'),
     createdAt: createdAt(),
     startedAt: timestamp('started_at', { withTimezone: true }),
     finishedAt: timestamp('finished_at', { withTimezone: true }),

@@ -13,6 +13,7 @@ export default defineConfig({
       'test/node-wire.integration.test.ts',
       'test/node-datasync.integration.test.ts',
       'test/node-stores.integration.test.ts',
+      'test/node-transfer.integration.test.ts',
       ...(process.env.JOBS_SMTP_PORT && process.env.JOBS_SMTP_CONTROL
         ? ['test/node-smtp.integration.test.ts', 'test/node-observer-shutdown.integration.test.ts']
         : []),

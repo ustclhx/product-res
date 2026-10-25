@@ -46,7 +46,12 @@ export async function auditTransfer(
   tx: Tx,
   transfer: AuditSubject,
   event: TransferAuditEvent,
-  extra: { readonly counts?: WorkspaceTransferCounts; readonly errorCode?: string | null } = {},
+  extra: {
+    readonly counts?: WorkspaceTransferCounts
+    readonly errorCode?: string | null
+    /** 用户取消时的真实操作人（可能不是发起人）；审计 actor 与 meta.cancelledBy 均记此人 */
+    readonly cancelledBy?: string
+  } = {},
 ): Promise<void> {
   const sides = [
     { side: 'source', workspaceId: transfer.sourceWorkspaceId, other: transfer.targetWorkspaceId },
@@ -54,7 +59,7 @@ export async function auditTransfer(
   ] as const
   for (const { side, workspaceId, other } of sides)
     await insertAudit(tx, {
-      actor: transfer.requestedBy,
+      actor: extra.cancelledBy ?? transfer.requestedBy,
       workspaceId,
       action: `workspace.transfer.${event}`,
       targetType: TRANSFER_AUDIT_TARGET,
@@ -66,6 +71,7 @@ export async function auditTransfer(
         counterpartWorkspaceId: other,
         counts: extra.counts ?? {},
         ...(extra.errorCode ? { errorCode: extra.errorCode } : {}),
+        ...(extra.cancelledBy ? { cancelledBy: extra.cancelledBy } : {}),
       },
     })
 }
@@ -87,13 +93,14 @@ export async function auditTransferRequested(tx: Tx, transfer: AuditSubject): Pr
     sql`select id from member
       where organization_id = ${transfer.targetWorkspaceId} and user_id = ${transfer.requestedBy}`,
   )
+  if (!owner) throw new Error(`upgrade target ${transfer.targetWorkspaceId} has no owner member`)
   // 与 packages/auth 团队创建的 member_added 同一 meta 形状
   await insertAudit(tx, {
     actor: transfer.requestedBy,
     workspaceId: transfer.targetWorkspaceId,
     action: 'workspace.member_added',
     targetType: 'member',
-    targetId: owner?.id ?? '',
+    targetId: owner.id,
     meta: {
       targetUserId: transfer.requestedBy,
       oldRole: null,

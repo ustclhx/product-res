@@ -33,6 +33,7 @@ export {
   type FinalizeResult,
   finalizeTransfer,
   listTransferBatches,
+  refreshAfterMove,
   type TransferBatchState,
 } from './lifecycle.ts'
 export {
@@ -74,6 +75,10 @@ export {
 } from './start.ts'
 export * from './types.ts'
 export {
+  holdTransferStart,
+  loadTransferAfterStart,
+  type TransferHead,
+  transferAcceptsInstance,
   transferWorkflowToken,
   WORKSPACE_TRANSFER_WORKFLOW,
   type WorkspaceTransferWorkflowParams,

@@ -3,6 +3,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { TemplateConfig } from '@product-res/config'
 import type { Database } from '@product-res/db'
 import {
+  transferAcceptsInstance,
   transferWorkflowToken,
   WORKSPACE_TRANSFER_WORKFLOW,
   type WorkspaceTransferWorkflowParams,
@@ -22,6 +23,10 @@ import { type JobObserver, logJobObserver, withJobObserver } from '../observer.t
 import { runWorkspaceTransfer } from '../workflows/transfer-runner.ts'
 
 export { WORKSPACE_TRANSFER_WORKFLOW, type WorkspaceTransferWorkflowParams }
+
+/** 生产装配：创建实例前按数据库确认流转进行中 */
+export const transferInstanceGuard = (db: Database) => (transferId: string) =>
+  transferAcceptsInstance(db, transferId)
 
 export interface NodeTransferWorkflowOptions {
   readonly cache: Pick<KeyValueStore, 'delete'>
@@ -81,6 +86,8 @@ const errors: Record<string, [number, string]> = {
 export function createNodeTransferWorkflowHttpHandler(options: {
   workflow: Capability<Workflow<WorkspaceTransferWorkflowParams>>
   secret: string
+  /** 创建前确认流转存在且进行中；省略时只做身份与形状校验（仅测试） */
+  accepts?: (transferId: string) => Promise<boolean>
 }) {
   const token = options.secret ? transferWorkflowToken(options.secret) : Promise.resolve('')
   return async (request: IncomingMessage, response: ServerResponse) => {
@@ -122,6 +129,9 @@ export function createNodeTransferWorkflowHttpHandler(options: {
         // 实例 id 必须以流转 id 开头，禁止用任意 id 驱动别的流转
         if (!command.id.startsWith(command.params.transferId))
           throw new AppError('INVALID_REQUEST', 'Invalid workflow request')
+        // 令牌被重放时也只能推进确实在进行中的流转
+        if (options.accepts && !(await options.accepts(command.params.transferId)))
+          throw new AppError('WORKFLOW_NOT_FOUND', 'Workflow instance not found', { status: 404 })
         const created = await workflow.create({
           id: command.id,
           params: {

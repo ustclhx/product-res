@@ -1,10 +1,18 @@
 import { env } from 'cloudflare:workers'
 import { ensurePersonalWorkspace } from '@product-res/auth'
-import { createDb, direction, organization, scoped, user, workspaceTransfer } from '@product-res/db'
+import {
+  auditLog,
+  createDb,
+  direction,
+  organization,
+  scoped,
+  user,
+  workspaceTransfer,
+} from '@product-res/db'
 import type { WorkspaceTransferWorkflowParams } from '@product-res/follow/transfer'
 import type { Workflow, WorkflowInstance } from '@product-res/platform'
 import { AppError, newId } from '@product-res/shared'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { describe, expect, it } from 'vitest'
 import {
   cancelWorkspaceTransfer,
@@ -30,12 +38,17 @@ function fakeWorkflow(options: { fail?: boolean; status?: string } = {}) {
   const instance = (id: string) =>
     ({
       id,
-      status: async () => ({ status: options.status ?? 'running' }),
+      // 本 fake 新建的实例视为运行中；其余实例（主实例）按 options.status
+      status: async () => ({
+        status: created.some((c) => c.id === id) ? 'running' : (options.status ?? 'running'),
+      }),
       terminate: async () => {},
       sendEvent: async () => {},
     }) as unknown as WorkflowInstance
   const workflow: Workflow<WorkspaceTransferWorkflowParams> = {
     async create({ id, params }) {
+      // 模拟投递耗时，让并发请求在行锁上交错
+      await new Promise((resolve) => setTimeout(resolve, 20))
       if (options.fail) throw new AppError('WORKFLOW_UNAVAILABLE', 'down', { status: 503 })
       created.push({ id: id as string, params })
       return instance(id as string)
@@ -170,24 +183,84 @@ describe('数据流转服务端入口', () => {
     expect(await retryWorkspaceTransfer(deps(running.workflow), actor, started.transferId)).toEqual(
       { status: 'pending', resumed: false },
     )
-    // 非发起人且非 owner 不能取消
+    // 非发起人且非 owner 不能取消，也看不到详情
+    const stranger = { ...actor, userId: newId(), role: 'admin' }
     await expect(
-      cancelWorkspaceTransfer(
+      cancelWorkspaceTransfer(deps(running.workflow), stranger, started.transferId),
+    ).rejects.toMatchObject({ code: 'TRANSFER_FORBIDDEN' })
+    await expect(
+      workspaceTransferDetail(
         deps(running.workflow),
-        { ...actor, userId: newId(), role: 'admin' },
+        { ...stranger, role: 'member' },
         started.transferId,
       ),
-    ).rejects.toMatchObject({ code: 'TRANSFER_FORBIDDEN' })
+    ).rejects.toMatchObject({ status: 404 })
+    // 开关关闭后取消、续跑、详情仍可用（进行中的流转先完成或补偿）
+    const off = { tenancy: { multiTenant: true, dataTransfer: false, maxWorkspacesPerUser: 5 } }
     const stopped = fakeWorkflow({ status: 'failed' })
     expect(
-      await cancelWorkspaceTransfer(deps(stopped.workflow), actor, started.transferId),
+      await cancelWorkspaceTransfer(deps(stopped.workflow, off), actor, started.transferId),
     ).toEqual({ status: 'compensating', resumed: true })
     expect(stopped.created).toHaveLength(1)
-    expect(stopped.created[0]?.id.startsWith(`${started.transferId}-`)).toBe(true)
+    const instanceId = stopped.created[0]?.id as string
+    expect(instanceId.startsWith(`${started.transferId}-`)).toBe(true)
     const [row] = await db()
       .select()
       .from(workspaceTransfer)
       .where(eq(workspaceTransfer.id, started.transferId))
-    expect(row).toMatchObject({ status: 'compensating', errorCode: 'TRANSFER_CANCELLED' })
+    expect(row).toMatchObject({
+      status: 'compensating',
+      errorCode: 'TRANSFER_CANCELLED',
+      workflowInstanceId: instanceId,
+    })
+    // 取消审计记录真实操作人
+    const [failed] = await db()
+      .select()
+      .from(auditLog)
+      .where(
+        and(
+          eq(auditLog.workspaceId, actor.userId),
+          eq(auditLog.action, 'workspace.transfer.failed'),
+        ),
+      )
+    expect(failed?.meta).toMatchObject({
+      cancelledBy: actor.userId,
+      errorCode: 'TRANSFER_CANCELLED',
+    })
+    // 当前实例在运行：续跑不再起新实例
+    expect(
+      await retryWorkspaceTransfer(deps(stopped.workflow, off), actor, started.transferId),
+    ).toEqual({ status: 'compensating', resumed: false })
+    expect(
+      (await workspaceTransferDetail(deps(stopped.workflow, off), actor, started.transferId))
+        .status,
+    ).toBe('compensating')
+  })
+
+  it('并发续跑只起一个实例', async () => {
+    const actor = await personal()
+    const first = fakeWorkflow()
+    const started = await startWorkspaceUpgrade(deps(first.workflow), actor, {
+      name: 'Team',
+      slug: `cc-${actor.userId.slice(-12)}`,
+      idempotencyKey: 'k',
+    })
+    const stopped = fakeWorkflow({ status: 'failed' })
+    const results = await Promise.all([
+      retryWorkspaceTransfer(deps(stopped.workflow), actor, started.transferId),
+      retryWorkspaceTransfer(deps(stopped.workflow), actor, started.transferId),
+    ])
+    expect(results.map((r) => r.resumed).sort()).toEqual([false, true])
+    expect(stopped.created).toHaveLength(1)
+  })
+
+  it('非个人空间的升级预览直接拒绝，不返回空间数据', async () => {
+    const actor = await personal()
+    await expect(
+      upgradePreview(deps(fakeWorkflow().workflow), {
+        ...actor,
+        workspace: { id: newId(), isPersonal: false },
+      }),
+    ).rejects.toMatchObject({ code: 'TRANSFER_FORBIDDEN' })
   })
 })

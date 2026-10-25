@@ -1,7 +1,12 @@
 import { env } from 'cloudflare:workers'
 import { ensurePersonalWorkspace } from '@product-res/auth'
 import { auditLog, createDb, organization, session, workspaceTransfer } from '@product-res/db'
-import { beginCompensation, listTransferBatches, startUpgrade } from '@product-res/follow/transfer'
+import {
+  beginCompensation,
+  compensateTransfer,
+  listTransferBatches,
+  startUpgrade,
+} from '@product-res/follow/transfer'
 import { NonRetryableError, type WorkflowStep } from '@product-res/platform'
 import { newId } from '@product-res/shared'
 import { eq, inArray, sql } from 'drizzle-orm'
@@ -34,6 +39,8 @@ function harness(
   options: {
     after?: (name: string) => Promise<void>
     crashAfter?: string | ((name: string) => boolean)
+    /** 该步骤每次尝试都抛基础设施错误（如数据库不可达），直到重试耗尽 */
+    failing?: string
   } = {},
 ) {
   const names: string[] = []
@@ -49,6 +56,7 @@ function harness(
         : 0
       for (let attempt = 0; ; attempt++) {
         try {
+          if (options.failing === name) throw new Error('connection terminated')
           const value = JSON.parse(JSON.stringify((await callback()) ?? null))
           await options.after?.(name)
           if (
@@ -159,6 +167,7 @@ describe('WorkspaceTransferWorkflow', () => {
       'batches',
       ...batches.map((key) => `batch:${key}`),
       'finalize',
+      'refresh',
       'sessions',
     ])
     expect(await tableCounts(db, f.targetWorkspaceId)).toEqual(f.counts)
@@ -176,7 +185,7 @@ describe('WorkspaceTransferWorkflow', () => {
     expect(await runWorkspaceTransfer(f.transferId, again.step, deps(kv.cache))).toMatchObject({
       status: 'completed',
     })
-    expect(again.names).toEqual(['start', 'load', 'resume:tokens', 'sessions'])
+    expect(again.names).toEqual(['start', 'load', 'resume:tokens', 'refresh', 'sessions'])
   })
 
   it('批次中途不可重试失败：逆序补偿，两边恢复，新空间软删，审计记失败与回滚', async () => {
@@ -274,5 +283,59 @@ describe('WorkspaceTransferWorkflow', () => {
     expect(result).toMatchObject({ status: 'compensated', errorCode: TRANSFER_TIMEOUT_CODE })
     expect(names).toContain('compensate:config')
     await assertCompensated(f, TRANSFER_TIMEOUT_CODE)
+  })
+  it('基础设施错误重试耗尽：原样抛出、不补偿，续跑实例接手完成', async () => {
+    const f = await upgradeFixture()
+    const first = harness({ failing: 'batch:config' })
+    await expect(
+      runWorkspaceTransfer(f.transferId, first.step, deps(fakeCache().cache)),
+    ).rejects.toThrow('connection terminated')
+    expect(first.names.some((n) => n.startsWith('compensate:'))).toBe(false)
+    expect((await transferRow(f.transferId))?.status).toBe('running')
+    const second = harness()
+    expect(
+      await runWorkspaceTransfer(f.transferId, second.step, deps(fakeCache().cache)),
+    ).toMatchObject({ status: 'completed' })
+    expect(await tableCounts(db, f.targetWorkspaceId)).toEqual(f.counts)
+  })
+
+  it('全部批次完成后 finalize 故障：不回滚，续跑完成', async () => {
+    const f = await upgradeFixture()
+    const first = harness({ failing: 'finalize' })
+    await expect(
+      runWorkspaceTransfer(f.transferId, first.step, deps(fakeCache().cache)),
+    ).rejects.toThrow('connection terminated')
+    expect((await transferRow(f.transferId))?.status).toBe('running')
+    const second = harness()
+    expect(
+      await runWorkspaceTransfer(f.transferId, second.step, deps(fakeCache().cache)),
+    ).toMatchObject({ status: 'completed' })
+    expect(await transferAudits(f)).toHaveLength(4)
+  })
+
+  it('另一实例已完成补偿：补偿步骤遇到 TRANSFER_STATE 直接收尾', async () => {
+    const f = await upgradeFixture()
+    const { step, names } = harness({
+      after: async (name) => {
+        await blockValidation(f)(name)
+        // 本实例列出待撤销批次后，另一实例抢先完成整个补偿
+        if (name === 'compensate:list:0')
+          await compensateTransfer(db, f.transferId, 'TRANSFER_TARGET_NOT_EMPTY')
+      },
+    })
+    expect(await runWorkspaceTransfer(f.transferId, step, deps(fakeCache().cache))).toMatchObject({
+      status: 'compensated',
+      errorCode: 'TRANSFER_TARGET_NOT_EMPTY',
+    })
+    expect(names.filter((n) => /^compensate:(?!begin|list|complete)/.test(n))).toHaveLength(1)
+    await db.execute(sql`delete from accuracy_audit where workspace_id = ${f.targetWorkspaceId}`)
+    await assertCompensated(f, 'TRANSFER_TARGET_NOT_EMPTY')
+  })
+
+  it('发起事务回滚：实例判定流转不存在后结束', async () => {
+    const { step } = harness()
+    expect(await runWorkspaceTransfer(newId(), step, deps(fakeCache().cache))).toMatchObject({
+      status: 'missing',
+    })
   })
 })

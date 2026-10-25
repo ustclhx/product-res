@@ -40,6 +40,7 @@ vi.mock('../src/node/transfer.ts', () => ({
   WORKSPACE_TRANSFER_WORKFLOW: 'workspace-transfer-v1',
   createNodeTransferHandler: () => async () => null,
   createNodeTransferWorkflowHttpHandler: () => async () => {},
+  transferInstanceGuard: () => async () => true,
 }))
 vi.mock('../src/node/registration.ts', () => ({
   getNodeJobFeatures: () => ({ billing: false }),

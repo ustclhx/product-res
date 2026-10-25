@@ -158,7 +158,7 @@
 
 新 schema 文件 `packages/db/src/schema/transfer.ts`：
 
-- `workspace_transfer`：`id`、`kind (upgrade|copy|move)`、`source_workspace_id`、`target_workspace_id`、`requested_by`、`idempotency_key`、`selection jsonb`（根条目与冲突选项）、`plan jsonb`（闭包统计、冲突预览、评分版本快照）、`status (pending|running|completed|failed|compensating|compensated|cancelled)`、`counts jsonb`、`error_code`、`created_at`、`started_at`、`finished_at`。唯一 `(requested_by, idempotency_key)`；部分唯一索引保证每个空间同时最多一个进行中的流转（分别对 source、target 建 `where status in ('pending','running','compensating')`）。
+- `workspace_transfer`：`id`、`kind (upgrade|copy|move)`、`source_workspace_id`、`target_workspace_id`、`requested_by`、`idempotency_key`、`selection jsonb`（根条目与冲突选项）、`plan jsonb`（闭包统计、冲突预览、评分版本快照）、`status (pending|running|completed|failed|compensating|compensated|cancelled)`、`counts jsonb`、`error_code`、`workflow_instance_id`（当前推进该流转的 Workflow 实例；续跑 / 取消只在它已终止时另起实例）、`created_at`、`started_at`、`finished_at`。唯一 `(requested_by, idempotency_key)`；部分唯一索引保证每个空间同时最多一个进行中的流转（分别对 source、target 建 `where status in ('pending','running','compensating')`）。
 - `workspace_transfer_batch`：`id`、`transfer_id`、`seq`、`batch_key`（如 `config`、`direction:<id>`、`store-pool`）、`status (pending|done|compensated)`、`counts`、`created_at`、`updated_at`；唯一 `(transfer_id, batch_key)`。
 - `workspace_transfer_id_map`：`transfer_id`、`table_name`、`source_id`、`target_id`、`action (planned|moved|copied|merged|skipped|renamed)`、`batch_key`（补偿按批次逆序撤销时定位）、`source_row jsonb`（移动合并时保存被删除的源行，D8）、`updated_at`；主键 `(transfer_id, table_name, source_id)`。复合主键表（`cluster_signal`）以拼接键记录，因此 id 列为 `text`。
 - `workspace_transfer` 另有检查约束 `source_workspace_id <> target_workspace_id`，以及按源 / 目标空间列出记录的索引。
@@ -177,6 +177,8 @@
 - **流转锁**：流转处于 pending / running / compensating 时，两个空间对工作台写入只读（在 `withWorkspace` 解析出 `workspaceReadOnly` 时并入此条件，错误码 `WORKSPACE_TRANSFERRING`）；`selection-daily-v1`、`selection-label-v1`、`selection-readiness-v1`、`selection-review-v1`、店铺追踪采集、每周抽检等按空间循环的任务跳过这些空间，`ensureSelectionDefaults` 不在流转中的空间写预置数据。
 - **补偿回滚**：失败（不可重试错误、权限失效、超时）或用户在完成前取消时进入 `compensating`，按批次逆序撤销：复制批次删除 `id_map` 中 `copied` 的目标行（子先父后）；移动批次把 `moved` 的行改回源空间，`merged` 的源行从映射记录恢复（移动合并时源行先写入 `id_map` 的 `source_row jsonb` 再删除）。完成后 `compensated`。`completed` 的流转不提供回滚，用户可发起反向移动。
 - 升级失败补偿完成后，新建的团队空间按现有软删流程删除（只有发起人一个成员）。
+- **执行目标**（tasks 4.1 实施）：生产为自托管 Node，Workflow 注册为 `workspace-transfer-v1`，web 经 jobs 内部接口 `/internal/workflows/workspace-transfer` 投递（Bearer 由 `BETTER_AUTH_SECRET` 派生）。Cloudflare 目标导出 `WorkspaceTransferWorkflow`，但 wrangler 未声明 workflows 绑定（与媒体 Workflow 现状一致）：需在 jobs 声明 workflow、web 以 `WORKSPACE_TRANSFER_WORKFLOW`（script_name: jobs）绑定后才可用，未绑定时发起入口返回 503。
+- **只有业务失败进入补偿**：不可重试错误码、实例总超时（30 分钟）与用户取消；数据库 / 网络故障、执行权丢失、引擎关停等在步骤重试耗尽后原样失败，流转保持进行中，由“重试续跑”接手；全部批次完成后 finalize 的故障只续跑不回滚。状态 `failed` / `cancelled` 不使用，失败原因（含 `TRANSFER_CANCELLED`）记在 `error_code`。
 
 ### D9 积分与权益不随数据走
 

@@ -15,6 +15,7 @@ import {
 import {
   beginCompensation,
   getWorkspaceTransferDetail,
+  holdTransferStart,
   listWorkspaceTransfers,
   type StartResult,
   startMove,
@@ -28,6 +29,8 @@ import { type Capability, requireCapability, type Workflow } from '@product-res/
 import { AppError, newId } from '@product-res/shared'
 import { log } from '@product-res/shared/log'
 import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm'
+
+type Tx = Parameters<Parameters<Database['transaction']>[0]>[0]
 
 /**
  * 跨空间数据流转的服务端入口（openspec/changes/add-workspace-data-transfer tasks 4.1，design D6、D8、D11）。
@@ -52,7 +55,10 @@ export interface TransferActor {
   readonly role: string
 }
 
-/** 开关关闭时入口表现为不存在（与未开放的功能一致） */
+/**
+ * 开关关闭时发起入口表现为不存在（与未开放的功能一致）。列表、详情、取消、续跑与后台只读
+ * 不受开关影响：design Migration Plan 要求进行中的流转先完成或补偿，关闭开关后卡住的流转仍可自助恢复。
+ */
 export function assertTransferEnabled(config: Pick<TemplateConfig, 'tenancy'>) {
   if (!config.tenancy.dataTransfer) throw notFound()
 }
@@ -64,9 +70,17 @@ function workflowOf(deps: TransferDeps): TransferWorkflow {
   ) as TransferWorkflow
 }
 
-/** 与 media-tasks 相同的事务性投递：在写入流转记录的事务内启动实例，创建失败则整体回滚 */
+/**
+ * 与 media-tasks 相同的事务性投递：在写入流转记录的事务内启动实例，创建失败则整体回滚。
+ * 先持有发起锁（Workflow 的 load 步骤等它释放后再读），并记录当前实例 id。
+ */
 const enqueue = (workflow: TransferWorkflow) => ({
-  onCreated: async (_tx: unknown, transfer: { id: string }) => {
+  onCreated: async (tx: Tx, transfer: { id: string }) => {
+    await holdTransferStart(tx, transfer.id)
+    await tx
+      .update(workspaceTransfer)
+      .set({ workflowInstanceId: transfer.id })
+      .where(eq(workspaceTransfer.id, transfer.id))
     await workflow.create({ id: transfer.id, params: { transferId: transfer.id } })
   },
 })
@@ -160,8 +174,10 @@ export async function upgradePreview(
   assertTransferEnabled(deps.config)
   const { db, config } = deps
   const ws = actor.workspace.id
+  // 只能升级自己的个人空间：不满足时不返回积分、订阅等任何空间数据
+  if (!actor.workspace.isPersonal || ws !== actor.userId)
+    throw new AppError('TRANSFER_FORBIDDEN', '只能升级自己的个人空间', { status: 403 })
   const reasons: string[] = []
-  if (!actor.workspace.isPersonal || ws !== actor.userId) reasons.push('TRANSFER_FORBIDDEN')
   const tenant = scoped(db, ws)
   const [active] = await db
     .select({ id: workspaceTransfer.id })
@@ -208,24 +224,28 @@ export async function upgradePreview(
   }
 }
 
-/** 当前空间作为源或目标的流转记录 */
+const isManager = (actor: TransferActor) => actor.role === 'owner' || actor.role === 'admin'
+
+/** 当前空间作为源或目标的流转记录：owner / admin 看全部，其他成员只看自己发起的 */
 export async function workspaceTransfers(
   deps: TransferDeps,
   actor: TransferActor,
 ): Promise<TransferSummary[]> {
-  assertTransferEnabled(deps.config)
-  return listWorkspaceTransfers(deps.db, actor.workspace.id)
+  const list = await listWorkspaceTransfers(deps.db, actor.workspace.id)
+  return isManager(actor) ? list : list.filter((t) => t.requestedBy === actor.userId)
 }
 
-/** 单条详情（进度、按表计数、跳过 / 重命名清单、失败原因）；不属于当前空间的流转视为不存在 */
+/**
+ * 单条详情（进度、按表计数、跳过 / 重命名清单、失败原因）：仅当前空间的 owner / admin 或发起人可见；
+ * 不属于当前空间或无权查看的流转一律视为不存在
+ */
 export async function workspaceTransferDetail(
   deps: TransferDeps,
   actor: TransferActor,
   transferId: string,
 ): Promise<TransferDetail> {
-  assertTransferEnabled(deps.config)
   const detail = await getWorkspaceTransferDetail(deps.db, transferId, actor.workspace.id)
-  if (!detail) throw notFound()
+  if (!detail || (!isManager(actor) && detail.requestedBy !== actor.userId)) throw notFound()
   return detail
 }
 
@@ -241,19 +261,46 @@ async function manageable(deps: TransferDeps, actor: TransferActor, transferId: 
   return detail
 }
 
-/**
- * 确保有 Workflow 实例在推进该流转：主实例（id = 流转 id）仍在运行则不重复启动，否则另起
- * `<流转 id>-<uuid>` 实例。引擎各步骤幂等，与仍在运行的旧续跑实例并发也安全。
- */
-async function ensureRunning(workflow: TransferWorkflow, transferId: string): Promise<boolean> {
+const LIVE = new Set(['queued', 'running', 'waiting', 'paused'])
+
+async function alive(workflow: TransferWorkflow, instanceId: string): Promise<boolean> {
   try {
-    const state = await (await workflow.get(transferId)).status()
-    if (['queued', 'running', 'waiting', 'paused'].includes(state.status)) return false
+    return LIVE.has((await (await workflow.get(instanceId)).status()).status)
   } catch (error) {
-    if (!(error instanceof AppError) || error.code !== 'WORKFLOW_NOT_FOUND') throw error
+    if (error instanceof AppError && error.code === 'WORKFLOW_NOT_FOUND') return false
+    throw error
   }
-  await workflow.create({ id: `${transferId}-${newId()}`, params: { transferId } })
-  return true
+}
+
+/**
+ * 确保有且只有一个 Workflow 实例在推进该流转：在流转行锁下读取当前实例 id，只有它已终止（或不存在）
+ * 才另起 `<流转 id>-<uuid>` 并在同一事务内记录；并发的两个请求按行锁排队，后到者看到新实例仍在运行即返回。
+ * 实例创建失败则不更新记录。
+ */
+async function ensureRunning(
+  deps: TransferDeps,
+  workflow: TransferWorkflow,
+  transferId: string,
+): Promise<boolean> {
+  return deps.db.transaction(async (tx) => {
+    const [row] = await tx
+      .select({
+        status: workspaceTransfer.status,
+        instance: workspaceTransfer.workflowInstanceId,
+      })
+      .from(workspaceTransfer)
+      .where(eq(workspaceTransfer.id, transferId))
+      .for('update')
+    if (!row || !ACTIVE.has(row.status)) return false
+    if (await alive(workflow, row.instance ?? transferId)) return false
+    const instanceId = `${transferId}-${newId()}`
+    await tx
+      .update(workspaceTransfer)
+      .set({ workflowInstanceId: instanceId })
+      .where(eq(workspaceTransfer.id, transferId))
+    await workflow.create({ id: instanceId, params: { transferId } })
+    return true
+  })
 }
 
 /**
@@ -269,10 +316,12 @@ export async function cancelWorkspaceTransfer(
   if (!ACTIVE.has(detail.status))
     throw new AppError('TRANSFER_STATE', `流转状态为 ${detail.status}，不能取消`, { status: 409 })
   const workflow = workflowOf(deps)
-  const status = await beginCompensation(deps.db, transferId, 'TRANSFER_CANCELLED')
+  const status = await beginCompensation(deps.db, transferId, 'TRANSFER_CANCELLED', {
+    cancelledBy: actor.userId,
+  })
   let resumed = false
   try {
-    resumed = await ensureRunning(workflow, transferId)
+    resumed = await ensureRunning(deps, workflow, transferId)
   } catch (error) {
     // 已进入补偿；实例启动失败时用户可稍后“重试”继续补偿
     log.warn('transfer.cancel_resume_failed', {
@@ -292,7 +341,7 @@ export async function retryWorkspaceTransfer(
   const detail = await manageable(deps, actor, transferId)
   if (!ACTIVE.has(detail.status))
     throw new AppError('TRANSFER_STATE', `流转状态为 ${detail.status}，不能续跑`, { status: 409 })
-  const resumed = await ensureRunning(workflowOf(deps), transferId)
+  const resumed = await ensureRunning(deps, workflowOf(deps), transferId)
   return { status: detail.status, resumed }
 }
 

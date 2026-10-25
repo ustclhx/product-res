@@ -92,6 +92,7 @@
     "apps/web/test/node/auth-smtp.integration.node.ts": ["node"],
     "apps/web/e2e/staging-acceptance/fault-local-media.ts": ["cloudflare"],
     "apps/web/test/admin-node-resources.ts": ["node"],
+    "apps/jobs/test/node-transfer.integration.test.ts": ["node"],
     "packages/platform/test/cloudflare.test.ts": ["cloudflare"],
     "packages/platform/test/node.test.ts": ["node"],
     "packages/platform/test/node/background.test.ts": ["node"],
