@@ -30,6 +30,13 @@ import { registerNodeStoreTracking } from '../stores/node.ts'
 import { createNodeMediaHandler } from './media.ts'
 import { createNodeMediaWorkflowHttpHandler } from './media-http.ts'
 import { getNodeJobFeatures, registerNodeJobsSchedules } from './registration.ts'
+import {
+  createNodeTransferHandler,
+  createNodeTransferWorkflowHttpHandler,
+  transferInstanceGuard,
+  WORKSPACE_TRANSFER_WORKFLOW,
+  type WorkspaceTransferWorkflowParams,
+} from './transfer.ts'
 
 export interface NodeJobsOptions {
   host: string
@@ -66,6 +73,9 @@ export async function startNodeJobs(config: NodeEnv, options: NodeJobsOptions) {
   let scheduler!: ReturnType<typeof createNodeScheduler>
   let mediaWorkflow:
     | ReturnType<typeof createNodeWorkflow<{ taskId: string; requestId?: string }>>
+    | undefined
+  let transferWorkflow:
+    | ReturnType<typeof createNodeWorkflow<WorkspaceTransferWorkflowParams>>
     | undefined
   let dispose = () => {}
   let engine: NodeJobEngine
@@ -155,6 +165,16 @@ export async function startNodeJobs(config: NodeEnv, options: NodeJobsOptions) {
             }),
           })
         }
+        // 跨空间数据流转（add-workspace-data-transfer 4.1）：始终注册，开关关闭后进行中的流转仍能完成或补偿
+        transferWorkflow = createNodeWorkflow({
+          engine,
+          name: WORKSPACE_TRANSFER_WORKFLOW,
+          handler: createNodeTransferHandler(engine.database, {
+            cache: context.cache,
+            template,
+            observer,
+          }),
+        })
         scheduler = createNodeScheduler({ engine })
         dispose = registerNodeJobsSchedules(scheduler, context, template)
         // 数据源凭据验收前可暂停数据 / 选品定时流水线（计划仍注册，到点直接返回）
@@ -187,6 +207,7 @@ export async function startNodeJobs(config: NodeEnv, options: NodeJobsOptions) {
       },
       stopReceiving() {
         mediaWorkflow?.stopReceiving()
+        transferWorkflow?.stopReceiving()
         queues?.stopReceiving()
         scheduler?.stopReceiving()
       },
@@ -240,6 +261,13 @@ export async function startNodeJobs(config: NodeEnv, options: NodeJobsOptions) {
     workflow: mediaWorkflow ? { available: true, value: mediaWorkflow } : { available: false },
     secret: config.MEDIA_WEBHOOK_SECRET ?? '',
   })
+  const transferHttp = createNodeTransferWorkflowHttpHandler({
+    workflow: transferWorkflow
+      ? { available: true, value: transferWorkflow }
+      : { available: false },
+    secret: config.BETTER_AUTH_SECRET,
+    accepts: transferInstanceGuard(db),
+  })
   const sockets = new Set<Socket>()
   let stopping = false
   const server = createServer((request, response) => {
@@ -261,6 +289,8 @@ export async function startNodeJobs(config: NodeEnv, options: NodeJobsOptions) {
         )
       } else if (request.url === '/internal/workflows/ai-media') {
         background.waitUntil(mediaHttp(request, response))
+      } else if (request.url === '/internal/workflows/workspace-transfer') {
+        background.waitUntil(transferHttp(request, response))
       } else response.writeHead(404).end()
     })
   })

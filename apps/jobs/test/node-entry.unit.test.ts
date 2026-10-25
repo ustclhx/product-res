@@ -35,6 +35,13 @@ vi.mock('../src/selection/node.ts', () => ({ registerNodeSelection: vi.fn() }))
 vi.mock('../src/review/selection-review.ts', () => ({ registerSelectionReview: vi.fn() }))
 vi.mock('../src/stores/node.ts', () => ({ registerNodeStoreTracking: vi.fn() }))
 vi.mock('../src/accuracy/weekly-audit.ts', () => ({ registerAccuracyAudit: vi.fn() }))
+// 流转 Workflow 的步骤由 transfer-workflow 集成测试覆盖；这里只验证注册不影响启动与停机
+vi.mock('../src/node/transfer.ts', () => ({
+  WORKSPACE_TRANSFER_WORKFLOW: 'workspace-transfer-v1',
+  createNodeTransferHandler: () => async () => null,
+  createNodeTransferWorkflowHttpHandler: () => async () => {},
+  transferInstanceGuard: () => async () => true,
+}))
 vi.mock('../src/node/registration.ts', () => ({
   getNodeJobFeatures: () => ({ billing: false }),
   registerNodeJobsSchedules: (_scheduler: unknown, context: unknown) => {
@@ -48,6 +55,7 @@ vi.mock('@product-res/platform/node', async (importOriginal) => ({
   createNodeCache: fixture.createCache,
   createNodeJobEngine: fixture.createEngine,
   createNodeQueueProducer: () => ({ producer: {} }),
+  createNodeWorkflow: () => ({ stopReceiving: () => {} }),
   createNodeQueueAdapter: () => ({
     register: fixture.queueRegister,
     prepare: fixture.queuePrepare,

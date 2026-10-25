@@ -31,6 +31,10 @@ export const webEnvSchema = envSchema.omit({ PAYMENT_MODE: true }).extend({
     templateConfig.ai.image || templateConfig.ai.video
       ? bindingWith<Cloudflare.Env['AI_MEDIA_WORKFLOW']>('create', 'get')
       : bindingWith<Cloudflare.Env['AI_MEDIA_WORKFLOW']>('create', 'get').optional(),
+  // 跨空间数据流转（add-workspace-data-transfer）；未绑定时发起入口返回 503
+  WORKSPACE_TRANSFER_WORKFLOW: bindingWith<
+    NonNullable<Cloudflare.Env['WORKSPACE_TRANSFER_WORKFLOW']>
+  >('create', 'get').optional(),
   EMAIL_QUEUE: bindingWith<Cloudflare.Env['EMAIL_QUEUE']>('send'),
   CACHE: bindingWith<Cloudflare.Env['CACHE']>('get', 'put', 'delete'),
   RL_AUTH: bindingWith<Cloudflare.Env['RL_AUTH']>('limit'),

@@ -9,6 +9,7 @@ import {
 import { newId } from '@product-res/shared'
 import { and, eq, sql } from 'drizzle-orm'
 import { assertNoActiveTransfer, assertTransferAccess, lockTransferWorkspaces } from './access.ts'
+import { auditTransferRequested } from './audit.ts'
 import {
   invalid,
   isUuid,
@@ -153,6 +154,7 @@ export async function startUpgrade(
       })
       .returning()
     if (!transfer) throw new Error('workspace_transfer insert returned no row')
+    await auditTransferRequested(tx, transfer)
     await hooks.onCreated?.(tx, transfer)
     return toResult(transfer, true)
   })
@@ -257,6 +259,7 @@ async function startSelective(
       })
       .returning()
     if (!transfer) throw new Error('workspace_transfer insert returned no row')
+    await auditTransferRequested(tx, transfer)
     await hooks.onCreated?.(tx, transfer)
     return toResult(transfer, true)
   })

@@ -6,6 +6,7 @@ import type { AiFaultInjectionEnv } from '@product-res/config'
 import type { Database } from '@product-res/db'
 import type { EmailQueueMessage } from '@product-res/email/queue'
 import type { ReplayMessage, StoreRoundMessage } from '@product-res/follow'
+import type { WorkspaceTransferWorkflowParams } from '@product-res/follow/transfer'
 import type {
   BackgroundTasks,
   Capability,
@@ -56,6 +57,8 @@ export interface WebRuntime {
   readonly selectionReplayQueue?: Capability<QueueProducer<ReplayMessage>>
   /** 店铺追踪“立即跑一轮”队列（add-accuracy-store-tracking 3.3）；只有 Node 入口装配 */
   readonly storeTrackingQueue?: Capability<QueueProducer<StoreRoundMessage>>
+  /** 跨空间数据流转 Workflow（add-workspace-data-transfer 4.1）；未装配时发起入口报告不可用 */
+  readonly transferWorkflow?: Capability<Workflow<WorkspaceTransferWorkflowParams>>
   /** C 接入前 Node 不装配文件能力；在任何文件副作用之前拒绝。 */
   readonly files?: Capability<Storage>
   /** 未装配的目标明确报告 unavailable；认证等独立模块不要求 AI 能力。 */

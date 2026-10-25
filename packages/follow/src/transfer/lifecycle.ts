@@ -6,7 +6,9 @@ import {
   workspaceTransferBatch,
 } from '@product-res/db'
 import { and, desc, eq, sql } from 'drizzle-orm'
+import { dismissPendingWeightSuggestions, rebuildWorkspaceReadiness } from '../validation.ts'
 import { lockTransferWorkspaces } from './access.ts'
+import { auditTransfer, auditTransferCompleted } from './audit.ts'
 import { countActions } from './batch.ts'
 import { rows, type TransferSelection, type Tx, transferError, xactLock } from './common.ts'
 import { col, ident, keyOf, type TableMeta, tableMeta } from './meta.ts'
@@ -85,12 +87,25 @@ export async function finalizeTransfer(db: Database, transferId: string): Promis
         )
       ).map((r) => r.token)
     }
+    const counts = await countActions(tx, transfer.id)
+    const now = new Date()
     await transition(tx, transfer.id, ['running'], {
       status: 'completed',
-      finishedAt: new Date(),
-      counts: await countActions(tx, transfer.id),
+      finishedAt: now,
+      counts,
       sessionTokens,
     })
+    // 审计与迁移同事务（tasks 5.1）；重试时上面已提前返回，不重复写
+    await auditTransferCompleted(tx, transfer, counts)
+    // 源空间未处理的整空间权重建议失效（tasks 4.2）：单条更新，与 completed 同事务；
+    // 准备度重算较重，放到完成后的独立步骤 refreshAfterMove，失败不影响完成状态
+    if (transfer.kind === 'move')
+      await dismissPendingWeightSuggestions(
+        asDatabase(tx),
+        transfer.sourceWorkspaceId,
+        transfer.requestedBy,
+        now,
+      )
     return { status: 'completed' as const, sessionTokens }
   })
 }
@@ -103,6 +118,7 @@ export async function beginCompensation(
   db: Database,
   transferId: string,
   errorCode: string,
+  options: { readonly cancelledBy?: string } = {},
 ): Promise<WorkspaceTransfer['status']> {
   return db.transaction(async (tx) => {
     const [transfer] = await tx
@@ -119,6 +135,12 @@ export async function beginCompensation(
       .update(workspaceTransfer)
       .set({ status: 'compensating', errorCode: transfer.errorCode ?? errorCode })
       .where(eq(workspaceTransfer.id, transferId))
+    // 失败（含用户取消）在进入补偿时记审计，计数为已执行批次的结果
+    await auditTransfer(tx, transfer, 'failed', {
+      counts: await countActions(tx, transfer.id),
+      errorCode: transfer.errorCode ?? errorCode,
+      ...(options.cancelledBy ? { cancelledBy: options.cancelledBy } : {}),
+    })
     return 'compensating' as const
   })
 }
@@ -264,11 +286,18 @@ export async function completeCompensation(
           null,
         )
     }
+    const now = new Date()
     await transition(tx, transfer.id, ['compensating'], {
       status: 'compensated',
-      finishedAt: new Date(),
+      finishedAt: now,
       sessionTokens,
     })
+    await auditTransfer(tx, transfer, 'compensated', {
+      counts: await countActions(tx, transfer.id),
+      errorCode: transfer.errorCode,
+    })
+    // 合并方向时被级联删除的源准备度统计已由批次快照逐行恢复（undoBatch 第 1 步），这里不再重算，
+    // 否则会改写恢复后的行，破坏“补偿后两边数据恢复到流转前”的要求
     return { status: 'compensated' as const, sessionTokens }
   })
 }
@@ -296,4 +325,26 @@ export async function compensateTransfer(
     for (const batch of batches) await compensateBatch(db, transferId, batch.key)
   }
   return completeCompensation(db, transferId)
+}
+
+// 派生统计重算接收 Database；事务对象提供同样的查询接口，在流转锁与状态迁移的同一事务内执行
+const asDatabase = (tx: Tx) => tx as unknown as Database
+
+/**
+ * move 完成后（tasks 4.2，design D3 readiness_stat）：两边的准备度都基于残缺样本，在流转锁内按现有样本重算。
+ * 与 completed 分开、作为 Workflow 的独立可重试步骤：重算失败不回滚已完成的流转；重算按现有样本整体重建，
+ * 重复执行结果相同。非 move 或未完成的流转直接返回 false。
+ */
+export async function refreshAfterMove(db: Database, transferId: string): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const head = await loadTransfer(tx, transferId)
+    if (head.kind !== 'move' || head.status !== 'completed') return false
+    await lockTransferWorkspaces(tx, [head.sourceWorkspaceId, head.targetWorkspaceId], {
+      sellerData: false,
+    })
+    const now = new Date()
+    await rebuildWorkspaceReadiness(asDatabase(tx), head.sourceWorkspaceId, { now })
+    await rebuildWorkspaceReadiness(asDatabase(tx), head.targetWorkspaceId, { now })
+    return true
+  })
 }

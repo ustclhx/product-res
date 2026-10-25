@@ -211,6 +211,9 @@ function createCloudflareWebRuntime(
     requestMeta,
     observability: { enabled: sentryEnabled(env), captureError: captureServerError },
     files: { available: true, value: files },
+    transferWorkflow: env.WORKSPACE_TRANSFER_WORKFLOW
+      ? { available: true, value: createCloudflareWorkflow(env.WORKSPACE_TRANSFER_WORKFLOW) }
+      : { available: false },
     emailQueue: { available: true, value: queue },
     eventsQueue: env.EVENTS_QUEUE
       ? { available: true, value: createCloudflareQueue(env.EVENTS_QUEUE) }
