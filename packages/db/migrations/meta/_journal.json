@@ -169,6 +169,13 @@
       "when": 1792954735281,
       "tag": "0023_workspace_transfer",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792958969842,
+      "tag": "0024_workspace_transfer_session_tokens",
+      "breakpoints": true
     }
   ]
 }

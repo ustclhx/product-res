@@ -1,0 +1,1 @@
+ALTER TABLE "workspace_transfer" ADD COLUMN "session_tokens" jsonb DEFAULT '[]'::jsonb NOT NULL;
