@@ -45,6 +45,8 @@ import type { TransferReference } from './types.ts'
 export interface SourceRowSnapshot {
   readonly row?: Record<string, unknown>
   readonly target?: Record<string, unknown>
+  /** 复制时映射不到而删除 / 置空的引用原值（列名 → 原值），计入 counts 的 unmapped:<列名> */
+  readonly unmapped?: Record<string, unknown>
 }
 
 export interface BatchResult {
@@ -152,12 +154,13 @@ export async function countActions(
   )) {
     counts[r.table_name] = { ...counts[r.table_name], [r.action]: r.n }
   }
-  // 复制时映射不到、按注册表删元素 / 置空的引用（copy.ts 记在 source_row.unmapped），键为 unmapped:<列名>
+  // 复制时映射不到、按注册表删元素 / 置空 / 删键的引用（copy.ts 记在 source_row.unmapped），
+  // 键为 unmapped:<列名>（jsonb-key 为 unmapped:<列名>.<键>）
   for (const r of await rows<{ table_name: string; column: string; n: number }>(
     tx,
     sql`select table_name, k as column, count(*)::int as n
       from workspace_transfer_id_map, jsonb_object_keys(source_row->'unmapped') k
-      where transfer_id = ${transferId} and ${filter} and action = 'copied'
+      where transfer_id = ${transferId} and ${filter}
         and jsonb_typeof(source_row->'unmapped') = 'object'
       group by table_name, k`,
   )) {
@@ -206,7 +209,8 @@ export async function plannedIds(ctx: Context, meta: TableMeta): Promise<string[
 /** 原地移动本批次该表剩余的 planned 行；rewrite=false 时只改空间（升级） */
 async function bulkMove(ctx: Context, meta: TableMeta, rewrite: boolean) {
   const { tx, transfer } = ctx
-  const refs = rewrite ? meta.entry.references : []
+  // jsonb-key 引用的行在移动时 id 不变（且这些表不参与合并），无需改写
+  const refs = rewrite ? meta.entry.references.filter((r) => r.kind !== 'jsonb-key') : []
   const join = sql`${plannedIn(ctx, meta)} and ${keyOf(meta, 't')} = m.source_id
       and t.${ident(meta.ws)} = ${transfer.sourceWorkspaceId}`
   for (const ref of refs.filter((r) => r.unmapped === 'fail')) {

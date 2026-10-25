@@ -8,6 +8,7 @@ import {
   direction,
   directionSeller,
   lead,
+  leadEvent,
   logisticsProfile,
   riskFinding,
   riskRule,
@@ -269,6 +270,11 @@ describe.skipIf(!url)('数据流转：复制', () => {
       .insert(direction)
       .values({ workspaceId: a, name: `other-${t}` })
       .returning()
+    // 合并的店铺带着闭包外的方向：不并入目标，计入 unmapped:direction_ids
+    await db
+      .update(trackedStore)
+      .set({ directionIds: [src.direction, extraDirection?.id as string] })
+      .where(eq(trackedStore.id, src.store))
     const [store2] = await db
       .insert(trackedStore)
       .values({
@@ -346,6 +352,7 @@ describe.skipIf(!url)('数据流转：复制', () => {
     expect(await idMap(started.transferId, 'tracked_store', src.store)).toMatchObject({
       action: 'merged',
       targetId: dst.store,
+      sourceRow: { unmapped: { direction_ids: [extraDirection?.id] } },
     })
     const [store] = await db.select().from(trackedStore).where(eq(trackedStore.id, dst.store))
     expect(store?.directionIds).toEqual([dst.direction, newDir])
@@ -398,6 +405,11 @@ describe.skipIf(!url)('数据流转：复制', () => {
       .from(workspaceTransfer)
       .where(eq(workspaceTransfer.id, started.transferId))
     expect(transfer?.counts.cost_param).toEqual({ skipped: 1 })
+    expect(transfer?.counts.tracked_store).toEqual({
+      merged: 1,
+      copied: 1,
+      'unmapped:direction_ids': 2,
+    })
     expect(transfer?.counts.tracked_product).toMatchObject({
       merged: 1,
       copied: 3,
@@ -540,6 +552,120 @@ describe.skipIf(!url)('数据流转：复制', () => {
       tracked_product: 1,
     })
     expect(await keys()).toEqual(before)
+  })
+
+  it('lead_event.payload 中的空间行 id 按映射回填：品类研究转出的线索按 studyId 能查到', async () => {
+    const { t, owner, a, b } = await teams('cj')
+    const src = await seedWorkspace(db, created, a, { tag: t })
+    const [snap] = (await db.execute(
+      sql`select id from category_study_snapshot where study_id = ${src.study}`,
+    )) as unknown as { id: string }[]
+    // 品类研究转线索（category.server convertToLead）、组合选定与决定（matrix / decisions.server）写入的事件
+    const events = await db
+      .insert(leadEvent)
+      .values([
+        {
+          workspaceId: a,
+          leadId: src.lead,
+          clusterId: src.cluster,
+          kind: 'note',
+          payload: {
+            source: 'category-insight',
+            studyId: src.study,
+            snapshotId: snap?.id,
+            productId: src.product,
+          },
+        },
+        {
+          workspaceId: a,
+          leadId: src.lead,
+          clusterId: src.cluster,
+          kind: 'status',
+          payload: { from: 'costing', to: 'pending', scenarioId: src.scenario },
+        },
+        {
+          workspaceId: a,
+          leadId: src.lead,
+          clusterId: src.cluster,
+          kind: 'status',
+          payload: { from: 'pending', to: 'followed', decisionId: src.decision },
+        },
+      ])
+      .returning()
+    const before = await snapshotRows(db, [a, b])
+    const byStudy = (ws: string, studyId: string) =>
+      db
+        .select({ leadId: leadEvent.leadId })
+        .from(leadEvent)
+        .where(
+          and(
+            eq(leadEvent.workspaceId, ws),
+            eq(leadEvent.kind, 'note'),
+            sql`${leadEvent.payload}->>'source' = 'category-insight'`,
+            sql`${leadEvent.payload}->>'studyId' = ${studyId}`,
+          ),
+        )
+
+    // 方向与品类研究一起复制：研究在方向之后的批次落地，事件在研究批次结束时回填
+    const started = await copy(owner, a, b, {
+      roots: { direction: [src.direction], categoryStudy: [src.study] },
+    })
+    await runAll(started.transferId)
+    const mapped = async (table: string, id: string) =>
+      (await idMap(started.transferId, table, id))?.targetId as string
+    const newLead = await mapped('lead', src.lead)
+    expect(await byStudy(b, await mapped('category_study', src.study))).toEqual([
+      { leadId: newLead },
+    ])
+    const payloads = await Promise.all(
+      events.map(async (e) => {
+        const [row] = await db
+          .select({ payload: leadEvent.payload })
+          .from(leadEvent)
+          .where(eq(leadEvent.id, await mapped('lead_event', e.id)))
+        return row?.payload
+      }),
+    )
+    expect(payloads).toEqual([
+      {
+        source: 'category-insight',
+        studyId: await mapped('category_study', src.study),
+        snapshotId: await mapped('category_study_snapshot', snap?.id as string),
+        productId: src.product,
+      },
+      {
+        from: 'costing',
+        to: 'pending',
+        scenarioId: await mapped('costing_scenario', src.scenario),
+      },
+      { from: 'pending', to: 'followed', decisionId: await mapped('decision', src.decision) },
+    ])
+    // 跨批次回填的行在补偿时随所属批次删除，两边逐行恢复
+    await compensateTransfer(db, started.transferId, 'TEST_ROLLBACK')
+    expect(await snapshotRows(db, [a, b])).toEqual(before)
+
+    // 只复制方向：研究不在本次流转中，删除 studyId / snapshotId 并记入报告
+    const only = await copy(owner, a, b, { roots: { direction: [src.direction] } })
+    await runAll(only.transferId)
+    await finalizeTransfer(db, only.transferId)
+    const noteMap = await idMap(only.transferId, 'lead_event', events[0]?.id as string)
+    expect(noteMap?.sourceRow).toEqual({
+      unmapped: { 'payload.studyId': src.study, 'payload.snapshotId': snap?.id },
+    })
+    const [note] = await db
+      .select({ payload: leadEvent.payload })
+      .from(leadEvent)
+      .where(eq(leadEvent.id, noteMap?.targetId as string))
+    expect(note?.payload).toEqual({ source: 'category-insight', productId: src.product })
+    const [transfer] = await db
+      .select()
+      .from(workspaceTransfer)
+      .where(eq(workspaceTransfer.id, only.transferId))
+    expect(transfer?.counts.lead_event).toMatchObject({
+      'unmapped:payload.studyId': 1,
+      'unmapped:payload.snapshotId': 1,
+    })
+    expect(await byStudy(b, src.study)).toEqual([])
   })
 
   it('涉及卖家数据的复制批次等待 eBay 账号删除的排它锁', async () => {

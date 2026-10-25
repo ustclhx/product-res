@@ -73,23 +73,28 @@ export type TransferConflict =
  * - fk：外键列；
  * - uuid-array：不受外键约束的 uuid[]（direction.node_ids、tracked_store.direction_ids）；
  * - loose-uuid：不受外键约束的单个 uuid（origin_ref、merged_into_id）；
- * - text-ref：文本列中可能存放的行 id（risk_finding.ref 为规则 id 时）。
+ * - text-ref：文本列中可能存放的行 id（risk_finding.ref 为规则 id 时）；
+ * - jsonb-key：jsonb 列中某个键存放的行 id（lead_event.payload 的 decisionId 等）。被引用的表可能在
+ *   本表之后（同批次靠后或更晚的批次），复制时先原样插入，每个批次结束后按 ID 映射回填（copy.ts）。
  */
-export type TransferReferenceKind = 'fk' | 'uuid-array' | 'loose-uuid' | 'text-ref'
+export type TransferReferenceKind = 'fk' | 'uuid-array' | 'loose-uuid' | 'text-ref' | 'jsonb-key'
 
 /**
  * 被引用行不在本次流转的 ID 映射中时（D4）：
  * - fail：闭包保证一定映射得到，映射不到即实现错误，批次失败；
  * - drop-element：从数组中删除；
  * - set-null：置空；
- * - keep：原样保留（如 risk_finding.ref 为品牌名等非 id 内容）。
+ * - keep：原样保留（如 risk_finding.ref 为品牌名等非 id 内容）；
+ * - drop-key：从 jsonb 中删除该键（jsonb-key）。
  */
-export type TransferUnmapped = 'fail' | 'drop-element' | 'set-null' | 'keep'
+export type TransferUnmapped = 'fail' | 'drop-element' | 'set-null' | 'keep' | 'drop-key'
 
 /** 需要按 ID 映射重写的引用列：复制时全部重写；移动时只有冲突合并的行会改指目标 id */
 export interface TransferReference {
   readonly column: AnyPgColumn
   readonly kind: TransferReferenceKind
+  /** jsonb-key：存放 id 的键名 */
+  readonly key?: string
   /** 被引用的流转表（SQL 表名） */
   readonly targets: readonly string[]
   /** 父子关系：子行随父行进入闭包，父先子后插入、子先父后撤销 */

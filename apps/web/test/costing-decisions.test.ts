@@ -19,7 +19,7 @@ import {
   user,
 } from '@product-res/db'
 import { newId } from '@product-res/shared'
-import { eq, inArray } from 'drizzle-orm'
+import { eq, inArray, sql } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   archivePage,
@@ -470,6 +470,15 @@ describe('待决定队列与决定', () => {
     expect((await archivePage(owner, { directionId: seeded.directionId }, NOW)).rows).toHaveLength(
       3,
     )
+    // 方向按线索当前所属方向过滤：跨空间复制 / 合并进来的决定快照中是源空间的方向 id
+    await owner.db.execute(
+      sql`update decision set snapshot = jsonb_set(snapshot, '{direction,id}', to_jsonb(${newId()}::text))
+        where id = ${follow?.id as string}`,
+    )
+    expect((await archivePage(owner, { directionId: seeded.directionId }, NOW)).rows).toHaveLength(
+      3,
+    )
+    expect((await archivePage(owner, { directionId: newId() }, NOW)).rows).toHaveLength(0)
     expect(
       (await archivePage(owner, { from: '2026-01-01', to: '2026-01-31' }, NOW)).rows,
     ).toHaveLength(0)

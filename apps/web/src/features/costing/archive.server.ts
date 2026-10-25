@@ -4,6 +4,7 @@ import {
   direction,
   type FollowOutcomeRow,
   followOutcome,
+  lead,
   leadEvent,
   scoped,
 } from '@product-res/db'
@@ -172,14 +173,16 @@ export async function archivePage(
   now = new Date(),
 ) {
   const s = scoped(actor.db, actor.workspaceId)
-  // 平台与方向按决定快照过滤：档案库反映决定当时的归属
+  // 平台按决定快照过滤（档案库反映决定当时的站点）；方向按线索当前所属方向过滤：
+  // 快照是历史事实，跨空间复制 / 移动后其中的方向 id 指向源空间（add-workspace-data-transfer）
   const where = and(
     filters.kind ? eq(decision.kind, filters.kind) : undefined,
     filters.platform
       ? sql`${decision.snapshot}->'cluster'->>'marketplace' like ${`${filters.platform}-%`}`
       : undefined,
     filters.directionId
-      ? sql`${decision.snapshot}->'direction'->>'id' = ${filters.directionId}`
+      ? sql`exists (select 1 from ${lead} where ${lead.id} = ${decision.leadId}
+          and ${lead.directionId} = ${filters.directionId})`
       : undefined,
     filters.from ? gte(decision.decidedAt, new Date(`${filters.from}T00:00:00${SGT}`)) : undefined,
     filters.to

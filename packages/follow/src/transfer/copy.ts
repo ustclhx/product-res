@@ -12,7 +12,7 @@ import {
 } from './batch.ts'
 import { rows, textList, transferError, uuidList } from './common.ts'
 import { batchFamily, col, ident, keyOf, type TableMeta, tableMeta } from './meta.ts'
-import { transferTablesInBatch } from './registry.ts'
+import { FLOWING_TRANSFER_TABLES, transferTablesInBatch } from './registry.ts'
 import type { TransferReference } from './types.ts'
 
 /**
@@ -30,6 +30,8 @@ import type { TransferReference } from './types.ts'
  *    删除 / 置空的原值记在 `source_row.unmapped`，计入 counts 的 `unmapped:<列名>`。
  *    其他列（含 jsonb 快照、setting_version、追踪商品的快照相位 last_snapshot_on / tier /
  *    tier_changed_at / tier_reason）原样保留。
+ * 4. jsonb-key 引用（lead_event.payload 中的决定 / 组合 / 品类研究 / 快照 id）指向的表可能更晚落地：
+ *    行先原样插入，每个批次结束时回填（rewriteJsonbKeys），映射不到删除该键并记入 unmapped。
  * 补偿由 lifecycle.ts 统一处理：子先父后删除 `copied` 的目标行，从 `source_row.target` 恢复被合并修改的目标行。
  */
 export async function copyBatch(ctx: Context): Promise<void> {
@@ -42,6 +44,63 @@ export async function copyBatch(ctx: Context): Promise<void> {
     await assignTargets(ctx, meta)
     if (meta.name === 'risk_finding') await collapseRefCollisions(ctx, meta)
     await insertCopies(ctx, meta)
+  }
+  await rewriteJsonbKeys(ctx)
+}
+
+/**
+ * jsonb-key 引用（lead_event.payload 的 decisionId / scenarioId / studyId / snapshotId）：
+ * 被引用的表在本表之后落地，因此行先原样插入，每个批次结束时对本次流转全部已复制的行回填：
+ * 源值已映射 → 改为目标 id；源值不在本次流转中、或已被跳过（目标为空）→ 删除该键并记入 unmapped；
+ * 仍为 planned（后续批次处理）→ 暂不改动。只改本次复制出的目标行，补偿时随其所在批次删除。
+ */
+async function rewriteJsonbKeys(ctx: Context) {
+  for (const entry of FLOWING_TRANSFER_TABLES) {
+    const refs = entry.references.filter((r) => r.kind === 'jsonb-key' && r.key)
+    if (refs.length === 0) continue
+    const meta = tableMeta(entry.name)
+    const pk = meta.pk[0]
+    if (meta.pk.length !== 1 || !pk) throw new Error(`${meta.name}: jsonb-key 需要单列主键`)
+    for (const ref of refs) {
+      const column = ident(ref.column.name)
+      const key = ref.key as string
+      const label = `${ref.column.name}.${key}`
+      // 源行（t）与本次复制出的目标行（g）；目标行该键仍为源值表示尚未处理
+      const pending = sql`from workspace_transfer_id_map m
+        join ${ident(meta.name)} t on t.${ident(pk)}::text = m.source_id
+        join ${ident(meta.name)} g on g.${ident(pk)}::text = m.target_id
+        where m.transfer_id = ${ctx.transfer.id} and m.table_name = ${meta.name}
+          and m.action = 'copied' and t.${column}->>${key} is not null
+          and g.${column}->>${key} = t.${column}->>${key}`
+      const target = sql`(select x.target_id from workspace_transfer_id_map x
+        where x.transfer_id = ${ctx.transfer.id} and x.table_name in (${sql.join(
+          ref.targets.map((t) => sql`${t}`),
+          sql`, `,
+        )}) and x.source_id = t.${column}->>${key} and x.action <> 'planned' limit 1)`
+      const planned = sql`exists (select 1 from workspace_transfer_id_map x
+        where x.transfer_id = ${ctx.transfer.id} and x.table_name in (${sql.join(
+          ref.targets.map((t) => sql`${t}`),
+          sql`, `,
+        )}) and x.source_id = t.${column}->>${key} and x.action = 'planned')`
+      await ctx.tx.execute(sql`with z as (
+          select m.source_id, g.${ident(pk)} as id, t.${column}->>${key} as value,
+            ${target} as target_id, ${planned} as planned
+          ${pending}),
+        mapped as (
+          update ${ident(meta.name)} u
+          set ${column} = jsonb_set(u.${column}, array[${key}]::text[], to_jsonb(z.target_id))
+          from z where u.${ident(pk)} = z.id and z.target_id is not null),
+        dropped as (
+          update ${ident(meta.name)} u set ${column} = u.${column} - ${key}::text
+          from z where u.${ident(pk)} = z.id and z.target_id is null and not z.planned
+          returning z.source_id, z.value)
+        update workspace_transfer_id_map m
+        set source_row = jsonb_set(coalesce(m.source_row, '{}'::jsonb), '{unmapped}',
+          coalesce(m.source_row->'unmapped', '{}'::jsonb) || jsonb_build_object(${label}::text, d.value))
+        from dropped d
+        where m.transfer_id = ${ctx.transfer.id} and m.table_name = ${meta.name}
+          and m.source_id = d.source_id`)
+    }
   }
 }
 
@@ -139,22 +198,25 @@ async function mergeTracked(ctx: Context, meta: TableMeta, id: string, targetId:
   const targetBefore = await snapshotOf(ctx, meta, targetId)
   if (!row || !targetBefore) throw new Error(`${meta.name} merge rows missing`)
   let changed = false
+  let unmapped: Record<string, unknown> | undefined
   if (meta.name === 'tracked_store') {
     const source = (row.direction_ids as string[] | null) ?? []
     const mapped = source.length
-      ? await rows<{ target_id: string }>(
+      ? await rows<{ v: string; target_id: string | null }>(
           ctx.tx,
-          sql`select m.target_id from unnest(${uuidList(source)}) with ordinality as u(v, i)
-            join workspace_transfer_id_map m on m.transfer_id = ${ctx.transfer.id}
-              and m.table_name = 'direction' and m.source_id = u.v::text
-              and m.action <> 'planned' and m.target_id is not null
-            order by u.i`,
+          sql`select u.v::text as v, (select m.target_id from workspace_transfer_id_map m
+              where m.transfer_id = ${ctx.transfer.id} and m.table_name = 'direction'
+                and m.source_id = u.v::text and m.action <> 'planned' limit 1) as target_id
+            from unnest(${uuidList(source)}) with ordinality as u(v, i) order by u.i`,
         )
       : []
+    // 映射不到的方向不并入目标，与复制出的店铺一样记入 unmapped:direction_ids
+    const dropped = mapped.filter((m) => !m.target_id).map((m) => m.v)
+    if (dropped.length) unmapped = { direction_ids: dropped }
     const current = (targetBefore.direction_ids as string[] | null) ?? []
     const next = unionList(
       current,
-      mapped.map((m) => m.target_id),
+      mapped.flatMap((m) => (m.target_id ? [m.target_id] : [])),
     )
     if (next.length !== current.length) {
       changed = true
@@ -171,7 +233,18 @@ async function mergeTracked(ctx: Context, meta: TableMeta, id: string, targetId:
         where id = ${targetId}`)
     }
   }
-  await setAction(ctx, meta, id, 'merged', targetId, changed ? { target: targetBefore } : undefined)
+  const snapshot = {
+    ...(changed ? { target: targetBefore } : {}),
+    ...(unmapped ? { unmapped } : {}),
+  }
+  await setAction(
+    ctx,
+    meta,
+    id,
+    'merged',
+    targetId,
+    Object.keys(snapshot).length ? snapshot : undefined,
+  )
 }
 
 /**
@@ -243,7 +316,8 @@ async function insertCopies(ctx: Context, meta: TableMeta) {
   const from = sql`from ${ident(meta.name)} t
     join workspace_transfer_id_map m on ${copiedIn(ctx, meta)} and ${keyOf(meta, 't')} = m.source_id`
   const where = sql`where t.${ident(meta.ws)} = ${transfer.sourceWorkspaceId}`
-  const refs = meta.entry.references
+  // jsonb-key 先原样插入，批次结束时由 rewriteJsonbKeys 回填
+  const refs = meta.entry.references.filter((r) => r.kind !== 'jsonb-key')
   // 闭包保证 fail 引用一定映射得到；映射不到即实现错误，不能留下指向源空间的引用
   for (const ref of refs.filter((r) => r.unmapped === 'fail')) {
     const value = col('t', ref.column.name)

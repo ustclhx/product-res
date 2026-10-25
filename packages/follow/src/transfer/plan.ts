@@ -404,6 +404,7 @@ async function planSelectiveClosure(
   // 被闭包引用的配置
   for (const entry of FLOWING_TRANSFER_TABLES) {
     for (const ref of entry.references) {
+      if (ref.kind === 'jsonb-key') continue
       for (const target of ref.targets) {
         const targetMeta = tableMeta(target)
         if (!triggers(targetMeta.entry).includes('referenced')) continue

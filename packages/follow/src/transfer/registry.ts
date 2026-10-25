@@ -382,6 +382,22 @@ export const FLOWING_TRANSFER_TABLES: readonly FlowingTransferTable[] = [
         closure: true,
         unmapped: 'fail',
       },
+      // 事件载荷中的空间行 id：回看提醒幂等判断（selection-review）、决定 / 组合状态事件、
+      // 品类研究转线索（category.server 按 studyId 查已转出的线索）
+      ...(
+        [
+          ['decisionId', 'decision'],
+          ['scenarioId', 'costing_scenario'],
+          ['studyId', 'category_study'],
+          ['snapshotId', 'category_study_snapshot'],
+        ] as const
+      ).map(([key, target]) => ({
+        column: leadEvent.payload,
+        kind: 'jsonb-key' as const,
+        key,
+        targets: [target],
+        unmapped: 'drop-key' as const,
+      })),
     ],
     preserved: [{ column: leadEvent.actorUserId, reason: USER }],
     note: '业务事件流（含 review-reminder 幂等标记）随线索 / 簇流转',
