@@ -23,7 +23,7 @@ import {
 export const getWorkspacePage = createServerFn({ method: 'GET' })
   .middleware([withWorkspaceMembership])
   .handler(async ({ context }) => {
-    const { db, workspace, member, workspaceTeamReadOnly } = context
+    const { db, workspace, member, workspaceTeamReadOnly, workspaceTransferring } = context
     const { user } = await requireFreshSession({
       auth: getWebRuntime().auth,
       db,
@@ -64,6 +64,14 @@ export const getWorkspacePage = createServerFn({ method: 'GET' })
           : [],
       memberCount: members.length,
       maxSeats: await resolveWorkspaceMaxSeats(workspace.id, db.$client),
+      // 流转中只读横幅（add-workspace-data-transfer 6.3）；开关关闭时中间件恒为 false
+      transfer: workspaceTransferring
+        ? await (await import('../transfer/transfer.server.ts')).activeTransferBanner(
+            db,
+            workspace.id,
+            { userId: user.id, role: member.role },
+          )
+        : null,
     }
   })
 

@@ -6,6 +6,7 @@ import { templateConfig } from '../../server/template-config.ts'
 import { authClient } from '../auth/auth-client.ts'
 import { NotificationCenter } from '../notifications/center.tsx'
 import { ThemeToggle } from '../theme/theme-toggle.tsx'
+import { TransferBanner } from '../transfer/banner.tsx'
 import { type WorkspacePage, WorkspaceSwitcher } from '../workspace/components.tsx'
 import { activeNavKey, WORKBENCH_NAV } from './nav.ts'
 
@@ -81,6 +82,7 @@ export function WorkbenchShell({ page, children }: { page: WorkspacePage; childr
             <AccountMenu page={page} />
           </div>
         </header>
+        <TransferBanner page={page} />
         <main className="min-w-0 flex-1 p-5">{children}</main>
       </div>
     </div>

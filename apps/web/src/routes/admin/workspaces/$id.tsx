@@ -15,11 +15,19 @@ import {
   getAdminWorkspaceCredits,
   restoreAdminWorkspace,
 } from '../../../features/admin/workspaces.functions.ts'
+import { AdminWorkspaceTransfers } from '../../../features/transfer/admin-transfers.tsx'
+import { getAdminWorkspaceTransfers } from '../../../features/transfer/transfer.functions.ts'
 import { m } from '../../../paraglide/messages.js'
 import { templateConfig } from '../../../server/template-config.ts'
 
 export const Route = createFileRoute('/admin/workspaces/$id')({
-  loader: ({ params }) => getAdminWorkspace({ data: { id: params.id } }),
+  loader: async ({ params }) => {
+    const [workspace, transfers] = await Promise.all([
+      getAdminWorkspace({ data: { id: params.id } }),
+      getAdminWorkspaceTransfers({ data: { id: params.id } }),
+    ])
+    return { ...workspace, transfers }
+  },
   component: WorkspaceDetail,
 })
 function WorkspaceDetail() {
@@ -160,6 +168,7 @@ function WorkspaceDetail() {
           <EmptyState />
         )}
       </AdminSection>
+      <AdminWorkspaceTransfers workspaceId={data.workspace.id} transfers={data.transfers} />
       {data.entitlements && (
         <AdminSection title={m.admin_subscriptions_and_overlapping_periods()}>
           <p className="text-muted-foreground text-sm">

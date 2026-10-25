@@ -85,21 +85,22 @@ export function WorkspaceSwitcher({ page }: { page: WorkspacePage }) {
   )
 }
 
+/** 新建团队空间的名称与地址校验（创建团队与个人空间升级共用，服务端另按保留字校验） */
+export const teamWorkspaceInput = z.object({
+  name: z.string().trim().min(1).max(100),
+  slug: z
+    .string()
+    .min(3)
+    .max(64)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+})
+
 function CreateTeam() {
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const form = useAppForm({
     defaultValues: { name: '', slug: '' },
-    validators: {
-      onSubmit: z.object({
-        name: z.string().trim().min(1).max(100),
-        slug: z
-          .string()
-          .min(3)
-          .max(64)
-          .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-      }),
-    },
+    validators: { onSubmit: teamWorkspaceInput },
     onSubmit: async ({ value }) => {
       setError(null)
       try {

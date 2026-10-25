@@ -28,7 +28,7 @@ import {
 import { type Capability, requireCapability, type Workflow } from '@product-res/platform'
 import { AppError, newId } from '@product-res/shared'
 import { log } from '@product-res/shared/log'
-import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm'
 
 type Tx = Parameters<Parameters<Database['transaction']>[0]>[0]
 
@@ -361,4 +361,47 @@ export async function adminWorkspaceTransferDetail(
   const detail = await getWorkspaceTransferDetail(db, transferId, workspaceId)
   if (!detail) throw notFound()
   return detail
+}
+
+export interface ActiveTransferBanner {
+  readonly id: string
+  readonly kind: TransferSummary['kind']
+  readonly status: TransferSummary['status']
+  /** 详情页对请求者可见（owner / admin 或发起人），否则横幅不给链接 */
+  readonly viewable: boolean
+}
+
+/** 工作台顶部只读横幅（tasks 6.3）：当前空间进行中的最近一条流转；调用方已确认 workspaceTransferring */
+export async function activeTransferBanner(
+  db: Database,
+  workspaceId: string,
+  viewer: { readonly userId: string; readonly role: string },
+): Promise<ActiveTransferBanner | null> {
+  const [row] = await db
+    .select({
+      id: workspaceTransfer.id,
+      kind: workspaceTransfer.kind,
+      status: workspaceTransfer.status,
+      requestedBy: workspaceTransfer.requestedBy,
+    })
+    .from(workspaceTransfer)
+    .where(
+      and(
+        or(
+          eq(workspaceTransfer.sourceWorkspaceId, workspaceId),
+          eq(workspaceTransfer.targetWorkspaceId, workspaceId),
+        ),
+        inArray(workspaceTransfer.status, [...WORKSPACE_TRANSFER_ACTIVE_STATUSES]),
+      ),
+    )
+    .orderBy(desc(workspaceTransfer.createdAt))
+    .limit(1)
+  if (!row) return null
+  const manager = viewer.role === 'owner' || viewer.role === 'admin'
+  return {
+    id: row.id,
+    kind: row.kind,
+    status: row.status,
+    viewable: manager || row.requestedBy === viewer.userId,
+  }
 }
