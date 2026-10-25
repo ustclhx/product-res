@@ -52,8 +52,8 @@ afterAll(async () => {
     await s.delete(direction, undefined)
     await s.delete(member, undefined)
   }
-  await db().delete(organization).where(inArray(organization.id, spaces))
-  await db().delete(user).where(eq(user.id, owner))
+  // 发起复制会在源、目标空间写 workspace.transfer.* 审计（5.1），audit_log 只追加不可删，
+  // 与其他流转测试一样保留空间与用户行
 })
 
 async function team(name: string) {
