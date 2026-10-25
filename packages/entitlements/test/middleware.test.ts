@@ -1,7 +1,7 @@
 import { AppError } from '@product-res/shared'
 import { expect, it, vi } from 'vitest'
 import { withEntitlement, withWorkspace } from '../../../apps/web/src/server/middleware.ts'
-import { DEFAULT_FREE_FEATURES, UPGRADE_REQUIRED } from '../src/index.ts'
+import { DEFAULT_FREE_FEATURES, getEntitlements, UPGRADE_REQUIRED } from '../src/index.ts'
 
 // 这些用例验证启用模块的权益行为；关闭模块的 404/无 seed 行为由 web feature-gates 用例覆盖。
 vi.mock('../../../apps/web/src/server/template-config.ts', async (original) => {
@@ -28,6 +28,8 @@ const context = {
   workspace: { id: 'workspace' },
   member: { role: 'owner' },
   workspaceReadOnly: false,
+  workspaceTeamReadOnly: false,
+  workspaceTransferring: false,
 }
 
 it('middleware chains fresh workspace authorization and rejects a paid model with upgrade code', async () => {
@@ -42,20 +44,39 @@ it('middleware chains fresh workspace authorization and rejects a paid model wit
 
 it('middleware keeps read-only team writes blocked before evaluating entitlements', async () => {
   const middleware = withEntitlement({ limit: 'maxSeats', value: 1 })
+  const next = vi.fn()
+  vi.mocked(getEntitlements).mockClear()
   await expect(
     middleware.options.server?.({
-      context: { ...context, workspaceReadOnly: true },
+      context: { ...context, workspaceReadOnly: true, workspaceTeamReadOnly: true },
       data: {},
-      next: vi.fn(),
+      next,
     } as never),
-  ).rejects.toMatchObject({ code: 'WORKSPACE_READ_ONLY' })
+  ).rejects.toMatchObject({ code: 'WORKSPACE_READ_ONLY', status: 403 })
+  expect(getEntitlements).not.toHaveBeenCalled()
+  expect(next).not.toHaveBeenCalled()
 })
 
 it('middleware permits an entitled read and injects request entitlements', async () => {
   const next = vi.fn(async (value) => value)
   const middleware = withEntitlement({ limit: 'maxSeats', value: 1 }, { access: 'read' })
   await middleware.options.server?.({
-    context: { ...context, workspaceReadOnly: true },
+    context: { ...context, workspaceReadOnly: true, workspaceTeamReadOnly: true },
+    data: {},
+    next,
+  } as never)
+  expect(next).toHaveBeenCalledWith({
+    context: {
+      entitlements: { key: 'free', sort: 0, features: DEFAULT_FREE_FEATURES },
+    },
+  })
+})
+
+it('middleware permits entitled writes when only the workbench transfer lock is active', async () => {
+  const next = vi.fn(async (value) => value)
+  const middleware = withEntitlement({ limit: 'maxSeats', value: 1 })
+  await middleware.options.server?.({
+    context: { ...context, workspaceReadOnly: true, workspaceTransferring: true },
     data: {},
     next,
   } as never)
