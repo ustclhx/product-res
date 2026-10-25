@@ -16,6 +16,7 @@ interface Built {
 
 const mocks = vi.hoisted(() => ({
   activated: vi.fn(async () => false),
+  transferring: vi.fn(async () => false),
   resolved: {
     workspace: { id: 'ws-1', name: 'Mine', slug: 'u-1', isPersonal: true },
     member: { role: 'owner' },
@@ -65,6 +66,10 @@ vi.mock('./workspace-data.ts', () => ({
   workspaceInvitations: async () => [],
   workspaceMembers: async () => [],
 }))
+vi.mock('@product-res/db', async (original) => ({
+  ...(await original<typeof import('@product-res/db')>()),
+  isWorkspaceTransferring: mocks.transferring,
+}))
 vi.mock('@product-res/auth', () => ({ requireFreshSession: async () => ({ user: mocks.user }) }))
 vi.mock('./account-activation.ts', async (original) => {
   const actual = await original<typeof import('./account-activation.ts')>()
@@ -113,7 +118,10 @@ async function run(middleware: Built, data: Record<string, unknown> = { slug: 'u
   return context
 }
 
-beforeEach(() => mocks.activated.mockReset())
+beforeEach(() => {
+  mocks.activated.mockReset()
+  mocks.transferring.mockResolvedValue(false)
+})
 
 describe('工作台准入中间件', () => {
   it('未开通时 withWorkspace 返回 403 ACCOUNT_NOT_ACTIVATED，开通后注入空间', async () => {
@@ -142,5 +150,20 @@ describe('工作台准入中间件', () => {
       activation: 'active',
       workspace: { id: 'ws-1', slug: 'u-1' },
     })
+  })
+})
+
+it('流转锁合入工作台只读，非工作台功能保留原有团队只读条件', async () => {
+  mocks.activated.mockResolvedValue(true)
+  mocks.transferring.mockResolvedValue(true)
+  expect(await run(withWorkspace)).toMatchObject({
+    workspaceReadOnly: true,
+    workspaceTransferring: true,
+    workspaceTeamReadOnly: false,
+  })
+  mocks.transferring.mockResolvedValue(false)
+  expect(await run(withWorkspace)).toMatchObject({
+    workspaceReadOnly: false,
+    workspaceTransferring: false,
   })
 })

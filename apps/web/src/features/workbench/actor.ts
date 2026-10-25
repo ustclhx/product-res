@@ -5,6 +5,7 @@ export interface WorkbenchActor {
   db: Database
   workspaceId: string
   workspaceReadOnly: boolean
+  workspaceTransferring?: boolean | undefined
   member: { role: string }
 }
 
@@ -12,12 +13,14 @@ export function actorOf(context: {
   db: Database
   workspace: { id: string }
   workspaceReadOnly: boolean
+  workspaceTransferring?: boolean | undefined
   member: { role: string }
 }): WorkbenchActor {
   return {
     db: context.db,
     workspaceId: context.workspace.id,
     workspaceReadOnly: context.workspaceReadOnly,
+    workspaceTransferring: context.workspaceTransferring,
     member: { role: context.member.role },
   }
 }

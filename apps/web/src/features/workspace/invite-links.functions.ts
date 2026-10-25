@@ -18,7 +18,7 @@ export const getInviteLinks = createServerFn({ method: 'GET' })
       context.db,
       context.workspace,
       context.member,
-      context.workspaceReadOnly,
+      context.workspaceTeamReadOnly,
     ),
   }))
 

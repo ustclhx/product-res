@@ -7,6 +7,7 @@ import {
   seasonalNode,
 } from './schema/selection.ts'
 import { scoped } from './scoped.ts'
+import { isWorkspaceTransferring } from './transfer.ts'
 
 /**
  * 跟卖选品的空间级预置数据（openspec/changes/add-follow-selection tasks 2.1）。
@@ -76,6 +77,7 @@ export async function ensureSelectionDefaults(
   db: Database,
   workspaceId: string,
 ): Promise<{ seeded: boolean }> {
+  if (await isWorkspaceTransferring(db, workspaceId)) return { seeded: false }
   return scoped(db, workspaceId).transaction(async (s) => {
     const inserted = await s
       .insert(scoringSetting, { version: 1, ...DEFAULT_SCORING_SETTING })

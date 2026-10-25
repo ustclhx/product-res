@@ -1,5 +1,6 @@
 import { cn } from '@product-res/ui'
 import { type ReactNode, useId, useState } from 'react'
+import { workbenchErrorText } from './errors.ts'
 
 /** 工作台配置表单的小部件：与 Input 同一套边框、圆角和 13px 正文 */
 export const controlClass =
@@ -82,7 +83,7 @@ export function useAction(onDone: () => Promise<void>) {
       await onDone()
       return true
     } catch (e) {
-      setError(e instanceof Error && e.message ? e.message : '操作失败，请重试')
+      setError(workbenchErrorText(e))
       return false
     } finally {
       setBusy(false)

@@ -1,5 +1,5 @@
 import type { Database } from '@product-res/db'
-import { scoped } from '@product-res/db'
+import { isWorkspaceTransferring, scoped, transferringWorkspaceIds } from '@product-res/db'
 import {
   type AccuracyAudit,
   accuracyAudit,
@@ -305,6 +305,10 @@ export async function generateAudit(
   workspaceId: string,
   input: { readonly now: Date; readonly seed?: string; readonly sampleSize?: number },
 ): Promise<{ audit: AccuracyAudit; created: boolean }> {
+  if (await isWorkspaceTransferring(db, workspaceId))
+    throw new AppError('WORKSPACE_TRANSFERRING', 'Workspace data transfer is in progress', {
+      status: 403,
+    })
   const s = scoped(db, workspaceId)
   const weekOf = auditWeekOf(input.now)
   const existing = async () => {
@@ -374,7 +378,9 @@ export async function generateWeeklyAudits(db: Database, now: Date) {
     )
     .where(ne(trackedProduct.tier, 'cold'))
   const results: { workspaceId: string; created: boolean; error?: unknown }[] = []
+  const transferring = await transferringWorkspaceIds(db)
   for (const { id } of workspaces) {
+    if (transferring.has(id)) continue
     try {
       const { created } = await generateAudit(db, id, { now })
       results.push({ workspaceId: id, created })

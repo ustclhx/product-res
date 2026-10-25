@@ -1,5 +1,5 @@
 import { type FreshSession, requireFreshSession } from '@product-res/auth'
-import type { Database } from '@product-res/db'
+import { type Database, isWorkspaceTransferring } from '@product-res/db'
 import {
   type EntitlementRequirement,
   getEntitlements,
@@ -87,10 +87,16 @@ export const withWorkspaceMembership = createMiddleware({ type: 'function' })
         ? await resolveDefaultWorkspace(db, user, session.activeOrganizationId)
         : await resolveWorkspaceBySlug(db, user.id, data.slug)
     if (!resolved) throw notFound()
+    const workspaceTeamReadOnly =
+      !templateConfig.tenancy.multiTenant && !resolved.workspace.isPersonal
+    const workspaceTransferring = await isWorkspaceTransferring(db, resolved.workspace.id)
     return next({
       context: {
         ...resolved,
-        workspaceReadOnly: !templateConfig.tenancy.multiTenant && !resolved.workspace.isPersonal,
+        // 账单、AI、文件与成员管理不参与选品流转，继续只使用原有团队禁写条件。
+        workspaceTeamReadOnly,
+        workspaceTransferring,
+        workspaceReadOnly: workspaceTeamReadOnly || workspaceTransferring,
       },
     })
   })
@@ -126,7 +132,7 @@ export function withEntitlement(
   return createMiddleware({ type: 'function' })
     .middleware([withWorkspace])
     .server(async ({ context, data, next }) => {
-      if (access === 'write' && context.workspaceReadOnly)
+      if (access === 'write' && context.workspaceTeamReadOnly)
         throw new AppError('WORKSPACE_READ_ONLY', 'Team workspace writes are disabled', {
           status: 403,
         })

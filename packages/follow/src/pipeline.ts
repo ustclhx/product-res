@@ -22,6 +22,7 @@ import {
   type SelectionDimension,
   scoped,
   seasonalNode,
+  transferringWorkspaceIds,
 } from '@product-res/db'
 import {
   findProducts,
@@ -170,7 +171,9 @@ export async function runSelectionDaily(
         : eq(direction.enabled, true),
     )
   const results: WorkspaceRunResult[] = []
+  const transferring = await transferringWorkspaceIds(db)
   for (const { workspaceId } of workspaces) {
+    if (transferring.has(workspaceId)) continue
     try {
       results.push(
         await runSelectionForWorkspace(db, workspaceId, { now: options.now, asOf: options.asOf }),

@@ -44,3 +44,4 @@ export {
   type SettingValues,
   settingDefaults,
 } from './settings.ts'
+export { isWorkspaceTransferring, transferringWorkspaceIds } from './transfer.ts'

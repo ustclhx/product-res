@@ -9,10 +9,22 @@ import {
   notificationLink,
   organization,
   scoped,
+  transferringWorkspaceIds,
 } from '@product-res/db'
 import type { ScheduleDefinition, Scheduler } from '@product-res/platform'
 import { log } from '@product-res/shared/log'
-import { and, asc, eq, isNotNull, isNull, lte, notExists, type SQL, sql } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  eq,
+  isNotNull,
+  isNull,
+  lte,
+  notExists,
+  notInArray,
+  type SQL,
+  sql,
+} from 'drizzle-orm'
 
 /**
  * 30 天回看提醒（openspec/changes/add-costing-decisions design D5、specs/selection-archive）。
@@ -52,6 +64,7 @@ const reminded = (leadId: SQL | string, decisionId: SQL | string) =>
 
 export async function runSelectionReview(db: Database, now: Date) {
   const cutoff = reviewCutoff(now)
+  const transferring = [...(await transferringWorkspaceIds(db))]
   const due = await db
     .select({
       id: decision.id,
@@ -69,6 +82,7 @@ export async function runSelectionReview(db: Database, now: Date) {
     )
     .where(
       and(
+        transferring.length > 0 ? notInArray(decision.workspaceId, transferring) : undefined,
         eq(decision.kind, 'follow'),
         isNotNull(decision.plannedListingOn),
         lte(decision.plannedListingOn, cutoff),

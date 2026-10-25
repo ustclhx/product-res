@@ -1,4 +1,5 @@
 import { createCsrfMiddleware, createMiddleware, createStart } from '@tanstack/react-start'
+import { workspaceTransferErrorAdapter } from './features/workbench/transfer-error.ts'
 
 const sentryErrors = createMiddleware({ type: 'function' }).server(async ({ next }) => {
   try {
@@ -27,4 +28,5 @@ export const startInstance = createStart(() => ({
     sentryRequests,
   ],
   functionMiddleware: [sentryErrors],
+  serializationAdapters: [workspaceTransferErrorAdapter],
 }))

@@ -153,7 +153,12 @@ it.each([checkoutCustomer, replayAdminWebhook])(
   'payment actions preserve their result format and set HTTP 503',
   async (action) => {
     const result = await (action as unknown as (input: unknown) => Promise<unknown>)({
-      context: { db: mocks.db, workspaceReadOnly: false },
+      context: {
+        db: mocks.db,
+        workspaceReadOnly: true,
+        workspaceTeamReadOnly: false,
+        workspaceTransferring: true,
+      },
       data: {},
     })
     expect(result).toEqual({ ok: false, error: 'BILLING_UNAVAILABLE' })
@@ -204,7 +209,9 @@ it('checkout audit uses the trusted runtime IP and configured return URL', async
   const result = await (checkoutCustomer as unknown as (input: unknown) => Promise<unknown>)({
     context: {
       db: mocks.db,
-      workspaceReadOnly: false,
+      workspaceReadOnly: true,
+      workspaceTeamReadOnly: false,
+      workspaceTransferring: true,
       workspace: { id: 'workspace', slug: 'team' },
       user: { id: 'user' },
     },
@@ -227,7 +234,12 @@ it.each(['events', 'email'] as const)(
     else mocks.emailAvailable = false
     const result = await (requestCustomerRefund as unknown as (input: unknown) => Promise<unknown>)(
       {
-        context: { db: mocks.db, workspaceReadOnly: false },
+        context: {
+          db: mocks.db,
+          workspaceReadOnly: true,
+          workspaceTeamReadOnly: false,
+          workspaceTransferring: true,
+        },
         data: {},
       },
     )
