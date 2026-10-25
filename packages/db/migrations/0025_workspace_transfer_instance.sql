@@ -1,0 +1,1 @@
+ALTER TABLE "workspace_transfer" ADD COLUMN "workflow_instance_id" text;
