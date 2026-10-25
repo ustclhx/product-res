@@ -60,7 +60,8 @@ export const workspaceName = (name: string | null) => name ?? m.transfer_unknown
 /** 批次进度：补偿中 / 已回滚显示撤销进度，计划完成前显示“计划中” */
 export function progressText(transfer: Pick<TransferSummary, 'status' | 'progress'>): string {
   const { done, compensated, total } = transfer.progress
-  if (total === 0) return m.transfer_progress_planning()
+  // 计划前结束（如排队时取消）没有批次
+  if (total === 0) return isActiveTransfer(transfer.status) ? m.transfer_progress_planning() : '—'
   if (transfer.status === 'compensating' || transfer.status === 'compensated')
     return m.transfer_progress_compensated({
       done: String(compensated),

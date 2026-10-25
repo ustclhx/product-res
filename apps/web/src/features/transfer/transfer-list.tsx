@@ -57,7 +57,13 @@ export function TransferList({
       getRowId={(t) => t.id}
       page={{ pageIndex: 0, pageSize: Math.max(1, transfers.length), rowCount: transfers.length }}
       onPageChange={() => {}}
-      labels={{ empty: m.transfer_list_empty() }}
+      labels={{
+        empty: m.transfer_list_empty(),
+        previous: m.transfer_table_previous(),
+        next: m.transfer_table_next(),
+        page: (page, pageCount) =>
+          m.transfer_table_page({ page: String(page), pageCount: String(pageCount ?? page) }),
+      }}
     />
   )
 }

@@ -187,12 +187,20 @@ export function groupLabel(group: string): string {
 /** 未登记的表（注册表新增后文案尚未补齐）原样显示表名 */
 export const tableLabel = (table: string) => TRANSFER_TABLES[table]?.label() ?? table
 
+/** 批次列表用短名：方向批次按方向逐一列出，分组全称太长 */
+function batchFamilyLabel(family: string): string {
+  if (family === 'config') return m.transfer_batch_family_config()
+  if (family === 'direction') return m.transfer_table_direction()
+  if (family === 'validation') return m.transfer_batch_family_validation()
+  return groupLabel(family)
+}
+
 /** 批次键 `<分组>[:<id>][#<子批>]`：显示分组名，同组多批时附带短 id 区分 */
 export function batchLabel(key: string): string {
   const [head = key, sub] = key.split('#', 2)
   const [family = head, id] = head.split(':', 2)
   const item = id ? ` · ${id === 'none' ? '—' : id.slice(-6)}` : ''
-  return `${groupLabel(family)}${item}${sub ? ` #${sub}` : ''}`
+  return `${batchFamilyLabel(family)}${item}${sub ? ` #${sub}` : ''}`
 }
 
 export interface TableGroupSummary {

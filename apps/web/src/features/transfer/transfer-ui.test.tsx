@@ -27,7 +27,7 @@ vi.mock('@tanstack/react-router', async (original) => ({
   Link: ({ children, to, params }: { children: unknown; to: string; params?: object }) => (
     <a href={`${to}#${JSON.stringify(params ?? {})}`}>{children as never}</a>
   ),
-  useNavigate: () => async () => {},
+  useRouter: () => ({ navigate: async () => {}, invalidate: async () => {} }),
 }))
 
 const userId = '0190a000-0000-7000-8000-0000000000aa'
@@ -319,9 +319,9 @@ describe('文案与错误码', () => {
   })
 
   it('批次键与分组汇总', () => {
-    expect(batchLabel('config')).toBe(m.transfer_group_config())
+    expect(batchLabel('config')).toBe(m.transfer_batch_family_config())
     expect(batchLabel('direction:0190a000-0000-7000-8000-00000000d1d1#2')).toBe(
-      `${m.transfer_group_direction()} · 00d1d1 #2`,
+      `${m.transfer_table_direction()} · 00d1d1 #2`,
     )
     expect(groupTableCounts({ lead: 2, direction: 1, tracked_store: 0 })).toEqual([
       {

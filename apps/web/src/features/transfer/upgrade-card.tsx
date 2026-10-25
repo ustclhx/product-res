@@ -1,5 +1,5 @@
 import { Button, useAppForm } from '@product-res/ui'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link, useRouter } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { m } from '../../paraglide/messages.js'
 import { templateConfig } from '../../server/template-config.ts'
@@ -78,7 +78,7 @@ function UpgradeDialog({ slug, onClose }: { slug: string; onClose: () => void })
   const [loadError, setLoadError] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [understood, setUnderstood] = useState(false)
-  const navigate = useNavigate()
+  const router = useRouter()
   useEffect(() => {
     let live = true
     getUpgradePreview({ data: { slug } })
@@ -97,10 +97,12 @@ function UpgradeDialog({ slug, onClose }: { slug: string; onClose: () => void })
         const started = await upgradeSubmitter(startWorkspaceUpgrade, slug, idempotencyKey)(value)
         // 两个空间进入只读：布局缓存需要重新获取以显示横幅
         clearWorkspacePageCache()
-        await navigate({
+        await router.navigate({
           to: '/app/$slug/settings/transfers/$transferId',
           params: { slug, transferId: started.transferId },
         })
+        // 路由默认先渲染旧布局再后台重验证：立即重取，横幅与进度页同时出现
+        await router.invalidate()
       } catch (e) {
         setError(transferActionError(e, m.transfer_upgrade_failed()))
       }
