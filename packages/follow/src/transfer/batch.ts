@@ -17,6 +17,7 @@ import {
   transferError,
   uuidList,
 } from './common.ts'
+import { copyBatch } from './copy.ts'
 import { batchFamily, col, ident, keyOf, type TableMeta, tableMeta } from './meta.ts'
 import {
   loadTransfer,
@@ -37,6 +38,7 @@ import type { TransferReference } from './types.ts'
  * 合并时源行先以 `to_jsonb` 快照写入 `id_map.source_row` 再删除，引用它的移动行改指目标 id；
  * 被引用的配置复制或合并到目标，源行保留。被改写的移动行同样先存快照，补偿据此逐列恢复。
  * 源行已不存在（如被 eBay 账号删除清理）记为 skipped。
+ * 复制批次（tasks 3.4）在 copy.ts，经同一 runBatch 取锁、校验权限与计数。
  */
 
 /** `id_map.source_row` 的结构：row 为源行修改 / 删除前的快照，target 为被合并修改的目标行快照 */
@@ -55,9 +57,9 @@ export interface BatchResult {
 export const touchesSellerData = (batchKey: string) =>
   ['direction', 'store-pool'].includes(batchFamily(batchKey))
 
-const TIER_RANK: Record<string, number> = { hot: 0, normal: 1, cold: 2 }
+export const TIER_RANK: Record<string, number> = { hot: 0, normal: 1, cold: 2 }
 
-interface Context {
+export interface Context {
   readonly tx: Tx
   readonly transfer: WorkspaceTransfer
   readonly batchKey: string
@@ -117,7 +119,7 @@ export async function runBatch(
     }
     if (transfer.kind === 'upgrade') await upgradeBatch(ctx)
     else if (transfer.kind === 'move') await moveBatch(ctx)
-    else throw transferError('TRANSFER_KIND_UNSUPPORTED', '复制尚未实现', 400)
+    else await copyBatch(ctx)
     const [left] = await rows(
       tx,
       sql`select table_name, source_id from workspace_transfer_id_map
@@ -150,15 +152,26 @@ export async function countActions(
   )) {
     counts[r.table_name] = { ...counts[r.table_name], [r.action]: r.n }
   }
+  // 复制时映射不到、按注册表删元素 / 置空的引用（copy.ts 记在 source_row.unmapped），键为 unmapped:<列名>
+  for (const r of await rows<{ table_name: string; column: string; n: number }>(
+    tx,
+    sql`select table_name, k as column, count(*)::int as n
+      from workspace_transfer_id_map, jsonb_object_keys(source_row->'unmapped') k
+      where transfer_id = ${transferId} and ${filter} and action = 'copied'
+        and jsonb_typeof(source_row->'unmapped') = 'object'
+      group by table_name, k`,
+  )) {
+    counts[r.table_name] = { ...counts[r.table_name], [`unmapped:${r.column}`]: r.n }
+  }
   return counts
 }
 
 /** 本批次中某表仍为 planned 的映射行（别名 m） */
-const plannedIn = (ctx: Context, meta: TableMeta, alias = 'm') =>
+export const plannedIn = (ctx: Context, meta: TableMeta, alias = 'm') =>
   sql`${sql.raw(alias)}.transfer_id = ${ctx.transfer.id} and ${sql.raw(alias)}.table_name = ${meta.name}
     and ${sql.raw(alias)}.batch_key = ${ctx.batchKey} and ${sql.raw(alias)}.action = 'planned'`
 
-async function setAction(
+export async function setAction(
   ctx: Context,
   meta: TableMeta,
   sourceId: string,
@@ -173,14 +186,14 @@ async function setAction(
 }
 
 /** 源行已不存在（被 eBay 账号删除等清理）的清单行记为 skipped */
-async function skipMissing(ctx: Context, meta: TableMeta) {
+export async function skipMissing(ctx: Context, meta: TableMeta) {
   await ctx.tx.execute(sql`update workspace_transfer_id_map m set action = 'skipped', updated_at = now()
     where ${plannedIn(ctx, meta)} and not exists (
       select 1 from ${ident(meta.name)} t
       where ${keyOf(meta, 't')} = m.source_id and t.${ident(meta.ws)} = ${ctx.transfer.sourceWorkspaceId})`)
 }
 
-async function plannedIds(ctx: Context, meta: TableMeta): Promise<string[]> {
+export async function plannedIds(ctx: Context, meta: TableMeta): Promise<string[]> {
   return (
     await rows<{ source_id: string }>(
       ctx.tx,
@@ -276,7 +289,7 @@ function rewritten(ctx: Context, ref: TransferReference): SQL {
 }
 
 /** 源行 / 目标行的 to_jsonb 快照（与补偿时 jsonb_populate_record 对应） */
-async function snapshotOf(ctx: Context, meta: TableMeta, id: string) {
+export async function snapshotOf(ctx: Context, meta: TableMeta, id: string) {
   const [row] = await rows<{ j: Record<string, unknown> }>(
     ctx.tx,
     sql`select to_jsonb(t) as j from ${ident(meta.name)} t where ${keyOf(meta, 't')} = ${id}`,
@@ -539,7 +552,7 @@ async function copyOrMergeConfig(ctx: Context, meta: TableMeta) {
   }
 }
 
-const unionList = (a: readonly string[], b: readonly string[]) => [...new Set([...a, ...b])]
+export const unionList = (a: readonly string[], b: readonly string[]) => [...new Set([...a, ...b])]
 
 /**
  * 方向（D2、D4.1）。根方向原地移动：同名默认重命名，可选合并（簇挂到目标方向、对标店铺去重、

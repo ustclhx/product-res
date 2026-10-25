@@ -177,11 +177,36 @@ const ROOT_TABLES = {
 } as const
 
 /** 选择性移动（D1、D2）：根条目须属于源空间；权限按 D6（移出团队数据需 owner） */
-export async function startMove(
+export function startMove(
   db: Database,
   input: StartMoveInput,
   config: TransferConfig,
   hooks: StartHooks = {},
+): Promise<StartResult> {
+  return startSelective(db, 'move', input, config, hooks)
+}
+
+export type StartCopyInput = StartMoveInput
+
+/**
+ * 选择性复制（D1、D2、tasks 3.4）：与移动同一入口规则；权限按 D6 复制列
+ * （团队源需 owner / admin，个人空间只能本人），源空间数据不变。
+ */
+export function startCopy(
+  db: Database,
+  input: StartCopyInput,
+  config: TransferConfig,
+  hooks: StartHooks = {},
+): Promise<StartResult> {
+  return startSelective(db, 'copy', input, config, hooks)
+}
+
+async function startSelective(
+  db: Database,
+  kind: 'move' | 'copy',
+  input: StartMoveInput,
+  config: TransferConfig,
+  hooks: StartHooks,
 ): Promise<StartResult> {
   assertEnabled(config)
   const key = idempotencyKey(input.idempotencyKey)
@@ -189,11 +214,21 @@ export async function startMove(
   const selection = parseSelection(input.selection)
   return db.transaction(async (tx) => {
     await xactLock(tx, `owner:${input.userId}`)
-    const found = await existing(tx, input.userId, key, 'move')
+    const found = await existing(tx, input.userId, key, kind)
     if (found) return toResult(found, false)
     const ids = [input.sourceWorkspaceId, input.targetWorkspaceId]
     await lockTransferWorkspaces(tx, ids, { sellerData: false })
-    await assertTransferAccess(tx, { kind: 'move', ...input }, config, { revoked: false })
+    await assertTransferAccess(
+      tx,
+      {
+        kind,
+        userId: input.userId,
+        sourceWorkspaceId: input.sourceWorkspaceId,
+        targetWorkspaceId: input.targetWorkspaceId,
+      },
+      config,
+      { revoked: false },
+    )
     await assertNoActiveTransfer(tx, ids)
     let found_ = 0
     for (const [root, table] of Object.entries(ROOT_TABLES)) {
@@ -213,7 +248,7 @@ export async function startMove(
     const [transfer] = await tx
       .insert(workspaceTransfer)
       .values({
-        kind: 'move',
+        kind,
         sourceWorkspaceId: input.sourceWorkspaceId,
         targetWorkspaceId: input.targetWorkspaceId,
         requestedBy: input.userId,
