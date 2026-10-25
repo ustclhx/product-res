@@ -127,60 +127,7 @@ export async function planTransfer(
       config,
       { revoked: true },
     )
-    const selection = transfer.selection as TransferSelection
-    let conflicts: TransferConflictDecision[] = []
-    if (transfer.kind === 'upgrade') {
-      await assertTargetEmpty(tx, transfer)
-      await planUpgrade(tx, transfer)
-    } else {
-      await planSelectiveClosure(tx, transfer, selection)
-      conflicts = await resolveConflicts(tx, transfer, selection)
-    }
-    const tables = Object.fromEntries(
-      (
-        await rows<{ table_name: string; n: number }>(
-          tx,
-          sql`select table_name, count(*)::int as n from workspace_transfer_id_map
-            where transfer_id = ${transfer.id} group by table_name`,
-        )
-      ).map((r) => [r.table_name, r.n]),
-    )
-    const total = Object.values(tables).reduce((a, b) => a + b, 0)
-    assertCopyWithinLimit(transfer.kind, total)
-    if (transfer.kind === 'upgrade') await splitOversizedBatches(tx, transfer.id)
-    const batches = await writeBatches(tx, transfer.id)
-    const violations = [
-      ...((await options.checkEntitlements?.(tx, {
-        targetWorkspaceId: transfer.targetWorkspaceId,
-        tables,
-      })) ?? []),
-    ]
-    if (violations.length)
-      throw transferError('TRANSFER_ENTITLEMENT_EXCEEDED', '超出目标空间套餐限额', 403, {
-        violations,
-      })
-    const names = await rows<{ id: string; name: string }>(
-      tx,
-      sql`select id, name from organization
-        where id in (${transfer.sourceWorkspaceId}, ${transfer.targetWorkspaceId})`,
-    )
-    const nameOf = (id: string) => names.find((n) => n.id === id)?.name ?? ''
-    const plan: TransferPlan = {
-      version: 1,
-      kind: transfer.kind,
-      sourceName: nameOf(transfer.sourceWorkspaceId),
-      targetName: nameOf(transfer.targetWorkspaceId),
-      tables,
-      total,
-      batches,
-      conflicts,
-      scoringVersions: transfer.kind !== 'upgrade' ? await scoringSnapshot(tx, transfer) : [],
-      quota:
-        transfer.kind !== 'upgrade'
-          ? await estimateQuota(tx, transfer, conflicts)
-          : { additionalBrowseCallsPerDay: 0, threshold: 0, exceeds: false },
-      entitlements: { checked: options.checkEntitlements !== undefined, violations },
-    }
+    const plan = await buildPlan(tx, transfer, options)
     await transition(tx, transfer.id, ['pending'], {
       plan: plan as unknown as Record<string, unknown>,
       status: 'running',
@@ -188,6 +135,71 @@ export async function planTransfer(
     })
     return plan
   })
+}
+
+/**
+ * 闭包、冲突、按表行数、批次、评分版本快照与外部额度估算（plan 步骤与只读预览共用）。
+ * 会写入 id_map(planned) 与批次行：plan 步骤随事务提交，预览在回滚的事务中调用（preview.ts）。
+ */
+export async function buildPlan(
+  tx: Tx,
+  transfer: WorkspaceTransfer,
+  options: PlanOptions & { readonly enforceCopyLimit?: boolean } = {},
+): Promise<TransferPlan> {
+  const selection = transfer.selection as TransferSelection
+  let conflicts: TransferConflictDecision[] = []
+  if (transfer.kind === 'upgrade') {
+    await assertTargetEmpty(tx, transfer)
+    await planUpgrade(tx, transfer)
+  } else {
+    await planSelectiveClosure(tx, transfer, selection)
+    conflicts = await resolveConflicts(tx, transfer, selection)
+  }
+  const tables = Object.fromEntries(
+    (
+      await rows<{ table_name: string; n: number }>(
+        tx,
+        sql`select table_name, count(*)::int as n from workspace_transfer_id_map
+            where transfer_id = ${transfer.id} group by table_name`,
+      )
+    ).map((r) => [r.table_name, r.n]),
+  )
+  const total = Object.values(tables).reduce((a, b) => a + b, 0)
+  if (options.enforceCopyLimit !== false) assertCopyWithinLimit(transfer.kind, total)
+  if (transfer.kind === 'upgrade') await splitOversizedBatches(tx, transfer.id)
+  const batches = await writeBatches(tx, transfer.id)
+  const violations = [
+    ...((await options.checkEntitlements?.(tx, {
+      targetWorkspaceId: transfer.targetWorkspaceId,
+      tables,
+    })) ?? []),
+  ]
+  if (violations.length)
+    throw transferError('TRANSFER_ENTITLEMENT_EXCEEDED', '超出目标空间套餐限额', 403, {
+      violations,
+    })
+  const names = await rows<{ id: string; name: string }>(
+    tx,
+    sql`select id, name from organization
+        where id in (${transfer.sourceWorkspaceId}, ${transfer.targetWorkspaceId})`,
+  )
+  const nameOf = (id: string) => names.find((n) => n.id === id)?.name ?? ''
+  return {
+    version: 1,
+    kind: transfer.kind,
+    sourceName: nameOf(transfer.sourceWorkspaceId),
+    targetName: nameOf(transfer.targetWorkspaceId),
+    tables,
+    total,
+    batches,
+    conflicts,
+    scoringVersions: transfer.kind !== 'upgrade' ? await scoringSnapshot(tx, transfer) : [],
+    quota:
+      transfer.kind !== 'upgrade'
+        ? await estimateQuota(tx, transfer, conflicts)
+        : { additionalBrowseCallsPerDay: 0, threshold: 0, exceeds: false },
+    entitlements: { checked: options.checkEntitlements !== undefined, violations },
+  }
 }
 
 /** 按期望状态条件更新流转行；状态已被并发改变（如进入补偿）时放弃本步，抛不可重试的 TRANSFER_STATE */

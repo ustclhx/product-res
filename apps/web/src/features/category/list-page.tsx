@@ -1,6 +1,7 @@
 import { Button, Input, Tag } from '@product-res/ui'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { type FormEvent, useState } from 'react'
+import { m } from '../../paraglide/messages.js'
 import { Section } from '../data-center/shared.tsx'
 import {
   DIRECTION_MARKETPLACES,
@@ -9,6 +10,13 @@ import {
   marketplaceLabel,
   splitList,
 } from '../follow/marketplaces.ts'
+import {
+  canTransfer,
+  SelectBox,
+  TransferBar,
+  type TransferSelectionState,
+  useTransferSelection,
+} from '../transfer/transfer-actions.tsx'
 import {
   controlClass,
   EmptyState,
@@ -32,6 +40,8 @@ export function CategoryListPage({ slug, initial }: { slug: string; initial: Stu
   const [data, setData] = useState(initial)
   const [creating, setCreating] = useState(false)
   const reload = async () => setData(await getCategoryStudies({ data: { slug } }))
+  const selection = useTransferSelection([...data.active, ...data.archived].map((s) => s.id))
+  const select = canTransfer(data.transfer) ? selection : undefined
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-end justify-between gap-2">
@@ -55,6 +65,14 @@ export function CategoryListPage({ slug, initial }: { slug: string; initial: Stu
         ) : null}
       </div>
       <ReadOnlyNotice show={!data.canWrite} />
+      {select ? (
+        <TransferBar
+          slug={slug}
+          root="categoryStudy"
+          availability={data.transfer}
+          selection={select}
+        />
+      ) : null}
       {creating ? <StudyForm slug={slug} onClose={() => setCreating(false)} /> : null}
       {data.active.length === 0 && !creating ? (
         <EmptyState title="还没有品类研究">
@@ -65,7 +83,7 @@ export function CategoryListPage({ slug, initial }: { slug: string; initial: Stu
       ) : null}
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {data.active.map((s) => (
-          <StudyCard key={s.id} slug={slug} study={s} />
+          <StudyCard key={s.id} slug={slug} study={s} selection={select} />
         ))}
       </div>
       {data.archived.length > 0 ? (
@@ -77,6 +95,7 @@ export function CategoryListPage({ slug, initial }: { slug: string; initial: Stu
                 slug={slug}
                 study={s}
                 canWrite={data.canWrite}
+                selection={select}
                 onChanged={reload}
               />
             ))}
@@ -99,7 +118,31 @@ function Chips({ items }: { items: readonly string[] }) {
   )
 }
 
-function StudyCard({ slug, study }: { slug: string; study: StudyRow }) {
+function StudyCard({
+  slug,
+  study,
+  selection,
+}: {
+  slug: string
+  study: StudyRow
+  selection?: TransferSelectionState | undefined
+}) {
+  return (
+    <div className="relative grid">
+      {selection ? (
+        <SelectBox
+          className="absolute top-4 left-4 z-10"
+          checked={selection.has(study.id)}
+          onChange={(on) => selection.toggle(study.id, on)}
+          label={m.transfer_actions_select_item({ name: study.name })}
+        />
+      ) : null}
+      <StudyLink slug={slug} study={study} indent={Boolean(selection)} />
+    </div>
+  )
+}
+
+function StudyLink({ slug, study, indent }: { slug: string; study: StudyRow; indent: boolean }) {
   return (
     <Link
       to="/app/$slug/category/$studyId"
@@ -109,7 +152,7 @@ function StudyCard({ slug, study }: { slug: string; study: StudyRow }) {
       className="grid content-start gap-2 rounded-xl border bg-card p-4 shadow-xs transition-colors hover:border-primary"
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="font-medium">{study.name}</span>
+        <span className={indent ? 'pl-6 font-medium' : 'font-medium'}>{study.name}</span>
         <Tag tone="info">{marketplaceLabel(study.marketplace)}</Tag>
       </div>
       {study.categoryIds.length ? (
@@ -130,27 +173,38 @@ function ArchivedRow({
   slug,
   study,
   canWrite,
+  selection,
   onChanged,
 }: {
   slug: string
   study: StudyRow
   canWrite: boolean
+  selection?: TransferSelectionState | undefined
   onChanged: () => Promise<void>
 }) {
   const { busy, error, run } = useAction(onChanged)
   return (
     <li className="flex flex-wrap items-center justify-between gap-2 text-[13px]">
-      <Link
-        to="/app/$slug/category/$studyId"
-        params={{ slug, studyId: study.id }}
-        search={{}}
-        className="hover:text-primary"
-      >
-        {study.name}
-        <span className="ml-2 text-xs text-muted-foreground">
-          {marketplaceLabel(study.marketplace)} · {study.snapshotCount} 份快照
-        </span>
-      </Link>
+      <span className="flex items-center gap-2">
+        {selection ? (
+          <SelectBox
+            checked={selection.has(study.id)}
+            onChange={(on) => selection.toggle(study.id, on)}
+            label={m.transfer_actions_select_item({ name: study.name })}
+          />
+        ) : null}
+        <Link
+          to="/app/$slug/category/$studyId"
+          params={{ slug, studyId: study.id }}
+          search={{}}
+          className="hover:text-primary"
+        >
+          {study.name}
+          <span className="ml-2 text-xs text-muted-foreground">
+            {marketplaceLabel(study.marketplace)} · {study.snapshotCount} 份快照
+          </span>
+        </Link>
+      </span>
       {canWrite ? (
         <Button
           size="sm"

@@ -1,8 +1,15 @@
 import { Button, Input, Tag } from '@product-res/ui'
 import { Link, useNavigate, useRouter } from '@tanstack/react-router'
 import { type FormEvent, Fragment, type ReactNode, useEffect, useState } from 'react'
+import { m } from '../../paraglide/messages.js'
 import { formatTime, Section, SimpleTable } from '../data-center/shared.tsx'
 import { marketplaceLabel } from '../follow/marketplaces.ts'
+import {
+  canTransfer,
+  SelectBox,
+  TransferBar,
+  useTransferSelection,
+} from '../transfer/transfer-actions.tsx'
 import { controlClass, EmptyState, ErrorText, Field, useAction } from '../workbench/fields.tsx'
 import type { ArchiveRow } from './archive.server.ts'
 import {
@@ -29,6 +36,8 @@ export function ArchivePage({
   search: ArchiveSearch
 }) {
   const [openId, setOpenId] = useState<string | null>(null)
+  const selection = useTransferSelection(data.rows.map((r) => r.id))
+  const selectable = canTransfer(data.transfer)
   return (
     <div className="grid gap-4">
       <div className="grid gap-1">
@@ -47,6 +56,14 @@ export function ArchivePage({
           有 {data.pendingReviews} 条跟卖记录待回看：请录入实际销量与售价。
         </p>
       ) : null}
+      {selectable ? (
+        <TransferBar
+          slug={slug}
+          root="decision"
+          availability={data.transfer}
+          selection={selection}
+        />
+      ) : null}
       <Section title={`已决定线索（${data.rows.length}${data.truncated ? '+' : ''}）`}>
         {data.rows.length === 0 ? (
           <EmptyState title="还没有已决定的线索">
@@ -55,6 +72,7 @@ export function ArchivePage({
         ) : (
           <SimpleTable
             head={[
+              ...(selectable ? [m.transfer_actions_col_select()] : []),
               '决定时间',
               '商品簇',
               '方向 · 平台',
@@ -68,6 +86,15 @@ export function ArchivePage({
             {data.rows.map((r) => (
               <Fragment key={r.id}>
                 <tr data-testid="archive-row">
+                  {selectable ? (
+                    <td className="px-3 py-2">
+                      <SelectBox
+                        checked={selection.has(r.id)}
+                        onChange={(on) => selection.toggle(r.id, on)}
+                        label={m.transfer_actions_select_item({ name: r.clusterName })}
+                      />
+                    </td>
+                  ) : null}
                   <td className="px-3 py-2 text-xs whitespace-nowrap">{formatTime(r.decidedAt)}</td>
                   <td className="px-3 py-2 font-medium">{r.clusterName}</td>
                   <td className="px-3 py-2 text-xs">
@@ -100,7 +127,7 @@ export function ArchivePage({
                 </tr>
                 {openId === r.id ? (
                   <tr>
-                    <td colSpan={8} className="bg-muted/30 px-3 py-3">
+                    <td colSpan={selectable ? 9 : 8} className="bg-muted/30 px-3 py-3">
                       <DetailPanel slug={slug} id={r.id} canWrite={data.canWrite} />
                     </td>
                   </tr>

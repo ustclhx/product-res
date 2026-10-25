@@ -2,6 +2,8 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { withWorkspace } from '../../server/middleware.ts'
 import { getWebRuntime } from '../../server/runtime.ts'
+import { templateConfig } from '../../server/template-config.ts'
+import { transferAvailability } from '../transfer/availability.ts'
 import { canWriteWorkbench } from '../workbench/access.ts'
 import { actorOf } from '../workbench/actor.ts'
 
@@ -20,11 +22,22 @@ const settings = z.object({
 export const getStoresPage = createServerFn({ method: 'GET' })
   .middleware([withWorkspace])
   .inputValidator(slug)
-  .handler(async ({ context }) => ({
-    ...(await (await service()).storesPage(actorOf(context))),
-    canWrite: canWriteWorkbench(context),
-    roundAvailable: getWebRuntime().storeTrackingQueue?.available === true,
-  }))
+  .handler(async ({ context }) => {
+    const s = await service()
+    const transfer = transferAvailability(context, templateConfig)
+    const [page, trackedProducts] = await Promise.all([
+      s.storesPage(actorOf(context)),
+      // 追踪商品列表只用于选择复制 / 移动（add-workspace-data-transfer 6.2），流转不可用时不查询
+      transfer.copy || transfer.move ? s.trackedProductList(actorOf(context)) : null,
+    ])
+    return {
+      ...page,
+      trackedProducts,
+      canWrite: canWriteWorkbench(context),
+      transfer,
+      roundAvailable: getWebRuntime().storeTrackingQueue?.available === true,
+    }
+  })
 
 export const getStoreDetail = createServerFn({ method: 'GET' })
   .middleware([withWorkspace])

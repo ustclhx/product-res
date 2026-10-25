@@ -1,7 +1,9 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { withWorkspace } from '../../server/middleware.ts'
+import { templateConfig } from '../../server/template-config.ts'
 import { DIRECTION_MARKETPLACES } from '../follow/marketplaces.ts'
+import { transferAvailability } from '../transfer/availability.ts'
 import { canWriteWorkbench } from '../workbench/access.ts'
 import { actorOf } from '../workbench/actor.ts'
 
@@ -46,6 +48,7 @@ export const getCategoryStudies = createServerFn({ method: 'GET' })
   .handler(async ({ context }) => ({
     ...(await (await service()).listStudies(actorOf(context))),
     canWrite: canWriteWorkbench(context),
+    transfer: transferAvailability(context, templateConfig),
   }))
 
 export const createCategoryStudy = createServerFn({ method: 'POST' })
