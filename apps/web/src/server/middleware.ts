@@ -89,7 +89,9 @@ export const withWorkspaceMembership = createMiddleware({ type: 'function' })
     if (!resolved) throw notFound()
     const workspaceTeamReadOnly =
       !templateConfig.tenancy.multiTenant && !resolved.workspace.isPersonal
-    const workspaceTransferring = await isWorkspaceTransferring(db, resolved.workspace.id)
+    const workspaceTransferring = templateConfig.tenancy.dataTransfer
+      ? await isWorkspaceTransferring(db, resolved.workspace.id)
+      : false
     return next({
       context: {
         ...resolved,

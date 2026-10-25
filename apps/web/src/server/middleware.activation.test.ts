@@ -15,6 +15,7 @@ interface Built {
 }
 
 const mocks = vi.hoisted(() => ({
+  dataTransfer: false,
   activated: vi.fn(async () => false),
   transferring: vi.fn(async () => false),
   resolved: {
@@ -52,6 +53,21 @@ vi.mock('@tanstack/react-router', () => ({
   notFound: () => new Error('not found'),
   redirect: () => new Error('redirect'),
 }))
+vi.mock('./template-config.ts', async (original) => {
+  const actual = await original<typeof import('./template-config.ts')>()
+  return {
+    ...actual,
+    templateConfig: {
+      ...actual.templateConfig,
+      tenancy: {
+        ...actual.templateConfig.tenancy,
+        get dataTransfer() {
+          return mocks.dataTransfer
+        },
+      },
+    },
+  }
+})
 vi.mock('./runtime.ts', () => ({ getWebRuntime: () => ({ db: {}, auth: {} }) }))
 vi.mock('../features/i18n/session.server.ts', () => ({ readRequestSession: vi.fn() }))
 vi.mock('../features/admin/impersonation.ts', () => ({ assertRealSession: vi.fn() }))
@@ -119,8 +135,9 @@ async function run(middleware: Built, data: Record<string, unknown> = { slug: 'u
 }
 
 beforeEach(() => {
+  mocks.dataTransfer = false
   mocks.activated.mockReset()
-  mocks.transferring.mockResolvedValue(false)
+  mocks.transferring.mockReset().mockResolvedValue(false)
 })
 
 describe('工作台准入中间件', () => {
@@ -154,6 +171,7 @@ describe('工作台准入中间件', () => {
 })
 
 it('流转锁合入工作台只读，非工作台功能保留原有团队只读条件', async () => {
+  mocks.dataTransfer = true
   mocks.activated.mockResolvedValue(true)
   mocks.transferring.mockResolvedValue(true)
   expect(await run(withWorkspace)).toMatchObject({
@@ -166,4 +184,14 @@ it('流转锁合入工作台只读，非工作台功能保留原有团队只读�
     workspaceReadOnly: false,
     workspaceTransferring: false,
   })
+})
+
+it('关闭数据流转时不查询流转锁，空间保持可写', async () => {
+  mocks.activated.mockResolvedValue(true)
+  mocks.transferring.mockResolvedValue(true)
+  expect(await run(withWorkspace)).toMatchObject({
+    workspaceTransferring: false,
+    workspaceReadOnly: false,
+  })
+  expect(mocks.transferring).not.toHaveBeenCalled()
 })
