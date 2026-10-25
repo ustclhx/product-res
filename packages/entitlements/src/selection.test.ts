@@ -101,7 +101,9 @@ describe('capabilities and limits', () => {
   it('validates requested totals against the numeric limit', () => {
     const seats = DEFAULT_FREE_FEATURES.maxSeats
     expect(() => requireEntitlement(free, { limit: 'maxSeats', value: seats })).not.toThrow()
-    expect(() => requireEntitlement(free, { limit: 'maxSeats', value: seats + 1 })).toThrow(AppError)
+    expect(() => requireEntitlement(free, { limit: 'maxSeats', value: seats + 1 })).toThrow(
+      AppError,
+    )
     expect(() => requireEntitlement(free, { capability: 'publicApi' })).toThrow(AppError)
   })
 })

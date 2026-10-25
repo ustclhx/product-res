@@ -30,6 +30,9 @@ export const EXAMPLE_CATALOG = [
       ...DEFAULT_FREE_FEATURES,
       models: [],
       maxConcurrentTasks: 10,
+      // 模板示例的单席位个人套餐；默认 free 席位已改为 10（add-team-invite-links），这里显式保留 1，
+      // 接入支付时重新规划套餐席位
+      maxSeats: 1,
       storageGb: 50,
       watermark: false,
     },
