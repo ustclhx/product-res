@@ -12,6 +12,7 @@
     "playwright.config.ts",
     "playwright.smoke.config.ts",
     "playwright.disconnect.config.ts",
+    "playwright.transfer.config.ts",
     "playwright.stripe.config.ts",
     "scripts",
     "test/global-setup.ts",
