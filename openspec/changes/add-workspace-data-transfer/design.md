@@ -1,6 +1,6 @@
 # Design
 
-> 规划，待正式产品阶段实施。以下表名、约束均取自当前 `packages/db/src/schema/*.ts`，实施前需按届时 schema 复核。
+> 2026-10-26 起实施。表名、约束已按当前 schema 复核（task 1.1，`packages/follow/test/transfer-registry.test.ts` 持续校验）。
 
 ## Context
 
@@ -45,15 +45,16 @@
 
 | 根条目 | 闭包（随根流转） | 被引用、按 D4 合并的配置 |
 |---|---|---|
-| 方向 `direction` | `direction_seller`；`cluster`（含 `merged_into_id` 指向的簇）→ `cluster_member`、`cluster_signal`、`risk_finding`、`lead` → `lead_event`；`supplier_quote`（按 cluster）；`costing_scenario`（按 lead）；`decision` → `follow_outcome`；`recommendation` → `recommendation_label`；`readiness_stat`（按 direction） | `seasonal_node`（`node_ids`）、`supplier`（报价引用）、`logistics_profile`（方案引用）、`scoring_setting`（D4.5） |
+| 方向 `direction` | `direction_seller`；`cluster`（含 `merged_into_id` 指向的簇）→ `cluster_member`、`cluster_signal`、`risk_finding`、`lead` → `lead_event`；`supplier_quote`（按 cluster）；`costing_scenario`（按 lead）；`decision` → `follow_outcome`；`recommendation` → `recommendation_label`；`readiness_stat`（按 direction） | `seasonal_node`（`node_ids`）、`supplier`（报价引用）、`logistics_profile`（方案引用）；`scoring_setting` 不随选择性操作流转（D4.5） |
 | 店铺 `tracked_store` | 无子表 | `direction_ids` 中的方向：只重写已在本次流转中的，其余从数组移除 |
 | 追踪商品 `tracked_product` | 无子表 | `origin_ref`：指向本次流转中的店铺 / 线索则重映射，否则置空 |
 | 品类研究 `category_study` | `category_study_snapshot` | 无 |
 | 核算方案 `costing_scenario` | 所属 `lead`、`cluster` 不在闭包外单独流转：选核算方案等价于选其线索所在方向的一个子集——以 `lead` 为根带上其簇、簇的全部线索、报价、方案、决定 | `supplier`、`logistics_profile`、`cost_param`（整份复制，D4） |
 | 档案（决定）`decision` | 同“核算方案”，另带 `follow_outcome` 与 `lead_event` 中的回看提醒 | 同上 |
-| 空间配置包 | `seasonal_node`、`brand_entry`、`risk_rule`、`scoring_setting`（当前版本）、`logistics_profile`、`cost_param`、`supplier` | — |
+| 空间配置包 | `seasonal_node`、`brand_entry`、`risk_rule`、`logistics_profile`、`cost_param`、`supplier` | — |
 
 - 以 `lead` / `decision` 为根时，最小闭包是“该线索所在的整个簇”（簇的 `lead`、`cluster_member`、`cluster_signal`、`risk_finding`、`supplier_quote`、`recommendation` 都挂在簇上）以及该簇所属的方向。此时方向不随簇移动：方向行按 D4.1 在目标中复制或合并，簇及其子孙移动（或复制）后 `cluster.direction_id`、`lead.direction_id`、`recommendation.direction_id` 改指目标方向 id；源方向及同方向的其他簇留在源空间。
+- 被引用的配置（`seasonal_node`、`supplier`、`logistics_profile`、`risk_rule`、`cost_param`）在选择性**移动**时同样按 D4 复制或合并到目标，源行保留：源空间中未流转的方向、报价、方案仍可能引用它们，移走会形成跨空间引用。
 - 闭包在流转开始的快照事务中一次算出，写入 `workspace_transfer_id_map`（`action = planned`），之后批次只处理清单内的行；流转过程中新产生的行（理论上被 D8 的只读锁阻止）不纳入。
 
 ### D3 逐表流转语义
@@ -200,10 +201,10 @@
 
 - **积分与权益不跟随**：用户升级后发现团队空间无积分 / 待开通，体验断裂；以确认对话框说明 + 管理员开通流程缓解。
 - **影子验证样本归属**：升级时样本随方向移动，个人空间准备度归零；选择性复制不带样本，目标空间准备度从冷启动开始，团队可能误以为模型“退化”。move 部分方向后两边的 `readiness_stat`、`weight_suggestion` 都基于残缺样本，需重算，未采用的 `weight_suggestion` 在源空间作废（`status = dismissed`，`resolved_by` 记发起人）。
-- **准确性抽检归属**：抽检记录只在升级时移动；选择性操作后，源空间仍保留历史抽检而对应追踪商品已移走，目标空间从下周开始自行抽检。部署级 `source_qualification` 的样本统计不应因流转变化——实施时需确认 `packages/marketdata/src/accuracy.ts` 的汇总是否按空间去重。
+- **准确性抽检归属**：抽检记录只在升级时移动；选择性操作后，源空间仍保留历史抽检而对应追踪商品已移走，目标空间从下周开始自行抽检。部署级 `source_qualification` 的样本统计不因流转变化（已确认，见「决定」）。
 - **评分版本错位**：选择性流转的线索 `setting_version` 指向源空间版本号，可能与目标同号不同权重；用标注与快照兜底，计算新线索时不受影响。
-- **外部额度**：店铺追踪采集按空间循环（`packages/follow/src/stores/collect.ts` 逐 `workspaceId` 处理），复制店铺池 / 追踪商品会让同一卖家、商品被两个空间各采集一次，增加 eBay Browse 调用（每日上限 5000、安全线 4500）。`plan` 步骤需估算新增调用并提示；更好的方案是采集层按 `(platform, seller_key)` / `product_id` 跨空间去重，作为实施前置评估项。
-- **eBay 账号删除**：部署级删除按卖家标识跨空间匿名化 `direction_seller`、`tracked_store`、`lead_event` 等；复制在批次事务内读取当时数据，删除处理晚于复制时会同时覆盖目标行，早于复制时复制的是已匿名化数据，不会“复活”被删数据。需确认删除处理与批次事务的锁顺序。
+- **外部额度**：采集在计划阶段已跨空间去重（见下文「决定」），复制本身不增加外部调用；风险在于复制时未保留快照相位，或店铺并入类目 / 关键词不同的方向。
+- **eBay 账号删除**：READ COMMITTED 下并发复制可能残留被删卖家数据，补偿可能从 `id_map.source_row` 恢复；处理见下文「决定」。
 - **API Key 与外部集成**：个人空间的 API Key 在升级后仍有效但指向空空间，外部脚本会静默读到空数据；确认页与完成页提示。
 - **文件与 AI 产物**：不流转，方案 / 研究中如引用文件链接会在目标空间失效（当前业务表未直接引用 `file`，实施时复核）。
 - **长事务与锁**：每批一个事务、两把空间锁，期间两个空间只读；大空间升级可能持续数分钟，需进度页与超时补偿。
@@ -216,9 +217,16 @@
 3. 先上线升级，再上线选择性复制 / 移动。
 4. 回退：关闭开关即隐藏入口；已完成的流转数据保持，进行中的流转先完成或补偿后再关闭。
 
+## 决定
+
+task 1.2 评估（2026-10-26）：
+
+- 采集额度：现有采集在计划阶段已跨空间去重（eBay 卖家新品按 taskKey(sellerId+类目/q)，packages/follow/src/collect.ts:254；追踪商品快照按 productId 合并并给所有相关空间记快照日，packages/follow/src/stores/collect.ts:230-276；Amazon 搜索按站点+关键词）。复制店铺池 / 追踪商品本身不增加外部调用，跨空间去重不作为前置任务（关闭对应 Open Question，修正 Risks「外部额度」）。复制追踪商品必须原样保留 last_snapshot_on、tier、tier_changed_at、tier_reason，否则 normal 档相位错开；plan 只估算「店铺并入类目/关键词不同的方向」带来的新增 Browse 调用并在超阈值时提示；测试：复制前后采集任务键集合不变。
+- 抽检归属：accuracyStats 按空间取最近 4 次已提交抽检（packages/marketdata/src/accuracy.ts:441），升级整体移动汇总不变，选择性流转不带抽检也不重复计数。generateWeeklyAudits / generateAudit 必须跳过流转中的空间；升级抽检批次前断言目标无 accuracy_audit（避免 (workspace_id, week_of) 冲突）；测试升级前后 accuracyStats 相同。
+- eBay 账号删除：删除只取 ebay-account-deletion:<notificationId> 锁，不与 ws: 锁成环；但 READ COMMITTED 下并发复制批次会让被删卖家数据残留在目标，补偿也可能从 id_map.source_row 恢复。对策：删除事务另取全局排它锁 ebay-account-deletion；涉及卖家数据的流转批次在 ws: 锁前取同 key 共享锁（顺序：全局 → ws: 按 uuid 排序）；删除处理同时清理 workspace_transfer_id_map.source_row 与 plan 中的卖家标识；移动批次源行已删记为 skipped；并发测试覆盖。
+
 ## Open Questions
 
 - 选择性移动单个簇时，方向在目标中是“复制一份”还是“必须合并到已有方向”，需结合 UI 稿确定（D2 当前倾向：按 D4.1 规则复制或合并）。
-- 是否允许平台管理员在后台代用户执行升级（客服场景）。
+- 是否允许平台管理员在后台代用户执行升级（客服场景）。本期不做，沿用 D6。
 - 方向、追踪商品等届时是否有套餐数量限额，决定 D9 的校验内容。
-- 采集层跨空间去重是否作为本 change 的前置任务。
