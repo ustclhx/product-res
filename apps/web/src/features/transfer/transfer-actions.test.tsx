@@ -13,7 +13,7 @@ import {
 
 // add-workspace-data-transfer tasks 6.2：列表多选按钮的显示条件、选择内容与预览展示。
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children }: { children: unknown }) => <a href="#">{children as never}</a>,
+  Link: ({ children }: { children: unknown }) => <a href="/app">{children as never}</a>,
   useNavigate: () => () => Promise.resolve(),
 }))
 
