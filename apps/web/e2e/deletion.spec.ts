@@ -4,6 +4,7 @@ import templateConfig from '../../../template.config.ts'
 import {
   APP_URL,
   activateWorkspace,
+  createTeamWorkspace,
   emailLink,
   fixtureDb,
   PASSWORD,
@@ -120,7 +121,7 @@ test('team deletion is owner-only, blocks sole-owner account deletion and revoke
       await sql`insert into member (id, organization_id, user_id, role, created_at) values (${randomUUID()}, ${id}, ${owner.id}, 'owner', now())`
       await activateWorkspace(sql, id)
       await page.goto(`/app/${slug}/settings`)
-      await expect(page.getByRole('link', { name: 'Delete team workspace' })).toHaveCount(0)
+      await expect(page.getByRole('link', { name: uiText('workspace_delete_team') })).toHaveCount(0)
       await expectWorkspaceMissing(page, `/app/${slug}/delete`)
     } finally {
       await removeWorkspaceActivation(sql, id)
@@ -140,15 +141,11 @@ test('team deletion is owner-only, blocks sole-owner account deletion and revoke
     await page.goto(await emailLink(ownerEmail))
     await expect(page.getByText(uiText('account_verification_verified'))).toBeVisible()
     await page.goto('/app')
-    await page.getByRole('button', { name: 'Create team workspace' }).click()
-    await page.getByLabel('Team name', { exact: true }).fill(teamName)
-    await page.getByLabel('Workspace URL', { exact: true }).fill(slug)
-    await page.getByRole('button', { name: 'Create team', exact: true }).click()
-    await expect(page).toHaveURL(new RegExp(`/app/${slug}$`))
+    await createTeamWorkspace(page, teamName, slug)
     await seedWorkspaceSeats(slug)
     await page.goto(`/app/${slug}/settings`)
-    await page.getByLabel('Invite email').fill(memberEmail)
-    await page.getByRole('button', { name: 'Send invitation' }).click()
+    await page.getByLabel(uiText('workspace_invite_email')).fill(memberEmail)
+    await page.getByRole('button', { name: uiText('workspace_send_invite') }).click()
     await expect(page.getByText(memberEmail, { exact: false })).toBeVisible()
     const [invitation] =
       await sql`select i.id from invitation i join organization o on o.id = i.organization_id where i.email = ${memberEmail} and o.slug = ${slug}`
@@ -162,7 +159,9 @@ test('team deletion is owner-only, blocks sole-owner account deletion and revoke
     await expect(memberPage).toHaveURL(new RegExp(`/app/${slug}$`))
     const memberCookies = await memberContext.cookies()
     await memberPage.goto(`/app/${slug}/settings`)
-    await expect(memberPage.getByRole('link', { name: 'Delete team workspace' })).toHaveCount(0)
+    await expect(
+      memberPage.getByRole('link', { name: uiText('workspace_delete_team') }),
+    ).toHaveCount(0)
     await expectWorkspaceMissing(memberPage, `/app/${slug}/delete`)
 
     await confirmAccountDeletion(page)

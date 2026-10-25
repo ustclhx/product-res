@@ -49,9 +49,17 @@ export function signInDestination(search: string): string {
     (redirect === '/account' ||
       /^\/accept-invitation\?id=[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
         redirect,
-      ))
+      ) ||
+      // 邀请链接（add-team-invite-links）：token 为 43 位 base64url
+      /^\/join\/[A-Za-z0-9_-]{43}$/.test(redirect))
     ? redirect
     : AFTER_SIGN_IN_PATH
+}
+
+/** 登录与注册页互相跳转时保留已允许的回跳地址 */
+export function redirectSearch(search: string): string {
+  const destination = signInDestination(search)
+  return destination === AFTER_SIGN_IN_PATH ? '' : `?redirect=${encodeURIComponent(destination)}`
 }
 
 export function signInCallbackURL() {

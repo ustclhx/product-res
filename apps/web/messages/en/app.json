@@ -11,6 +11,6 @@
   "app_billing": "Billing",
   "app_usage": "Usage",
   "app_account_pending_title": "Account pending activation",
-  "app_account_pending_body": "Your account has been created. During the beta, an administrator must grant credits to your account before you can use the workspace. Refresh this page once it has been activated.",
+  "app_account_pending_body": "Your account has been created. During the beta, an administrator must grant credits to this workspace before you can use it (each team workspace is activated separately). Refresh this page once it has been activated.",
   "app_account_pending_account": "Account settings"
 }

@@ -13,7 +13,8 @@ export const EXAMPLE_CATALOG = [
     credits: 0,
     creditExpiryDays: null,
     rollover: false,
-    features: DEFAULT_FREE_FEATURES,
+    // 内测没有支付渠道：free 给 10 席，团队空间才能加人（add-team-invite-links D1，迁移 0022 同步已有行）
+    features: { ...DEFAULT_FREE_FEATURES, maxSeats: 10 },
     sort: 0,
     active: true,
     prices: [],
@@ -29,6 +30,9 @@ export const EXAMPLE_CATALOG = [
       ...DEFAULT_FREE_FEATURES,
       models: [],
       maxConcurrentTasks: 10,
+      // 模板示例的单席位个人套餐；默认 free 席位已改为 10（add-team-invite-links），这里显式保留 1，
+      // 接入支付时重新规划套餐席位
+      maxSeats: 1,
       storageGb: 50,
       watermark: false,
     },

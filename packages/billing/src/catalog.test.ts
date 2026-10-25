@@ -110,7 +110,7 @@ describe('offline catalog', () => {
     const state = memoryDb()
     await seedCatalog(state.db)
     const free = state.plans.find((p) => p.key === 'free')
-    expect(free?.features).toEqual(DEFAULT_FREE_FEATURES)
+    expect(free?.features).toEqual({ ...DEFAULT_FREE_FEATURES, maxSeats: 10 })
     expect(state.prices).toHaveLength(10)
     expect(
       state.prices.every((p) => !p.active && String(p.providerPriceId).startsWith('unsynced:')),

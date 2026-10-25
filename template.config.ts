@@ -13,7 +13,7 @@ export default defineTemplateConfig({
   },
   i18n: { enabled: false, locales: ['en', 'zh'], defaultLocale: 'zh' },
   tenancy: {
-    multiTenant: false, // false = 仅个人空间；true = 允许团队 workspace
+    multiTenant: true, // false = 仅个人空间；true = 允许团队 workspace（内测开启，add-team-invite-links）
     maxWorkspacesPerUser: 5,
   },
   auth: {

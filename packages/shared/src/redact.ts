@@ -112,3 +112,20 @@ function walkEntries(
   }
   return result
 }
+
+/**
+ * 路径中带令牌的地址（add-team-invite-links D5）：`/join/<token>` 的令牌段替换为 `[REDACTED]`。
+ * 请求日志与 Sentry 的 `request.url` 只保留路径，先经这里再输出。
+ */
+const TOKEN_PATH = /^(\/(?:[a-z]{2}(?:-[A-Za-z]{2})?\/)?join\/)[^/?#]+/
+
+export function redactUrlPath(path: string): string {
+  return path.replace(TOKEN_PATH, `$1${REDACTED}`)
+}
+
+/** 完整 URL：只替换路径中的令牌段，协议、主机与其余路径不变 */
+export function redactUrl(url: string): string {
+  const match = /^([a-z][a-z0-9+.-]*:\/\/[^/]+)(\/.*)?$/i.exec(url)
+  if (!match) return redactUrlPath(url)
+  return `${match[1]}${match[2] ? redactUrlPath(match[2]) : ''}`
+}

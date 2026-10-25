@@ -32,7 +32,12 @@ function mayCapture(config: TemplateConfig): boolean {
     !config.analytics.posthogHost.trim()
   )
     return false
-  if (['/admin', '/api'].some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)))
+  // /join/<token> 路径带邀请令牌，不采集（add-team-invite-links D5）
+  if (
+    ['/admin', '/api', '/join'].some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    )
+  )
     return false
   const dnt = navigator.doNotTrack ?? (window as Window & { doNotTrack?: string }).doNotTrack
   if (dnt === '1' || dnt === 'yes') return false

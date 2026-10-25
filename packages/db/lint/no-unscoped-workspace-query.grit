@@ -60,7 +60,8 @@ pattern workspace_table() {
     `supplierQuote`,
     `trackedProduct`,
     `trackedStore`,
-    `weightSuggestion`
+    `weightSuggestion`,
+    `workspaceInviteLink`
   }
 }
 

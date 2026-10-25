@@ -122,6 +122,8 @@ async function softDelete(
   >`select user_id from member where organization_id=${id} and role='owner'`
   await sql`update organization set deleted_at=now(),updated_at=now() where id=${id}`
   await sql`update invitation set status='canceled',updated_at=now() where organization_id=${id} and status='pending'`
+  // 邀请链接与邮件邀请一致：软删即作废，恢复空间后旧链接仍作废（add-team-invite-links）
+  await sql`update workspace_invite_link set revoked_at=now(),revoked_by=${actorId},updated_at=now() where workspace_id=${id} and revoked_at is null`
   // metadata is text in the installed API key schema. Parse without a SQL JSON cast so malformed
   // unrelated metadata cannot prevent deleting a workspace.
   const keys = await sql<

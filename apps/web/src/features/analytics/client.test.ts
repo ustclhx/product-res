@@ -94,6 +94,8 @@ describe('PostHog 同意与路由边界', () => {
     expect(beforeSend({ event: '$pageview' })).toEqual({ event: '$pageview' })
     browser.location.pathname = '/admin/users'
     expect(beforeSend({ event: '$pageview' })).toBeNull()
+    browser.location.pathname = `/join/${'A'.repeat(43)}`
+    expect(beforeSend({ event: '$pageview' })).toBeNull()
     browser.location.pathname = '/'
     revokeAnalyticsConsent()
     expect(posthog.opt_out_capturing).toHaveBeenCalled()

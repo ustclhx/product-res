@@ -135,6 +135,7 @@ describe('工作台准入中间件', () => {
     expect(await getWorkspacePage.handlerFn({ context })).toEqual({
       activation: 'pending',
       user: { id: 'user-1', name: 'User', email: 'user@example.test' },
+      otherSpaces: [],
     })
     mocks.activated.mockResolvedValue(true)
     expect(await getWorkspacePage.handlerFn({ context })).toMatchObject({

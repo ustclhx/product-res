@@ -84,7 +84,7 @@ describe('capabilities and limits', () => {
     ).toBe(true)
     expect(can(pro, 'ai.useModel', { modelKey: 'other' })).toBe(false)
     expect(can({ entitlements: pro }, 'publicApi')).toBe(true)
-    expect(limit({ entitlements: free }, 'maxSeats')).toBe(1)
+    expect(limit({ entitlements: free }, 'maxSeats')).toBe(DEFAULT_FREE_FEATURES.maxSeats)
   })
 
   it('rejects a paid model on free with a distinguishable upgrade AppError', () => {
@@ -99,8 +99,11 @@ describe('capabilities and limits', () => {
   })
 
   it('validates requested totals against the numeric limit', () => {
-    expect(() => requireEntitlement(free, { limit: 'maxSeats', value: 1 })).not.toThrow()
-    expect(() => requireEntitlement(free, { limit: 'maxSeats', value: 2 })).toThrow(AppError)
+    const seats = DEFAULT_FREE_FEATURES.maxSeats
+    expect(() => requireEntitlement(free, { limit: 'maxSeats', value: seats })).not.toThrow()
+    expect(() => requireEntitlement(free, { limit: 'maxSeats', value: seats + 1 })).toThrow(
+      AppError,
+    )
     expect(() => requireEntitlement(free, { capability: 'publicApi' })).toThrow(AppError)
   })
 })

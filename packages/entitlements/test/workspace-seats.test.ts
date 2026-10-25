@@ -19,21 +19,23 @@ it.skipIf(!url)(
     const key = newId()
     const planId = newId()
     const priceId = newId()
+    // 已提交的 free 席位随部署数据而定（迁移 0022 / seed 可能为 10），事务外应始终看到它
+    const committed = (await getEntitlements(db, ws)).features.maxSeats
     try {
       await db.$client
         .begin(async (tx) => {
           await tx`insert into organization (id, name, slug) values (${ws}, 'Entitlements', ${ws})`
           await tx`insert into plan (id, key, name, type, credits, features) values (${newId()}, 'free', 'Free', 'subscription', 0, ${JSON.stringify(DEFAULT_FREE_FEATURES)}::jsonb) on conflict (key) do update set features=excluded.features`
-          expect(await resolveWorkspaceMaxSeats(ws, tx)).toBe(1)
+          expect(await resolveWorkspaceMaxSeats(ws, tx)).toBe(DEFAULT_FREE_FEATURES.maxSeats)
           await tx`insert into plan (id, key, name, type, credits, sort, features) values (${planId}, ${key}, 'Pro', 'subscription', 0, 10, ${JSON.stringify({ ...DEFAULT_FREE_FEATURES, maxSeats: 5 })}::jsonb)`
           await tx`insert into plan_price (id, plan_id, provider, provider_price_id, amount, currency) values (${priceId}, ${planId}, 'stripe', ${key}, 100, 'usd')`
           await tx`insert into subscription (id, workspace_id, plan_id, plan_price_id, provider, provider_subscription_id, status, current_period_start, current_period_end, last_event_at) values (${newId()}, ${ws}, ${planId}, ${priceId}, 'stripe', ${key}, 'active', now(), now()+interval '1 month', now())`
           expect(await resolveWorkspaceMaxSeats(ws, tx)).toBe(5)
-          expect(await resolveWorkspaceMaxSeats(newId(), tx)).toBe(1)
+          expect(await resolveWorkspaceMaxSeats(newId(), tx)).toBe(DEFAULT_FREE_FEATURES.maxSeats)
           await tx`update subscription set status='past_due', past_due_since=now()-interval '8 days' where workspace_id=${ws}`
-          expect(await resolveWorkspaceMaxSeats(ws, tx)).toBe(1)
+          expect(await resolveWorkspaceMaxSeats(ws, tx)).toBe(DEFAULT_FREE_FEATURES.maxSeats)
           // A separate client cannot see these uncommitted rows, proving the test exercises tx.
-          expect((await getEntitlements(db, ws)).features.maxSeats).toBe(1)
+          expect((await getEntitlements(db, ws)).features.maxSeats).toBe(committed)
           throw new Error('rollback fixture')
         })
         .catch(rollbackFixture)

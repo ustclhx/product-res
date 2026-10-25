@@ -7,7 +7,7 @@ import { DEFAULT_FREE_FEATURES } from '@product-res/entitlements'
 import { newId } from '@product-res/shared'
 import { loadEnv } from 'vite'
 import templateConfig from '../../../template.config.ts'
-import { activateAccount } from './fixtures/activation.ts'
+import { activateAccount, activateWorkspace } from './fixtures/activation.ts'
 
 export {
   activateAccount,
@@ -20,10 +20,11 @@ export const PASSWORD = 'correct-horse-battery'
 const uiLocale = templateConfig.i18n.enabled ? 'en' : templateConfig.i18n.defaultLocale
 const messages: Record<string, string> = Object.assign(
   {},
-  ...['auth', 'auth-errors', 'errors', 'admin', 'account', 'app'].map((domain) =>
-    JSON.parse(
-      readFileSync(new URL(`../messages/${uiLocale}/${domain}.json`, import.meta.url), 'utf8'),
-    ),
+  ...['auth', 'auth-errors', 'errors', 'admin', 'account', 'app', 'workspace', 'invite-links'].map(
+    (domain) =>
+      JSON.parse(
+        readFileSync(new URL(`../messages/${uiLocale}/${domain}.json`, import.meta.url), 'utf8'),
+      ),
   ),
 )
 export function uiText(key: string, values: Record<string, string | number> = {}) {
@@ -77,6 +78,46 @@ export async function seedWorkspaceSeats(slug: string) {
   } finally {
     await sql.end()
   }
+}
+
+/** 顶栏空间菜单（add-team-invite-links）：展开后切换空间或创建团队空间 */
+export async function openWorkspaceMenu(page: Page) {
+  const menu = page.getByTestId('workspace-menu')
+  if (!(await menu.evaluate((el) => (el as HTMLDetailsElement).open)))
+    await menu.locator('summary').click()
+  return menu
+}
+export async function createTeamWorkspace(page: Page, name: string, slug: string) {
+  const menu = await openWorkspaceMenu(page)
+  await menu.getByRole('button', { name: uiText('workspace_create_team') }).click()
+  const form = menu.getByRole('form', { name: uiText('workspace_create_team') })
+  await form.getByLabel(uiText('workspace_team_name'), { exact: true }).fill(name)
+  await form.getByLabel(uiText('workspace_team_slug'), { exact: true }).fill(slug)
+  await form.getByRole('button', { name: uiText('workspace_create_submit'), exact: true }).click()
+  await expect(page).toHaveURL(new RegExp(`/app/${slug}$`))
+  // 内测准入：新团队空间先显示待开通页，管理员发放积分后刷新进入
+  if (templateConfig.credits.requireGrantForAccess) {
+    await expect(
+      page.getByRole('heading', { name: uiText('app_account_pending_title') }),
+    ).toBeVisible()
+    await activateWorkspaceSlug(slug)
+    await page.reload()
+  }
+  await expect(page.getByTestId('workspace-name')).toHaveText(name)
+}
+export async function activateWorkspaceSlug(slug: string) {
+  const sql = fixtureDb()
+  try {
+    const [workspace] = await sql`select id from organization where slug=${slug}`
+    if (!workspace) throw new Error('Workspace fixture is missing')
+    await activateWorkspace(sql, String(workspace.id))
+  } finally {
+    await sql.end()
+  }
+}
+export async function switchWorkspace(page: Page, name: string) {
+  const menu = await openWorkspaceMenu(page)
+  await menu.getByRole('button').filter({ hasText: name }).click()
 }
 
 export async function register(
@@ -147,8 +188,10 @@ export async function loginOtp(page: Page, email: string, path = '/login') {
   await page.getByRole('button', { name: authText('auth_sign_in_with_email_code') }).click()
   await page.getByLabel(authText('auth_email'), { exact: true }).fill(email)
   await page.getByRole('button', { name: authText('auth_send_code') }).click()
-  await expect(page.getByLabel(authText('auth_verification_code'))).toBeVisible()
-  await page.getByLabel(authText('auth_verification_code')).fill(await emailCode(email))
+  await expect(page.getByLabel(authText('auth_verification_code'), { exact: true })).toBeVisible()
+  await page
+    .getByLabel(authText('auth_verification_code'), { exact: true })
+    .fill(await emailCode(email))
   await page.getByRole('button', { name: authText('auth_sign_in'), exact: true }).click()
   await expect(page).not.toHaveURL(/\/login(?:\?|$)/)
 }

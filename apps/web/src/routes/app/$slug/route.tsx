@@ -4,6 +4,7 @@ import { WorkbenchShell } from '../../../features/workbench/shell.tsx'
 import {
   AccountPendingPage,
   isAccountPending,
+  pendingSpaces,
   requireActivatedPage,
 } from '../../../features/workspace/activation.tsx'
 import { loadWorkspacePage, primeWorkspacePage } from '../../../features/workspace/load-page.ts'
@@ -24,7 +25,7 @@ export const Route = createFileRoute('/app/$slug')({
   component: WorkspaceLayout,
   notFoundComponent: ({ data }) =>
     isAccountPending(data) ? (
-      <AccountPendingPage />
+      <AccountPendingPage otherSpaces={pendingSpaces(data)} />
     ) : (
       <main>
         <h1>{m.app_workspace_not_found()}</h1>

@@ -24,6 +24,14 @@ const copy =
         team: '团队空间',
         owner: '你的角色：owner',
         settings: '空间设置',
+        menu: '切换空间',
+        createTeam: '创建团队空间',
+        teamName: '团队名称',
+        teamSlug: '空间地址',
+        create: '创建',
+        emailInvite: '邮件邀请',
+        ownerRole: '所有者',
+        deleteTeam: '删除团队空间',
       }
     : {
         registerForm: 'Create an account',
@@ -43,6 +51,14 @@ const copy =
         team: 'Team workspace',
         owner: 'Your role: owner',
         settings: 'Workspace settings',
+        menu: 'Switch workspace',
+        createTeam: 'Create team workspace',
+        teamName: 'Team name',
+        teamSlug: 'Workspace URL',
+        create: 'Create',
+        emailInvite: 'Email invitation',
+        ownerRole: 'Owner',
+        deleteTeam: 'Delete team workspace',
       }
 const PERSONAL_URL = /\/app\/u-[a-z0-9]+\/?$/
 
@@ -228,11 +244,15 @@ test('fresh Node Compose: delivered verification, sign-out, password login and t
   await expect(header.getByText(copy.personal, { exact: true })).toBeVisible()
   await expect(header.getByText(copy.owner, { exact: true })).toBeVisible()
 
-  await header.getByRole('button', { name: 'Create team workspace', exact: true }).click()
-  const createTeam = header.getByRole('form', { name: 'Create team workspace' })
-  await createTeam.getByLabel('Team name', { exact: true }).fill(teamName)
-  await createTeam.getByLabel('Workspace URL', { exact: true }).fill(slug)
-  await createTeam.getByRole('button', { name: 'Create team', exact: true }).click()
+  const openMenu = async () => {
+    await header.getByTestId('workspace-menu').locator('summary').click()
+  }
+  await openMenu()
+  await header.getByRole('button', { name: copy.createTeam, exact: true }).click()
+  const createTeam = header.getByRole('form', { name: copy.createTeam })
+  await createTeam.getByLabel(copy.teamName, { exact: true }).fill(teamName)
+  await createTeam.getByLabel(copy.teamSlug, { exact: true }).fill(slug)
+  await createTeam.getByRole('button', { name: copy.create, exact: true }).click()
   await expect(page).toHaveURL(`${baseURL}/app/${slug}`)
   await expect(header.getByTestId('workspace-name')).toHaveText(teamName)
   await expect(header.getByText(copy.team, { exact: true })).toBeVisible()
@@ -243,28 +263,24 @@ test('fresh Node Compose: delivered verification, sign-out, password login and t
   await expect(settings).toHaveAttribute('href', `/app/${slug}/settings`)
   await settings.click()
   await expect(page).toHaveURL(`${baseURL}/app/${slug}/settings`)
-  await expect(content.getByRole('form', { name: 'Invite member', exact: true })).toBeVisible()
+  await expect(content.getByRole('form', { name: copy.emailInvite, exact: true })).toBeVisible()
   const owner = content.getByRole('listitem').filter({ hasText: email })
   await expect(owner).toBeVisible()
-  await expect(owner).toHaveText(`${name} (${email}) · owner`)
-  await expect(
-    content.getByRole('link', { name: 'Delete team workspace', exact: true }),
-  ).toBeVisible()
+  await expect(owner).toHaveText(`${name} (${email}) ${copy.ownerRole}`)
+  await expect(content.getByRole('link', { name: copy.deleteTeam, exact: true })).toBeVisible()
 
-  await header.getByLabel('Switch workspace', { exact: true }).selectOption({
-    label: 'Personal (personal)',
-  })
+  await openMenu()
+  await header.getByRole('button').filter({ hasText: 'Personal' }).click()
   await expect(page).toHaveURL(personalURL)
   await expect(header.getByTestId('workspace-name')).toHaveText('Personal')
   await expect(settings).toBeVisible()
   await expect(settings).toHaveAttribute('href', `${new URL(personalURL).pathname}/settings`)
   await settings.click()
   await expect(page).toHaveURL(`${personalURL}/settings`)
-  await expect(content.getByRole('form', { name: 'Invite member', exact: true })).toHaveCount(0)
-  await expect(
-    content.getByRole('link', { name: 'Delete team workspace', exact: true }),
-  ).toHaveCount(0)
-  await header.getByLabel('Switch workspace', { exact: true }).selectOption({ label: teamName })
+  await expect(content.getByRole('form', { name: copy.emailInvite, exact: true })).toHaveCount(0)
+  await expect(content.getByRole('link', { name: copy.deleteTeam, exact: true })).toHaveCount(0)
+  await openMenu()
+  await header.getByRole('button').filter({ hasText: teamName }).click()
   await expect(page).toHaveURL(`${baseURL}/app/${slug}`)
   await expect(header.getByTestId('workspace-name')).toHaveText(teamName)
   expect(await sessionIdentity(page)).toEqual({ email, verified: true })

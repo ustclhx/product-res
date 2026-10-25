@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isSensitiveKey, REDACTED, redact } from './redact.ts'
+import { isSensitiveKey, REDACTED, redact, redactUrl, redactUrlPath } from './redact.ts'
 
 describe('redact', () => {
   it('removes credentials and conversation content from an error event', () => {
@@ -85,4 +85,14 @@ it('运营通知密钥的普通与 setting 键名均被脱敏', () => {
   }
   expect(JSON.stringify(redact(value))).not.toMatch(/telegram-secret|discord-secret/)
   expect(Object.values(redact(value) as Record<string, unknown>)).toEqual(Array(4).fill(REDACTED))
+})
+
+it('redacts invite link tokens in paths and URLs', () => {
+  const token = 'A'.repeat(43)
+  expect(redactUrlPath(`/join/${token}`)).toBe(`/join/${REDACTED}`)
+  expect(redactUrlPath(`/en/join/${token}`)).toBe(`/en/join/${REDACTED}`)
+  expect(redactUrlPath('/app/team/settings')).toBe('/app/team/settings')
+  expect(redactUrlPath('/joined/x')).toBe('/joined/x')
+  expect(redactUrl(`https://app.test/join/${token}`)).toBe(`https://app.test/join/${REDACTED}`)
+  expect(redactUrl('https://app.test')).toBe('https://app.test')
 })

@@ -1,8 +1,8 @@
 import { useAppForm } from '@product-res/ui'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { z } from 'zod'
-import { authClient, goToApp } from '../../features/auth/auth-client.ts'
+import { authClient, goToApp, redirectSearch } from '../../features/auth/auth-client.ts'
 import {
   AuthLayout,
   authLinkClassName,
@@ -77,6 +77,8 @@ const schema = () =>
   })
 
 export const Route = createFileRoute('/(auth)/register')({
+  // 注册成功后回到允许的地址（如邀请链接），校验见 signInDestination
+  validateSearch: z.object({ redirect: z.string().optional() }),
   loader: () => getAuthUiOptions(),
   head: () => ({ meta: [{ title: COPY.metaTitle }] }),
   component: RegisterPage,
@@ -84,6 +86,8 @@ export const Route = createFileRoute('/(auth)/register')({
 
 function RegisterPage() {
   const options = Route.useLoaderData()
+  const { redirect } = Route.useSearch()
+  const loginHref = `/login${redirectSearch(redirect ? `?redirect=${encodeURIComponent(redirect)}` : '')}`
   return (
     <AuthLayout
       title={COPY.title}
@@ -91,9 +95,9 @@ function RegisterPage() {
       footer={
         <p>
           {COPY.haveAccount}{' '}
-          <Link to="/login" className={authLinkClassName}>
+          <a href={loginHref} className={authLinkClassName}>
             {COPY.signIn}
-          </Link>
+          </a>
         </p>
       }
     >

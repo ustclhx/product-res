@@ -10,9 +10,9 @@
  */
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { newId } from './id.ts'
-import { redact } from './redact.ts'
+import { redact, redactUrl } from './redact.ts'
 
-export { isSensitiveKey, REDACTED, redact } from './redact.ts'
+export { isSensitiveKey, REDACTED, redact, redactUrl, redactUrlPath } from './redact.ts'
 
 export interface LogContext {
   readonly requestId?: string
@@ -66,7 +66,10 @@ export function sentryBeforeSend<T extends object>(event: T): T {
     request: request
       ? {
           method: request.method,
-          url: typeof request.url === 'string' ? request.url.split(/[?#]/)[0] : undefined,
+          url:
+            typeof request.url === 'string'
+              ? redactUrl(request.url.split(/[?#]/)[0] ?? '')
+              : undefined,
           headers: request.headers,
         }
       : undefined,
