@@ -1,21 +1,30 @@
 import { env } from 'cloudflare:workers'
 import { ensurePersonalWorkspace } from '@product-res/auth'
-import { auditLog, createDb, organization, session, workspaceTransfer } from '@product-res/db'
+import {
+  auditLog,
+  createDb,
+  member,
+  organization,
+  session,
+  workspaceTransfer,
+} from '@product-res/db'
 import {
   beginCompensation,
   compensateTransfer,
   listTransferBatches,
+  startMove,
   startUpgrade,
 } from '@product-res/follow/transfer'
 import { NonRetryableError, type WorkflowStep } from '@product-res/platform'
 import { newId } from '@product-res/shared'
-import { eq, inArray, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import { afterAll, describe, expect, it } from 'vitest'
 import {
   type Created,
   cleanupCreated,
   config,
   createSession,
+  createTeam,
   createUser,
   seedWorkspace,
   snapshotRows,
@@ -330,6 +339,58 @@ describe('WorkspaceTransferWorkflow', () => {
     expect(names.filter((n) => /^compensate:(?!begin|list|complete)/.test(n))).toHaveLength(1)
     await db.execute(sql`delete from accuracy_audit where workspace_id = ${f.targetWorkspaceId}`)
     await assertCompensated(f, 'TRANSFER_TARGET_NOT_EMPTY')
+  })
+
+  // tasks 7.2「批次执行时权限失效转补偿」：经 Workflow 端到端，以数据库当前成员关系为准
+  it('批次执行时权限失效：源空间 owner 被降为 admin，下一批次转入补偿，两边恢复', async () => {
+    const t = tag()
+    const owner = await createUser(db, created, `rv${t}`)
+    const a = await createTeam(db, created, `WA${t}`, [{ userId: owner, role: 'owner' }])
+    const b = await createTeam(db, created, `WB${t}`, [{ userId: owner, role: 'owner' }])
+    const s = await seedWorkspace(db, created, a, { tag: t })
+    const before = await snapshotRows(db, [a, b])
+    const started = await startMove(
+      db,
+      {
+        userId: owner,
+        sourceWorkspaceId: a,
+        targetWorkspaceId: b,
+        selection: { roots: { direction: [s.direction], store: [s.store] } },
+        idempotencyKey: `k-${t}`,
+      },
+      config,
+    )
+    const { step, names } = harness({
+      after: async (name) => {
+        if (name === 'batch:config')
+          await db
+            .update(member)
+            .set({ role: 'admin' })
+            .where(and(eq(member.organizationId, a), eq(member.userId, owner)))
+      },
+    })
+    expect(await runWorkspaceTransfer(started.transferId, step, deps(fakeCache().cache))).toEqual({
+      transferId: started.transferId,
+      status: 'compensated',
+      errorCode: 'TRANSFER_PERMISSION_REVOKED',
+    })
+    expect(names).toContain('compensate:config')
+    expect(names).not.toContain('finalize')
+    expect(await transferRow(started.transferId)).toMatchObject({
+      status: 'compensated',
+      errorCode: 'TRANSFER_PERMISSION_REVOKED',
+    })
+    expect(await snapshotRows(db, [a, b])).toEqual(before)
+    expect(await transferAudits({ userId: a, targetWorkspaceId: b })).toEqual(
+      [
+        'source:workspace.transfer.compensated',
+        'source:workspace.transfer.failed',
+        'source:workspace.transfer.requested',
+        'target:workspace.transfer.compensated',
+        'target:workspace.transfer.failed',
+        'target:workspace.transfer.requested',
+      ].sort(),
+    )
   })
 
   it('发起事务回滚：实例判定流转不存在后结束', async () => {

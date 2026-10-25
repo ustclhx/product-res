@@ -14,6 +14,7 @@ import {
 } from '@product-res/db'
 import { newId } from '@product-res/shared'
 import { and, eq, sql } from 'drizzle-orm'
+import { getTableConfig } from 'drizzle-orm/pg-core'
 import { afterAll, describe, expect, it } from 'vitest'
 import { deleteEbayUserData } from '../src/ebay-account-deletion.ts'
 import {
@@ -26,6 +27,7 @@ import {
   NON_RETRYABLE_TRANSFER_ERRORS,
   planTransfer,
   runBatch,
+  STATIC_TRANSFER_TABLES,
   startMove,
   startUpgrade,
   type TransferPlan,
@@ -140,6 +142,74 @@ describe.skipIf(!url)('数据流转引擎', () => {
       expect(members.map((m) => [m.userId, m.role])).toEqual([[userId, 'owner']])
       const [s] = await db.select().from(session).where(eq(session.id, sessionId))
       expect(s?.activeOrganizationId).toBe(first.targetWorkspaceId)
+    })
+
+    // spec「不随数据流转的内容 / 升级后的积分」：不流转的空间表逐行留在个人空间，新团队空间没有积分
+    it('积分、AI 对话、通知与已有审计留在个人空间，新团队空间没有积分', async () => {
+      const t = tag()
+      const userId = await personal(`upk${t}`)
+      await seedWorkspace(db, created, userId, { tag: t, upgradeOnly: true })
+      const [grant] = (await db.execute(
+        sql`insert into credit_grant (id, workspace_id, source, source_ref, amount, remaining)
+          values (${newId()}, ${userId}, 'admin', ${`transfer-test:${t}`}, 500, 320) returning id`,
+      )) as unknown as { id: string }[]
+      await db.execute(sql`insert into credit_ledger (id, workspace_id, user_id, grant_id, delta, type)
+        values (${newId()}, ${userId}, ${userId}, ${grant?.id}, 500, 'grant'),
+          (${newId()}, ${userId}, ${userId}, ${grant?.id}, -180, 'consume')`)
+      await db.execute(sql`insert into ai_conversation (id, workspace_id, user_id, model_key)
+        values (${newId()}, ${userId}, ${userId}, 'test-model')`)
+      await db.execute(sql`insert into notification (id, user_id, workspace_id, type, title)
+        values (${newId()}, ${userId}, ${userId}, 'test', 'kept')`)
+      await db.execute(sql`insert into audit_log (id, workspace_id, actor_user_id, action)
+        values (${newId()}, ${userId}, ${userId}, 'test.before_upgrade')`)
+      // 成员与邀请表以 organization_id 关联空间，其余为 workspace_id
+      const spaceColumn = new Map(
+        STATIC_TRANSFER_TABLES.filter((x) => x.link === 'workspace').map((x) => [
+          x.name,
+          getTableConfig(x.table).columns.some((c) => c.name === 'workspace_id')
+            ? 'workspace_id'
+            : 'organization_id',
+        ]),
+      )
+      const staticTables = [...spaceColumn.keys()]
+      const staticRows = async (ws: string) => {
+        const out: Record<string, unknown[]> = {}
+        for (const name of staticTables)
+          out[name] = (
+            (await db.execute(
+              sql`select to_jsonb(t) as j from ${sql.raw(`"${name}"`)} t
+                where ${sql.raw(`"${spaceColumn.get(name)}"`)} = ${ws} order by to_jsonb(t)::text`,
+            )) as unknown as { j: unknown }[]
+          ).map((r) => r.j)
+        return out
+      }
+      const before = await staticRows(userId)
+      const started = await startUpgrade(
+        db,
+        { userId, name: 'Team', slug: `teamk-${t}`, idempotencyKey: key() },
+        config,
+      )
+      created.workspaces.push(started.targetWorkspaceId)
+      await runAll(started.transferId)
+      await finalizeTransfer(db, started.transferId)
+
+      // 个人空间：除审计另写新行外，全部不流转的表逐行不变；已有审计行仍在原空间
+      const after = await staticRows(userId)
+      for (const name of staticTables.filter((x) => x !== 'audit_log'))
+        expect(after[name], name).toEqual(before[name])
+      expect(after.audit_log).toEqual(expect.arrayContaining(before.audit_log ?? []))
+      const balance = (await db.execute(
+        sql`select coalesce(sum(remaining),0)::int as n from credit_grant where workspace_id = ${userId}`,
+      )) as unknown as { n: number }[]
+      expect(balance[0]?.n).toBe(320)
+      // 新团队空间：只有发起人的 owner 成员与流转 / 升级审计，没有积分、流水、对话与通知
+      const team = await staticRows(started.targetWorkspaceId)
+      for (const name of staticTables.filter((x) => x !== 'member' && x !== 'audit_log'))
+        expect(team[name], name).toEqual([])
+      expect(team.member).toHaveLength(1)
+      const actions = (team.audit_log as { action: string }[]).map((r) => r.action)
+      expect(actions.length).toBeGreaterThan(0)
+      expect(actions.every((a) => a.startsWith('workspace.'))).toBe(true)
     })
 
     it('批次失败后续跑幂等，补偿后两边恢复并软删新空间', async () => {
@@ -572,6 +642,11 @@ describe.skipIf(!url)('数据流转引擎', () => {
           { tenancy: { ...config.tenancy, multiTenant: false } },
         ),
       ).rejects.toMatchObject({ code: 'WORKSPACE_READ_ONLY' })
+      // 已软删的源或目标空间在发起时拒绝
+      const gone = await createTeam(db, created, `PD${t}`, [{ userId: owner, role: 'owner' }])
+      await db.update(organization).set({ deletedAt: new Date() }).where(eq(organization.id, gone))
+      await expect(move(owner, team, gone)).rejects.toMatchObject({ code: 'WORKSPACE_NOT_FOUND' })
+      await expect(move(owner, gone, owner)).rejects.toMatchObject({ code: 'WORKSPACE_NOT_FOUND' })
       // owner 移到自己的个人空间允许
       const ok = await move(owner, team, owner)
       expect(ok.created).toBe(true)
