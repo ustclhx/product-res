@@ -749,6 +749,9 @@ importers:
 
   packages/follow:
     dependencies:
+      '@product-res/auth':
+        specifier: workspace:*
+        version: link:../auth
       '@product-res/datasources':
         specifier: workspace:*
         version: link:../datasources

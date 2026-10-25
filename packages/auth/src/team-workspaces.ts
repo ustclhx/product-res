@@ -7,6 +7,7 @@ import { setSessionCookie } from 'better-auth/cookies'
 import { z } from 'zod'
 import type { SendAuthEmail } from './email.ts'
 import { checkSessionInDatabase } from './fresh-session.ts'
+import { admitTeamWorkspace, isValidTeamSlug } from './workspace-admission.ts'
 
 /** Resolve only from local DB using the supplied transaction; never perform network I/O. */
 export type ResolveMaxSeats = (
@@ -15,32 +16,14 @@ export type ResolveMaxSeats = (
 ) => Promise<number | null>
 const roles = z.enum(['owner', 'admin', 'member'])
 const uuid = z.uuid()
-const slug = z
-  .string()
-  .min(3)
-  .max(64)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
-const reserved = new Set([
-  'admin',
-  'api',
-  'app',
-  'account',
-  'login',
-  'logout',
-  'signup',
-  'settings',
-  'invite',
-  'new',
-])
 function validSlug(value: unknown): string {
-  const parsed = slug.safeParse(value)
-  if (!parsed.success || reserved.has(parsed.data) || parsed.data.startsWith('u-')) {
+  if (!isValidTeamSlug(value)) {
     throw APIError.from('BAD_REQUEST', {
       code: 'INVALID_WORKSPACE_SLUG',
       message: 'Invalid or reserved slug',
     })
   }
-  return parsed.data
+  return value
 }
 function deny(code: string, message: string): never {
   throw APIError.from('FORBIDDEN', { code, message })
@@ -154,18 +137,20 @@ export function teamWorkspaces(
               const result = await db.$client.begin(async (sql) => {
                 await sql`select pg_advisory_xact_lock(hashtextextended(${`owner:${user.id}`}, 0))`
                 await checkFresh(sql)
-                const [count] = await sql<
-                  { total: number }[]
-                >`select count(*)::int as total from member m join organization o on o.id=m.organization_id where m.user_id=${user.id} and m.role='owner' and not o.is_personal and o.deleted_at is null`
-                if ((count?.total ?? 0) >= config.tenancy.maxWorkspacesPerUser)
-                  deny('WORKSPACE_LIMIT', 'Workspace limit reached')
-                // Serialize slug admission too; the database unique constraint remains the final invariant.
-                await sql`select pg_advisory_xact_lock(hashtextextended(${`slug:${requestedSlug}`}, 0))`
-                if ((await sql`select id from organization where slug=${requestedSlug}`).length)
-                  throw APIError.from('BAD_REQUEST', {
-                    code: 'SLUG_TAKEN',
-                    message: 'Slug already in use',
-                  })
+                await admitTeamWorkspace(
+                  (strings, ...values) => sql(strings, ...(values as never[])),
+                  {
+                    userId: user.id,
+                    slug: requestedSlug,
+                    maxWorkspacesPerUser: config.tenancy.maxWorkspacesPerUser,
+                  },
+                  (code, message, status) => {
+                    throw APIError.from(status === 403 ? 'FORBIDDEN' : 'BAD_REQUEST', {
+                      code,
+                      message,
+                    })
+                  },
+                )
                 const id = newId()
                 const [org] =
                   await sql`insert into organization (id,name,slug,is_personal) values (${id},${input.name},${requestedSlug},false) returning id,name,slug,logo,metadata,is_personal as "isPersonal",deleted_at as "deletedAt",created_at as "createdAt",updated_at as "updatedAt"`

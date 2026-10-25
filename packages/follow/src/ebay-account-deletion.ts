@@ -22,6 +22,12 @@ import { and, eq, inArray, like, type SQL, sql } from 'drizzle-orm'
  */
 
 export const EBAY_ACCOUNT_DELETION_ACTION = 'ebay.account_deletion'
+/**
+ * 与跨空间数据流转互斥的全局锁（add-workspace-data-transfer design「决定」）：删除事务取排它锁，
+ * 涉及卖家数据的流转批次与补偿在 ws: 锁之前取共享锁。READ COMMITTED 下否则并发批次可能把
+ * 被删卖家的数据移到目标空间，或在补偿时从 workspace_transfer_id_map.source_row 恢复。
+ */
+export const EBAY_ACCOUNT_DELETION_LOCK = 'ebay-account-deletion'
 const TARGET_TYPE = 'ebay-notification'
 
 export interface EbayAccountDeletionInput {
@@ -103,6 +109,9 @@ export async function deleteEbayUserData(
       )
       .limit(1)
     if (seen) return { status: 'duplicate' as const, userHash, counts: { ...EMPTY } }
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${EBAY_ACCOUNT_DELETION_LOCK}, 0))`,
+    )
 
     const counts = { ...EMPTY }
     if (keys.length > 0) {
@@ -198,6 +207,8 @@ export async function deleteEbayUserData(
           )
           .returning({ id: rawPayload.id })
       ).length
+
+      await purgeTransferSnapshots(tx, keys)
     }
 
     await tx.insert(auditLog).values({
@@ -213,4 +224,35 @@ export async function deleteEbayUserData(
     })
     return { status: 'processed' as const, userHash, counts }
   })
+}
+
+type Tx = Parameters<Parameters<Database['transaction']>[0]>[0]
+
+/**
+ * 流转记录中的卖家标识（add-workspace-data-transfer design「决定」）：移动合并时被删除的源行快照
+ * （`source_row.row`）与被修改的目标行快照（`source_row.target`）整条清空，补偿遇到空快照即跳过；
+ * plan 的冲突预览中删除该卖家的店铺条目。流转表只由流转服务与本处理访问，因此不经 scoped()。
+ */
+async function purgeTransferSnapshots(tx: Tx, keys: readonly string[]) {
+  const list = sql`array[${sql.join(
+    keys.map((k) => sql`${k}`),
+    sql`, `,
+  )}]::text[]`
+  const seller = (row: string) => sql.raw(`source_row->'${row}'`)
+  const matches = (row: string) => sql`(
+      (table_name = 'tracked_store' and ${seller(row)}->>'platform' = 'ebay'
+        and lower(${seller(row)}->>'seller_key') = any(${list}))
+      or (table_name = 'direction_seller' and ${seller(row)}->>'marketplace' like 'ebay-%'
+        and lower(${seller(row)}->>'seller_platform_id') = any(${list}))
+      or (table_name = 'lead_event' and lower(${seller(row)}->'payload'->>'sellerKey') = any(${list})))`
+  await tx.execute(sql`update workspace_transfer_id_map set source_row = null, updated_at = now()
+    where source_row is not null and (${matches('row')} or ${matches('target')})`)
+  await tx.execute(sql`update workspace_transfer set plan = jsonb_set(plan, '{conflicts}', coalesce((
+      select jsonb_agg(c) from jsonb_array_elements(plan->'conflicts') c
+      where not (c->>'table' = 'tracked_store' and c->>'marketplace' like 'ebay-%'
+        and lower(c->>'label') = any(${list}))), '[]'::jsonb))
+    where jsonb_typeof(plan->'conflicts') = 'array' and exists (
+      select 1 from jsonb_array_elements(plan->'conflicts') c
+      where c->>'table' = 'tracked_store' and c->>'marketplace' like 'ebay-%'
+        and lower(c->>'label') = any(${list}))`)
 }

@@ -5,6 +5,7 @@ import type { BetterAuthPlugin } from 'better-auth'
 import { APIError, createAuthEndpoint } from 'better-auth/api'
 import { z } from 'zod'
 import { type AuthContextSource, requireFreshSession } from './fresh-session.ts'
+import { softDeleteWorkspace } from './workspace-admission.ts'
 
 export type DeletionKind = 'account' | 'workspace'
 export type DeletionTransaction = Parameters<Parameters<Database['$client']['begin']>[1]>[0]
@@ -111,42 +112,9 @@ async function finishCleanup(
     deletionCompleted: true,
   })
 }
-async function softDelete(
-  sql: DeletionTransaction,
-  id: string,
-  actorId: string,
-  ip: string | null,
-) {
-  const owners = await sql<
-    { user_id: string }[]
-  >`select user_id from member where organization_id=${id} and role='owner'`
-  await sql`update organization set deleted_at=now(),updated_at=now() where id=${id}`
-  await sql`update invitation set status='canceled',updated_at=now() where organization_id=${id} and status='pending'`
-  // 邀请链接与邮件邀请一致：软删即作废，恢复空间后旧链接仍作废（add-team-invite-links）
-  await sql`update workspace_invite_link set revoked_at=now(),revoked_by=${actorId},updated_at=now() where workspace_id=${id} and revoked_at is null`
-  // metadata is text in the installed API key schema. Parse without a SQL JSON cast so malformed
-  // unrelated metadata cannot prevent deleting a workspace.
-  const keys = await sql<
-    { id: string; metadata: string | null }[]
-  >`select id,metadata from apikey where enabled=true`
-  for (const key of keys) {
-    let metadata: { workspace_id?: string; workspaceId?: string } | null
-    try {
-      metadata = key.metadata ? JSON.parse(key.metadata) : null
-    } catch {
-      continue
-    }
-    if (metadata?.workspace_id === id || metadata?.workspaceId === id)
-      await sql`update apikey set enabled=false,updated_at=now() where id=${key.id}`
-  }
-  const sessions = await sql<
-    { token: string }[]
-  >`update session set active_organization_id=null,updated_at=now() where active_organization_id=${id} returning token`
-  await sql`delete from member where organization_id=${id}`
-  await sql`insert into audit_log (id,actor_user_id,workspace_id,action,target_type,target_id,ip,meta)
-    values (${newId()},${actorId},${id},'workspace.deleted','organization',${id},${ip},${JSON.stringify({ originalOwnerUserIds: owners.map((owner) => owner.user_id) })}::jsonb)`
-  return sessions.map((session) => session.token)
-}
+/** postgres.js 事务适配为共用 SQL 标签（workspace-admission.ts） */
+const softDelete = (sql: DeletionTransaction, id: string, actorId: string, ip: string | null) =>
+  softDeleteWorkspace((strings, ...values) => sql(strings, ...(values as never[])), id, actorId, ip)
 export async function deleteTeamWorkspace(
   options: Options & { readonly workspaceId: string; readonly multiTenant?: boolean },
 ) {

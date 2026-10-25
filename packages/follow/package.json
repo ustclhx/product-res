@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@product-res/auth": "workspace:*",
     "@product-res/datasources": "workspace:*",
     "@product-res/db": "workspace:*",
     "@product-res/marketdata": "workspace:*",
