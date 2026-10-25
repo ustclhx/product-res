@@ -65,6 +65,8 @@
   "transfer_progress_batches": "{done} / {total} 批",
   "transfer_progress_compensated": "已撤销 {done} / {total} 批",
   "transfer_progress_planning": "计划中",
+  "transfer_progress_nothing_to_undo": "无需撤销，正在收尾",
+  "transfer_progress_nothing_undone": "无需撤销",
   "transfer_detail_title": "数据流转详情",
   "transfer_detail_back": "返回流转记录",
   "transfer_detail_route": "{source} → {target}",

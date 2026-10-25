@@ -67,7 +67,7 @@ function TransferPage() {
 
   const target = page.spaces.find((s) => s.id === detail.targetWorkspaceId)
   return (
-    <div className="grid max-w-5xl gap-4">
+    <div className="grid min-w-0 max-w-5xl grid-cols-1 gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="font-semibold text-lg">{m.transfer_detail_title()}</h1>
         <Link

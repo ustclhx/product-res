@@ -65,6 +65,8 @@
   "transfer_progress_batches": "{done} / {total} batches",
   "transfer_progress_compensated": "{done} / {total} batches undone",
   "transfer_progress_planning": "Planning",
+  "transfer_progress_nothing_to_undo": "Nothing to undo, finishing up",
+  "transfer_progress_nothing_undone": "Nothing to undo",
   "transfer_detail_title": "Data transfer details",
   "transfer_detail_back": "Back to transfer history",
   "transfer_detail_route": "{source} → {target}",

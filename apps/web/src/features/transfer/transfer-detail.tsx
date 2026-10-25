@@ -57,16 +57,23 @@ export function TransferStatusTag({
 
 export const workspaceName = (name: string | null) => name ?? m.transfer_unknown_workspace()
 
+const isUndoing = (status: string) => status === 'compensating' || status === 'compensated'
+
 /** 批次进度：补偿中 / 已回滚显示撤销进度，计划完成前显示“计划中” */
 export function progressText(transfer: Pick<TransferSummary, 'status' | 'progress'>): string {
   const { done, compensated, total } = transfer.progress
-  // 计划前结束（如排队时取消）没有批次
-  if (total === 0) return isActiveTransfer(transfer.status) ? m.transfer_progress_planning() : '—'
-  if (transfer.status === 'compensating' || transfer.status === 'compensated')
+  if (isUndoing(transfer.status)) {
+    // 回滚时只看撤销进度；计划前或首批完成前取消没有需要撤销的批次
+    if (done + compensated === 0)
+      return transfer.status === 'compensating'
+        ? m.transfer_progress_nothing_to_undo()
+        : m.transfer_progress_nothing_undone()
     return m.transfer_progress_compensated({
       done: String(compensated),
       total: String(done + compensated),
     })
+  }
+  if (total === 0) return isActiveTransfer(transfer.status) ? m.transfer_progress_planning() : '—'
   return m.transfer_progress_batches({ done: String(done), total: String(total) })
 }
 
@@ -162,7 +169,7 @@ export function TransferDetailView({
   const progress = progressValue(detail)
   const cancelled = detail.errorCode === CANCELLED_CODE
   return (
-    <div className="grid gap-4" data-testid="transfer-detail">
+    <div className="grid min-w-0 grid-cols-1 gap-4" data-testid="transfer-detail">
       <Section
         title={
           <span className="flex flex-wrap items-center gap-2">
@@ -193,7 +200,9 @@ export function TransferDetailView({
               {progressText(detail)}
             </span>
           </div>
-          <ProgressBar value={progress.value} max={progress.max} />
+          {progress.max > 0 || !isUndoing(detail.status) ? (
+            <ProgressBar value={progress.value} max={progress.max} />
+          ) : null}
         </div>
         {active ? (
           <p
@@ -283,7 +292,7 @@ export function TransferDetailView({
 
       <Section title={m.transfer_detail_counts_title()}>
         {rows.length ? (
-          <div className="overflow-x-auto">
+          <div className="min-w-0 max-w-full overflow-x-auto">
             <table
               className="w-full min-w-[560px] text-left text-[13px]"
               data-testid="transfer-counts"
@@ -378,13 +387,13 @@ export function TransferDetailView({
       ) : null}
       {detail.batches.length ? (
         <Section title={m.transfer_detail_batches_title()}>
-          <ol className="grid gap-1 text-xs sm:grid-cols-2">
+          <ol className="grid grid-cols-1 gap-1 text-xs sm:grid-cols-2">
             {detail.batches.map((b) => (
               <li
                 key={b.key}
-                className="flex items-center justify-between gap-2 rounded-md border px-2 py-1"
+                className="flex min-w-0 items-center justify-between gap-2 rounded-md border px-2 py-1"
               >
-                <span className="truncate">
+                <span className="min-w-0 truncate">
                   {b.seq}. {batchLabel(b.key)}
                 </span>
                 <Tag

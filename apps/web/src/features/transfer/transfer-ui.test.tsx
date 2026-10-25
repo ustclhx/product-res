@@ -9,6 +9,7 @@ import { transferErrorAdapter } from './error-adapter.ts'
 import { batchLabel, groupTableCounts, TRANSFER_TABLES, transferErrorText } from './labels.ts'
 import {
   countRows,
+  progressText,
   type TransferDetail,
   TransferDetailView,
   transferActions,
@@ -257,6 +258,33 @@ describe('流转详情', () => {
     )
     expect(html).toContain(m.transfer_detail_completed_upgrade())
     expect(html).toContain(m.transfer_detail_open_target())
+  })
+
+  it('回滚中只显示撤销进度，没有可撤销的批次时不显示“计划中”', () => {
+    const p = (done: number, compensated: number, total: number) => ({ done, compensated, total })
+    expect(progressText({ status: 'compensating', progress: p(0, 0, 0) })).toBe(
+      m.transfer_progress_nothing_to_undo(),
+    )
+    expect(progressText({ status: 'compensating', progress: p(0, 0, 4) })).toBe(
+      m.transfer_progress_nothing_to_undo(),
+    )
+    expect(progressText({ status: 'compensated', progress: p(0, 0, 0) })).toBe(
+      m.transfer_progress_nothing_undone(),
+    )
+    expect(progressText({ status: 'compensating', progress: p(1, 1, 4) })).toBe(
+      m.transfer_progress_compensated({ done: '1', total: '2' }),
+    )
+    expect(progressText({ status: 'pending', progress: p(0, 0, 0) })).toBe(
+      m.transfer_progress_planning(),
+    )
+    const html = renderToStaticMarkup(
+      <TransferDetailView
+        detail={detail({ status: 'compensating', progress: p(0, 0, 0), batches: [] })}
+        viewer={owner}
+      />,
+    )
+    expect(html).not.toContain(m.transfer_progress_planning())
+    expect(html).toContain(m.transfer_progress_nothing_to_undo())
   })
 
   it('计数合并计划行数与 unmapped 键', () => {

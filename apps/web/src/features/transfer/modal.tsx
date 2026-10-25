@@ -51,7 +51,9 @@ export function Modal({
         <h2 id={titleId} className="border-b px-4 py-3 text-sm font-semibold">
           {title}
         </h2>
-        <div className="grid min-h-0 gap-3 overflow-y-auto px-4 py-3 text-[13px]">{children}</div>
+        <div className="grid min-h-0 min-w-0 grid-cols-1 gap-3 overflow-y-auto px-4 py-3 text-[13px]">
+          {children}
+        </div>
         {footer ? (
           <div className="flex flex-wrap justify-end gap-2 border-t px-4 py-3">{footer}</div>
         ) : null}
