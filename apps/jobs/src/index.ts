@@ -8,6 +8,7 @@ import {
 } from '@product-res/config'
 import { createDb } from '@product-res/db'
 import { getEntitlements } from '@product-res/entitlements'
+import type { WorkspaceTransferWorkflowParams } from '@product-res/follow/transfer'
 import {
   createCloudflareDatabase,
   createCloudflareKv,
@@ -34,6 +35,7 @@ import {
   tagJobContext,
 } from './sentry.ts'
 import { runMediaTask } from './workflows/media-runner.ts'
+import { runWorkspaceTransfer } from './workflows/transfer-runner.ts'
 
 const cloudflareJobObserver = { tagContext: tagJobContext, captureException: captureJobException }
 
@@ -197,6 +199,57 @@ export const AiMediaWorkflow = new Proxy(AiMediaWorkflowBase, {
     const env = args[1] as Cloudflare.Env
     return Reflect.construct(
       sentryEnabled(env) ? InstrumentedAiMediaWorkflow : target,
+      args,
+      newTarget,
+    )
+  },
+})
+
+class WorkspaceTransferWorkflowBase extends WorkflowEntrypoint<
+  Cloudflare.Env,
+  WorkspaceTransferWorkflowParams
+> {
+  override run(event: WorkflowEvent<WorkspaceTransferWorkflowParams>, step: WorkflowStep) {
+    return withLogContext(
+      {
+        requestId: event.payload.requestId ?? newRequestId(),
+        transferId: event.payload.transferId,
+      },
+      async () => {
+        tagJobContext()
+        const workflowSentry = createWorkflowSentry(step, sentryEnabled(this.env))
+        try {
+          requireEnv(this.env)
+          return await runWorkspaceTransfer(
+            event.payload.transferId,
+            createCloudflareWorkflowStep(workflowSentry.step),
+            {
+              db: createDb(this.env.HYPERDRIVE),
+              config: templateConfig,
+              cache: createCloudflareKv(this.env.CACHE),
+              observer: workflowSentry.observer,
+            },
+          )
+        } catch (error) {
+          workflowSentry.observer.captureException(error)
+          throw error
+        }
+      },
+    )
+  }
+}
+
+const InstrumentedWorkspaceTransferWorkflow = instrumentWorkflowWithSentry(
+  sentryOptions,
+  WorkspaceTransferWorkflowBase,
+)
+
+/** 跨空间数据流转（add-workspace-data-transfer 4.1）；web 以 WORKSPACE_TRANSFER_WORKFLOW 绑定 */
+export const WorkspaceTransferWorkflow = new Proxy(WorkspaceTransferWorkflowBase, {
+  construct(target, args, newTarget) {
+    const env = args[1] as Cloudflare.Env
+    return Reflect.construct(
+      sentryEnabled(env) ? InstrumentedWorkspaceTransferWorkflow : target,
       args,
       newTarget,
     )

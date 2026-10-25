@@ -31,6 +31,7 @@ import type { WebRuntime } from '../server/runtime.ts'
 import { templateConfig } from '../server/template-config.ts'
 import { createNodeMediaWorkflowClient } from './media-workflow.ts'
 import type { NodeWebObserver } from './observer-context.ts'
+import { createNodeTransferWorkflowClient } from './transfer-workflow.ts'
 
 function unavailable(): never {
   throw new AppError('CAPABILITY_UNAVAILABLE', 'Capability is unavailable', { status: 503 })
@@ -198,6 +199,13 @@ export async function createNodeWebProcess(
       selectionReplayQueue: { available: true, value: replayQueue },
       storeTrackingQueue: { available: true, value: storeQueue },
       health: { cache: () => cache.ping(), tasks: taskHealth },
+      transferWorkflow: {
+        available: true,
+        value: createNodeTransferWorkflowClient({
+          jobsUrl: jobsConfig.JOBS_URL,
+          secret: env.BETTER_AUTH_SECRET,
+        }),
+      },
       files: storage ? { available: true, value: storage } : { available: false },
       ai: {
         available: true,

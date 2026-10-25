@@ -22,12 +22,12 @@
 
 ## 4. 后台任务
 
-- [ ] 4.1 `apps/jobs` 注册流转 Workflow（`step.do` 按批次，可续跑）与超时补偿。
-- [ ] 4.2 流转锁：`withWorkspace` 只读条件 `WORKSPACE_TRANSFERRING`；选品日常、打标签、准备度、回看提醒、店铺采集、每周抽检与 `ensureSelectionDefaults` 跳过流转中的空间；move 完成后重算两边 `readiness_stat` 并作废源空间未处理的 `weight_suggestion`。
+- [x] 4.1 `apps/jobs` 注册流转 Workflow（`step.do` 按批次，可续跑）与超时补偿。
+- [x] 4.2 流转锁：`withWorkspace` 只读条件 `WORKSPACE_TRANSFERRING`；选品日常、打标签、准备度、回看提醒、店铺采集、每周抽检与 `ensureSelectionDefaults` 跳过流转中的空间；move 完成后重算两边 `readiness_stat` 并作废源空间未处理的 `weight_suggestion`。
 
 ## 5. 审计
 
-- [ ] 5.1 源 / 目标空间写 `workspace.transfer.*` 与升级审计，`meta` 带流转 id 与按表计数；已有审计行不改归属。
+- [x] 5.1 源 / 目标空间写 `workspace.transfer.*` 与升级审计，`meta` 带流转 id 与按表计数；已有审计行不改归属。
 
 ## 6. UI
 

@@ -14,6 +14,10 @@ declare namespace Cloudflare {
     HYPERDRIVE_CACHED: Hyperdrive
     /** 定义在 apps/jobs 的 AiMediaWorkflow（script_name: jobs）；参数类型在 P4 移入 packages/ai */
     AI_MEDIA_WORKFLOW: Workflow<{ taskId: string }>
+    /** 定义在 apps/jobs 的 WorkspaceTransferWorkflow（script_name: jobs）；可选绑定 */
+    WORKSPACE_TRANSFER_WORKFLOW?: Workflow<
+      import('@product-res/follow/transfer').WorkspaceTransferWorkflowParams
+    >
     /** 邮件队列 producer，apps/jobs 消费（消息格式见 @product-res/email/queue） */
     EVENTS_QUEUE: Queue<
       | import('@product-res/billing').BillingQueueMessage

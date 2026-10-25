@@ -5,6 +5,13 @@
 // startUpgrade / startMove / startCopy → planTransfer → runBatch（逐批）→ finalizeTransfer；
 // 失败或取消时 beginCompensation → compensateBatch（逆序）→ completeCompensation（或 compensateTransfer）。
 export { assertTransferAccess, lockTransferWorkspaces } from './access.ts'
+export {
+  auditTransfer,
+  auditTransferCompleted,
+  auditTransferRequested,
+  TRANSFER_AUDIT_TARGET,
+  type TransferAuditEvent,
+} from './audit.ts'
 export { type BatchResult, runBatch, type SourceRowSnapshot, touchesSellerData } from './batch.ts'
 export {
   type DirectionConflictStrategy,
@@ -38,6 +45,14 @@ export {
   type TransferPlan,
   type TransferPlanBatch,
 } from './plan.ts'
+export {
+  getWorkspaceTransferDetail,
+  listWorkspaceTransfers,
+  type TransferDetail,
+  type TransferReportEntry,
+  type TransferSummary,
+  upgradeTableCounts,
+} from './queries.ts'
 export type { QuotaEstimate } from './quota.ts'
 export {
   FLOWING_TRANSFER_TABLES,
@@ -58,3 +73,8 @@ export {
   startUpgrade,
 } from './start.ts'
 export * from './types.ts'
+export {
+  transferWorkflowToken,
+  WORKSPACE_TRANSFER_WORKFLOW,
+  type WorkspaceTransferWorkflowParams,
+} from './workflow.ts'
