@@ -5,13 +5,15 @@ export type { PlanFeatures } from '@product-res/db'
 
 /**
  * Canonical pre-seed free defaults; seed code should reuse this export.
- * Numeric/boolean defaults follow docs/05-billing.md §5 (3 tasks, 1 seat, 5 GB).
+ * Numeric/boolean defaults follow docs/05-billing.md §5 (3 tasks, 5 GB). Seats are 10 in this project
+ * (add-team-invite-links): billing has no payment providers, production has no seeded plan rows,
+ * and team workspaces must accept invitees on this fallback.
  * No models are granted until a persisted free plan supplies its allowlist.
  */
 export const DEFAULT_FREE_FEATURES: PlanFeatures = {
   models: [],
   maxConcurrentTasks: 3,
-  maxSeats: 1,
+  maxSeats: 10,
   storageGb: 5,
   publicApi: false,
   priorityQueue: false,
