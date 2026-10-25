@@ -4,7 +4,7 @@ import {
   workspaceTransfer,
   workspaceTransferBatch,
 } from '@product-res/db'
-import { eq, type SQL, sql } from 'drizzle-orm'
+import { and, eq, inArray, type SQL, sql } from 'drizzle-orm'
 import { assertTransferAccess, lockTransferWorkspaces } from './access.ts'
 import {
   type DirectionConflictStrategy,
@@ -84,11 +84,17 @@ export interface PlanOptions {
   readonly checkEntitlements?: TransferEntitlementCheck
 }
 
-export async function loadTransfer(tx: Tx, transferId: string): Promise<WorkspaceTransfer> {
-  const [transfer] = await tx
-    .select()
-    .from(workspaceTransfer)
-    .where(eq(workspaceTransfer.id, transferId))
+/**
+ * forUpdate：锁住流转行。状态迁移（plan、批次、完成、补偿）都在行锁下读取并按期望状态条件更新，
+ * 避免并发的 beginCompensation 被覆盖回 running / completed。
+ */
+export async function loadTransfer(
+  tx: Tx,
+  transferId: string,
+  options: { readonly forUpdate?: boolean } = {},
+): Promise<WorkspaceTransfer> {
+  const query = tx.select().from(workspaceTransfer).where(eq(workspaceTransfer.id, transferId))
+  const [transfer] = options.forUpdate ? await query.for('update') : await query
   if (!transfer) throw transferError('TRANSFER_NOT_FOUND', '流转记录不存在', 404)
   return transfer
 }
@@ -105,7 +111,7 @@ export async function planTransfer(
     await lockTransferWorkspaces(tx, [before.sourceWorkspaceId, before.targetWorkspaceId], {
       sellerData: true,
     })
-    const transfer = await loadTransfer(tx, transferId)
+    const transfer = await loadTransfer(tx, transferId, { forUpdate: true })
     // 重试的 plan 步骤在锁内再判一次：另一个执行者可能已经写入
     if (transfer.plan) return transfer.plan as unknown as TransferPlan
     if (transfer.status !== 'pending')
@@ -177,16 +183,30 @@ export async function planTransfer(
           : { additionalBrowseCallsPerDay: 0, threshold: 0, exceeds: false },
       entitlements: { checked: options.checkEntitlements !== undefined, violations },
     }
-    await tx
-      .update(workspaceTransfer)
-      .set({
-        plan: plan as unknown as Record<string, unknown>,
-        status: 'running',
-        startedAt: new Date(),
-      })
-      .where(eq(workspaceTransfer.id, transfer.id))
+    await transition(tx, transfer.id, ['pending'], {
+      plan: plan as unknown as Record<string, unknown>,
+      status: 'running',
+      startedAt: new Date(),
+    })
     return plan
   })
+}
+
+/** 按期望状态条件更新流转行；状态已被并发改变（如进入补偿）时放弃本步，抛不可重试的 TRANSFER_STATE */
+export async function transition(
+  tx: Tx,
+  transferId: string,
+  expected: readonly WorkspaceTransfer['status'][],
+  values: Partial<typeof workspaceTransfer.$inferInsert>,
+): Promise<void> {
+  const updated = await tx
+    .update(workspaceTransfer)
+    .set(values)
+    .where(
+      and(eq(workspaceTransfer.id, transferId), inArray(workspaceTransfer.status, [...expected])),
+    )
+    .returning({ id: workspaceTransfer.id })
+  if (updated.length === 0) throw transferError('TRANSFER_STATE', '流转状态已变化，放弃本步', 409)
 }
 
 /** D8：超过阈值只允许升级与移动，复制要求缩小范围（复制批次 tasks 3.4 接入） */
@@ -513,7 +533,7 @@ async function resolveConflicts(
     else if (conflict.kind === 'keep-target') for (const m of matches) decide(m, 'keep-target')
     else {
       const renameColumn = conflict.kind === 'rename' ? conflict.column : conflict.renameColumn
-      // 名称占用：目标已有 + 本次流入后保留原名的行
+      // 名称占用：目标已有 + 源空间全部名称（重命名先在源空间改名再移动，新名称不能撞源空间唯一索引）
       const taken = new Set(
         (
           await rows<{ name: string }>(
@@ -522,8 +542,6 @@ async function resolveConflicts(
               where t.${ident(meta.ws)} = ${transfer.targetWorkspaceId}
               union all
               select ${col('t', renameColumn.name)} from ${ident(meta.name)} t
-              join workspace_transfer_id_map m on m.transfer_id = ${transfer.id}
-                and m.table_name = ${meta.name} and m.source_id = t.id::text
               where t.${ident(meta.ws)} = ${transfer.sourceWorkspaceId}`,
           )
         ).map((r) => r.name),

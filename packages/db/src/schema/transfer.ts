@@ -58,6 +58,8 @@ export const WORKSPACE_TRANSFER_ID_MAP_ACTIONS = [
   'merged',
   'skipped',
   'renamed',
+  // 源空间中未流转的行因引用了移走的行而被修改（如店铺 direction_ids 去掉移走的方向），补偿从快照恢复
+  'updated',
 ] as const
 export type WorkspaceTransferIdMapAction = (typeof WORKSPACE_TRANSFER_ID_MAP_ACTIONS)[number]
 
@@ -91,6 +93,11 @@ export const workspaceTransfer = pgTable(
     plan: jsonb('plan').$type<Record<string, unknown>>(),
     status: text('status', { enum: WORKSPACE_TRANSFER_STATUSES }).notNull().default('pending'),
     counts: jsonb('counts').$type<WorkspaceTransferCounts>().notNull().default({}),
+    /**
+     * 完成（升级切换活跃空间）或补偿（软删新空间）时被改动的会话 token：与状态迁移同一事务写入，
+     * 步骤重试时原样返回，调用方据此失效会话缓存（KV `auth:<token>`）
+     */
+    sessionTokens: jsonb('session_tokens').$type<string[]>().notNull().default([]),
     errorCode: text('error_code'),
     createdAt: createdAt(),
     startedAt: timestamp('started_at', { withTimezone: true }),

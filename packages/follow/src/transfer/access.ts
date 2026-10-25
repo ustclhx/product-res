@@ -71,11 +71,16 @@ export async function assertTransferAccess(
   const byId = new Map(workspaces.map((w) => [w.id, w]))
   const check = (id: string, side: 'source' | 'target') => {
     const workspace = byId.get(id)
-    if (!workspace || workspace.deleted_at)
-      throw transferError('WORKSPACE_NOT_FOUND', '空间不存在', options.revoked ? 403 : 404)
+    // 执行中（revoked）统一转为不可重试的 TRANSFER_PERMISSION_REVOKED，Workflow 据此补偿而非无限重试
+    if (!workspace || workspace.deleted_at) {
+      if (options.revoked) deny('空间已删除')
+      throw transferError('WORKSPACE_NOT_FOUND', '空间不存在', 404)
+    }
     // multiTenant=false 时团队空间只读（workspaceReadOnly）
-    if (!workspace.is_personal && !config.tenancy.multiTenant)
+    if (!workspace.is_personal && !config.tenancy.multiTenant) {
+      if (options.revoked) deny('团队空间已转为只读')
       throw transferError('WORKSPACE_READ_ONLY', '团队空间当前只读', 403)
+    }
     if (workspace.is_personal) {
       // 个人空间只能由本人作为源或目标；不能流入或读取他人的个人空间
       if (workspace.id !== input.userId || workspace.role !== 'owner')

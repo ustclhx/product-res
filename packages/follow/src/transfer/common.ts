@@ -138,6 +138,7 @@ export const NON_RETRYABLE_TRANSFER_ERRORS = new Set([
   'TRANSFER_CLOSURE_INCOMPLETE',
   'TRANSFER_KIND_UNSUPPORTED',
   'TRANSFER_STATE',
+  'TRANSFER_COMPENSATION_ORDER',
 ])
 
 /** 事务级 advisory lock（与 packages/auth 相同的 hashtextextended 键空间） */

@@ -17,10 +17,13 @@ import { and, eq, sql } from 'drizzle-orm'
 import { afterAll, describe, expect, it } from 'vitest'
 import { deleteEbayUserData } from '../src/ebay-account-deletion.ts'
 import {
+  beginCompensation,
+  compensateBatch,
   compensateTransfer,
   finalizeTransfer,
   listTransferBatches,
   lockTransferWorkspaces,
+  NON_RETRYABLE_TRANSFER_ERRORS,
   planTransfer,
   runBatch,
   startMove,
@@ -103,7 +106,10 @@ describe.skipIf(!url)('数据流转引擎', () => {
 
       const plan = await runAll(first.transferId)
       expect(plan.tables).toEqual(before)
-      await finalizeTransfer(db, first.transferId)
+      const finalized = await finalizeTransfer(db, first.transferId)
+      expect(finalized.sessionTokens).toEqual([`t-${sessionId}`])
+      // 重试返回同一批需失效的会话 token
+      expect(await finalizeTransfer(db, first.transferId)).toEqual(finalized)
 
       expect(await tableCounts(db, first.targetWorkspaceId)).toEqual(before)
       expect(Object.values(await tableCounts(db, userId)).every((n) => n === 0)).toBe(true)
@@ -170,8 +176,10 @@ describe.skipIf(!url)('数据流转引擎', () => {
       expect((await runBatch(db, started.transferId, 'validation', config)).status).toBe('done')
       expect(Object.values(await tableCounts(db, userId)).every((n) => n === 0)).toBe(true)
 
+      const teamSession = await createSession(db, userId, started.targetWorkspaceId)
       const result = await compensateTransfer(db, started.transferId, 'TEST_CANCEL')
-      expect(result.status).toBe('compensated')
+      expect(result).toEqual({ status: 'compensated', sessionTokens: [`t-${teamSession}`] })
+      expect(await compensateTransfer(db, started.transferId, 'TEST_CANCEL')).toEqual(result)
       expect(await snapshotRows(db, [userId])).toEqual(snapshot)
       expect(
         Object.values(await tableCounts(db, started.targetWorkspaceId)).every((n) => n === 0),
@@ -245,6 +253,31 @@ describe.skipIf(!url)('数据流转引擎', () => {
         product: src.product,
         tier: 'cold',
       })
+      // 源空间已有未流转的“重命名候选名”方向：新名称须避开（否则先在源空间改名会撞唯一索引）
+      const [taken] = await db
+        .insert(direction)
+        .values({ workspaceId: a, name: `万圣节装饰（来自 A${t}）` })
+        .returning()
+      // 未流转的店铺引用了移走的方向：源侧去掉该方向
+      const [watcher] = await db
+        .insert(trackedStore)
+        .values({
+          workspaceId: a,
+          platform: 'ebay',
+          marketplace: 'ebay-us',
+          sellerKey: `watch_${t}`,
+          kind: 'watch',
+          directionIds: [src.direction, taken?.id as string],
+        })
+        .returning()
+      // 两条自然键相同的规则都合并到目标同一条规则：同簇两条风险发现改写后撞唯一键，合并为一条
+      const [rule2] = (await db.execute(
+        sql`insert into risk_rule (id, workspace_id, kind, match, level, description)
+          values (${newId()}, ${a}, 'hazmat', '{"attributes":["battery"]}', 'high', 'battery 2')
+          returning id`,
+      )) as unknown as { id: string }[]
+      await db.execute(sql`insert into risk_finding (id, workspace_id, cluster_id, kind, ref, level)
+        values (${newId()}, ${a}, ${src.cluster}, 'hazmat', ${rule2?.id}, 'high')`)
       const before = await snapshotRows(db, [a, b])
       const selection = {
         roots: {
@@ -269,7 +302,7 @@ describe.skipIf(!url)('数据流转引擎', () => {
       const decisions = Object.fromEntries(plan.conflicts.map((c) => [c.table, c]))
       expect(decisions.direction).toMatchObject({
         action: 'rename',
-        newName: `万圣节装饰（来自 A${t}）`,
+        newName: `万圣节装饰（来自 A${t}） 2`,
       })
       expect(decisions.category_study).toMatchObject({ action: 'rename' })
       expect(decisions.tracked_store).toMatchObject({ action: 'merge', targetId: dst.store })
@@ -288,7 +321,7 @@ describe.skipIf(!url)('数据流转引擎', () => {
       const [moved] = await db.select().from(direction).where(eq(direction.id, src.direction))
       expect(moved).toMatchObject({
         workspaceId: b,
-        name: `万圣节装饰（来自 A${t}）`,
+        name: `万圣节装饰（来自 A${t}） 2`,
         nodeIds: [dst.node],
       })
       // 报价改指复制到目标的供应商；核算方案改指合并的物流方案；源配置保留
@@ -320,13 +353,26 @@ describe.skipIf(!url)('数据流转引擎', () => {
       // 影子验证样本随簇移动；准备度留在源空间
       const counts = await tableCounts(db, a)
       expect(counts).toMatchObject({
-        direction: 0,
+        direction: 1,
         cluster: 0,
         recommendation: 0,
         readiness_stat: 1,
         seasonal_node: 1,
         supplier: 1,
       })
+
+      const [detached] = await db
+        .select()
+        .from(trackedStore)
+        .where(eq(trackedStore.id, watcher?.id as string))
+      expect(detached).toMatchObject({ workspaceId: a, directionIds: [taken?.id] })
+      expect(
+        (await idMap(started.transferId, 'tracked_store', watcher?.id as string))?.action,
+      ).toBe('updated')
+      const findings = (await db.execute(
+        sql`select workspace_id, ref from risk_finding where cluster_id = ${src.cluster}`,
+      )) as unknown as { workspace_id: string; ref: string }[]
+      expect(findings).toEqual([{ workspace_id: b, ref: dst.rule }])
 
       await compensateTransfer(db, started.transferId, 'TEST_ROLLBACK')
       expect(await snapshotRows(db, [a, b])).toEqual(before)
@@ -337,7 +383,8 @@ describe.skipIf(!url)('数据流转引擎', () => {
       const owner = await createUser(db, created, `mg${t}`)
       const a = await createTeam(db, created, `MA${t}`, [{ userId: owner, role: 'owner' }])
       const b = await createTeam(db, created, `MB${t}`, [{ userId: owner, role: 'owner' }])
-      const src = await seedWorkspace(db, created, a, { tag: t, readiness: false })
+      // 源方向带准备度统计：删除合并的源方向会级联删除，须快照并在补偿时恢复
+      const src = await seedWorkspace(db, created, a, { tag: t })
       const dst = await seedWorkspace(db, created, b, {
         tag: `${t}b`,
         sellerKey: `seller_${t}`,
@@ -357,7 +404,6 @@ describe.skipIf(!url)('数据流转引擎', () => {
           status: 'seed',
         })
         .returning()
-      const before = await snapshotRows(db, [a, b])
       const started = await startMove(
         db,
         {
@@ -369,7 +415,19 @@ describe.skipIf(!url)('数据流转引擎', () => {
         },
         config,
       )
-      const plan = await runAll(started.transferId)
+      const plan = await planTransfer(db, started.transferId, config)
+      // 计划之后才加入源方向的对标店铺：随方向流转，不被删除源方向时级联删掉
+      await db.insert(directionSeller).values({
+        workspaceId: a,
+        directionId: src.direction,
+        marketplace: 'ebay-us',
+        sellerPlatformId: `late_${t}`,
+        status: 'suggested',
+      })
+      const before = await snapshotRows(db, [a, b])
+      for (const batch of await listTransferBatches(db, started.transferId))
+        await runBatch(db, started.transferId, batch.key, config)
+      expect((await tableCounts(db, a)).readiness_stat).toBe(0)
       expect(plan.conflicts.find((c) => c.table === 'direction')).toMatchObject({
         action: 'merge',
         targetId: dst.direction,
@@ -391,6 +449,7 @@ describe.skipIf(!url)('数据流转引擎', () => {
         .where(eq(directionSeller.directionId, dst.direction))
       expect(sellers.map((s) => [s.sellerPlatformId, s.status]).sort()).toEqual(
         [
+          [`late_${t}`, 'suggested'],
           [`other_${t}`, 'seed'],
           [`seller_${t}`, 'rejected'],
         ].sort(),
@@ -549,6 +608,74 @@ describe.skipIf(!url)('数据流转引擎', () => {
         runBatch(db, started.transferId, rest[0]?.key as string, config),
       ).rejects.toMatchObject({ code: 'TRANSFER_PERMISSION_REVOKED' })
       await compensateTransfer(db, started.transferId, 'TRANSFER_PERMISSION_REVOKED')
+      expect(await snapshotRows(db, [a, b])).toEqual(before)
+    })
+  })
+
+  describe('状态与顺序', () => {
+    async function moving(label: string) {
+      const t = tag()
+      const owner = await createUser(db, created, `${label}${t}`)
+      const a = await createTeam(db, created, `${label}A${t}`, [{ userId: owner, role: 'owner' }])
+      const b = await createTeam(db, created, `${label}B${t}`, [{ userId: owner, role: 'owner' }])
+      const s = await seedWorkspace(db, created, a, { tag: t })
+      const before = await snapshotRows(db, [a, b])
+      const started = await startMove(
+        db,
+        {
+          userId: owner,
+          sourceWorkspaceId: a,
+          targetWorkspaceId: b,
+          selection: { roots: { direction: [s.direction], store: [s.store] } },
+          idempotencyKey: key(),
+        },
+        config,
+      )
+      await planTransfer(db, started.transferId, config)
+      return { a, b, before, transferId: started.transferId }
+    }
+
+    it('进入补偿后批次与完成都不再执行；补偿只能按批次逆序', async () => {
+      const { a, b, before, transferId } = await moving('st')
+      const batches = await listTransferBatches(db, transferId)
+      expect(batches.map((x) => x.key.split(':')[0])).toEqual(['config', 'direction', 'store-pool'])
+      await runBatch(db, transferId, batches[0]?.key as string, config)
+      await runBatch(db, transferId, batches[1]?.key as string, config)
+      await beginCompensation(db, transferId, 'TEST_CANCEL')
+      await expect(
+        runBatch(db, transferId, batches[2]?.key as string, config),
+      ).rejects.toMatchObject({ code: 'TRANSFER_STATE' })
+      await expect(finalizeTransfer(db, transferId)).rejects.toMatchObject({
+        code: 'TRANSFER_STATE',
+      })
+      // 先撤销配置批次会级联删掉方向批次中改指复制供应商的报价
+      await expect(
+        compensateBatch(db, transferId, batches[0]?.key as string),
+      ).rejects.toMatchObject({ code: 'TRANSFER_COMPENSATION_ORDER' })
+      const [row] = await db
+        .select({ status: workspaceTransfer.status })
+        .from(workspaceTransfer)
+        .where(eq(workspaceTransfer.id, transferId))
+      expect(row?.status).toBe('compensating')
+      await compensateTransfer(db, transferId, 'TEST_CANCEL')
+      expect(await snapshotRows(db, [a, b])).toEqual(before)
+    })
+
+    it('执行中空间被软删或团队转为只读：不可重试的 TRANSFER_PERMISSION_REVOKED', async () => {
+      const { a, b, before, transferId } = await moving('sd')
+      const [first] = await listTransferBatches(db, transferId)
+      await db.update(organization).set({ deletedAt: new Date() }).where(eq(organization.id, b))
+      await expect(runBatch(db, transferId, first?.key as string, config)).rejects.toMatchObject({
+        code: 'TRANSFER_PERMISSION_REVOKED',
+      })
+      await db.update(organization).set({ deletedAt: null }).where(eq(organization.id, b))
+      await expect(
+        runBatch(db, transferId, first?.key as string, {
+          tenancy: { ...config.tenancy, multiTenant: false },
+        }),
+      ).rejects.toMatchObject({ code: 'TRANSFER_PERMISSION_REVOKED' })
+      expect(NON_RETRYABLE_TRANSFER_ERRORS.has('TRANSFER_PERMISSION_REVOKED')).toBe(true)
+      await compensateTransfer(db, transferId, 'TRANSFER_PERMISSION_REVOKED')
       expect(await snapshotRows(db, [a, b])).toEqual(before)
     })
   })

@@ -5,7 +5,11 @@ import type { BetterAuthPlugin } from 'better-auth'
 import { APIError, createAuthEndpoint } from 'better-auth/api'
 import { z } from 'zod'
 import { type AuthContextSource, requireFreshSession } from './fresh-session.ts'
-import { softDeleteWorkspace } from './workspace-admission.ts'
+import {
+  type AdmissionSql,
+  softDeleteWorkspace,
+  transferringWorkspaces,
+} from './workspace-admission.ts'
 
 export type DeletionKind = 'account' | 'workspace'
 export type DeletionTransaction = Parameters<Parameters<Database['$client']['begin']>[1]>[0]
@@ -113,8 +117,12 @@ async function finishCleanup(
   })
 }
 /** postgres.js 事务适配为共用 SQL 标签（workspace-admission.ts） */
+const tag =
+  (sql: DeletionTransaction): AdmissionSql =>
+  (strings, ...values) =>
+    sql(strings, ...(values as never[]))
 const softDelete = (sql: DeletionTransaction, id: string, actorId: string, ip: string | null) =>
-  softDeleteWorkspace((strings, ...values) => sql(strings, ...(values as never[])), id, actorId, ip)
+  softDeleteWorkspace(tag(sql), id, actorId, ip)
 export async function deleteTeamWorkspace(
   options: Options & { readonly workspaceId: string; readonly multiTenant?: boolean },
 ) {
@@ -153,6 +161,8 @@ export async function deleteTeamWorkspace(
       fail('PERSONAL_WORKSPACE', 'Delete your account to delete the personal workspace')
     if (workspace.role !== 'owner')
       fail('WORKSPACE_PERMISSION', 'Only owners can delete a team workspace')
+    if ((await transferringWorkspaces(tag(sql), [workspaceId])).length)
+      fail('WORKSPACE_TRANSFERRING', 'Workspace data transfer in progress', 409)
     for (const step of registered) await step.execute?.(context, sql)
     const keys = await softDelete(sql, workspaceId, fresh.user.id, options.clientIp ?? null)
     return saveCleanup(sql, keys, options.kv)
@@ -211,6 +221,15 @@ export async function deleteAccount(options: Options) {
     const personal = await sql<
       { id: string }[]
     >`select o.id from organization o join member m on m.organization_id=o.id where m.user_id=${current.id} and o.is_personal and o.deleted_at is null`
+    if (
+      (
+        await transferringWorkspaces(
+          tag(sql),
+          personal.map((w) => w.id),
+        )
+      ).length
+    )
+      fail('WORKSPACE_TRANSFERRING', 'Workspace data transfer in progress', 409)
     const cacheKeys: string[] = [`active-sessions-${current.id}`]
     for (const workspace of personal)
       cacheKeys.push(...(await softDelete(sql, workspace.id, current.id, options.clientIp ?? null)))

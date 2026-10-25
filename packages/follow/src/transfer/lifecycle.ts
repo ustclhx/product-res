@@ -10,7 +10,7 @@ import { lockTransferWorkspaces } from './access.ts'
 import { countActions } from './batch.ts'
 import { rows, type TransferSelection, type Tx, transferError, xactLock } from './common.ts'
 import { col, ident, keyOf, type TableMeta, tableMeta } from './meta.ts'
-import { loadTransfer } from './plan.ts'
+import { loadTransfer, transition } from './plan.ts'
 import { FLOWING_TRANSFER_TABLES } from './registry.ts'
 
 /**
@@ -18,7 +18,7 @@ import { FLOWING_TRANSFER_TABLES } from './registry.ts'
  *
  * 补偿按批次逆序、每批一个事务撤销：
  * 1. 父先子后：被合并删除的源行从 `source_row.row` 重新插入（eBay 账号删除已清空的快照跳过）；
- * 2. moved / renamed：有快照的逐列恢复（含空间与被改写的引用、原名），无快照的改回源空间；
+ * 2. moved / renamed / updated：有快照的逐列恢复（含空间与被改写的引用、原名），无快照的改回源空间；
  * 3. 子先父后：删除 copied 的目标行，被合并修改的目标行从 `source_row.target` 恢复。
  * 升级失败补偿完成后按现有流程软删新建的团队空间（只有发起人一个成员）。
  */
@@ -59,8 +59,9 @@ export async function finalizeTransfer(db: Database, transferId: string): Promis
     await lockTransferWorkspaces(tx, [head.sourceWorkspaceId, head.targetWorkspaceId], {
       sellerData: false,
     })
-    const transfer = await loadTransfer(tx, transferId)
-    if (transfer.status === 'completed') return { status: 'completed' as const, sessionTokens: [] }
+    const transfer = await loadTransfer(tx, transferId, { forUpdate: true })
+    if (transfer.status === 'completed')
+      return { status: 'completed' as const, sessionTokens: transfer.sessionTokens }
     if (transfer.status !== 'running')
       throw transferError('TRANSFER_STATE', `流转状态为 ${transfer.status}，不能完成`, 409)
     const [pending] = await rows(
@@ -84,14 +85,12 @@ export async function finalizeTransfer(db: Database, transferId: string): Promis
         )
       ).map((r) => r.token)
     }
-    await tx
-      .update(workspaceTransfer)
-      .set({
-        status: 'completed',
-        finishedAt: new Date(),
-        counts: await countActions(tx, transfer.id),
-      })
-      .where(eq(workspaceTransfer.id, transfer.id))
+    await transition(tx, transfer.id, ['running'], {
+      status: 'completed',
+      finishedAt: new Date(),
+      counts: await countActions(tx, transfer.id),
+      sessionTokens,
+    })
     return { status: 'completed' as const, sessionTokens }
   })
 }
@@ -138,7 +137,7 @@ export async function compensateBatch(
     await lockTransferWorkspaces(tx, [head.sourceWorkspaceId, head.targetWorkspaceId], {
       sellerData: true,
     })
-    const transfer = await loadTransfer(tx, transferId)
+    const transfer = await loadTransfer(tx, transferId, { forUpdate: true })
     if (transfer.status !== 'compensating')
       throw transferError('TRANSFER_STATE', `流转状态为 ${transfer.status}，不能补偿`, 409)
     const [batch] = await tx
@@ -153,6 +152,16 @@ export async function compensateBatch(
       .for('update')
     if (!batch) throw transferError('TRANSFER_BATCH_NOT_FOUND', '批次不存在', 404)
     if (batch.status !== 'done') return 'skipped' as const
+    // 只能按批次逆序撤销：先撤销父批次会级联删掉仍挂在后续批次中的行（如复制的供应商 → 报价）
+    const [later] = await rows<{ batch_key: string }>(
+      tx,
+      sql`select batch_key from workspace_transfer_batch
+        where transfer_id = ${transfer.id} and seq > ${batch.seq} and status = 'done' limit 1`,
+    )
+    if (later)
+      throw transferError('TRANSFER_COMPENSATION_ORDER', '须先撤销后续批次', 409, {
+        pending: later.batch_key,
+      })
     await undoBatch(tx, transfer, batchKey)
     await tx
       .update(workspaceTransferBatch)
@@ -187,7 +196,7 @@ async function undoBatch(tx: Tx, transfer: WorkspaceTransfer, batchKey: string) 
     await tx.execute(sql`update ${entryOf('t', meta)} set ${restoreColumns(meta)}
       from workspace_transfer_id_map m
       cross join lateral jsonb_populate_record(null::${ident(meta.name)}, m.source_row->'row') r
-      where ${inBatch(meta, "'moved','renamed'")} and m.source_row ? 'row'
+      where ${inBatch(meta, "'moved','renamed','updated'")} and m.source_row ? 'row'
         and ${keyOf(meta, 't')} = m.source_id`)
     await tx.execute(sql`update ${entryOf('t', meta)}
       set ${ident(meta.ws)} = ${transfer.sourceWorkspaceId}
@@ -224,12 +233,15 @@ export async function completeCompensation(
 ): Promise<CompensationResult> {
   return db.transaction(async (tx) => {
     const head = await loadTransfer(tx, transferId)
-    if (head.status === 'compensated') return { status: 'compensated' as const, sessionTokens: [] }
+    if (head.status === 'compensated')
+      return { status: 'compensated' as const, sessionTokens: head.sessionTokens }
     if (head.kind === 'upgrade') await xactLock(tx, `owner:${head.requestedBy}`)
     await lockTransferWorkspaces(tx, [head.sourceWorkspaceId, head.targetWorkspaceId], {
       sellerData: false,
     })
-    const transfer = await loadTransfer(tx, transferId)
+    const transfer = await loadTransfer(tx, transferId, { forUpdate: true })
+    if (transfer.status === 'compensated')
+      return { status: 'compensated' as const, sessionTokens: transfer.sessionTokens }
     if (transfer.status !== 'compensating')
       throw transferError('TRANSFER_STATE', `流转状态为 ${transfer.status}，不能完成补偿`, 409)
     const [left] = await rows(
@@ -252,10 +264,11 @@ export async function completeCompensation(
           null,
         )
     }
-    await tx
-      .update(workspaceTransfer)
-      .set({ status: 'compensated', finishedAt: new Date() })
-      .where(eq(workspaceTransfer.id, transfer.id))
+    await transition(tx, transfer.id, ['compensating'], {
+      status: 'compensated',
+      finishedAt: new Date(),
+      sessionTokens,
+    })
     return { status: 'compensated' as const, sessionTokens }
   })
 }
@@ -266,18 +279,21 @@ export async function compensateTransfer(
   transferId: string,
   errorCode: string,
 ): Promise<CompensationResult> {
-  const status = await beginCompensation(db, transferId, errorCode)
-  if (status === 'compensated') return { status, sessionTokens: [] }
-  const batches = await db
-    .select({ key: workspaceTransferBatch.batchKey })
-    .from(workspaceTransferBatch)
-    .where(
-      and(
-        eq(workspaceTransferBatch.transferId, transferId),
-        eq(workspaceTransferBatch.status, 'done'),
-      ),
-    )
-    .orderBy(desc(workspaceTransferBatch.seq))
-  for (const batch of batches) await compensateBatch(db, transferId, batch.key)
+  await beginCompensation(db, transferId, errorCode)
+  // 循环到没有 done 批次：进入补偿前已开始的批次可能在第一次列出之后才提交
+  for (;;) {
+    const batches = await db
+      .select({ key: workspaceTransferBatch.batchKey })
+      .from(workspaceTransferBatch)
+      .where(
+        and(
+          eq(workspaceTransferBatch.transferId, transferId),
+          eq(workspaceTransferBatch.status, 'done'),
+        ),
+      )
+      .orderBy(desc(workspaceTransferBatch.seq))
+    if (batches.length === 0) break
+    for (const batch of batches) await compensateBatch(db, transferId, batch.key)
+  }
   return completeCompensation(db, transferId)
 }

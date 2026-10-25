@@ -2,7 +2,6 @@ import {
   type Database,
   type WorkspaceTransfer,
   type WorkspaceTransferCounts,
-  workspaceTransfer,
   workspaceTransferBatch,
 } from '@product-res/db'
 import { newId } from '@product-res/shared'
@@ -19,8 +18,13 @@ import {
   uuidList,
 } from './common.ts'
 import { batchFamily, col, ident, keyOf, type TableMeta, tableMeta } from './meta.ts'
-import { loadTransfer, type TransferConflictDecision, type TransferPlan } from './plan.ts'
-import { transferTablesInBatch } from './registry.ts'
+import {
+  loadTransfer,
+  type TransferConflictDecision,
+  type TransferPlan,
+  transition,
+} from './plan.ts'
+import { FLOWING_TRANSFER_TABLES, transferTablesInBatch } from './registry.ts'
 import type { TransferReference } from './types.ts'
 
 /**
@@ -74,6 +78,10 @@ export async function runBatch(
     await lockTransferWorkspaces(tx, [head.sourceWorkspaceId, head.targetWorkspaceId], {
       sellerData: touchesSellerData(batchKey),
     })
+    // 先锁流转行再锁批次行（与补偿相同顺序）；进入补偿后不再执行任何批次
+    const transfer = await loadTransfer(tx, transferId, { forUpdate: true })
+    if (transfer.status !== 'running')
+      throw transferError('TRANSFER_STATE', `流转状态为 ${transfer.status}，不能执行批次`, 409)
     const [batch] = await tx
       .select()
       .from(workspaceTransferBatch)
@@ -87,9 +95,6 @@ export async function runBatch(
     if (!batch) throw transferError('TRANSFER_BATCH_NOT_FOUND', '批次不存在', 404)
     if (batch.status !== 'pending')
       return { batchKey, status: 'skipped' as const, counts: batch.counts }
-    const transfer = await loadTransfer(tx, transferId)
-    if (transfer.status !== 'running')
-      throw transferError('TRANSFER_STATE', `流转状态为 ${transfer.status}，不能执行批次`, 409)
     await assertTransferAccess(
       tx,
       {
@@ -125,10 +130,7 @@ export async function runBatch(
       .update(workspaceTransferBatch)
       .set({ status: 'done', counts })
       .where(eq(workspaceTransferBatch.id, batch.id))
-    await tx
-      .update(workspaceTransfer)
-      .set({ counts: await countActions(tx, transfer.id) })
-      .where(eq(workspaceTransfer.id, transfer.id))
+    await transition(tx, transfer.id, ['running'], { counts: await countActions(tx, transfer.id) })
     return { batchKey, status: 'done' as const, counts }
   })
 }
@@ -160,7 +162,7 @@ async function setAction(
   ctx: Context,
   meta: TableMeta,
   sourceId: string,
-  action: 'moved' | 'copied' | 'merged' | 'skipped' | 'renamed',
+  action: 'moved' | 'copied' | 'merged' | 'skipped' | 'renamed' | 'updated',
   targetId: string | null,
   snapshot?: SourceRowSnapshot,
 ) {
@@ -311,6 +313,7 @@ async function upgradeBatch(ctx: Context) {
 
 async function moveBatch(ctx: Context) {
   const family = batchFamily(ctx.batchKey)
+  if (family === 'direction') await planLateDirectionSellers(ctx)
   for (const entry of transferTablesInBatch(family)) {
     const meta = tableMeta(entry.name)
     if ((await plannedIds(ctx, meta)).length === 0) continue
@@ -319,6 +322,7 @@ async function moveBatch(ctx: Context) {
     else if (meta.name === 'direction') await moveDirections(ctx, meta)
     else {
       if (meta.name === 'direction_seller') await dedupeDirectionSellers(ctx, meta)
+      if (meta.name === 'risk_finding') await collapseRefCollisions(ctx, meta)
       if (meta.name === 'tracked_store' || meta.name === 'tracked_product')
         await mergeTracked(ctx, meta)
       const renamed = meta.name === 'category_study' ? await applyRenames(ctx, meta) : []
@@ -326,8 +330,95 @@ async function moveBatch(ctx: Context) {
       for (const id of renamed) await setAction(ctx, meta, id, 'renamed', id)
     }
   }
-  // 合并后的源行在子行改指目标后删除（子先父后）
-  for (const { meta, id } of [...ctx.deferred].reverse()) await deleteRow(ctx, meta, id)
+  // 合并后的源行在子行改指目标后删除（子先父后）；删除会级联的、不在清单中的子行先存快照
+  for (const { meta, id } of [...ctx.deferred].reverse()) {
+    await snapshotCascadeChildren(ctx, meta, id)
+    await deleteRow(ctx, meta, id)
+  }
+}
+
+/**
+ * 计划之后才加入根方向的对标店铺（如推荐任务写入）同样随方向流转，避免方向合并删除源方向时被级联删除。
+ */
+async function planLateDirectionSellers(ctx: Context) {
+  const roots = ctx.selection.roots?.direction ?? []
+  if (roots.length === 0) return
+  await ctx.tx.execute(sql`insert into workspace_transfer_id_map
+      (transfer_id, table_name, source_id, action, batch_key, updated_at)
+    select ${ctx.transfer.id}, 'direction_seller', s.id::text, 'planned', ${ctx.batchKey}, now()
+    from direction_seller s
+    where s.workspace_id = ${ctx.transfer.sourceWorkspaceId} and s.direction_id = any(${uuidList(roots)})
+      and s.direction_id::text in (select source_id from workspace_transfer_id_map
+        where transfer_id = ${ctx.transfer.id} and table_name = 'direction'
+          and batch_key = ${ctx.batchKey} and action = 'planned')
+    on conflict do nothing`)
+}
+
+/**
+ * 删除合并源行前，把经外键引用它、但不在清单中的子行（如派生的 readiness_stat）快照为
+ * merged（target 为空）；删除级联掉这些行，补偿时与源行一起按父先子后重新插入。
+ */
+async function snapshotCascadeChildren(ctx: Context, parent: TableMeta, id: string) {
+  for (const entry of FLOWING_TRANSFER_TABLES) {
+    for (const ref of entry.references) {
+      if (ref.kind !== 'fk' || !ref.targets.includes(parent.name)) continue
+      const child = tableMeta(entry.name)
+      await ctx.tx.execute(sql`insert into workspace_transfer_id_map
+          (transfer_id, table_name, source_id, action, batch_key, source_row, updated_at)
+        select ${ctx.transfer.id}, ${child.name}, ${keyOf(child, 'c')}, 'merged', ${ctx.batchKey},
+          jsonb_build_object('row', to_jsonb(c)), now()
+        from ${ident(child.name)} c where ${col('c', ref.column.name)} = ${id}
+        on conflict do nothing`)
+    }
+  }
+}
+
+/**
+ * risk_finding.ref 改写后可能撞 (cluster_id, kind, ref) 唯一键：源空间两条自然键相同的风险规则
+ * 合并到目标同一条规则。同组只保留第一条（按 id），其余记为 merged 并保存快照后删除，补偿时恢复。
+ */
+async function collapseRefCollisions(ctx: Context, meta: TableMeta) {
+  const ref = meta.entry.references.find((r) => r.kind === 'text-ref')
+  if (!ref) return
+  const dups = await rows<{ id: string; keep: string; r: Record<string, unknown> }>(
+    ctx.tx,
+    sql`select z.id, z.keep, z.r from (
+        select t.id::text as id, to_jsonb(t) as r,
+          first_value(t.id::text) over (
+            partition by t.cluster_id, t.kind, ${rewritten(ctx, ref)} order by t.id) as keep
+        from risk_finding t, workspace_transfer_id_map m
+        where ${plannedIn(ctx, meta)} and t.id::text = m.source_id
+          and t.workspace_id = ${ctx.transfer.sourceWorkspaceId}) z
+      where z.id <> z.keep`,
+  )
+  for (const d of dups) {
+    await setAction(ctx, meta, d.id, 'merged', d.keep, { row: d.r })
+    await deleteRow(ctx, meta, d.id)
+  }
+}
+
+/**
+ * 移走根方向后，源空间中未流转的店铺 direction_ids 去掉这些方向（跨表引用只在同一空间内成立）；
+ * 原行快照记为 updated（target 为空，不参与引用映射），补偿逐列恢复。
+ */
+async function detachSourceStores(ctx: Context, directionIds: readonly string[]) {
+  if (directionIds.length === 0) return
+  const ids = uuidList(directionIds)
+  const src = ctx.transfer.sourceWorkspaceId
+  await ctx.tx.execute(sql`insert into workspace_transfer_id_map
+      (transfer_id, table_name, source_id, action, batch_key, source_row, updated_at)
+    select ${ctx.transfer.id}, 'tracked_store', s.id::text, 'updated', ${ctx.batchKey},
+      jsonb_build_object('row', to_jsonb(s)), now()
+    from tracked_store s
+    where s.workspace_id = ${src} and s.direction_ids && ${ids}
+    on conflict do nothing`)
+  await ctx.tx.execute(sql`update tracked_store s
+    set direction_ids = array(select u.x from unnest(s.direction_ids) with ordinality as u(x, i)
+      where not u.x = any(${ids}) order by u.i)
+    where s.workspace_id = ${src} and s.direction_ids && ${ids}
+      and exists (select 1 from workspace_transfer_id_map m
+        where m.transfer_id = ${ctx.transfer.id} and m.table_name = 'tracked_store'
+          and m.source_id = s.id::text and m.action = 'updated')`)
 }
 
 /** 重命名决定：先存快照再改名，随后与其他行一起原地移动 */
@@ -499,6 +590,16 @@ async function moveDirections(ctx: Context, meta: TableMeta) {
   if (renamed.length) await applyRenames(ctx, meta)
   await bulkMove(ctx, meta, true)
   for (const id of renamed) await setAction(ctx, meta, id, 'renamed', id)
+  const gone = await rows<{ source_id: string }>(
+    ctx.tx,
+    sql`select source_id from workspace_transfer_id_map
+      where transfer_id = ${ctx.transfer.id} and table_name = 'direction'
+        and batch_key = ${ctx.batchKey} and action in ('moved', 'renamed', 'merged')`,
+  )
+  await detachSourceStores(
+    ctx,
+    gone.map((g) => g.source_id).filter((id) => roots.has(id)),
+  )
 }
 
 /** 方向合并时对标店铺按 (marketplace, seller_platform_id) 去重：目标已有的保留目标（含 rejected） */

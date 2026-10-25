@@ -62,6 +62,24 @@ export async function admitTeamWorkspace(
 }
 
 /**
+ * 空间是否处于进行中的数据流转（add-workspace-data-transfer D8：pending / running / compensating）。
+ * 删除流程在 ws: 锁内调用：流转批次与补偿同样持有 ws: 锁，软删会让流转半途失效且无法补偿。
+ */
+export async function transferringWorkspaces(
+  sql: AdmissionSql,
+  workspaceIds: readonly string[],
+): Promise<string[]> {
+  const found: string[] = []
+  for (const id of workspaceIds) {
+    const [active] = await sql`select id from workspace_transfer
+      where status in ('pending','running','compensating')
+        and (source_workspace_id=${id} or target_workspace_id=${id}) limit 1`
+    if (active) found.push(id)
+  }
+  return found
+}
+
+/**
  * 软删空间：作废邀请与邀请链接、禁用空间 API Key、清空指向该空间的活跃会话、移除成员并写审计。
  * 调用方须持有 owner 锁与 `ws:` 锁。返回需要在事务提交后失效的会话 token。
  */
