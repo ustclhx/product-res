@@ -45,6 +45,11 @@ export interface TemplateConfig<L extends string = string> {
     /** false = 仅个人空间；true = 允许团队 workspace */
     readonly multiTenant: boolean
     readonly maxWorkspacesPerUser: number
+    /**
+     * 跨空间数据流转（个人空间升级、复制 / 移动，openspec/changes/add-workspace-data-transfer）。
+     * 依赖团队空间，multiTenant=false 时解析结果强制为 false。
+     */
+    readonly dataTransfer: boolean
   }
   readonly auth: {
     readonly emailPassword: boolean
@@ -149,7 +154,7 @@ export interface TemplateConfigInput<L extends string = DefaultLocale> {
 /** 除 `app` 外的默认值，与 docs/02-project-structure.md §3 草案一致。 */
 export const templateConfigDefaults = {
   i18n: { enabled: true, locales: ['en', 'zh'], defaultLocale: 'en' },
-  tenancy: { multiTenant: false, maxWorkspacesPerUser: 5 },
+  tenancy: { multiTenant: false, maxWorkspacesPerUser: 5, dataTransfer: false },
   auth: {
     emailPassword: true,
     requireEmailVerification: false,
@@ -194,6 +199,12 @@ export const templateConfigDefaults = {
   analytics: { cloudflareToken: '', posthogKey: '', posthogHost: 'https://us.i.posthog.com' },
 } as const satisfies Omit<TemplateConfig<DefaultLocale>, 'app'>
 
+// 流转只发生在个人空间与团队空间之间，没有团队空间时开关无意义，静默关闭而不是报错，
+// 便于只切换 multiTenant 就能整体回退。
+function resolveTenancy(tenancy: Section<'tenancy'>): Section<'tenancy'> {
+  return { ...tenancy, dataTransfer: tenancy.multiTenant && tenancy.dataTransfer }
+}
+
 /** 合并用户配置与默认值；数组整体替换，不与默认值合并。 */
 export function defineTemplateConfig<const L extends string = DefaultLocale>(
   input: TemplateConfigInput<L>,
@@ -212,7 +223,7 @@ export function defineTemplateConfig<const L extends string = DefaultLocale>(
   const config: TemplateConfig<L> = {
     app: { ...input.app },
     i18n: { enabled: input.i18n?.enabled ?? d.i18n.enabled, locales, defaultLocale },
-    tenancy: { ...d.tenancy, ...input.tenancy },
+    tenancy: resolveTenancy({ ...d.tenancy, ...input.tenancy }),
     auth: { ...d.auth, ...input.auth },
     billing: {
       ...d.billing,

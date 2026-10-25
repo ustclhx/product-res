@@ -15,6 +15,7 @@ export default defineTemplateConfig({
   tenancy: {
     multiTenant: true, // false = 仅个人空间；true = 允许团队 workspace（内测开启，add-team-invite-links）
     maxWorkspacesPerUser: 5,
+    dataTransfer: false, // 跨空间数据流转（升级 / 复制 / 移动）；正式产品阶段再开启，multiTenant=false 时强制关闭
   },
   auth: {
     emailPassword: true,

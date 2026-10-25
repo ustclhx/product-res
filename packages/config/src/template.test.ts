@@ -32,6 +32,20 @@ describe('defineTemplateConfig', () => {
     })
   })
 
+  it('forces dataTransfer off when multiTenant is disabled', () => {
+    expect(defineTemplateConfig({ app }).tenancy.dataTransfer).toBe(false)
+    expect(
+      defineTemplateConfig({ app, tenancy: { multiTenant: false, dataTransfer: true } }).tenancy,
+    ).toEqual({ multiTenant: false, maxWorkspacesPerUser: 5, dataTransfer: false })
+    expect(
+      defineTemplateConfig({ app, tenancy: { multiTenant: true, dataTransfer: true } }).tenancy
+        .dataTransfer,
+    ).toBe(true)
+    expect(defineTemplateConfig({ app, tenancy: { multiTenant: true } }).tenancy.dataTransfer).toBe(
+      false,
+    )
+  })
+
   it('merges nested sections field by field', () => {
     const config = defineTemplateConfig({
       app,
