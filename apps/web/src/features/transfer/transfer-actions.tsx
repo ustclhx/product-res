@@ -6,6 +6,8 @@ import { m } from '../../paraglide/messages.js'
 import { workbenchErrorText } from '../workbench/errors.ts'
 import { controlClass, ErrorText, Field } from '../workbench/fields.tsx'
 import type { TransferAvailability } from './availability.ts'
+import { tableLabel, transferActionError } from './labels.ts'
+import { Modal } from './modal.tsx'
 import {
   getTransferPreview,
   getTransferTargets,
@@ -29,12 +31,12 @@ export type TransferRootKind =
 export type TransferKind = 'copy' | 'move'
 type Strategy = 'rename' | 'merge'
 
-/**
- * 发起后跳转的流转进度页。记录页与详情路由由 W4a（tasks 6.3）在 /app/$slug/settings 下实现；
- * 合并时由协调者把这里对齐到详情路径（参数 transferId 已就绪）。
- */
-export function transferRecordTarget(slug: string, _transferId: string) {
-  return { to: '/app/$slug/settings' as const, params: { slug } }
+/** 发起后跳转的流转进度页（tasks 6.3 的数据流转记录详情） */
+export function transferRecordTarget(slug: string, transferId: string) {
+  return {
+    to: '/app/$slug/settings/transfers/$transferId' as const,
+    params: { slug, transferId },
+  }
 }
 
 /** 列表的多选状态：列表刷新后丢弃已不存在的 id */
@@ -145,35 +147,6 @@ export function TransferBar({
   )
 }
 
-const TABLE_LABELS: Record<string, () => string> = {
-  direction: m.transfer_actions_table_direction,
-  direction_seller: m.transfer_actions_table_direction_seller,
-  seasonal_node: m.transfer_actions_table_seasonal_node,
-  brand_entry: m.transfer_actions_table_brand_entry,
-  risk_rule: m.transfer_actions_table_risk_rule,
-  cluster: m.transfer_actions_table_cluster,
-  cluster_member: m.transfer_actions_table_cluster_member,
-  cluster_signal: m.transfer_actions_table_cluster_signal,
-  lead: m.transfer_actions_table_lead,
-  lead_event: m.transfer_actions_table_lead_event,
-  risk_finding: m.transfer_actions_table_risk_finding,
-  tracked_store: m.transfer_actions_table_tracked_store,
-  tracked_product: m.transfer_actions_table_tracked_product,
-  supplier: m.transfer_actions_table_supplier,
-  supplier_quote: m.transfer_actions_table_supplier_quote,
-  logistics_profile: m.transfer_actions_table_logistics_profile,
-  cost_param: m.transfer_actions_table_cost_param,
-  costing_scenario: m.transfer_actions_table_costing_scenario,
-  decision: m.transfer_actions_table_decision,
-  follow_outcome: m.transfer_actions_table_follow_outcome,
-  category_study: m.transfer_actions_table_category_study,
-  category_study_snapshot: m.transfer_actions_table_category_study_snapshot,
-  recommendation: m.transfer_actions_table_recommendation,
-  recommendation_label: m.transfer_actions_table_recommendation_label,
-}
-
-export const tableLabel = (table: string) => TABLE_LABELS[table]?.() ?? table
-
 /** 同名方向的冲突策略只在流转会带上方向时有意义（方向根，或以档案为根时方向随线索复制） */
 export const rootCarriesDirections = (root: TransferRootKind) =>
   root === 'direction' || root === 'decision'
@@ -196,6 +169,18 @@ export function selectionFor(root: TransferRootKind, ids: readonly string[], str
   }
 }
 
+/** 流转错误码按 labels.ts 选文案（与升级、记录页同一套）；流转锁沿用工作台文案 */
+function errorText(error: unknown, fallback: string) {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    error.code === 'WORKSPACE_TRANSFERRING'
+  )
+    return workbenchErrorText(error)
+  return transferActionError(error, fallback)
+}
+
 function newIdempotencyKey() {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
@@ -216,7 +201,7 @@ export function TransferDialog({
   onClose: () => void
 }) {
   const navigate = useNavigate()
-  const titleId = useId()
+  const strategyName = useId()
   // 打开对话框时生成幂等键：重复提交（双击、网络重试）返回同一流转
   const [idempotencyKey] = useState(newIdempotencyKey)
   const [targets, setTargets] = useState<TransferTarget[] | null>(null)
@@ -238,7 +223,7 @@ export function TransferDialog({
       .catch((e: unknown) => {
         if (!live) return
         setTargets([])
-        setError(e instanceof Error && e.message ? e.message : m.transfer_actions_error_targets())
+        setError(errorText(e, m.transfer_actions_error_targets()))
       })
     return () => {
       live = false
@@ -259,7 +244,7 @@ export function TransferDialog({
       })
       setPreview({ key: previewKey, value })
     } catch (e) {
-      setError(workbenchErrorText(e))
+      setError(errorText(e, workbenchErrorText(e)))
     } finally {
       setBusy(null)
     }
@@ -277,35 +262,59 @@ export function TransferDialog({
       setStarted(true)
       await navigate(transferRecordTarget(slug, result.transferId))
     } catch (e) {
-      setError(workbenchErrorText(e))
+      setError(errorText(e, workbenchErrorText(e)))
       setBusy(null)
     }
   }
 
   const count = String(ids.length)
-  return (
-    <div className="fixed inset-0 z-40 grid place-items-center overflow-y-auto bg-black/30 p-4">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        data-testid="transfer-dialog"
-        onKeyDown={(e) => e.key === 'Escape' && busy !== 'submit' && onClose()}
-        className="grid max-h-[90vh] w-full max-w-xl gap-3 overflow-y-auto rounded-xl border bg-card p-5 text-[13px] shadow-lg"
+  const footer = (
+    <>
+      <Button size="sm" variant="ghost" onClick={onClose} disabled={busy === 'submit'}>
+        {m.transfer_actions_cancel()}
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={!targetId || busy !== null}
+        onClick={() => void runPreview()}
       >
-        <div className="grid gap-1">
-          <h2 id={titleId} className="text-sm font-semibold">
-            {kind === 'copy'
-              ? m.transfer_actions_dialog_copy_title()
-              : m.transfer_actions_dialog_move_title()}
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            {kind === 'copy'
-              ? m.transfer_actions_dialog_copy_intro({ count })
-              : m.transfer_actions_dialog_move_intro({ count })}
-          </p>
-        </div>
-
+        {busy === 'preview' ? m.transfer_actions_previewing() : m.transfer_actions_preview()}
+      </Button>
+      <Button
+        size="sm"
+        variant={kind === 'move' ? 'destructive' : 'default'}
+        disabled={!current || current.tooLarge || busy !== null || started}
+        onClick={() => void submit()}
+      >
+        {busy === 'submit'
+          ? m.transfer_actions_submitting()
+          : kind === 'copy'
+            ? m.transfer_actions_confirm_copy()
+            : m.transfer_actions_confirm_move()}
+      </Button>
+    </>
+  )
+  return (
+    <Modal
+      open
+      className="max-w-xl"
+      title={
+        kind === 'copy'
+          ? m.transfer_actions_dialog_copy_title()
+          : m.transfer_actions_dialog_move_title()
+      }
+      onClose={() => {
+        if (busy !== 'submit') onClose()
+      }}
+      footer={footer}
+    >
+      <div className="grid min-w-0 gap-3" data-testid="transfer-dialog">
+        <p className="text-xs text-muted-foreground">
+          {kind === 'copy'
+            ? m.transfer_actions_dialog_copy_intro({ count })
+            : m.transfer_actions_dialog_move_intro({ count })}
+        </p>
         {targets === null ? (
           <p className="text-xs text-muted-foreground">{m.transfer_actions_targets_loading()}</p>
         ) : targets.length === 0 ? (
@@ -342,7 +351,7 @@ export function TransferDialog({
               <label key={value} className="flex items-start gap-2 text-xs">
                 <input
                   type="radio"
-                  name={`${titleId}-strategy`}
+                  name={`${strategyName}-strategy`}
                   className="mt-0.5 accent-primary"
                   checked={strategy === value}
                   onChange={() => setStrategy(value)}
@@ -370,34 +379,8 @@ export function TransferDialog({
             {m.transfer_actions_started()}
           </p>
         ) : null}
-
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button size="sm" variant="ghost" onClick={onClose} disabled={busy === 'submit'}>
-            {m.transfer_actions_cancel()}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={!targetId || busy !== null}
-            onClick={() => void runPreview()}
-          >
-            {busy === 'preview' ? m.transfer_actions_previewing() : m.transfer_actions_preview()}
-          </Button>
-          <Button
-            size="sm"
-            variant={kind === 'move' ? 'destructive' : 'default'}
-            disabled={!current || current.tooLarge || busy !== null || started}
-            onClick={() => void submit()}
-          >
-            {busy === 'submit'
-              ? m.transfer_actions_submitting()
-              : kind === 'copy'
-                ? m.transfer_actions_confirm_copy()
-                : m.transfer_actions_confirm_move()}
-          </Button>
-        </div>
       </div>
-    </div>
+    </Modal>
   )
 }
 
