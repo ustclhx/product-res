@@ -1,5 +1,8 @@
 # product-res
 
+product-res 是基于本模板的 AI SaaS，生产域名为 [product.ezarouter.cc](https://product.ezarouter.cc)。
+目前处于内测阶段，由管理员发放积分开通使用。下文各节描述的是模板提供的能力。
+
 基于 TanStack Start、Postgres 与 Cloudflare 的 SaaS 模板：认证与空间、订阅与积分、AI 文本/图片/视频、
 后台管理和营销站点开箱即用，同一套业务代码可部署到 Cloudflare Workers，也可自托管为 Node/Docker Compose。
 架构与领域文档见 [文档目录](docs/README.md)。Node >=22，pnpm 版本以根 `package.json` 为准。
