@@ -137,6 +137,8 @@ pnpm dev        # web 默认 http://localhost:3000，jobs 默认 8788
 | `pnpm dev` | 本地启动 web 与 jobs |
 | `pnpm check` / `pnpm typecheck` / `pnpm test` | 代码规范、类型检查、测试 |
 | `pnpm check:deps` | 包依赖方向检查 |
+| `pnpm check:singletons` | 关键依赖唯一实例检查 |
 | `pnpm build` / `pnpm build:node` | Cloudflare 构建 / 自托管 Node 构建 |
 | `pnpm billing:seed` / `pnpm billing:sync` | 写入示例套餐 / 同步价格到支付平台 |
 | `pnpm create-project --help` | 新项目生成参数 |
+| `pnpm test:create-project` | 临时目录中的生成器边界测试 |
