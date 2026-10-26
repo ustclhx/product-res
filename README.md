@@ -1,5 +1,11 @@
 # product-res
 
+product-res 是跨境电商选品工作台（数据源接入、跟卖选品、品类洞察与成本核算），不绑定特定商户。
+项目由 saas-template 生成（自托管目标），生产域名为 [product.ezarouter.cc](https://product.ezarouter.cc)。
+目前处于内测阶段：新账号所在空间需由管理员在后台发放积分后才能使用工作台（平台管理员不受此限制）。
+下文各节沿用模板说明，描述的是模板的全部能力；本项目实际启用的功能以 [`template.config.ts`](template.config.ts) 为准。
+业务方案见 [选品工作台方案](docs/plan/selection-workbench.md)。
+
 基于 TanStack Start、Postgres 与 Cloudflare 的 SaaS 模板：认证与空间、订阅与积分、AI 文本/图片/视频、
 后台管理和营销站点开箱即用，同一套业务代码可部署到 Cloudflare Workers，也可自托管为 Node/Docker Compose。
 架构与领域文档见 [文档目录](docs/README.md)。Node >=22，pnpm 版本以根 `package.json` 为准。
