@@ -358,7 +358,7 @@ test('文件桶签名白名单与生成项目的桶名一致，备份桶名不�
   )
   assert.match(spec, /R2_FILES_BUCKET: 'acme-files-staging'/)
   assert.match(spec, /`\/acme-files-staging\/\$\{key\}`/)
-  assert.match(spec, /'product-res-production-backups'/)
+  assert.match(spec, /'acme-production-backups'/)
 })
 
 test('模板 production 环境改名、清空 ID 并替换自定义域名', async (t) => {
