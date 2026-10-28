@@ -1,6 +1,6 @@
-# 跨境电商选品工作台（Amazon + eBay）：流程与实施方案
+# 跨境电商选品工作台：流程与实施方案
 
-更新：2026-10-18。状态：方案已讨论确认，OpenSpec change 已起草（见第 17 节），尚未开始实施。
+更新：2026-10-28。状态：按 OpenSpec 目录及 tasks.md 核对，已实施、未归档（任务全部勾选）：`add-data-source-hub`、`add-costing-decisions`、`add-beta-access-gate`、`add-stream-heartbeat`、`add-team-invite-links`；已实施并归档：`add-workspace-data-transfer`（18/18，归档于 `openspec/changes/archive/2026-10-26-add-workspace-data-transfer/`）；仍在进行（已勾选/总任务数）：`bootstrap-selection-workbench`（7/10）、`add-source-connectors`（4/19）、`add-follow-selection`（11/12）、`add-category-insight`（7/8）、`add-shadow-validation`（8/9）、`add-accuracy-store-tracking`（12/15）、`add-ebay-account-deletion`（4/6）、`add-insight-background-analysis`（4/5）、`add-tunnel-ingress`（5/8）。未勾选的凭据核验、部署及真实数据验收等任务仍待完成。
 
 - 原选品工作流代码、文档和调研已冻结在 `frozen/selection-workflow-pilot` 分支；本文引用的 `app/`、`docs/pilot/`、`research/` 等路径均指该分支。
 - UI 设计稿：[工作台总览](../design/workbench-overview.html)、[数据中心](../design/data-center.html)。页面结构以本文第 12 节为准，视觉以设计稿为准。
