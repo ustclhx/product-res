@@ -19,6 +19,15 @@
 | [09-parallel-plan.md](./09-parallel-plan.md) | 用 Orca 并行开发：worktree 隔离、共享文件规则、并行波次与合并流程 |
 | [frontend-navigation.md](./frontend-navigation.md) | 前端导航延迟：工作空间页客户端缓存、悬停预加载与 TanStack Router 复用语义 |
 
+## 业务方案
+
+| 文档 | 内容 |
+|---|---|
+| [selection-workbench.md](./plan/selection-workbench.md) | 跨境电商选品工作台的业务流程、数据层、选品算法、成本核算与分期实施方案 |
+| [data-sources-design.md](./plan/data-sources-design.md) | 数据源接入、店铺追踪、数据可信度分级与校准，以及自有店铺回验设计 |
+| [blockers.md](./plan/blockers.md) | 需要人工介入或决策的部署、协作与数据源卡点，以及已实施的产品与算法默认值 |
+| [saas-template-selfhost-requirements.md](./plan/saas-template-selfhost-requirements.md) | saas-template 基于 Docker Compose 的自托管部署目标、功能需求与验收标准 |
+
 ## 本地配置入口
 
 支付配置使用根目录 [.env.example](../.env.example) / `.env.local`：前者提交占位符，后者填写真值且被 Git 忽略。Web、Jobs 和 billing seed/sync 共用五项支付变量名，配置步骤见 [支付联通 runbook](./runbooks/p2-payment-integration.md)。认证仍使用 `apps/web/.dev.vars.example` / app `.dev.vars`；Orca 数据库与端口使用生成的 `.env.worktree`。线上继续用 Cloudflare secrets，不自动上传本地文件。
