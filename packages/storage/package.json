@@ -14,9 +14,9 @@
     "test:node:s3": "vitest run --config vitest.node-s3.config.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "3.1149.0",
-    "@aws-sdk/lib-storage": "3.1149.0",
-    "@aws-sdk/s3-request-presigner": "3.1149.0",
+    "@aws-sdk/client-s3": "3.1161.0",
+    "@aws-sdk/lib-storage": "3.1161.0",
+    "@aws-sdk/s3-request-presigner": "3.1161.0",
     "@product-res/auth": "workspace:*",
     "@product-res/db": "workspace:*",
     "@product-res/entitlements": "workspace:*",
