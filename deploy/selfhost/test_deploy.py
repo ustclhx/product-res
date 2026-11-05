@@ -361,6 +361,42 @@ class DeployTest(unittest.TestCase):
             deploy.local(self.args)
         self.assertEqual(self.commands, [])
 
+    def test_successful_deploy_prunes_only_unrecorded_images_of_the_release_namespace(self):
+        ns = 'ghcr.io/acme/app'
+        self.releases[A]['images'] = {'web': f'{ns}/web@sha256:{"1" * 64}', 'jobs': f'{ns}/jobs@sha256:{"2" * 64}'}
+        self.releases[B]['images'] = {'web': f'{ns}/web@sha256:{"3" * 64}', 'jobs': f'{ns}/jobs@sha256:{"4" * 64}'}
+        ids = {f'{ns}/web@sha256:{"1" * 64}': 'sha256:a1', f'{ns}/jobs@sha256:{"2" * 64}': 'sha256:a2',
+               f'{ns}/web@sha256:{"3" * 64}': 'sha256:b1'}  # B 的 jobs 本机缺失也不影响
+        listing = '\n'.join([f'{ns}/web sha256:a1', f'{ns}/web sha256:old1', f'{ns}/jobs sha256:a2',
+                             f'{ns}/jobs sha256:old2', f'{ns}/web sha256:b1', 'other/app sha256:foreign',
+                             f'{ns}-fork/web sha256:fork', f'{ns}/web sha256:busy'])
+        removed = []
+        def fake_run(args, **_):
+            if args[:3] == ['docker', 'image', 'inspect'] and args[3] == '--format':
+                if args[5] not in ids:
+                    raise deploy.DeploymentError('missing')
+                return ids[args[5]] + '\n'
+            if args[:2] == ['docker', 'images']:
+                return listing + '\n'
+            if args[:3] == ['docker', 'image', 'rm']:
+                if args[3] == 'sha256:busy':
+                    raise deploy.DeploymentError('in use')
+                removed.append(args[3])
+                return ''
+            return json.dumps([{'Config': {'Labels': {'org.opencontainers.image.revision': B}}}])
+        with patch.object(deploy, 'run', side_effect=fake_run), patch('sys.stdout') as stdout:
+            deploy.local(self.args)
+        # 当前 B 与上一成功 A 的镜像全部保留；只删同 namespace 的旧镜像，不碰其他仓库或前缀相近的仓库。
+        self.assertEqual(removed, ['sha256:old1', 'sha256:old2'])
+        events = [json.loads(call.args[0]) for call in stdout.write.call_args_list if call.args[0].startswith('{')]
+        self.assertIn({'event': 'selfhost.deploy.images_pruned', 'removed': 2}, events)
+
+    def test_prune_failure_never_fails_a_completed_deployment(self):
+        with patch.object(deploy, 'prune_release_images', side_effect=deploy.DeploymentError('docker unavailable')), \
+                patch('sys.stderr'):
+            deploy.local(self.args)
+        self.assertEqual(json.loads(self.statefile.read_text())['successful']['sha'], B)
+
 
 if __name__ == '__main__':
     unittest.main()

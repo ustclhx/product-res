@@ -219,6 +219,35 @@ def import_bundle(directory, source, sha, fixture):
     return destination, release
 
 
+def prune_release_images(directory, state, env, fixture):
+    # 每次发布在主机留下一整组镜像（约 6GB）；只保留 state 记录的当前与上一成功版本，回滚目标不受影响。
+    # 尽力而为：清理失败不改变部署结果，不加 -f，仍被容器使用的镜像会被 Docker 拒绝而保留。
+    keep, namespaces = set(), set()
+    for record in [state.get('successful'), state.get('previous')]:
+        if not record:
+            continue
+        release = verify_bundle(directory / 'releases' / record['sha'], record['sha'], allow_fixture=fixture)
+        for reference in release['images'].values():
+            namespaces.add(reference.split('@', 1)[0].rsplit('/', 1)[0] + '/')
+            try:
+                keep.add(run(['docker', 'image', 'inspect', '--format', '{{.Id}}', reference], env=env).strip())
+            except DeploymentError:
+                pass
+    if not namespaces or not keep:
+        return 0
+    removed = 0
+    for line in run(['docker', 'images', '--no-trunc', '--format', '{{.Repository}} {{.ID}}'], env=env).splitlines():
+        repository, _, image = line.partition(' ')
+        if image and image not in keep and any(repository.startswith(prefix) for prefix in namespaces):
+            try:
+                run(['docker', 'image', 'rm', image], env=env, timeout=120)
+                keep.add(image)
+                removed += 1
+            except DeploymentError:
+                pass
+    return removed
+
+
 def local(args):
     raw_directory = Path(args.dir)
     directory = raw_directory.resolve()
@@ -315,6 +344,12 @@ def local(args):
         state['successful'] = plan
         atomic_json(state_file, state)
         print(json.dumps({'event': 'selfhost.deploy.completed', 'target': target}), flush=True)
+        try:
+            removed = prune_release_images(directory, state, compose.env, args.fixture)
+            print(json.dumps({'event': 'selfhost.deploy.images_pruned', 'removed': removed}), flush=True)
+        except (DeploymentError, OSError, ValueError, KeyError) as error:
+            reason = str(error) if isinstance(error, DeploymentError) else 'details withheld'
+            print(json.dumps({'event': 'selfhost.deploy.prune_skipped', 'reason': reason}), file=sys.stderr, flush=True)
 
 
 def remote(args):
