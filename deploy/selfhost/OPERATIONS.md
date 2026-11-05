@@ -31,7 +31,9 @@
    此路径与 object-storage 二选一，不启动本地存储，不要求其管理身份；可与 backup/replica
    组合，应用与备份身份保持独立。外部桶须事先私有化并配置 APP_URL origin 的 CORS，
    R2 使用 S3 API HTTPS endpoint 与 region=auto，详见仓库外部存储 runbook。
-6. release-state保留上一成功版本和最后迁移SHA。失败不自动回滚；兼容性审阅后执行
+6. release-state保留上一成功版本和最后迁移SHA。部署成功后自动删除本 release namespace 中
+   不属于当前与上一成功版本 image-set 的镜像（不加 -f，失败只记 `prune_skipped` 事件，不影响部署结果），
+   回滚目标始终可用。失败不自动回滚；兼容性审阅后执行
    `./deploy.sh --local --dir /srv/product-res-selfhost --rollback <previous-success-sha>`（SSH换成
    `--host <explicit-host>`）。最后迁移release必须显式声明目标兼容，包括schema、DBOS
    handler/checkpoint和长任务版本；应用回滚不会降低数据库schema或执行旧migration。
