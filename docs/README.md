@@ -17,7 +17,83 @@
 | [07-infrastructure.md](./07-infrastructure.md) | 自建 Postgres、Hyperdrive + Tunnel、备份、环境、部署、CI |
 | [08-roadmap.md](./08-roadmap.md) | 分阶段开发计划与验收标准、待决事项 |
 | [09-parallel-plan.md](./09-parallel-plan.md) | 用 Orca 并行开发：worktree 隔离、共享文件规则、并行波次与合并流程 |
+| [README.md](./README.md) | product-res 技术设计文档 |
+| [create-project.md](./create-project.md) | 从模板创建项目 |
 | [frontend-navigation.md](./frontend-navigation.md) | 前端导航延迟：工作空间页客户端缓存、悬停预加载与 TanStack Router 复用语义 |
+| [node-jobs-extension.md](./node-jobs-extension.md) | Node jobs 注册与扩展 |
+| [plan/blockers.md](./plan/blockers.md) | 待审阅卡点（需要人工介入或决策） |
+| [plan/data-sources-design.md](./plan/data-sources-design.md) | 数据源接入设计（讨论稿） |
+| [plan/saas-template-selfhost-requirements.md](./plan/saas-template-selfhost-requirements.md) | saas-template 自托管部署模板需求（Docker Compose） |
+| [plan/selection-workbench.md](./plan/selection-workbench.md) | 跨境电商选品工作台：流程与实施方案 |
+| [platform-capabilities.md](./platform-capabilities.md) | 平台能力与 A/B 接口交接 |
+| [platform-node-adapters.md](./platform-node-adapters.md) | Node 基础平台适配器（A 3.1–3.3） |
+| [receipts/aisa-dataforseo-2026-10-20.md](./receipts/aisa-dataforseo-2026-10-20.md) | AIsa → DataForSEO Amazon 核验回执（2026-10-20） |
+| [receipts/ebay-browse-2026-10-23.md](./receipts/ebay-browse-2026-10-23.md) | eBay Browse 核验回执（2026-10-23） |
+| [receipts/fx-ecb-2026-10-18.md](./receipts/fx-ecb-2026-10-18.md) | 核验回执：汇率（欧洲央行） |
+| [receipts/m2-acceptance-2026-10-19.md](./receipts/m2-acceptance-2026-10-19.md) | 验收回执：M2 跟卖选品端到端（add-follow-selection 5.1） |
+| [receipts/m3-acceptance-2026-10-19.md](./receipts/m3-acceptance-2026-10-19.md) | M3 验收记录：add-costing-decisions 5.1（2026-10-19） |
+| [receipts/m4-acceptance-2026-10-19.md](./receipts/m4-acceptance-2026-10-19.md) | M4 验收记录：add-category-insight 4.1（2026-10-19） |
+| [receipts/m5-acceptance-2026-10-19.md](./receipts/m5-acceptance-2026-10-19.md) | 验收回执：M5 影子验证流转（add-shadow-validation 5.1） |
+| [runbooks/evidence/create-project/2026-10-12/resources.md](./runbooks/evidence/create-project/2026-10-12/resources.md) | product-res-smoke 6.1 临时资源清单 |
+| [runbooks/evidence/create-project/2026-10-12/ui-observations.md](./runbooks/evidence/create-project/2026-10-12/ui-observations.md) | 界面观察描述 |
+| [runbooks/evidence/marketing/lighthouse-2026-10-11.md](./runbooks/evidence/marketing/lighthouse-2026-10-11.md) | Lighthouse 验收（add-marketing-i18n-seo 5.2） |
+| [runbooks/evidence/p2-stripe/controlled-time-tests.md](./runbooks/evidence/p2-stripe/controlled-time-tests.md) | P2 Stripe：受控应用时间验证 |
+| [runbooks/evidence/production/release-2026-10-16.md](./runbooks/evidence/production/release-2026-10-16.md) | 生产首次发布与恢复演练证据（2026-10-16） |
+| [runbooks/evidence/selfhost/b-1.9-report.md](./runbooks/evidence/selfhost/b-1.9-report.md) | B 1.9：2 vCPU/4GiB 资源预算与选型复核 |
+| [runbooks/evidence/selfhost/b-6.1-report.md](./runbooks/evidence/selfhost/b-6.1-report.md) | B 6.1 本地 Docker 调度验收 |
+| [runbooks/evidence/selfhost/b-6.2-queues.md](./runbooks/evidence/selfhost/b-6.2-queues.md) | B 6.2 · 本地 Docker 队列验收（2026-10-14） |
+| [runbooks/evidence/selfhost/b-6.3-workflow.md](./runbooks/evidence/selfhost/b-6.3-workflow.md) | B 6.3 本地 Docker 长流水线验收 |
+| [runbooks/evidence/selfhost/b-accept.md](./runbooks/evidence/selfhost/b-accept.md) | B 6.1–6.3 本地 Docker 验收（2026-10-14） |
+| [runbooks/evidence/selfhost/d-bundle-2026-10-14/report.md](./runbooks/evidence/selfhost/d-bundle-2026-10-14/report.md) | D bundle 收尾与 registry 演练（2026-10-14） |
+| [runbooks/evidence/selfhost/d-bundle2-2026-10-14/report.md](./runbooks/evidence/selfhost/d-bundle2-2026-10-14/report.md) | D 1.4 第二次正式发布完整 bundle 验收（2026-10-14） |
+| [runbooks/evidence/selfhost/d-drill-2026-10-15/report.md](./runbooks/evidence/selfhost/d-drill-2026-10-15/report.md) | D 6.2 正式发布镜像的完整本地 PITR 演练 |
+| [runbooks/evidence/selfhost/d-vm-2026-10-15/report.md](./runbooks/evidence/selfhost/d-vm-2026-10-15/report.md) | D 临时 VM 与 B 生命周期验收（2026-10-15） |
+| [runbooks/evidence/selfhost/d-vm2-2026-10-15/report.md](./runbooks/evidence/selfhost/d-vm2-2026-10-15/report.md) | D 正式 flock 镜像临时 VM 验收（2026-10-15） |
+| [runbooks/evidence/selfhost/external-s3-assembly-2026-10-16.md](./runbooks/evidence/selfhost/external-s3-assembly-2026-10-16.md) | 外部 S3 发布装配验证（2026-10-16） |
+| [runbooks/evidence/selfhost/replica-health-2026-10-17/ci-interruption-correction.md](./runbooks/evidence/selfhost/replica-health-2026-10-17/ci-interruption-correction.md) | PR #240 中断复制回归补正 |
+| [runbooks/evidence/selfhost/replica-health-2026-10-17/report.md](./runbooks/evidence/selfhost/replica-health-2026-10-17/report.md) | 副本健康告警诊断（2026-10-17） |
+| [runbooks/evidence/selfhost/replica-release-9f48968/report.md](./runbooks/evidence/selfhost/replica-release-9f48968/report.md) | 9f48968 正式升级与副本健康验收 |
+| [runbooks/evidence/selfhost/server-acceptance-1888e7d/approved-fixture.md](./runbooks/evidence/selfhost/server-acceptance-1888e7d/approved-fixture.md) | 已批准的 sleep 夹具修正 |
+| [runbooks/evidence/selfhost/server-acceptance-1888e7d/matrix.md](./runbooks/evidence/selfhost/server-acceptance-1888e7d/matrix.md) | 需求与证据矩阵 |
+| [runbooks/evidence/selfhost/server-acceptance-1888e7d/report.md](./runbooks/evidence/selfhost/server-acceptance-1888e7d/report.md) | 新加坡服务器验收：1888e7d |
+| [runbooks/evidence/selfhost/server-acceptance-2026-10-16/attempt-aaf8299.md](./runbooks/evidence/selfhost/server-acceptance-2026-10-16/attempt-aaf8299.md) | 正式 aaf8299 部署尝试与后续入口 |
+| [runbooks/evidence/selfhost/server-acceptance-2026-10-16/report.md](./runbooks/evidence/selfhost/server-acceptance-2026-10-16/report.md) | 2026-10-16 真实服务器验收预检 |
+| [runbooks/evidence/staging-acceptance/2026-10-17/README.md](./runbooks/evidence/staging-acceptance/2026-10-17/README.md) | W3 沙箱验收（2026-10-18 Asia/Taipei） |
+| [runbooks/evidence/staging-acceptance/2026-10-18/README.md](./runbooks/evidence/staging-acceptance/2026-10-18/README.md) | W3 后台重放与 PayPal 沙箱验收 |
+| [runbooks/evidence/staging-acceptance/README.md](./runbooks/evidence/staging-acceptance/README.md) | Staging 验收证据：2026-10-12 至 2026-10-13 |
+| [runbooks/evidence/teardown-2026-10-18.md](./runbooks/evidence/teardown-2026-10-18.md) | 模板生产与自托管测试实例拆除（2026-10-18） |
+| [runbooks/hyperdrive-tunnel.md](./runbooks/hyperdrive-tunnel.md) | Runbook · 本机数据库经 Tunnel 接入 Hyperdrive（历史链路与回滚） |
+| [runbooks/node-job-engine.md](./runbooks/node-job-engine.md) | Node 任务引擎运维 |
+| [runbooks/p2-acceptance-paypal.md](./runbooks/p2-acceptance-paypal.md) | P2 PayPal 沙箱联通验收 |
+| [runbooks/p2-acceptance-stripe.md](./runbooks/p2-acceptance-stripe.md) | P2 Stripe 真实联通验收 |
+| [runbooks/p2-offline-acceptance.md](./runbooks/p2-offline-acceptance.md) | P2 离线开发验收（2026-10-04） |
+| [runbooks/p2-payment-integration.md](./runbooks/p2-payment-integration.md) | P2 支付联通与 staging 验收 |
+| [runbooks/p2-staging-preparation.md](./runbooks/p2-staging-preparation.md) | P2 staging 准备记录（更新至 2026-10-09 UTC） |
+| [runbooks/production-neon.md](./runbooks/production-neon.md) | Neon production 操作与验收 |
+| [runbooks/restore.md](./runbooks/restore.md) | Cloudflare 形态生产数据库恢复与演练 |
+| [runbooks/selfhost-a-final.md](./runbooks/selfhost-a-final.md) | A 8/9：Node 认证与 Compose 尾部验收 |
+| [runbooks/selfhost-a4-billing.md](./runbooks/selfhost-a4-billing.md) | A 4.2：计费、积分与后台平台迁移 |
+| [runbooks/selfhost-a4-storage.md](./runbooks/selfhost-a4-storage.md) | A 4.4：存储、growth 与公开页迁移 |
+| [runbooks/selfhost-a46.md](./runbooks/selfhost-a46.md) | A 4.6：平台迁移整合验收 |
+| [runbooks/selfhost-a5.md](./runbooks/selfhost-a5.md) | A 5.1–5.3：Node 生产构建、启动与 CI |
+| [runbooks/selfhost-a7.md](./runbooks/selfhost-a7.md) | A 7.1–7.4：Dockerfiles 与 Compose 验收 |
+| [runbooks/selfhost-backup-retention.md](./runbooks/selfhost-backup-retention.md) | Selfhost 备份保留边界 |
+| [runbooks/selfhost-backup.md](./runbooks/selfhost-backup.md) | Selfhost PG17 基础与逻辑备份 |
+| [runbooks/selfhost-c-jobs-wire.md](./runbooks/selfhost-c-jobs-wire.md) | C 的 Node jobs 共享接线 |
+| [runbooks/selfhost-c-profile.md](./runbooks/selfhost-c-profile.md) | C 1.5/1.6：object-storage profile 与全栈验收 |
+| [runbooks/selfhost-c-storage.md](./runbooks/selfhost-c-storage.md) | C 1.4：Node 文件接线验收与 B 交接 |
+| [runbooks/selfhost-c-wire.md](./runbooks/selfhost-c-wire.md) | C 共享接线：配置、观测与构建 |
+| [runbooks/selfhost-delivery-handoff.md](./runbooks/selfhost-delivery-handoff.md) | D 镜像交付与协调者签收清单 |
+| [runbooks/selfhost-deploy.md](./runbooks/selfhost-deploy.md) | 显式部署、health 与兼容回滚（D 2.1–2.3） |
+| [runbooks/selfhost-init.md](./runbooks/selfhost-init.md) | 空白服务器初始化（D 2.5） |
+| [runbooks/selfhost-proxy.md](./runbooks/selfhost-proxy.md) | 同一 Compose 的外部代理与 Cloudflare Tunnel 接入（D 2.4 / add-tunnel-ingress） |
+| [runbooks/selfhost-release.md](./runbooks/selfhost-release.md) | 同 SHA release bundle |
+| [runbooks/selfhost-replica.md](./runbooks/selfhost-replica.md) | 第二目标独立恢复副本 |
+| [runbooks/selfhost-restore.md](./runbooks/selfhost-restore.md) | Selfhost PG17 指定时间点恢复 |
+| [runbooks/sentry-node-adapter.md](./runbooks/sentry-node-adapter.md) | Node Sentry adapter：C 2.1–2.2 模块交付 |
+| [runbooks/sentry.md](./runbooks/sentry.md) | Sentry 服务端错误与 source map |
+| [runbooks/staging-acceptance.md](./runbooks/staging-acceptance.md) | Staging 验收脚本 |
+| [runbooks/staging-neon.md](./runbooks/staging-neon.md) | Neon staging 操作与验收 |
 
 ## 本地配置入口
 
