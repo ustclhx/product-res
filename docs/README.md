@@ -18,6 +18,32 @@
 | [08-roadmap.md](./08-roadmap.md) | 分阶段开发计划与验收标准、待决事项 |
 | [09-parallel-plan.md](./09-parallel-plan.md) | 用 Orca 并行开发：worktree 隔离、共享文件规则、并行波次与合并流程 |
 | [frontend-navigation.md](./frontend-navigation.md) | 前端导航延迟：工作空间页客户端缓存、悬停预加载与 TanStack Router 复用语义 |
+| [create-project.md](./create-project.md) | 从模板创建项目、Agent Skills 清单 |
+| [platform-capabilities.md](./platform-capabilities.md) | 平台中立能力接口、Cloudflare / Node 装配与 A/B 交接 |
+| [platform-node-adapters.md](./platform-node-adapters.md) | Node 基础平台适配器（KV、限流、后台任务、请求元数据） |
+| [node-jobs-extension.md](./node-jobs-extension.md) | Node jobs 的注册与扩展 |
+| [glossary.md](./glossary.md) | 核心术语表 |
+
+## 业务方案（`plan/`）
+
+| 文档 | 内容 |
+|---|---|
+| [selection-workbench.md](./plan/selection-workbench.md) | 跨境电商选品工作台的业务流程、数据层、选品算法、成本核算与分期实施方案 |
+| [data-sources-design.md](./plan/data-sources-design.md) | 数据源接入、店铺追踪、数据可信度分级与校准，以及自有店铺回验设计 |
+| [blockers.md](./plan/blockers.md) | 需要人工介入或决策的部署、协作与数据源卡点，以及已实施的产品与算法默认值 |
+| [saas-template-selfhost-requirements.md](./plan/saas-template-selfhost-requirements.md) | saas-template 基于 Docker Compose 的自托管部署目标、功能需求与验收标准 |
+
+界面设计稿在 [`design/`](./design/)（HTML）。
+
+## 运维手册（`runbooks/`）
+
+- **Cloudflare 形态与 Neon**：[staging-neon](./runbooks/staging-neon.md)、[production-neon](./runbooks/production-neon.md)（已拆除，历史参考）、[hyperdrive-tunnel](./runbooks/hyperdrive-tunnel.md)（历史链路与回滚）、[restore](./runbooks/restore.md)（同上，历史参考）、[staging-acceptance](./runbooks/staging-acceptance.md)
+- **支付（P2）**：[p2-payment-integration](./runbooks/p2-payment-integration.md)、[p2-staging-preparation](./runbooks/p2-staging-preparation.md)、[p2-offline-acceptance](./runbooks/p2-offline-acceptance.md)、[p2-acceptance-stripe](./runbooks/p2-acceptance-stripe.md)、[p2-acceptance-paypal](./runbooks/p2-acceptance-paypal.md)
+- **自托管部署与运维**：[selfhost-init](./runbooks/selfhost-init.md)、[selfhost-deploy](./runbooks/selfhost-deploy.md)、[selfhost-release](./runbooks/selfhost-release.md)、[selfhost-proxy](./runbooks/selfhost-proxy.md)、[selfhost-backup](./runbooks/selfhost-backup.md)、[selfhost-backup-retention](./runbooks/selfhost-backup-retention.md)、[selfhost-restore](./runbooks/selfhost-restore.md)、[selfhost-replica](./runbooks/selfhost-replica.md)、[selfhost-delivery-handoff](./runbooks/selfhost-delivery-handoff.md)、[node-job-engine](./runbooks/node-job-engine.md)
+- **自托管迁移批次记录**：[a4-billing](./runbooks/selfhost-a4-billing.md)、[a4-storage](./runbooks/selfhost-a4-storage.md)、[a46](./runbooks/selfhost-a46.md)、[a5](./runbooks/selfhost-a5.md)、[a7](./runbooks/selfhost-a7.md)、[a-final](./runbooks/selfhost-a-final.md)、[c-wire](./runbooks/selfhost-c-wire.md)、[c-jobs-wire](./runbooks/selfhost-c-jobs-wire.md)、[c-storage](./runbooks/selfhost-c-storage.md)、[c-profile](./runbooks/selfhost-c-profile.md)
+- **观测**：[sentry](./runbooks/sentry.md)、[sentry-node-adapter](./runbooks/sentry-node-adapter.md)
+
+验收与核验的原始证据按主题与日期存放在 [`runbooks/evidence/`](./runbooks/evidence/)（部署、演练、支付与 staging 验收等）和 [`receipts/`](./receipts/)（数据源核验、M2–M5 选品验收等），不逐个列出。
 
 ## 本地配置入口
 
