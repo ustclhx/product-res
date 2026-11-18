@@ -29,7 +29,7 @@ const db = createDb(env.HYPERDRIVE)
 const storageEnv = {
   FILES: env.FILES,
   R2_ACCOUNT_ID: '00000000000000000000000000000000',
-  R2_FILES_BUCKET: 'files',
+  R2_FILES_BUCKET: 'product-res-files',
   R2_ACCESS_KEY_ID: 'test-access-key',
   R2_SECRET_ACCESS_KEY: 'test-secret-key',
 } satisfies StorageEnv
