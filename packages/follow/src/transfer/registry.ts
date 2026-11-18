@@ -3,6 +3,7 @@ import {
   accuracyAuditItem,
   aiConversation,
   aiMessage,
+  aiMessageFeedback,
   aiTask,
   apikey,
   auditLog,
@@ -776,6 +777,12 @@ export const STATIC_TRANSFER_TABLES: readonly StaticTransferTable[] = [
     reason: '个人对话；ai_message.hold_id 指向源空间积分预扣',
   }),
   staticTable({ name: 'ai_message', table: aiMessage, file: 'ai', reason: '随 ai_conversation' }),
+  staticTable({
+    name: 'ai_message_feedback',
+    table: aiMessageFeedback,
+    file: 'ai',
+    reason: '回复评分随 ai_conversation',
+  }),
   staticTable({
     name: 'ai_task',
     table: aiTask,
