@@ -69,7 +69,7 @@ export function CategoryReportPage({ slug, data }: { slug: string; data: ReportD
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="grid gap-1">
           <nav className="text-xs text-muted-foreground">
-            <Link to="/app/$slug/category" params={{ slug }} className="hover:text-primary">
+            <Link to="/app/$slug/category" params={{ slug }} className="hover:text-primary-text">
               品牌选品
             </Link>
             <span className="px-1">/</span>
@@ -213,7 +213,7 @@ function Report({
         <Link
           to="/app/$slug/data"
           params={{ slug }}
-          className="mx-0.5 text-primary hover:underline"
+          className="mx-0.5 text-primary-text hover:underline"
         >
           数据中心
         </Link>
@@ -595,7 +595,7 @@ function AiRunning({ reason }: { reason: string }) {
     <p
       data-testid="ai-running"
       role="status"
-      className="flex items-center gap-2 rounded-md bg-primary-soft px-3 py-2 text-xs text-primary"
+      className="flex items-center gap-2 rounded-md bg-primary-soft px-3 py-2 text-xs text-primary-text"
     >
       <span className="size-2 shrink-0 animate-pulse rounded-full bg-current" aria-hidden />
       <span>
@@ -710,7 +710,7 @@ function MatrixPanel({
                           href={r.url}
                           target="_blank"
                           rel="noreferrer noopener"
-                          className="font-mono hover:text-primary"
+                          className="font-mono hover:text-primary-text"
                         >
                           {r.platformId}
                         </a>
@@ -833,9 +833,9 @@ function ConvertDialog({
             {row.title ?? row.platformId}
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-md bg-primary-soft px-3 py-2 text-xs text-primary">
+        <div className="flex items-center gap-2 rounded-md bg-primary-soft px-3 py-2 text-xs text-primary-text">
           跟卖方式：<strong>同款微改良</strong>
-          <span className="text-primary/70">改良点写入线索备注并带入核算</span>
+          <span className="text-primary-text/70">改良点写入线索备注并带入核算</span>
         </div>
         {noDirection ? (
           <p className="rounded-md bg-warning-soft px-3 py-2 text-xs text-warning-strong">
@@ -967,7 +967,7 @@ function SuggestionCard({
         </div>
       </div>
       <details className="group text-xs">
-        <summary className="cursor-pointer list-none text-primary [&::-webkit-details-marker]:hidden">
+        <summary className="cursor-pointer list-none text-primary-text [&::-webkit-details-marker]:hidden">
           依据：{reviewRefs.length ? `${reviewRefs.length} 条差评` : ''}
           {reviewRefs.length && productRefs.length ? ' · ' : ''}
           {productRefs.length ? `${productRefs.length} 个竞品` : ''}

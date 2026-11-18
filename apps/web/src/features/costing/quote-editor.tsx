@@ -165,7 +165,7 @@ export function QuoteSection({
                           href={s.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="hover:text-primary"
+                          className="hover:text-primary-text"
                         >
                           {s.name} ↗
                         </a>
@@ -178,7 +178,7 @@ export function QuoteSection({
                       {writable && s ? (
                         <button
                           type="button"
-                          className="ml-2 text-primary hover:underline"
+                          className="ml-2 text-primary-text hover:underline"
                           onClick={() => setSupplierEditing(s)}
                         >
                           编辑供应商

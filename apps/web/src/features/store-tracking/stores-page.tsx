@@ -193,7 +193,7 @@ function columns(
           <Link
             to="/app/$slug/stores/$storeId"
             params={{ slug, storeId: s.id }}
-            className="text-caption font-medium hover:text-primary"
+            className="text-caption font-medium hover:text-primary-text"
           >
             {s.displayName}
           </Link>
@@ -507,7 +507,7 @@ function TrackedProductsSection({
               href={p.url}
               target="_blank"
               rel="noreferrer noopener"
-              className="text-caption font-medium hover:text-primary"
+              className="text-caption font-medium hover:text-primary-text"
             >
               {productName(p)}
             </a>

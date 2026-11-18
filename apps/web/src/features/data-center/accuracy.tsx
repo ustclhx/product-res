@@ -394,7 +394,7 @@ export function AccuracyAudit({
               href={item.link}
               target="_blank"
               rel="noreferrer noopener"
-              className="text-xs text-primary underline"
+              className="text-xs text-primary-text underline"
             >
               {m.accuracy_open_page()}
             </a>

@@ -51,7 +51,7 @@ function columnsFor(slug: string, platform: Platform): DataTableColumn<Candidate
             <Link
               to="/app/$slug/follow/$clusterId"
               params={{ slug, clusterId: item.clusterId }}
-              className="line-clamp-2 text-caption font-medium leading-snug text-foreground hover:text-primary"
+              className="line-clamp-2 text-caption font-medium leading-snug text-foreground hover:text-primary-text"
               title={item.name}
             >
               {item.name}
@@ -254,7 +254,7 @@ export function CandidatesPage({ slug, data }: { slug: string; data: CandidatesD
         <Link
           to="/app/$slug/follow/directions"
           params={{ slug }}
-          className="inline-flex items-center gap-1.5 rounded-md border bg-card px-3 py-1.5 text-caption hover:border-primary hover:text-primary"
+          className="inline-flex items-center gap-1.5 rounded-md border bg-card px-3 py-1.5 text-caption hover:border-primary hover:text-primary-text"
           data-testid="follow-directions-link"
         >
           选品方向与店铺池 <span aria-hidden>→</span>
@@ -273,7 +273,7 @@ export function CandidatesPage({ slug, data }: { slug: string; data: CandidatesD
                 className={cn(
                   '-mb-px border-b-2 px-4 py-2 text-caption',
                   platform === p
-                    ? 'border-primary font-medium text-primary'
+                    ? 'border-primary font-medium text-primary-text'
                     : 'border-transparent text-muted-foreground hover:text-foreground',
                 )}
                 onClick={() => go({ platform: p, direction: '' })}
@@ -359,7 +359,7 @@ function SetupEmpty({
         <Link
           to="/app/$slug/follow/directions"
           params={{ slug }}
-          className="text-primary hover:underline"
+          className="text-primary-text hover:underline"
         >
           去配置方向
         </Link>
@@ -373,7 +373,7 @@ function SetupEmpty({
           ? `已启用 ${setup.enabledSources} 个数据源`
           : '在数据中心配置凭据并启用至少一个数据源',
       link: (
-        <Link to="/app/$slug/data" params={{ slug }} className="text-primary hover:underline">
+        <Link to="/app/$slug/data" params={{ slug }} className="text-primary-text hover:underline">
           去数据中心
         </Link>
       ),

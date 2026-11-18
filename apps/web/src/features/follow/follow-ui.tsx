@@ -92,7 +92,7 @@ export function SourceList({ view }: { view: MetricSourcesView }) {
             <span className="flex items-center gap-1.5">
               <SourceBadge method={v.method} source={v.label} />
               {v.sourceId === view.primarySourceId ? (
-                <span className="text-micro text-primary">主值</span>
+                <span className="text-micro text-primary-text">主值</span>
               ) : null}
             </span>
             <span className="flex items-baseline gap-2">

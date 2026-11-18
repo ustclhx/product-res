@@ -75,7 +75,7 @@ export function DataPreview({
             className={cn(
               '-mb-px border-b-2 px-3 py-1.5 text-sm',
               view === key
-                ? 'border-primary text-primary'
+                ? 'border-primary text-primary-text'
                 : 'border-transparent text-muted-foreground',
             )}
             onClick={() => setView(key)}

@@ -180,7 +180,7 @@ export function InviteLinksPanel({
       </p>
       {created ? (
         <div className="grid gap-2 rounded-lg border border-primary/30 bg-primary-soft p-3">
-          <p role="status" className="text-caption text-primary">
+          <p role="status" className="text-caption text-primary-text">
             {m.invite_links_created()}
           </p>
           <div className="flex flex-wrap items-center gap-2">

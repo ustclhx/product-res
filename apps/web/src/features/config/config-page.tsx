@@ -96,7 +96,7 @@ export function ConfigPage({
             className={cn(
               '-mb-px border-b-2 px-3 py-2 text-sm',
               tab === key
-                ? 'border-primary font-medium text-primary'
+                ? 'border-primary font-medium text-primary-text'
                 : 'border-transparent text-muted-foreground',
             )}
             onClick={() => setTab(key)}

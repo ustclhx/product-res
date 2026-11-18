@@ -94,7 +94,7 @@ function AccountMenu({ page }: { page: WorkspacePage }) {
   return (
     <details className="relative">
       <summary className="flex cursor-pointer list-none items-center gap-2 text-caption">
-        <span className="flex size-7 items-center justify-center rounded-full bg-primary-soft text-xs font-semibold text-primary">
+        <span className="flex size-7 items-center justify-center rounded-full bg-primary-soft text-xs font-semibold text-primary-text">
           {(page.user.name || page.user.email).slice(0, 1).toUpperCase()}
         </span>
         <span data-testid="current-user">

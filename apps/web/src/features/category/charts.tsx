@@ -268,9 +268,10 @@ export function BubbleChart({
           symbolSize: (d: [number, number, number | null]) =>
             d[2] == null ? 10 : 10 + 34 * Math.sqrt(d[2] / maxSize),
           // 原为主色 55% 透明填充；token 可能不是十六进制，改用 opacity（白边随之半透明）
+          // 深色画布上主色加半透明对比不足，气泡改用文字主色（深色下提亮、浅色下加深）
           itemStyle: {
-            color: primary,
-            opacity: 0.55,
+            color: token('primary-text'),
+            opacity: 0.7,
             borderColor: token('card'),
             borderWidth: 2,
           },

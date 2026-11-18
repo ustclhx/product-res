@@ -90,7 +90,7 @@ export function WorkbenchHome({ slug, initial }: { slug: string; initial: Workbe
           {data.countdown.length === 0 ? (
             <EmptyState title="还没有节点">
               在
-              <Link to="/app/$slug/config" params={{ slug }} className="text-primary">
+              <Link to="/app/$slug/config" params={{ slug }} className="text-primary-text">
                 设置
               </Link>
               中维护节点日历。

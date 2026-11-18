@@ -157,7 +157,7 @@ export function ArchivePage({
                   <Link
                     to="/app/$slug/category/$studyId"
                     params={{ slug, studyId: study.id }}
-                    className="text-primary hover:underline"
+                    className="text-primary-text hover:underline"
                   >
                     查看报告
                   </Link>

@@ -284,7 +284,7 @@ export function ClusterPage({
           to="/app/$slug/follow"
           params={{ slug }}
           search={{ platform: c.platform }}
-          className="hover:text-primary"
+          className="hover:text-primary-text"
         >
           跟卖选品
         </Link>
@@ -299,7 +299,7 @@ export function ClusterPage({
             <Link
               to="/app/$slug/follow/$clusterId"
               params={{ slug, clusterId: c.mergedIntoId }}
-              className="ml-1 text-primary hover:underline"
+              className="ml-1 text-primary-text hover:underline"
             >
               查看合并后的商品簇 →
             </Link>
@@ -328,7 +328,7 @@ export function ClusterPage({
             <span>{data.members.length} 个成员</span>
             {lead ? <span>线索日期 {lead.leadOn}</span> : null}
             {c.url ? (
-              <a href={c.url} target="_blank" rel="noreferrer" className="text-primary">
+              <a href={c.url} target="_blank" rel="noreferrer" className="text-primary-text">
                 平台页面 ↗
               </a>
             ) : null}
@@ -364,7 +364,7 @@ export function ClusterPage({
             className={cn(
               '-mb-px border-b-2 px-3 py-2 text-sm',
               tab === key
-                ? 'border-primary font-medium text-primary'
+                ? 'border-primary font-medium text-primary-text'
                 : 'border-transparent text-muted-foreground hover:text-foreground',
             )}
           >
@@ -540,7 +540,7 @@ export function ClusterPage({
                             href={r.link}
                             target="_blank"
                             rel="noreferrer"
-                            className="ml-2 text-primary hover:underline"
+                            className="ml-2 text-primary-text hover:underline"
                           >
                             {r.kind === 'design-patent' ? '在 Google Patents 检索 ↗' : '查看依据 ↗'}
                           </a>
@@ -973,7 +973,12 @@ function MemberRow({
             <div className="grid min-w-0 gap-0.5">
               <span className="line-clamp-1 font-medium" title={m.title}>
                 {m.url ? (
-                  <a href={m.url} target="_blank" rel="noreferrer" className="hover:text-primary">
+                  <a
+                    href={m.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-primary-text"
+                  >
                     {m.title}
                   </a>
                 ) : (

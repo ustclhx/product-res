@@ -72,7 +72,7 @@ export function DirectionsPage({ slug, initial }: { slug: string; initial: Direc
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div className="grid gap-1">
           <nav className="text-xs text-muted-foreground">
-            <Link to="/app/$slug/follow" params={{ slug }} className="hover:text-primary">
+            <Link to="/app/$slug/follow" params={{ slug }} className="hover:text-primary-text">
               跟卖选品
             </Link>
             <span className="px-1">/</span>
@@ -518,7 +518,7 @@ function DirectionCard({
                   <Link
                     to="/app/$slug/stores/$storeId"
                     params={{ slug, storeId: s.id }}
-                    className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs hover:text-primary"
+                    className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs hover:text-primary-text"
                   >
                     {s.displayName ?? s.sellerKey}
                     <span className="text-muted-foreground">{marketplaceLabel(s.marketplace)}</span>

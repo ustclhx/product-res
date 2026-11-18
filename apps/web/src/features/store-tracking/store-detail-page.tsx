@@ -54,7 +54,7 @@ const listingColumns = (platform: 'ebay' | 'amazon'): DataTableColumn<ListingIte
               href={l.url}
               target="_blank"
               rel="noreferrer noopener"
-              className="line-clamp-2 text-caption font-medium leading-snug hover:text-primary"
+              className="line-clamp-2 text-caption font-medium leading-snug hover:text-primary-text"
             >
               {l.title ?? l.platformId}
             </a>
@@ -160,7 +160,7 @@ export function StoreDetailPage({ slug, initial }: { slug: string; initial: Stor
     <div className="grid gap-4">
       <div className="grid gap-1">
         <nav className="text-xs text-muted-foreground">
-          <Link to="/app/$slug/stores" params={{ slug }} className="hover:text-primary">
+          <Link to="/app/$slug/stores" params={{ slug }} className="hover:text-primary-text">
             {m.store_tracking_back()}
           </Link>
           <span className="px-1">/</span>
@@ -179,7 +179,7 @@ export function StoreDetailPage({ slug, initial }: { slug: string; initial: Stor
                 href={store.url}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="hover:text-primary"
+                className="hover:text-primary-text"
               >
                 {m.store_tracking_open_store()}
               </a>

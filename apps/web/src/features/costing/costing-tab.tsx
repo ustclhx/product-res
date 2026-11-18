@@ -201,7 +201,7 @@ function StatusStrip({
                 i === current
                   ? 'bg-primary text-primary-foreground font-medium'
                   : i < current
-                    ? 'bg-primary-soft text-primary'
+                    ? 'bg-primary-soft text-primary-text'
                     : 'bg-muted text-muted-foreground',
               )}
             >

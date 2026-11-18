@@ -90,7 +90,7 @@ export function DisabledSourceNotice({
             to="/app/$slug/data"
             params={{ slug }}
             hash={`source-${s.id}`}
-            className="underline hover:text-primary"
+            className="underline hover:text-primary-text"
           >
             {m.store_tracking_source_disabled_link()}
           </Link>

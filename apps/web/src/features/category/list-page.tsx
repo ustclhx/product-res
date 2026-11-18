@@ -171,7 +171,7 @@ function StudyLink({ slug, study, indent }: { slug: string; study: StudyRow; ind
         <span>
           {study.snapshotCount} 份快照 · 最近 {fmtDateTime(study.latestSnapshotAt)}
         </span>
-        <span className="text-primary">查看报告 →</span>
+        <span className="text-primary-text">查看报告 →</span>
       </div>
     </Link>
   )
@@ -205,7 +205,7 @@ function ArchivedRow({
           to="/app/$slug/category/$studyId"
           params={{ slug, studyId: study.id }}
           search={{}}
-          className="hover:text-primary"
+          className="hover:text-primary-text"
         >
           {study.name}
           <span className="ml-2 text-xs text-muted-foreground">

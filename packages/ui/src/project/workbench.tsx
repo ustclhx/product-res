@@ -24,7 +24,7 @@ const tone = {
   success: 'bg-success-soft text-success-strong border-success/30',
   warning: 'bg-warning-soft text-warning-strong border-warning/30',
   danger: 'bg-destructive-soft text-destructive border-destructive/30',
-  info: 'bg-primary-soft text-primary border-primary/30',
+  info: 'bg-primary-soft text-primary-text border-primary/30',
   neutral: 'bg-muted text-muted-foreground border-border',
 } as const
 export type Tone = keyof typeof tone

@@ -69,7 +69,7 @@ export function WorkspaceSwitcher({ page }: { page: WorkspacePage }) {
                     aria-current={current ? 'true' : undefined}
                     className={cn(
                       'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left hover:bg-accent disabled:cursor-default',
-                      current && 'bg-primary-soft text-primary hover:bg-primary-soft',
+                      current && 'bg-primary-soft text-primary-text hover:bg-primary-soft',
                     )}
                     onClick={async () => {
                       setPending(true)
