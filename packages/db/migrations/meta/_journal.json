@@ -183,6 +183,69 @@
       "when": 1792962860856,
       "tag": "0025_workspace_transfer_instance",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792962860857,
+      "tag": "0026_tpl_job_engine_app_dead_letter",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1792962860858,
+      "tag": "0027_tpl_audit_meta_remove_personal_data",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1792962860859,
+      "tag": "0028_tpl_ai_task_cancel_billing",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1792962860860,
+      "tag": "0029_tpl_user_attribution",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1792962860861,
+      "tag": "0030_tpl_user_attribution_signup_host",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1792962860862,
+      "tag": "0031_tpl_daily_credits",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1792962860863,
+      "tag": "0032_tpl_subject_chat",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1792962860864,
+      "tag": "0033_tpl_feedback_reason",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1792962860865,
+      "tag": "0034_tpl_feedback_share",
+      "breakpoints": true
     }
   ]
 }
