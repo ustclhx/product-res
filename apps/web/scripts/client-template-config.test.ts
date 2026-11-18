@@ -53,10 +53,8 @@ describe('marketing.performance 构建配置文件', () => {
         prerender: true,
       })
       // 营销页未启用时写出 prerender: false，构建后处理据此跳过
-      marketingPerformanceOptions(file, { criticalCss: 'used' }, false).buildStart?.call(
-        {} as never,
-        {} as never,
-      )
+      const disabled = marketingPerformanceOptions(file, { criticalCss: 'used' }, false)
+      ;(disabled.buildStart as () => void)()
       expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({
         criticalCss: 'used',
         prerender: false,
