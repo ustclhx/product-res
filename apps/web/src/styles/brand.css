@@ -100,7 +100,7 @@
   /* 深色沿用品牌蓝（Ant 深色主色），侧栏选中项与主按钮为白字；文字用的主色提亮保证对比度 */
   --primary: #1668dc;
   --primary-foreground: #ffffff;
-  --primary-text: #3c89e8;
+  --primary-text: #69b1ff;
   --secondary: #252525;
   --secondary-foreground: #f5f5f5;
   --muted: #1e1e1e;
