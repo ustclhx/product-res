@@ -1,0 +1,57 @@
+{
+  "$comment": "PLAUSIBLE_SITES 解析与按 host 选择 site 的共享用例：@product-res/config（web / jobs 共用）与门禁脚本 check-wrangler-envs.mjs 各跑一遍，保证两份实现一致。resolve 每项为 [访问域名, 兜底 PLAUSIBLE_DOMAIN, 期望 site]，空串表示不统计。",
+  "cases": [
+    {
+      "name": "未配置映射时单站行为不变",
+      "raw": "",
+      "sites": {},
+      "resolve": [
+        ["acme.example", "acme", "acme"],
+        ["preview.workers.dev", "acme", "acme"],
+        ["acme.example", "", ""]
+      ]
+    },
+    {
+      "name": "只有空白视为未配置",
+      "raw": "   ",
+      "sites": {},
+      "resolve": [["acme.example", "acme", "acme"]]
+    },
+    {
+      "name": "多站按访问域名命中",
+      "raw": "ganjiday.com=ganjiday.com, arcanumber.com=arcanumber.com",
+      "sites": { "ganjiday.com": "ganjiday.com", "arcanumber.com": "arcanumber.com" },
+      "resolve": [
+        ["ganjiday.com", "", "ganjiday.com"],
+        ["arcanumber.com", "", "arcanumber.com"],
+        ["ARCANUMBER.com:443", "", "arcanumber.com"],
+        ["www.arcanumber.com", "", "arcanumber.com"],
+        ["arcanumber.com.", "", "arcanumber.com"]
+      ]
+    },
+    {
+      "name": "映射中的 host 同样规范化",
+      "raw": "WWW.Acme.Example:8443=acme-prod",
+      "sites": { "acme.example": "acme-prod" },
+      "resolve": [["acme.example", "", "acme-prod"]]
+    },
+    {
+      "name": "未登记且无兜底时不统计",
+      "raw": "ganjiday.com=ganjiday.com",
+      "sites": { "ganjiday.com": "ganjiday.com" },
+      "resolve": [
+        ["xuanxue.workers.dev", "", ""],
+        ["xuanxue.workers.dev", "fallback-site", "fallback-site"],
+        ["sub.ganjiday.com", "", ""]
+      ]
+    },
+    { "name": "缺少等号", "raw": "ganjiday.com", "error": true },
+    { "name": "域名为空", "raw": "=ganjiday.com", "error": true },
+    { "name": "site 为空", "raw": "ganjiday.com=", "error": true },
+    { "name": "空项（多余逗号）", "raw": "a.example=a,,b.example=b", "error": true },
+    { "name": "结尾多余逗号", "raw": "a.example=a,", "error": true },
+    { "name": "带协议的域名", "raw": "https://a.example=a", "error": true },
+    { "name": "site 含空白", "raw": "a.example=a b", "error": true },
+    { "name": "同一域名映射两次", "raw": "a.example=a,www.a.example=b", "error": true }
+  ]
+}

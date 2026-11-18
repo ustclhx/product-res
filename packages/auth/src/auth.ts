@@ -4,12 +4,14 @@ import type { Database } from '@product-res/db'
 import * as schema from '@product-res/db/schema'
 import type { KeyValueStore, RateLimiter } from '@product-res/platform'
 import { newId } from '@product-res/shared'
+import { log } from '@product-res/shared/log'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { APIError } from 'better-auth/api'
 import { admin, emailOTP, magicLink, organization, twoFactor } from 'better-auth/plugins'
 import { accountSettings, userSettingsFields } from './account-settings.ts'
 import { adminBootstrap } from './admin-bootstrap.ts'
+import type { CleanupWorkspaceShareCards } from './ai-content-cleanup.ts'
 import { type DeletionStep, deletionPlugin } from './deletion.ts'
 import type { SendAuthEmail } from './email.ts'
 import { emailVerificationOptions } from './email-verification.ts'
@@ -33,7 +35,10 @@ export interface CreateAuthDeps {
   /** 可信运行时入口解析的本请求 IP。 */
   readonly clientIp?: string | null | undefined
   readonly beforeUserCreate?: (user: { readonly email: string }, headers?: Headers) => Promise<void>
+  /** 注册提交后调用；headers 缺失表示非浏览器请求。实现方自行兜底，抛错只记日志不影响注册。 */
+  readonly onUserSignedUp?: (user: { readonly id: string }, headers?: Headers) => Promise<void>
   readonly deletionSteps?: readonly DeletionStep[]
+  readonly cleanupShareCards?: CleanupWorkspaceShareCards
   /** 模板配置（`template.config.ts`），决定启用哪些登录方式与插件 */
   readonly config: TemplateConfig
   /** 认证邮件的发送点；由调用方注入（后续接 EMAIL_QUEUE），测试中用假实现 */
@@ -71,8 +76,9 @@ export function createAuth(env: AuthEnv, db: Database, deps: CreateAuthDeps) {
     appName: config.app.name,
     baseURL: vars.APP_URL,
     basePath: '/api/auth',
-    // 空间绑定与角色校验只经应用管理入口；原生 HTTP 接口不能绕过。
+    // 禁用独立 OTP 校验；空间绑定与角色校验只经应用管理入口，原生 HTTP 接口不能绕过。
     disabledPaths: [
+      '/email-otp/check-verification-otp',
       '/api-key/create',
       '/api-key/update',
       '/api-key/delete',
@@ -101,9 +107,20 @@ export function createAuth(env: AuthEnv, db: Database, deps: CreateAuthDeps) {
             assertSignupAllowed(user.email)
             await deps.beforeUserCreate?.(user, context?.request?.headers ?? context?.headers)
           },
-          after: async (user) => {
+          after: async (user, context) => {
             await workspaceHooks.user.create.after(user)
             await bootstrapAdmin(user.id, 'user.create')
+            // 后台代建账号带的是管理员的 Cookie，不能当作被创建用户的首触来源。
+            if (deps.onUserSignedUp && !context?.path?.startsWith('/admin/')) {
+              try {
+                await deps.onUserSignedUp(
+                  { id: user.id },
+                  context?.request?.headers ?? context?.headers,
+                )
+              } catch (error) {
+                log.warn('analytics.sign_up_failed', { error })
+              }
+            }
             // Better Auth defers create.after until registration commits. Keep the
             // injected callback outside the workspace hook's best-effort catch.
             if (user.emailVerified && deps.onEmailVerified) {
@@ -173,7 +190,14 @@ export function createAuth(env: AuthEnv, db: Database, deps: CreateAuthDeps) {
       }),
       // 敏感接口按数据库实时校验会话与封禁（fresh-session.ts）
       freshSessionGuard(db),
-      deletionPlugin(db, deps.cache, config.tenancy.multiTenant, deps.deletionSteps, deps.clientIp),
+      deletionPlugin(
+        db,
+        deps.cache,
+        config.tenancy.multiTenant,
+        deps.deletionSteps,
+        deps.clientIp,
+        deps.cleanupShareCards,
+      ),
       verificationReservation(db),
       workspaceLifecyclePlugin(db, config.tenancy.maxWorkspacesPerUser, deps.clientIp),
       teamWorkspaces(db, config, sendEmail, deps.resolveMaxSeats, deps.clientIp),

@@ -1,0 +1,5 @@
+{
+  "billing_credit_guide_title": "积分不足",
+  "billing_credit_guide_amounts": "预计消耗 {estimatedCredits} 积分，当前可用 {availableCredits} 积分。",
+  "billing_credit_guide_packs": "购买积分包"
+}

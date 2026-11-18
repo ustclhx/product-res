@@ -1,0 +1,15 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "share_page_shared_by": "由 {site} 用户分享 · {date}",
+  "share_page_cta_primary": "用 {site} 生成你的结果",
+  "share_page_cta_secondary": "了解 {site}",
+  "share_page_note": "这是 {site} 用户公开分享的结果，分享者可以随时撤销。",
+  "share_page_note_expires": "这是 {site} 用户公开分享的结果，分享者可以随时撤销。链接有效期至 {date}。",
+  "share_page_not_found_title": "分享不存在或已被撤销",
+  "share_page_not_found_body": "链接可能有误，或分享者已撤销分享。",
+  "share_page_expired_title": "这个分享已过期",
+  "share_page_expired_body": "分享链接已超过有效期。如需查看，请联系分享者重新分享。",
+  "share_page_rate_limited_title": "请求过于频繁",
+  "share_page_rate_limited_body": "请稍等一分钟后再试。",
+  "share_page_home": "返回首页"
+}

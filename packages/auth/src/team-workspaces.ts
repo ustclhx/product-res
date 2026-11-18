@@ -369,7 +369,8 @@ export function teamWorkspaces(
                   workspaceId,
                   'workspace.member_invited',
                   String(invitation?.id),
-                  { email: input.email, newRole: input.role },
+                  // target_id 即邀请 id；审计行永久保留，不写入受邀邮箱。
+                  { newRole: input.role },
                 )
                 return { invitation, workspace }
               }

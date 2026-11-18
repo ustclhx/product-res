@@ -40,89 +40,106 @@ function httpUrl(value: string): URL | undefined {
   }
 }
 
+// 包在纯标注的立即调用函数里：参数中有 `secret.optional()` 这类对 schema 变量的方法调用，打包器无法判定无副作用；
+// 客户端经 @product-res/config 入口间接引入本模块时，整段未被引用即可摇掉，不把 zod 带进页面（模板 0.5.6）
 /** 仅标量配置；PAYMENT_MODE 继续由支付入口校验，缺凭据不阻断公开页面。 */
-const nodeEnvBaseSchema = z.object({
-  DATABASE_URL: z.url({ protocol: /^postgres(?:ql)?$/, hostname: /.+/ }),
-  VALKEY_URL: z.url({ protocol: /^rediss?$/, hostname: /.+/ }),
-  BETTER_AUTH_SECRET: z.string().min(32),
-  APP_URL: z.url({ protocol: /^https$/, hostname: /.+/ }),
-  DB_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),
-  SHUTDOWN_TIMEOUT_MS: z.coerce.number().int().min(1).default(30_000),
-  TRUSTED_PROXY_CIDRS: z.string().default(''),
-  CACHE_NAMESPACE: secret.default('saas'),
-  PAYMENT_MODE: z.string().optional(),
-  AI_FAULT_INJECTION: z.string().optional(),
-  SENTRY_ENVIRONMENT: z.enum(['development', 'staging', 'production', 'smoke']).optional(),
-  SENTRY_DSN: z
-    .string()
-    .refine((value) => {
-      if (value === '') return true
-      const url = httpUrl(value)
-      return (
-        url !== undefined &&
-        /^\w+$/.test(url.username) &&
-        url.password === '' &&
-        /\/\d+$/.test(url.pathname)
-      )
-    })
-    .optional(),
-  S3_ENDPOINT: secret
-    .refine((value) => {
-      const url = httpUrl(value)
-      return url !== undefined && url.username === '' && url.password === ''
-    })
-    .optional(),
-  S3_REGION: secret.optional(),
-  S3_BUCKET: secret.optional(),
-  S3_ACCESS_KEY_ID: secret.optional(),
-  S3_SECRET_ACCESS_KEY: secret.optional(),
-  // 在对象校验之后才补默认值，避免默认 true 意外启用未配置存储。
-  S3_FORCE_PATH_STYLE: z
-    .enum(['true', 'false'])
-    .transform((value) => value === 'true')
-    .optional(),
-  BOOTSTRAP_ADMIN_EMAILS: z.string().optional(),
-  // 'true' 时首个管理员引导不要求邮箱已验证；其它取值保持要求
-  BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED: z.string().optional(),
-  SIGNUP_ALLOWED_EMAILS: z.string().optional(),
-  // 可选密钥目录（自托管挂载 secrets/optional）；文件名为密钥名
-  OPTIONAL_SECRETS_DIR: z.string().optional(),
-  // 只在开发与验收时注册模拟数据源；生产不设置
-  DATASOURCE_MOCK: z.enum(['true', 'false']).optional(),
-  // paused 时数据 / 选品定时计划仍注册但到点直接返回；拼写错误启动即失败，避免误以为已暂停
-  DATA_PIPELINE_SCHEDULES: z.enum(['paused', 'running']).optional(),
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  GOOGLE_CLIENT_SECRET: secret.optional(),
-  GITHUB_CLIENT_ID: z.string().optional(),
-  GITHUB_CLIENT_SECRET: secret.optional(),
-  TURNSTILE_SITE_KEY: z.string().optional(),
-  TURNSTILE_SECRET_KEY: secret.optional(),
-  STRIPE_SECRET_KEY: secret.optional(),
-  STRIPE_WEBHOOK_SECRET: secret.optional(),
-  PAYPAL_CLIENT_ID: z.string().optional(),
-  PAYPAL_CLIENT_SECRET: secret.optional(),
-  PAYPAL_WEBHOOK_ID: z.string().optional(),
-  OPENAI_BASE_URL: z.string().optional(),
-  AI_TEXT_EGRESS: z.enum(['direct', 'gateway']).default('direct'),
-  OPENAI_API_KEY: secret.optional(),
-  ANTHROPIC_API_KEY: secret.optional(),
-  GOOGLE_API_KEY: secret.optional(),
-  DEEPSEEK_API_KEY: secret.optional(),
-  FAL_KEY: secret.optional(),
-  MEDIA_WEBHOOK_SECRET: z.string().min(32).optional(),
-  AI_GATEWAY_ACCOUNT_ID: z.string().optional(),
-  AI_GATEWAY_ID: z.string().optional(),
-  AI_GATEWAY_TOKEN: secret.optional(),
-  RESEND_API_KEY: secret.optional(),
-  EMAIL_TRANSPORT: z.enum(['log', 'resend', 'smtp']).default('log'),
-  EMAIL_FROM: mailbox.optional(),
-  EMAIL_REPLY_TO: mailbox.optional(),
-  SMTP_HOST: smtpHost.optional(),
-  SMTP_PORT: z.coerce.number().int().min(1).max(65535).optional(),
-  SMTP_TLS_MODE: z.enum(['implicit', 'starttls', 'none']).default('starttls'),
-  SMTP_USER: secret.optional(),
-  SMTP_PASSWORD: secret.optional(),
-})
+const nodeEnvBaseSchema = /* @__PURE__ */ (() =>
+  z.object({
+    DATABASE_URL: z.url({ protocol: /^postgres(?:ql)?$/, hostname: /.+/ }),
+    VALKEY_URL: z.url({ protocol: /^rediss?$/, hostname: /.+/ }),
+    BETTER_AUTH_SECRET: z.string().min(32),
+    APP_URL: z.url({ protocol: /^https$/, hostname: /.+/ }),
+    DB_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),
+    SHUTDOWN_TIMEOUT_MS: z.coerce.number().int().min(1).default(30_000),
+    TRUSTED_PROXY_CIDRS: z.string().default(''),
+    CACHE_NAMESPACE: secret.default('saas'),
+    // Compose 的 ${PAYMENT_MODE:-} 会传入空串，按未设置处理：线上报缺失，不默认 test。
+    PAYMENT_MODE: z
+      .string()
+      .optional()
+      .transform((value) => (value === '' ? undefined : value)),
+    AI_FAULT_INJECTION: z.string().optional(),
+    // 组件预览页 /dev/ui 开关（非密钥）；只有 `true` 时开放，生产不设
+    UI_PREVIEW: z.string().optional(),
+    SENTRY_ENVIRONMENT: z.enum(['development', 'staging', 'production', 'smoke']).optional(),
+    SENTRY_DSN: z
+      .string()
+      .refine((value) => {
+        if (value === '') return true
+        const url = httpUrl(value)
+        return (
+          url !== undefined &&
+          /^\w+$/.test(url.username) &&
+          url.password === '' &&
+          /\/\d+$/.test(url.pathname)
+        )
+      })
+      .optional(),
+    S3_ENDPOINT: secret
+      .refine((value) => {
+        const url = httpUrl(value)
+        return url !== undefined && url.username === '' && url.password === ''
+      })
+      .optional(),
+    S3_REGION: secret.optional(),
+    S3_BUCKET: secret.optional(),
+    S3_ACCESS_KEY_ID: secret.optional(),
+    S3_SECRET_ACCESS_KEY: secret.optional(),
+    // 在对象校验之后才补默认值，避免默认 true 意外启用未配置存储。
+    S3_FORCE_PATH_STYLE: z
+      .enum(['true', 'false'])
+      .transform((value) => value === 'true')
+      .optional(),
+    BOOTSTRAP_ADMIN_EMAILS: z.string().optional(),
+    // 'true' 时首个管理员引导不要求邮箱已验证；其它取值保持要求
+    BOOTSTRAP_ADMIN_ALLOW_UNVERIFIED: z.string().optional(),
+    SIGNUP_ALLOWED_EMAILS: z.string().optional(),
+    // 可选密钥目录（自托管挂载 secrets/optional）；文件名为密钥名
+    OPTIONAL_SECRETS_DIR: z.string().optional(),
+    // 只在开发与验收时注册模拟数据源；生产不设置
+    DATASOURCE_MOCK: z.enum(['true', 'false']).optional(),
+    // paused 时数据 / 选品定时计划仍注册但到点直接返回；拼写错误启动即失败，避免误以为已暂停
+    DATA_PIPELINE_SCHEDULES: z.enum(['paused', 'running']).optional(),
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: secret.optional(),
+    GITHUB_CLIENT_ID: z.string().optional(),
+    GITHUB_CLIENT_SECRET: secret.optional(),
+    TURNSTILE_SITE_KEY: z.string().optional(),
+    PLAUSIBLE_DOMAIN: z.string().optional(),
+    PLAUSIBLE_HOST: z.string().optional(),
+    // Compose 的 ${PLAUSIBLE_SITES:-} 会传入空串，按未设置处理：即单站，格式由 plausibleSite 与发布门禁校验。
+    PLAUSIBLE_SITES: z
+      .string()
+      .optional()
+      .transform((value) => (value?.trim() ? value : undefined)),
+    INDEXNOW_KEY: z.string().optional(),
+    TURNSTILE_SECRET_KEY: secret.optional(),
+    STRIPE_SECRET_KEY: secret.optional(),
+    STRIPE_WEBHOOK_SECRET: secret.optional(),
+    PAYPAL_CLIENT_ID: z.string().optional(),
+    PAYPAL_CLIENT_SECRET: secret.optional(),
+    PAYPAL_WEBHOOK_ID: z.string().optional(),
+    OPENAI_BASE_URL: z.string().optional(),
+    AI_TEXT_EGRESS: z.enum(['direct', 'gateway']).default('direct'),
+    OPENAI_API_KEY: secret.optional(),
+    ANTHROPIC_API_KEY: secret.optional(),
+    GOOGLE_API_KEY: secret.optional(),
+    DEEPSEEK_API_KEY: secret.optional(),
+    FAL_KEY: secret.optional(),
+    MEDIA_WEBHOOK_SECRET: z.string().min(32).optional(),
+    AI_GATEWAY_ACCOUNT_ID: z.string().optional(),
+    AI_GATEWAY_ID: z.string().optional(),
+    AI_GATEWAY_TOKEN: secret.optional(),
+    RESEND_API_KEY: secret.optional(),
+    EMAIL_TRANSPORT: z.enum(['log', 'resend', 'smtp']).default('log'),
+    EMAIL_FROM: mailbox.optional(),
+    EMAIL_REPLY_TO: mailbox.optional(),
+    SMTP_HOST: smtpHost.optional(),
+    SMTP_PORT: z.coerce.number().int().min(1).max(65535).optional(),
+    SMTP_TLS_MODE: z.enum(['implicit', 'starttls', 'none']).default('starttls'),
+    SMTP_USER: secret.optional(),
+    SMTP_PASSWORD: secret.optional(),
+  }))()
 
 function withNodeValidation<Shape extends z.core.$ZodShape>(schema: z.ZodObject<Shape>) {
   return schema
@@ -165,7 +182,8 @@ function withNodeValidation<Shape extends z.core.$ZodShape>(schema: z.ZodObject<
     }))
 }
 
-export const nodeEnvSchema = withNodeValidation(nodeEnvBaseSchema)
+// 纯标注：客户端经 @product-res/config 入口间接引入本模块时，未被引用的 schema 可整体摇掉
+export const nodeEnvSchema = /* @__PURE__ */ withNodeValidation(nodeEnvBaseSchema)
 
 export type NodeEnv = z.output<typeof nodeEnvSchema>
 

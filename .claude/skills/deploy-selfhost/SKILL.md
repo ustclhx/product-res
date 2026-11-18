@@ -13,12 +13,12 @@ description: 为本 SaaS 模板准备或部署自托管环境，沿主机接入/
 
 | 资源 | 要求与证据 |
 | --- | --- |
-| 主机 | Ubuntu24.04 / Debian12，amd64/arm64、systemd；空白主机init 固定 Docker28.5.1/Compose2.40.3，至少2CPU/4GiB/10GiB空闲是预检下限，另审查 PG/WAL/对象/备份增长。非空白复用主机按§3接入，不能运行空白 init。 |
+| 主机 | Ubuntu24.04 / Debian12，amd64（正式镜像只发布 linux/amd64，arm64 主机不支持）、systemd；空白主机init 固定 Docker28.5.1/Compose2.40.3，至少2CPU/4GiB/10GiB空闲是预检下限，另审查 PG/WAL/对象/备份增长。非空白复用主机按§3接入，不能运行空白 init。 |
 | 域名/TLS | APP_DOMAIN / APP_URL 与入口一致；默认 Caddy ACME 需 DNS 和公网80/443，或已有受信证书；PG证书须 DNS:postgres SAN，CA验证与 sslmode=verify-full。 |
 | PG/Valkey | 私网 PG17、app/migrator/readonly最小权限、Valkey认证；仅代理映射宿主80/443，数据服务无公网端口。 |
 | S3 | 外部私有 S3/R2 按§3加载 `compose.s3.yaml`，核对 endpoint/region/bucket/CA/path-style 与受限应用身份；或显式 object-storage override。备份主目标与独立凭据副本按§5隔离。文本项目也核对文件清理能力的配置需求。 |
 | 邮件 | 生产按 Node adapter 配 SMTP 或 Resend（`packages/email/src/node/smtp.ts`、`packages/config/src/node-schema.ts`）；域名/发件人、TLS、认证与 secrets。log模式不代表真实送信验收。 |
-| 发布身份 | 成功 GHCR发布 run、同SHA八服务image-set、双架构smoke；服务器只消费bundle，不需业务源码/Node/pnpm，不触发publish。私有registry只经安全stdin登录。 |
+| 发布身份 | 成功 GHCR发布 run、同SHA八服务image-set、amd64 smoke；服务器只消费bundle，不需业务源码/Node/pnpm，不触发publish。私有registry只经安全stdin登录。 |
 | 运维 | 可信SSH host key、非交互身份、稳定executor ID/owner卷、独立备份与恢复材料；B/D ownership与恢复未签收时明示，不能删owner绕过。 |
 
 只读检查本地 `git status`、`gh run view <run-id>`（读状态）、各脚本 `--help`。如用户已授权连接明确空白主机，可在那里运行 `sudo bash <bundle>/init-server.sh --dir <dir> --check`；不猜服务器、不自动SSH、不在当前 macOS 工作站运行安装。`--check` 是预检，不安装；返回不支持OS/已有配置即报告，不自动修复。
@@ -37,7 +37,7 @@ gh run download <run-id> --name selfhost-image-set-<full-sha> --dir <new-image-s
 gh run download <run-id> --name selfhost-release-<full-sha> --dir <new-artifact-dir>
 ```
 
-阅读 workflow 的实际压缩格式再解压，核对来源 run/repo、成功结论、SHA、namespace、web/jobs/migrate/postgres/valkey/caddy/object-storage/backup 八服务 digest/revision、amd64与arm64。已存在同SHA发布只能复用，不覆盖tag；缺成功集合则报告需要发布负责人执行授权发布，技能不自动触发 `selfhost-publish`。
+阅读 workflow 的实际压缩格式再解压，核对来源 run/repo、成功结论、SHA、namespace、web/jobs/migrate/postgres/valkey/caddy/object-storage/backup 八服务 digest/revision、linux/amd64（此前发布的双架构集合同样含 amd64，仍可复用）。已存在同SHA发布只能复用，不覆盖tag；缺成功集合则报告需要发布负责人执行授权发布，技能不自动触发 `selfhost-publish`。
 
 ```sh
 python3 <bundle-dir>/release/bundle.py verify <bundle-dir> --sha <full-sha>

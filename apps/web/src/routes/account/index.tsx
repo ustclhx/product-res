@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
 import { SignupBonusSection } from '../../features/billing/signup-section.tsx'
 import { DeletionSection } from '../../features/deletion/deletion-section.tsx'
+import { compactSearch, optionalString } from '../../features/routing/search.ts'
 import { getAccount } from '../../features/settings/account.functions.ts'
 import {
   EmailVerificationSection,
@@ -15,7 +15,10 @@ import { ACCOUNT_COPY } from '../../features/settings/copy.ts'
 // 用户设置页（tasks.md 5.2）：不在 /app/$slug 下，属于用户本人而非某个空间
 export const Route = createFileRoute('/account/')({
   // 邮箱验证链接失败时 Better Auth 重定向回 callbackURL 并带上 ?error=
-  validateSearch: z.object({ error: z.string().optional() }),
+  validateSearch: (search: Record<string, unknown>) =>
+    compactSearch({
+      error: optionalString(search.error),
+    }),
   loader: () => getAccount(),
   head: () => ({ meta: [{ title: ACCOUNT_COPY.title }] }),
   component: AccountPage,

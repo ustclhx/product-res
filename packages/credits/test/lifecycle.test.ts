@@ -228,7 +228,12 @@ describe('credits lifecycle on PostgreSQL', () => {
       .set({ expiresAt: new Date(0) })
       .where(eq(creditGrant.id, inactive.id))
     await expireWorkspaceCredits(db, ws)
-    const untouched = await grant(db, grantInput(7))
+    const untouched = await grant(db, {
+      ...grantInput(7),
+      source: 'daily',
+      paymentId: null,
+      expiresAt: new Date(Date.now() + 7 * 86_400_000),
+    })
     await grant(db, { ...grantInput(9), workspaceId: otherWs })
     await expect(
       revokePaymentCredits(db, { workspaceId: otherWs, paymentId: paid.id }),
@@ -244,7 +249,12 @@ describe('credits lifecycle on PostgreSQL', () => {
     expect(await getCreditBalance(db, ws)).toEqual({ available: 7, held: 0, debt: 0 })
     const grants = await db.select().from(creditGrant).where(eq(creditGrant.workspaceId, ws))
     expect(grants.find((g) => g.id === inactive.id)?.status).toBe('expired')
-    expect(grants.find((g) => g.id === untouched.id)?.remaining).toBe(7)
+    expect(grants.find((g) => g.id === untouched.id)).toMatchObject({
+      remaining: 7,
+      status: 'active',
+      source: 'daily',
+      paymentId: null,
+    })
     expect(await getCreditBalance(db, otherWs)).toEqual({ available: 9, held: 0, debt: 0 })
     await invariant()
   })

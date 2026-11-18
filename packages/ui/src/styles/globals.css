@@ -1,96 +1,361 @@
 /*
- * @product-res/ui 的全局样式：Tailwind CSS v4 + shadcn/ui 主题变量（neutral 基色）。
- * 应用在自己的入口 CSS 中 `@import "@product-res/ui/globals.css";`，再用 `@source` 声明应用自身的源码目录。
+ * @product-res/ui 的全局样式（基线层）：Tailwind CSS v4 + shadcn 语义变量 + Fluid Functionalism 叠加变量。
+ * 应用在自己的入口 CSS 中 `@import "@product-res/ui/globals.css";`，再用 `@source` 声明应用自身的源码目录，
+ * 最后导入项目品牌层 brand.css（apps/web/src/styles/brand.css）。
+ *
+ * token 三层（openspec add-ui-design-system design D2）：
+ *   1. 本文件：基线，直接采用 Fluid Functionalism 的默认视觉（中性灰阶），不按任何特定参考调整；
+ *   2. presets/*.css：主题预设，只覆盖强调色、圆角与焦点环，挂在 <html data-preset="…">；
+ *   3. brand.css：项目品牌层，归项目所有，模板创建后不再修改。
  * 暗色模式：给 <html> 加 `dark` 类即切换到 `.dark` 中的变量，由 components/theme.tsx 的内联脚本与 ThemeToggle 切换。
- * 新站点只需改这里的变量即可换主题；组件中不写死颜色。
+ * 组件中不写死颜色；颜色值只出现在本文件与预设中。
+ * Fluid 来源与上游月份见 packages/ui/UPSTREAM.md（tokens、surfaces、type-scale、shape-context、scroll-area、button）。
  */
 @import "tailwindcss";
 @import "tw-animate-css";
+/* Inter 可变字体（含 opsz 光学尺寸轴），自托管；按 unicode-range 只下载用到的子集，中文回退系统字体 */
+@import "@fontsource-variable/inter/opsz.css";
+@import "./presets/neutral.css" layer(base);
+@import "./presets/blue.css" layer(base);
+@import "./presets/violet.css" layer(base);
+@import "./presets/green.css" layer(base);
 
-/* 本包组件中使用的类名（路径相对于本文件） */
-@source "../components";
+/* 本包组件、上下文与 hooks 中使用的类名（路径相对于本文件） */
+@source "../";
 
 @custom-variant dark (&:is(.dark *));
 
-/* color-scheme 让原生控件（select、滚动条等）跟随主题 */
-:root {
-  color-scheme: light;
-  /* 选品工作台主题（docs/design 设计稿）：Ant Design 风格的色板映射到 shadcn 变量 */
-  --radius: 0.5rem; /* 8px；卡片使用 rounded-xl = 12px */
-  --app-font-sans:
-    "Inter Variable", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC",
-    system-ui, sans-serif;
-  --app-font-mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", monospace;
-  --background: #ffffff;
-  --foreground: #262626;
-  --card: #ffffff;
-  --card-foreground: #262626;
-  --popover: #ffffff;
-  --popover-foreground: #262626;
-  --primary: #1677ff;
-  --primary-foreground: #ffffff;
-  --primary-soft: #e6f4ff;
-  --secondary: #f5f5f5;
-  --secondary-foreground: #262626;
-  --muted: #f5f5f5;
-  --muted-foreground: #8c8c8c;
-  --subtle-foreground: #595959;
-  --accent: #f5f5f5;
-  --accent-foreground: #262626;
-  --destructive: #ff4d4f;
-  --destructive-soft: #fff2f0;
-  --success: #52c41a;
-  --success-soft: #f6ffed;
-  --success-strong: #389e0d;
-  --warning: #faad14;
-  --warning-soft: #fffbe6;
-  --warning-strong: #d48806;
-  --border: #f0f0f0;
-  --input: #d9d9d9;
-  --ring: #4096ff;
-  --page: #f0f2f5;
-  --sidebar: #001529;
-  --sidebar-foreground: #ffffff;
-  --sidebar-muted: rgb(255 255 255 / 65%);
+/* color-scheme 让原生控件（滚动条等）跟随主题 */
+/*
+ * 基线变量放在 base 层：项目 brand.css 不分层，普通 :root / .dark 选择器即可覆盖基线与预设，
+ * 不用比拼选择器优先级（未分层的声明总是胜过分层声明）。
+ */
+@layer base {
+  :root {
+    color-scheme: light;
+    /* 圆角基准：Fluid rounded 形状的控件 8px（rounded-lg）、容器 12px（rounded-xl） */
+    --radius: 0.5rem;
+
+    /* ── 表面阶梯（Fluid surfaces）：浅色两级灰底后全白，靠阴影区分层级 ── */
+    --surface-1: #fafafa;
+    --surface-2: #fcfcfc;
+    --surface-3: #ffffff;
+    --surface-4: #ffffff;
+    --surface-5: #ffffff;
+    --surface-6: #ffffff;
+    --surface-7: #ffffff;
+    --surface-8: #ffffff;
+    --shadow-color: rgb(0 0 0 / 0.06);
+    --shadow-1: 0 0 0 1px var(--shadow-color);
+    --shadow-2: 0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color);
+    --shadow-3:
+      0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color),
+      0 3px 3px -1.5px var(--shadow-color);
+    --shadow-4:
+      0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color), 0 3px 3px -1.5px
+      var(--shadow-color), 0 6px 6px -3px var(--shadow-color);
+    --shadow-5:
+      0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color), 0 3px 3px -1.5px
+      var(--shadow-color), 0 6px 6px -3px var(--shadow-color), 0 12px 12px -6px var(--shadow-color);
+    --shadow-6:
+      0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color), 0 3px 3px -1.5px
+      var(--shadow-color), 0 6px 6px -3px var(--shadow-color), 0 12px 12px -6px var(--shadow-color),
+      0 24px 24px -12px var(--shadow-color);
+    --shadow-7:
+      0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color), 0 3px 3px -1.5px
+      var(--shadow-color), 0 6px 6px -3px var(--shadow-color), 0 12px 12px -6px var(--shadow-color),
+      0 24px 24px -12px var(--shadow-color), 0 48px 48px -24px var(--shadow-color);
+    --shadow-8:
+      0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color), 0 3px 3px -1.5px
+      var(--shadow-color), 0 6px 6px -3px var(--shadow-color), 0 12px 12px -6px var(--shadow-color),
+      0 24px 24px -12px var(--shadow-color), 0 48px 48px -24px var(--shadow-color), 0 96px 96px
+      -48px var(--shadow-color);
+
+    /* ── shadcn 语义变量，取 Fluid 站点默认值 ── */
+    --background: var(--surface-1);
+    --foreground: #171717;
+    --card: var(--surface-3);
+    --card-foreground: #171717;
+    --popover: var(--surface-3);
+    --popover-foreground: #171717;
+    /* Fluid 的主按钮用前景色作底；模板改由 --primary 承载，预设只需改这一处即可换强调色 */
+    --primary: #171717;
+    --primary-foreground: #fafafa;
+    /* 模板新增（4.2）：强调色作文字（Button link 变体等）。默认即 --primary；深色预设的实心主按钮色
+       作文字不足 4.5:1，由预设在 .dark 中改为更亮的同色系 */
+    --primary-text: var(--primary);
+    --secondary: #f4f4f5;
+    --secondary-foreground: #171717;
+    --muted: #f4f4f5;
+    /* 模板改动：上游 #737373 在 --muted 上只有 4.3:1，略加深到 AA */
+    --muted-foreground: #6b6b6b;
+    --accent: #e5e5e5;
+    --accent-foreground: #171717;
+    /* 模板新增（0.5.7）：中性填充（灰色实心 Badge 等）。与 --accent 同值但独立：品牌层常把 --accent 改成品牌主色，
+       中性徽标不应随之变色（衍生项目反馈对比度降到 1.38） */
+    --neutral-fill: #e5e5e5;
+    /* Fluid 用 red-500；作文字（含浅红底上）对比度不足 4.5:1，模板取 red-700 */
+    --destructive: #b91c1c;
+    --destructive-light: #fef2f2;
+    /* 成功色沿用模板原值（作文字时满足 4.5:1） */
+    --success: oklch(0.527 0.154 150.069);
+    /* 模板新增（add-ai-chat-components）：提醒色，对话「未完成」状态等。设计稿取 yellow-700（#a16207），
+       在自身 10% 淡底上只有约 4.2:1，略加深到 ≥ 4.5:1（页面底与卡片底上约 4.9–5.2:1） */
+    --warning: #8a5a00;
+    /* 边框由前景色混出，随主题自动变化 */
+    --border: color-mix(in oklab, var(--foreground) 12%, transparent);
+    --input: #e5e5e5;
+
+    /* ── Fluid 交互变量 ── */
+    --hover: rgb(0 0 0 / 0.04);
+    --active: rgb(0 0 0 / 0.07);
+    --selected: #d4d4d4;
+    --overlay: 0 0 0;
+    --tint: rgb(0 0 0 / 0.08);
+    --tint-hover: rgb(0 0 0 / 0.065);
+    /* 唯一的品牌强调色：开关轨道、选区与所有焦点环（经 --focus-ring）；预设覆盖它 */
+    /* 模板改动：浅色取 blue-500（上游 #6b97ff 在 #fafafa 上不足 3:1） */
+    --fluid-accent: #3b82f6;
+    --focus-ring: var(--fluid-accent);
+    /* 模板新增（add-ai-chat-components）：强调色作小字（工具调用「执行中」徽标）。与正文色混合：浅色更深、深色更亮，
+       随预设换色且 ≥ 4.5:1 */
+    --fluid-accent-text: color-mix(in oklab, var(--fluid-accent) 72%, var(--foreground));
+    /* 模板新增（add-ai-chat-components）：对话中的中性填充（用户气泡、中性状态徽标、不可用的输入框）。
+       半透明前景色叠在所处表面上：深色下 --secondary 与卡片同为 #252525，用它会在卡片（嵌入式面板）上看不出底色；
+       叠加后浅色约 #f1f1f1（设计稿 #f4f4f5），深色在卡片上约 #313131（设计稿 #2c2c2c–#333） */
+    --chat-fill: color-mix(in oklab, var(--foreground) 6%, transparent);
+    /* shadcn 组件的焦点环同样取强调色，与 Fluid 组件一致 */
+    --ring: var(--focus-ring);
+    /* 模板新增：未选中的复选框边框与关闭态开关轨道。它们是控件唯一的边界与状态标识，
+       需与页面及弹窗表面 ≥ 3:1（WCAG 1.4.11）；上游用 --border / --accent，只有约 1.2–1.4:1 */
+    --control-border: color-mix(in oklab, var(--foreground) 52%, transparent);
+    /* 模板新增：Input、Textarea、Select 触发器共用的边框，默认即 Fluid 的 --border；
+       需要更醒目的输入框边框时（如 ≥ 3:1）在 brand.css 只改这一处 */
+    --field-border: var(--border);
+    /* 模板新增：开启态 Switch 的滑块色（上游固定白色）。浅色强调色上白色即可；预设的深色强调色较浅，
+       白色滑块不足 3:1，由预设在 .dark 中改为深色 */
+    --switch-thumb-on: #ffffff;
+    /* 模板新增（4.2）：关闭态滑块色，原先组件内写死 bg-white；对关闭轨道 ≥ 3:1 由 presets.test.ts 断言 */
+    --switch-thumb-off: #ffffff;
+
+    /* ── Badge 色板（Fluid badge：Tailwind 500 色阶，灰色取 400）。文字始终是正文色，色值只用于
+       15% 淡底与圆点，浅色与深色共用 ── */
+    --badge-gray: #a3a3a3;
+    --badge-red: #ef4444;
+    --badge-orange: #f97316;
+    --badge-amber: #f59e0b;
+    --badge-yellow: #eab308;
+    --badge-lime: #84cc16;
+    --badge-green: #22c55e;
+    --badge-emerald: #10b981;
+    --badge-teal: #14b8a6;
+    --badge-cyan: #06b6d4;
+    --badge-blue: #3b82f6;
+    --badge-indigo: #6366f1;
+    --badge-violet: #8b5cf6;
+    --badge-purple: #a855f7;
+    --badge-fuchsia: #d946ef;
+    --badge-pink: #ec4899;
+    --badge-rose: #f43f5e;
+
+    /* ── 层级：离开组件的浮层只用这些值 ── */
+    --z-sticky: 30;
+    --z-overlay: 40;
+    --z-modal: 50;
+    --z-popover: 60;
+    --z-tooltip: 70;
+    /* Toast 在模态与提示之上：通知不被遮罩挡住 */
+    --z-toast: 80;
+
+    /* ── 字号阶梯（Fluid type-scale）：六个角色 × default / compact ── */
+    --fs-display: 28px;
+    --lh-display: 34px;
+    --fs-display-compact: 24px;
+    --lh-display-compact: 30px;
+    --fs-title: 16px;
+    --lh-title: 22px;
+    --fs-title-compact: 15px;
+    --lh-title-compact: 20px;
+    --fs-subtitle: 14px;
+    --lh-subtitle: 20px;
+    --fs-subtitle-compact: 13px;
+    --lh-subtitle-compact: 18px;
+    /* 模板改动：正文 14px（上游 13px），中文与长文更易读；compact 仍为 12px */
+    --fs-body: 14px;
+    --lh-body: 20px;
+    --fs-body-compact: 12px;
+    --lh-body-compact: 18px;
+    --fs-caption: 12px;
+    --lh-caption: 16px;
+    --fs-caption-compact: 11px;
+    --lh-caption-compact: 14px;
+    --fs-micro: 11px;
+    --lh-micro: 14px;
+    --fs-micro-compact: 10px;
+    --lh-micro-compact: 12px;
+  }
+
+  .dark {
+    color-scheme: dark;
+    /* 暗色表面：在 #171717 上叠加白色，层级越高越亮 */
+    --surface-1: #171717;
+    --surface-2: #1e1e1e;
+    --surface-3: #252525;
+    --surface-4: #2c2c2c;
+    --surface-5: #333333;
+    --surface-6: #3a3a3a;
+    --surface-7: #414141;
+    --surface-8: #484848;
+    --dm-hi-base: rgb(255 255 255 / 0.01);
+    --dm-hi-mid: rgb(255 255 255 / 0.02);
+    --dm-hi-high: rgb(255 255 255 / 0.04);
+    --dm-hi-peak: rgb(255 255 255 / 0.06);
+    --dm-ring-base: rgb(255 255 255 / 0.02);
+    --dm-ring-mid: rgb(255 255 255 / 0.04);
+    --dm-ring-high: rgb(255 255 255 / 0.06);
+    --dm-drop: rgb(0 0 0 / 0.18);
+    --shadow-1: inset 0 0 0 1px var(--dm-ring-base);
+    --shadow-2:
+      inset 0 1px 0 0 var(--dm-hi-base), inset 0 0 0 1px var(--dm-ring-base),
+      0 1px 1px -0.5px var(--dm-drop);
+    --shadow-3:
+      inset 0 1px 0 0 var(--dm-hi-mid), inset 0 0 0 1px var(--dm-ring-base), 0 0 0 1px
+      rgb(0 0 0 / 0.12), 0 1px 1px -0.5px var(--dm-drop), 0 3px 3px -1.5px var(--dm-drop);
+    --shadow-4:
+      inset 0 1px 0 0 var(--dm-hi-mid), inset 0 0 0 1px var(--dm-ring-mid), 0 0 0 1px
+      rgb(0 0 0 / 0.14), 0 1px 1px -0.5px var(--dm-drop), 0 3px 3px -1.5px var(--dm-drop), 0 6px 6px
+      -3px var(--dm-drop);
+    --shadow-5:
+      inset 0 1px 0 0 var(--dm-hi-high), inset 0 0 0 1px var(--dm-ring-mid), 0 0 0 1px
+      rgb(0 0 0 / 0.16), 0 1px 1px -0.5px var(--dm-drop), 0 3px 3px -1.5px var(--dm-drop), 0 6px 6px
+      -3px var(--dm-drop), 0 12px 12px -6px var(--dm-drop);
+    --shadow-6:
+      inset 0 1px 0 0 var(--dm-hi-high), inset 0 0 0 1px var(--dm-ring-high), 0 0 0 1px
+      rgb(0 0 0 / 0.18), 0 1px 1px -0.5px var(--dm-drop), 0 3px 3px -1.5px var(--dm-drop), 0 6px 6px
+      -3px var(--dm-drop), 0 12px 12px -6px var(--dm-drop), 0 24px 24px -12px var(--dm-drop);
+    --shadow-7:
+      inset 0 1px 0 0 var(--dm-hi-peak), inset 0 0 0 1px var(--dm-ring-high), 0 0 0 1px
+      rgb(0 0 0 / 0.2), 0 1px 1px -0.5px var(--dm-drop), 0 3px 3px -1.5px var(--dm-drop), 0 6px 6px
+      -3px var(--dm-drop), 0 12px 12px -6px var(--dm-drop), 0 24px 24px -12px var(--dm-drop), 0 48px
+      48px -24px var(--dm-drop);
+    --shadow-8:
+      inset 0 1px 0 0 var(--dm-hi-peak), inset 0 0 0 1px var(--dm-ring-high), 0 0 0 1px
+      rgb(0 0 0 / 0.22), 0 1px 1px -0.5px var(--dm-drop), 0 3px 3px -1.5px var(--dm-drop), 0 6px 6px
+      -3px var(--dm-drop), 0 12px 12px -6px var(--dm-drop), 0 24px 24px -12px var(--dm-drop), 0 48px
+      48px -24px var(--dm-drop), 0 96px 96px -48px var(--dm-drop);
+
+    --foreground: #f5f5f5;
+    --card-foreground: #f5f5f5;
+    --popover-foreground: #f5f5f5;
+    --primary: #f5f5f5;
+    --primary-foreground: #171717;
+    --secondary: #252525;
+    --secondary-foreground: #f5f5f5;
+    --muted: #1e1e1e;
+    /* 模板改动：上游 #a3a3a3 在弹窗高层表面（surface-7）上不足 4.5:1 */
+    --muted-foreground: #b0b0b0;
+    --accent: #525252;
+    --accent-foreground: #f5f5f5;
+    --neutral-fill: #525252;
+    --destructive: #fca5a5;
+    --destructive-light: #450a0a;
+    --success: oklch(0.723 0.219 149.579);
+    --warning: #fcd34d;
+    --input: #404040;
+
+    --hover: rgb(255 255 255 / 0.06);
+    --active: rgb(255 255 255 / 0.1);
+    --selected: #525252;
+    --overlay: 255 255 255;
+    --tint: rgb(255 255 255 / 0.25);
+    --tint-hover: rgb(255 255 255 / 0.2);
+    /* 深色强调色：上游 #6b97ff 与浅色主按钮（#f5f5f5）对比不足 3:1，略加深 */
+    --fluid-accent: #4f86f7;
+    /* 深色：control-border 略降（白色滑块叠在弹窗表面的关闭轨道上仍需 ≥ 3:1） */
+    --control-border: color-mix(in oklab, var(--foreground) 48%, transparent);
+  }
 }
 
-.dark {
-  color-scheme: dark;
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --success: oklch(0.723 0.219 149.579);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  /* 设计稿只有浅色；暗色沿用模板默认，下列业务变量给出可读的近似值 */
-  --primary-soft: oklch(0.3 0.08 255);
-  --subtle-foreground: oklch(0.8 0 0);
-  --destructive-soft: oklch(0.3 0.08 25);
-  --success-soft: oklch(0.3 0.06 150);
-  --success-strong: oklch(0.8 0.15 150);
-  --warning: oklch(0.8 0.15 80);
-  --warning-soft: oklch(0.32 0.06 80);
-  --warning-strong: oklch(0.85 0.14 80);
-  --page: oklch(0.12 0 0);
-  --sidebar: oklch(0.18 0.03 255);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-muted: oklch(0.985 0 0 / 65%);
+/*
+ * Inter 的度量匹配回退字体：Inter 以 font-display: swap 加载，慢网下首帧先用回退字体排版，Inter 到达后换字。
+ * 系统字体（如 SF）与 Inter 宽度相差 3%–6%，换字时正文换行改变、整段下移（实测定价页、博客页手机端 CLS 约 0.02 / 0.013）。
+ * 这里把本地 Arial（Linux 上为度量兼容的 Liberation Sans / Arimo）按 Inter 的宽度与纵向度量缩放后放在 Inter 之后，
+ * 首帧排版与 Inter 基本一致。Arial 只有常规与粗体两种字重，按字重分两个字体：数值在 Chromium 中按营销页实测换字位移取得
+ * （常规体以 14–18px 正文为准；粗体在小字与 opsz 收窄的大标题之间折中）；纵向度量取 Inter 的
+ * ascender 1984 / descender -494 / unitsPerEm 2048，再除以 size-adjust。
+ * unicode-range 与 Inter 拉丁子集一致：Inter 加载后这些字符都由 Inter 显示，回退字体不会改变加载完成后的外观；
+ * 其他字符（中文等）仍按原顺序回退到系统字体。
+ * Android 没有 Arial，由紧随其后的 "Inter Fallback Roboto" 接手：系统 Roboto 比 Inter 窄 6%–8%，
+ * 按同一方法取常规 106%、粗体 103%（对营销页文案在 343–700px 宽度下统计换行差异，比未缩放的 Roboto 少约 40%–100%，
+ * 与 Arial 一档持平）。有 Arial 的平台上拉丁字符已由 "Inter Fallback" 覆盖，这一组不会被用到；两者都没有时回退到系统字体。
+ * 项目在 brand.css 用 --font-sans 换掉 Inter 时，新字体栈不含 "Inter Fallback"，这里的规则不生效、也不下载任何文件；
+ * 若自己的字体同样以 swap 加载，可按同样方法为它定义度量匹配的回退字体并放进字体栈。
+ */
+@font-face {
+  font-family: "Inter Fallback";
+  font-style: normal;
+  font-weight: 100 549;
+  src:
+    local("Arial"), local("ArialMT"), local("Liberation Sans"), local("LiberationSans"),
+    local("Arimo");
+  size-adjust: 105.5%;
+  ascent-override: 91.82%;
+  descent-override: 22.86%;
+  line-gap-override: 0%;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Inter Fallback";
+  font-style: normal;
+  font-weight: 550 900;
+  src:
+    local("Arial Bold"), local("Arial-BoldMT"), local("Liberation Sans Bold"),
+    local("LiberationSans-Bold"), local("Arimo Bold");
+  size-adjust: 97%;
+  ascent-override: 99.87%;
+  descent-override: 24.87%;
+  line-gap-override: 0%;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Inter Fallback Roboto";
+  font-style: normal;
+  font-weight: 100 549;
+  src: local("Roboto"), local("Roboto-Regular"), local("Roboto Regular");
+  size-adjust: 106%;
+  ascent-override: 91.39%;
+  descent-override: 22.76%;
+  line-gap-override: 0%;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Inter Fallback Roboto";
+  font-style: normal;
+  font-weight: 550 900;
+  src: local("Roboto Bold"), local("Roboto-Bold");
+  size-adjust: 103%;
+  ascent-override: 94.05%;
+  descent-override: 23.42%;
+  line-gap-override: 0%;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @theme inline {
+  --font-sans:
+    "Inter Variable", "Inter Fallback", "Inter Fallback Roboto", ui-sans-serif, system-ui,
+    -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC",
+    sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -103,38 +368,307 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-text: var(--primary-text);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-neutral-fill: var(--neutral-fill);
   --color-destructive: var(--destructive);
+  --color-destructive-light: var(--destructive-light);
   --color-success: var(--success);
-  --color-success-soft: var(--success-soft);
-  --color-success-strong: var(--success-strong);
   --color-warning: var(--warning);
-  --color-warning-soft: var(--warning-soft);
-  --color-warning-strong: var(--warning-strong);
-  --color-destructive-soft: var(--destructive-soft);
-  --color-primary-soft: var(--primary-soft);
-  --color-subtle-foreground: var(--subtle-foreground);
-  --color-page: var(--page);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-muted: var(--sidebar-muted);
-  --font-sans: var(--app-font-sans);
-  --font-mono: var(--app-font-mono);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-hover: var(--hover);
+  --color-active: var(--active);
+  --color-selected: var(--selected);
+  /* 上游只作为变量提供；模板的 Button 用 ::before 画底色，需要对应的工具类 */
+  --color-tint: var(--tint);
+  --color-tint-hover: var(--tint-hover);
+  --color-fluid-accent: var(--fluid-accent);
+  --color-fluid-accent-text: var(--fluid-accent-text);
+  --color-chat-fill: var(--chat-fill);
+  /* 模板新增（add-ai-chat-components）：思考中三点的明暗循环（animate-chat-dot），减少动态效果时由
+     motion-reduce:animate-none 关闭（同在 utilities 层，SSR 即生效） */
+  --animate-chat-dot: chat-dot 1.2s ease-in-out infinite;
+  /* 模板新增（add-ai-chat-components）：ChatMessage 助手消息的版式阈值（容器查询 @chat-message:）。
+     消息宽度不足 23rem（368px）时头像与推理按钮同一行、正文通栏在下（Mobile / EmbeddedMobile 画板，内容宽约 358px）；
+     达到时为头像列 + 内容列（Embedded 画板的 420px 面板，内容宽约 388px） */
+  --container-chat-message: 23rem;
+  --color-control-border: var(--control-border);
+  --color-field-border: var(--field-border);
+
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
+  --color-surface-5: var(--surface-5);
+  --color-surface-6: var(--surface-6);
+  --color-surface-7: var(--surface-7);
+  --color-surface-8: var(--surface-8);
+  --shadow-surface-1: var(--shadow-1);
+  --shadow-surface-2: var(--shadow-2);
+  --shadow-surface-3: var(--shadow-3);
+  --shadow-surface-4: var(--shadow-4);
+  --shadow-surface-5: var(--shadow-5);
+  --shadow-surface-6: var(--shadow-6);
+  --shadow-surface-7: var(--shadow-7);
+  --shadow-surface-8: var(--shadow-8);
+
+  --text-display: var(--fs-display);
+  --text-display--line-height: var(--lh-display);
+  --text-title: var(--fs-title);
+  --text-title--line-height: var(--lh-title);
+  --text-subtitle: var(--fs-subtitle);
+  --text-subtitle--line-height: var(--lh-subtitle);
+  --text-body: var(--fs-body);
+  --text-body--line-height: var(--lh-body);
+  --text-caption: var(--fs-caption);
+  --text-caption--line-height: var(--lh-caption);
+  --text-micro: var(--fs-micro);
+  --text-micro--line-height: var(--lh-micro);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    @apply font-sans;
+  }
   body {
     @apply bg-background text-foreground antialiased;
+  }
+  /* 选中文字用强调色淡底（Fluid tokens） */
+  ::selection {
+    background-color: color-mix(in oklab, var(--fluid-accent) 25%, transparent);
+  }
+  .dark ::selection {
+    background-color: color-mix(in oklab, var(--fluid-accent) 40%, transparent);
+  }
+  /* 没有自带焦点样式的元素的兜底焦点环；圆角跟随 ShapeProvider 写入的 --shape-input-radius */
+  :focus-visible {
+    outline: 1px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: var(--shape-input-radius, 8px);
+  }
+  a:focus-visible {
+    border-radius: 2px;
+  }
+}
+
+/* 切换圆角形状时的 180ms 过渡（ShapeProvider 临时给 <html> 加 transitioning 类） */
+html.transitioning *,
+html.transitioning *::before,
+html.transitioning *::after {
+  transition:
+    border-radius 180ms ease-in-out,
+    background-color 180ms ease-in-out,
+    color 180ms ease-in-out,
+    border-color 180ms ease-in-out,
+    fill 180ms ease-in-out,
+    /* biome-ignore lint/complexity/noImportantStyles: 过渡只在切换形状的 200ms 内生效，需压过组件自身的 transition 类 */
+    stroke 180ms ease-in-out !important;
+}
+
+/* Button 加载转圈 */
+@keyframes spinner-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes spinner-breathe {
+  0%,
+  100% {
+    stroke-dasharray: 0.01 49.99;
+    stroke-dashoffset: -25;
+  }
+  50% {
+    stroke-dasharray: 26 24;
+    stroke-dashoffset: -12;
+  }
+}
+
+/* ScrollArea：滚动边缘渐隐与细滚动条（Fluid scroll-area） */
+@property --sf-start {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+@property --sf-end {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+@keyframes sf-reveal-start {
+  from {
+    --sf-start: 1;
+  }
+  to {
+    --sf-start: 0;
+  }
+}
+@keyframes sf-reveal-end {
+  from {
+    --sf-end: 0;
+  }
+  to {
+    --sf-end: 1;
+  }
+}
+.scroll-fade,
+.scroll-fade-x {
+  --scroll-fade-size: 48px;
+}
+@supports (animation-timeline: scroll()) {
+  .scroll-fade {
+    mask-image: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, var(--sf-start)) 0,
+      #000 var(--scroll-fade-size),
+      #000 calc(100% - var(--scroll-fade-size)),
+      rgba(0, 0, 0, var(--sf-end)) 100%
+    );
+    animation:
+      sf-reveal-start both linear,
+      sf-reveal-end both linear;
+    animation-timeline: scroll(self), scroll(self);
+    animation-range-start: 0, calc(100% - var(--scroll-fade-size));
+    animation-range-end: var(--scroll-fade-size), 100%;
+  }
+  .scroll-fade-x {
+    mask-image: linear-gradient(
+      to right,
+      rgba(0, 0, 0, var(--sf-start)) 0,
+      #000 var(--scroll-fade-size),
+      #000 calc(100% - var(--scroll-fade-size)),
+      rgba(0, 0, 0, var(--sf-end)) 100%
+    );
+    animation:
+      sf-reveal-start both linear,
+      sf-reveal-end both linear;
+    animation-timeline: scroll(self inline), scroll(self inline);
+    animation-range-start: 0, calc(100% - var(--scroll-fade-size));
+    animation-range-end: var(--scroll-fade-size), 100%;
+  }
+}
+/* scroll-divider：滚动边缘的细线（Fluid scroll-area 的 css 段，4.2 Command Menu 用）。
+   线画在父元素的伪元素上，借子孙 .scroll-fade 视口的滚动时间线；不支持滚动驱动动画的浏览器两者都没有 */
+@keyframes sf-divider-start {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes sf-divider-end {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@supports (timeline-scope: --sf) {
+  .scroll-divider {
+    position: relative;
+    timeline-scope: --sf-scroller;
+    --scroll-divider-size: 48px;
+  }
+  .scroll-divider .scroll-fade {
+    scroll-timeline-name: --sf-scroller;
+  }
+  .scroll-divider::before,
+  .scroll-divider::after {
+    content: "";
+    position: absolute;
+    left: var(--scroll-divider-inset, 0px);
+    right: var(--scroll-divider-inset, 0px);
+    height: 1px;
+    background-color: var(--border);
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0;
+  }
+  .scroll-divider::before {
+    top: 0;
+    animation: sf-divider-start both linear;
+    animation-timeline: --sf-scroller;
+    animation-range: 0 var(--scroll-divider-size);
+  }
+  .scroll-divider:first-child::before {
+    content: none;
+  }
+  .scroll-divider::after {
+    bottom: 0;
+    animation: sf-divider-end both linear;
+    animation-timeline: --sf-scroller;
+    animation-range: calc(100% - var(--scroll-divider-size)) 100%;
+  }
+  .scroll-divider:last-child::after {
+    content: none;
+  }
+}
+/* 细滚动条只用于内部滚动容器（ScrollArea 视口、弹层列表等），页面根保持系统默认 */
+@layer base {
+  @media (pointer: fine) {
+    *:not(html, body) {
+      scrollbar-width: thin;
+      scrollbar-color: rgb(var(--overlay) / 0.08) transparent;
+    }
+  }
+}
+
+/* Tabs 横向溢出时隐藏滚动条（Fluid tabs 的 css 段） */
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* 对话组件（add-ai-chat-components）：思考中三点的关键帧（工具类 animate-chat-dot，见 @theme） */
+@keyframes chat-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+/* 对话组件（add-ai-chat-components design D1 / D4）：流式生成中正文末尾的光标。约定与 DOM 层级无关：
+   - ChatMessage 在 status="streaming" 时给内容区加 data-chat-streaming；
+   - 光标只画在其中带 data-chat-tail 的元素之后。ChatMarkdown（线 B）在流式时把它放在最后一个承载文字的块元素上
+     （段落、列表项、标题、引用中的最后一段等）；ChatMessage 自己包段落的纯文本子节点由 ChatMessage 标在最后一段上；
+     其余自定义内容由调用方自行标注，没有标注时不显示光标。
+   减少动态效果时不闪烁 */
+@keyframes chat-caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+[data-chat-streaming] [data-chat-tail]::after {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 15px;
+  margin-left: 2px;
+  vertical-align: -2px;
+  border-radius: 1px;
+  background: currentColor;
+  animation: chat-caret-blink 1s steps(2) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-chat-streaming] [data-chat-tail]::after {
+    animation: none;
   }
 }

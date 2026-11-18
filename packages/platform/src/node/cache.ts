@@ -7,11 +7,12 @@ export type NodeRateLimitPolicies = Readonly<
   Record<RateLimitPolicy, { readonly limit: number; readonly periodSeconds: number }>
 >
 
-/** 与默认 Wrangler 三种策略保持一致；入口可显式传入经校验的配置。 */
+/** 与默认 Wrangler 各策略保持一致；入口可显式传入经校验的配置，未传的策略取默认值。 */
 export const defaultNodeRateLimitPolicies: NodeRateLimitPolicies = {
   auth: { limit: 10, periodSeconds: 60 },
   ai: { limit: 20, periodSeconds: 60 },
   api: { limit: 60, periodSeconds: 60 },
+  shareCard: { limit: 30, periodSeconds: 60 },
 }
 
 const fixedWindow = `
@@ -23,13 +24,14 @@ return count <= tonumber(ARGV[2]) and 1 or 0
 export interface NodeCacheOptions {
   readonly url: string
   readonly namespace: string
-  readonly policies?: NodeRateLimitPolicies
+  readonly policies?: Partial<NodeRateLimitPolicies>
   readonly timeoutMs?: number
 }
 
 /** 进程拥有此连接；web/jobs 必须使用相同 namespace，并在排空后台任务后 close。 */
 export async function createNodeCache(options: NodeCacheOptions) {
-  const policies = options.policies ?? defaultNodeRateLimitPolicies
+  // 新增策略时旧的显式配置仍可用，缺省项回落到默认限额。
+  const policies: NodeRateLimitPolicies = { ...defaultNodeRateLimitPolicies, ...options.policies }
   if (!options.namespace.trim()) throw new Error('Cache namespace must not be empty')
   for (const { limit, periodSeconds } of Object.values(policies)) {
     if (

@@ -44,6 +44,15 @@ beforeAll(async () => {
     ['consume', -900, next],
   ] as const)
     await sql`insert into credit_ledger (id,workspace_id,type,delta,created_at) values (${newId()},${spaces[0] ?? ''},${type},${delta},${createdAt})`
+  // 只汇总当日已提交 daily grant；其他来源、非发放及次日账本均排除。
+  for (const [type, refType, delta, createdAt] of [
+    ['grant', 'daily', 2147483647, at],
+    ['grant', 'daily', 2147483647, at],
+    ['grant', 'signup', 100, at],
+    ['expire', 'daily', -5, at],
+    ['grant', 'daily', 50, next],
+  ] as const)
+    await sql`insert into credit_ledger (id,workspace_id,type,ref_type,delta,created_at) values (${newId()},${spaces[0] ?? ''},${type},${refType},${delta},${createdAt})`
 })
 afterAll(async () => {
   const sql = createDb(env.HYPERDRIVE_MIGRATOR).$client
@@ -67,6 +76,8 @@ it('固定种子按 UTC 边界、月化价格、去重空间与结算时间汇�
     paid_workspaces: 2,
     mrr_by_currency: { USD: 2200, EUR: 1200 },
     credits_consumed: 150,
+    daily_grant_count: 2,
+    daily_grant_credits: '4294967294',
     overage_absorbed: 10,
     overage_by_model: { 'model-a': 3, 'model-b': 7 },
     text_completed: 2,
@@ -76,7 +87,7 @@ it('固定种子按 UTC 边界、月化价格、去重空间与结算时间汇�
     media_failed: null,
   })
   expect(new Date(String(result?.data_through)).toISOString()).toBe('2001-02-04T00:00:00.000Z')
-  await db.$client`update metrics_daily set credits_consumed=999 where day=${day}`
+  await db.$client`update metrics_daily set credits_consumed=999,daily_grant_count=999,daily_grant_credits=999 where day=${day}`
   await worker.scheduled(
     createScheduledController({
       cron: METRICS_DAILY_CRON,
@@ -86,5 +97,9 @@ it('固定种子按 UTC 边界、月化价格、去重空间与结算时间汇�
   )
   const rows = await db.$client`select * from metrics_daily where day=${day}`
   expect(rows).toHaveLength(1)
-  expect(rows[0]?.credits_consumed).toBe(150)
+  expect(rows[0]).toMatchObject({
+    credits_consumed: 150,
+    daily_grant_count: 2,
+    daily_grant_credits: '4294967294',
+  })
 })

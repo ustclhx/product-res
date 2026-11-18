@@ -48,14 +48,70 @@ export function mapStripeSubscriptionStatus(
   }
 }
 
-/** Billing adjustments must be recorded separately and must never grant monthly credits. */
+/**
+ * Billing adjustments must be recorded separately and must never grant monthly credits.
+ * 月付↔年付在周期末以 billing_cycle_anchor=phase_start 切换时，Stripe 以 subscription_update
+ * 开出新周期首期发票：只有一条非按比例的整周期订阅行、没有任何按比例行，按续费入账发放该周期积分。
+ * 未传入发票订阅行时保持原分类，有按比例行的仍是 adjustment。
+ */
 export function classifyStripeBillingReason(
   reason: Stripe.Invoice.BillingReason | null,
+  subscriptionLines?: Stripe.InvoiceLineItem[],
 ): 'initial' | 'renewal' | 'adjustment' | 'unsupported' {
   if (reason === 'subscription_create') return 'initial'
   if (reason === 'subscription_cycle') return 'renewal'
-  if (reason === 'subscription_update') return 'adjustment'
+  if (reason === 'subscription_update') {
+    const periodRestart =
+      subscriptionLines?.length === 1 &&
+      subscriptionLines.every(
+        (line) => !line.parent?.subscription_item_details?.proration && line.amount > 0,
+      )
+    return periodRestart ? 'renewal' : 'adjustment'
+  }
   return 'unsupported'
+}
+
+/** 发票中属于其订阅的订阅项行（不含一次性 invoice item） */
+export function stripeSubscriptionLines(
+  invoice: Stripe.Invoice,
+  lines: Stripe.InvoiceLineItem[] = invoice.lines.data,
+): Stripe.InvoiceLineItem[] {
+  if (lines === invoice.lines.data && invoice.lines.has_more) {
+    throw new Error('Invoice classification requires complete line items')
+  }
+  const subscriptionId = stripeInvoiceSubscription(invoice)
+  return lines.filter(
+    (line) =>
+      line.parent?.type === 'subscription_item_details' &&
+      line.parent.subscription_item_details?.subscription === subscriptionId,
+  )
+}
+
+/** 补齐分页后的发票行；分类与周期解析都必须看到完整行 */
+export async function stripeInvoiceLines(
+  stripe: Stripe,
+  invoice: Stripe.Invoice,
+): Promise<Stripe.InvoiceLineItem[]> {
+  return invoice.lines.has_more
+    ? await stripe.invoices.listLineItems(invoice.id).autoPagingToArray({ limit: 100 })
+    : invoice.lines.data
+}
+
+/**
+ * 订阅是否会在当前周期末停止续费。
+ * API 置 cancel_at_period_end=true；Customer Portal 的“周期末取消”（2026-09-30.endive 实测）
+ * 改为设置 cancel_at=当前周期末且 cancel_at_period_end 仍为 false。两种形态都视为周期末取消。
+ * cancel_at 晚于当前周期末（远期定时取消）时下一周期仍会续费，不算周期末取消。
+ * currentPeriodEnd 取订阅项的 current_period_end（Unix 秒），与快照周期一致。
+ */
+export function stripeCancelsAtPeriodEnd(
+  subscription: Pick<Stripe.Subscription, 'cancel_at_period_end' | 'cancel_at'>,
+  currentPeriodEnd: number,
+): boolean {
+  return (
+    subscription.cancel_at_period_end ||
+    (subscription.cancel_at != null && subscription.cancel_at <= currentPeriodEnd)
+  )
 }
 
 export function mapStripeSubscription(subscription: Stripe.Subscription): SubscriptionSnapshot {
@@ -71,7 +127,7 @@ export function mapStripeSubscription(subscription: Stripe.Subscription): Subscr
     remoteStatus: subscription.status,
     currentPeriodStart: stripeDate(item.current_period_start),
     currentPeriodEnd: stripeDate(item.current_period_end),
-    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    cancelAtPeriodEnd: stripeCancelsAtPeriodEnd(subscription, item.current_period_end),
     canceledAt: subscription.canceled_at === null ? null : stripeDate(subscription.canceled_at),
     trialEnd: subscription.trial_end === null ? null : stripeDate(subscription.trial_end),
     // Stripe has no timestamp for the transition to past_due; don't invent a grace-period start.
@@ -96,7 +152,9 @@ export function stripeInvoicePeriod(
     throw new Error('Invoice period requires complete line items')
   }
   const subscriptionId = stripeInvoiceSubscription(invoice)
-  const adjustment = classifyStripeBillingReason(invoice.billing_reason) === 'adjustment'
+  const adjustment =
+    classifyStripeBillingReason(invoice.billing_reason, stripeSubscriptionLines(invoice, lines)) ===
+    'adjustment'
   const metadata = parseStripeMetadata(invoice.parent?.subscription_details?.metadata)
   const relevant = lines.filter((line) => {
     const details = line.parent?.subscription_item_details
@@ -230,7 +288,11 @@ export async function getStripePayment(
     const invoice = await stripe.invoices.retrieve(invoiceId)
     const subscriptionId = stripeInvoiceSubscription(invoice)
     if (subscriptionId) {
-      const kind = classifyStripeBillingReason(invoice.billing_reason)
+      const lines = await stripeInvoiceLines(stripe, invoice)
+      const kind = classifyStripeBillingReason(
+        invoice.billing_reason,
+        stripeSubscriptionLines(invoice, lines),
+      )
       if (kind !== 'initial' && kind !== 'renewal' && kind !== 'adjustment') {
         throw new Error(`Unsupported subscription payment classification: ${kind}`)
       }
@@ -239,9 +301,6 @@ export async function getStripePayment(
       if (invoice.status !== 'paid' || invoicePayment.status_transitions.paid_at === null) {
         throw new Error('Subscription invoice is not paid')
       }
-      const lines = invoice.lines.has_more
-        ? await stripe.invoices.listLineItems(invoice.id).autoPagingToArray({ limit: 100 })
-        : invoice.lines.data
       const period = stripeInvoicePeriod(invoice, lines)
       const priceLines = lines.filter(
         (line) =>

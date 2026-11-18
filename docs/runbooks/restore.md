@@ -1,6 +1,6 @@
 # Cloudflare 形态生产数据库恢复与演练
 
-对应 `add-cloud-production-neon` 4.1 / 4.2 与 production-deployment spec「生产数据库备份与恢复演练」。生产库为 Neon 项目 `product-res-production`（`super-resonance-99115167`，默认分支 `main`），项目与凭据见 [production-neon](./production-neon.md)。自托管形态的 WAL-G / PITR 见 [selfhost-restore](./selfhost-restore.md)，两者互不替代。
+对应 `add-cloud-production-neon` 4.1 / 4.2 与 production-deployment spec「生产数据库备份与恢复演练」。生产库为 Neon 项目 `product-res-production`（`<project-id>`，默认分支 `main`），项目与凭据见 [production-neon](./production-neon.md)。自托管形态的 WAL-G / PITR 见 [selfhost-restore](./selfhost-restore.md)，两者互不替代。
 
 **铁律**：演练与恢复只创建临时目标（Neon 临时分支或本地临时库），**不覆盖、不重置生产 `main` 分支**；校验只读执行；不在命令参数、日志或证据中写连接串与密钥。
 
@@ -15,18 +15,18 @@
 
 ```sh
 # 目标时间用 UTC ISO 格式；分支 24 小时后自动过期，演练结束仍应主动删除
-neonctl branches create --project-id super-resonance-99115167 \
+neonctl branches create --project-id <project-id> \
   --name restore-drill-<YYYYMMDD> --parent <2026-10-20T03:00:00Z> \
   --expires-at <创建时间 + 24h> --no-secrets --output json
 ```
 
-取临时分支的 readonly 非 pooled 连接串（`neonctl connection-string restore-drill-<YYYYMMDD> --project-id super-resonance-99115167 --database-name product_res_production --role-name readonly`），只放进环境变量，运行校验：
+取临时分支的 readonly 非 pooled 连接串（`neonctl connection-string restore-drill-<YYYYMMDD> --project-id <project-id> --database-name product_res_production --role-name readonly`），只放进环境变量，运行校验：
 
 ```sh
 RESTORE_DATABASE_URL=<只在环境变量中> node scripts/production/verify-restore.mjs --roles
 ```
 
-`--roles` 额外核对三角色仍受限（时间点分支保留集群角色）。演练结束：`neonctl branches delete restore-drill-<YYYYMMDD> --project-id super-resonance-99115167`。
+`--roles` 额外核对三角色仍受限（时间点分支保留集群角色）。演练结束：`neonctl branches delete restore-drill-<YYYYMMDD> --project-id <project-id>`。
 
 真正需要用历史数据恢复生产时，先停写（暂停 jobs 发布或开启维护）、评估差异，再由用户决定：把应用切到恢复分支，或从恢复分支导出少量数据回写。不要直接 reset `main`。
 
@@ -68,10 +68,5 @@ RESTORE_DATABASE_URL=<只在环境变量中> node scripts/production/verify-rest
 
 ## 5. 演练记录
 
-上线前及之后每季度各演练一次两条路径，证据写入 `docs/runbooks/evidence/production/restore-<YYYY-MM-DD>.md`：目标时间点、备份对象键与 sha256、开始 / 可查询 / 校验完成的 UTC 时间、RTO（开始到校验通过）、RPO（目标时间与实际数据最新时间之差）、各项校验结果与行数对比、临时资源已删除。演练时同时验证 age 私钥离线副本可解密。
+上线前及之后每季度各演练一次两条路径，证据写入 `EVIDENCE_DIR/production/restore-<YYYY-MM-DD>.md`（未设置时使用 `test-results/evidence/`，归档到私有证据库）：目标时间点、备份对象键与 sha256、开始 / 可查询 / 校验完成的 UTC 时间、RTO（开始到校验通过）、RPO（目标时间与实际数据最新时间之差）、各项校验结果与行数对比、临时资源已删除。演练时同时验证 age 私钥离线副本可解密。
 
-## 6. 本地验证记录（2026-10-15）
-
-- 备份脚本 `BACKUP_DRY_RUN=1` 对本地 `product_res_dev` 生成加密 dump（PG17 容器 `pg_dump` → age，116,701 字节，age 头正确），未上传。
-- 用临时 age 密钥解密后 `pg_restore` 到本地临时库，`verify-restore.mjs` 五项全部通过；删除一条迁移记录后 `migrations` 判定失败，证明校验能发现差异。临时库与文件已删除。
-- 以 `readonly` 执行 `pg_dump` 会因 `permission denied for schema drizzle` 失败；临时角色授予 `pg_read_all_data` 后可完整导出（含 `drizzle` 与 `job_engine` 共 45 张表数据）且写入仍被拒绝。生产需由 owner 执行 `GRANT pg_read_all_data TO readonly`（待用户批准，见 production runbook）。

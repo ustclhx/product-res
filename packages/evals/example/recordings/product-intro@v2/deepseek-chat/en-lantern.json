@@ -1,0 +1,18 @@
+{
+  "kind": "generation",
+  "promptVersion": "product-intro@v2",
+  "renderedHash": "sha256:3859fd16f3a85ea3a3417e02155776e2e87ab74a619279b4acec1684a4838a63",
+  "model": {
+    "key": "deepseek-chat",
+    "provider": "deepseek",
+    "providerModelId": "deepseek-chat"
+  },
+  "output": "## Overview\nThe solar camping lantern charges in six hours of sunlight and offers three brightness levels. It folds flat for storage and transport.\n\n## Highlights\n- Charges in six hours of sunlight\n- Three brightness levels\n- Folds flat\n\n## Who it is for\nWeekend campers looking for a packable lantern that charges with sunlight and offers adjustable brightness.",
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 125,
+    "outputTokens": 73
+  },
+  "recordedAt": "2026-11-14T07:12:28.809Z",
+  "source": "recorded"
+}

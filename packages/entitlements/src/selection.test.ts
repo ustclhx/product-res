@@ -98,6 +98,45 @@ describe('capabilities and limits', () => {
     }
   })
 
+  it('grants only explicitly true custom capabilities without overriding built-in behavior', () => {
+    const entitled = {
+      ...pro,
+      features: {
+        ...pro.features,
+        capabilities: {
+          'exports.advanced': true,
+          'exports.disabled': false,
+          publicApi: false,
+          'ai.useModel': true,
+        },
+      },
+    }
+    expect(can({ entitlements: entitled }, 'exports.advanced')).toBe(true)
+    expect(() => requireEntitlement(entitled, { capability: 'exports.advanced' })).not.toThrow()
+    expect(can(entitled, 'exports.disabled')).toBe(false)
+    expect(can(entitled, 'exports.unknown')).toBe(false)
+    expect(can(entitled, 'publicApi')).toBe(true)
+    expect(can(entitled, 'ai.useModel', { modelKey: 'other' })).toBe(false)
+    expect(can(free, 'exports.advanced')).toBe(false)
+    expect(() => requireEntitlement(free, { capability: 'exports.advanced' })).toThrowError(
+      expect.objectContaining({ code: UPGRADE_REQUIRED, status: 403 }),
+    )
+  })
+
+  it('denies inherited capability keys and non-boolean persisted values', () => {
+    const capabilities: Record<string, boolean> = Object.create({ 'exports.inherited': true })
+    Object.assign(capabilities, { 'exports.truthy': 'true', 'exports.number': 1 })
+    const entitlement = { ...pro, features: { ...pro.features, capabilities } }
+    for (const key of [
+      'exports.inherited',
+      'exports.truthy',
+      'exports.number',
+      'constructor',
+      'toString',
+    ])
+      expect(can(entitlement, key)).toBe(false)
+  })
+
   it('validates requested totals against the numeric limit', () => {
     const seats = DEFAULT_FREE_FEATURES.maxSeats
     expect(() => requireEntitlement(free, { limit: 'maxSeats', value: seats })).not.toThrow()

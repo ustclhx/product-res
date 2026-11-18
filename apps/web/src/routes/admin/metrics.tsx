@@ -71,6 +71,8 @@ function Metrics() {
           [m.admin_paid_workspaces(), data.latest?.paidWorkspaces ?? '—'],
           [m.admin_paid_conversion(), percent(data.paidConversion)],
           [m.admin_user_credits_consumed(), data.creditsConsumed],
+          [m.admin_daily_grant_count(), data.dailyGrantCount],
+          [m.admin_daily_grant_credits(), data.dailyGrantCredits],
           [m.admin_platform_overage_absorbed(), data.overageAbsorbed],
           [
             m.admin_text_success_rate(),
@@ -99,7 +101,7 @@ function Metrics() {
       {Object.entries(data.overageByModel).length ? (
         <div className="overflow-x-auto rounded-md border">
           <table className="w-full text-left text-sm">
-            <thead className="bg-muted/50">
+            <thead className="bg-hover">
               <tr className="border-b">
                 <th className="h-10 px-3 font-medium text-muted-foreground">{m.admin_model()}</th>
                 <th className="h-10 px-3 font-medium text-muted-foreground">

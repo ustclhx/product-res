@@ -7,10 +7,12 @@ import {
   useTable,
 } from '@tanstack/react-table'
 import { type FormEvent, type ReactNode, useId, useMemo } from 'react'
+import { useSize } from '../lib/size-context.tsx'
 import { cn } from '../lib/utils.ts'
 import { Button } from './button.tsx'
 import { Input } from './input.tsx'
 import { Label } from './label.tsx'
+import { Select, SelectContent, SelectItem, SelectTrigger } from './select.tsx'
 
 /**
  * 服务端分页与筛选的通用列表（TanStack Table）。
@@ -20,6 +22,10 @@ import { Label } from './label.tsx'
  * 调用方在 `onPageChange` / `onFiltersChange` 中导航即可，刷新与分享链接都保留状态。
  *
  * 总数未知的列表（只知道是否还有下一页）传 `hasMore`，此时只显示当前页码。
+ *
+ * 外观吸收 Fluid table / input 的样式（openspec add-ui-design-system tasks 4.2）：表头用 `bg-hover` 底、
+ * 行悬停 `bg-hover`，字号与单元格高度跟随 density（`UiRoot`），筛选控件与 Input / Select 同一套边框与焦点环。
+ * 公开 API 不变。
  */
 
 const features = tableFeatures({ rowPaginationFeature })
@@ -61,17 +67,6 @@ export interface DataTableLabels {
   readonly pagination: string
 }
 
-const defaultLabels: DataTableLabels = {
-  previous: 'Previous',
-  next: 'Next',
-  page: (page, pageCount) => (pageCount === null ? `Page ${page}` : `Page ${page} of ${pageCount}`),
-  empty: 'No records found.',
-  applyFilters: 'Apply',
-  resetFilters: 'Reset',
-  filters: 'Filters',
-  pagination: 'Pagination',
-}
-
 export interface DataTableProps<TRow extends RowData> {
   /** 表格的无障碍名称 */
   readonly label: string
@@ -84,7 +79,8 @@ export interface DataTableProps<TRow extends RowData> {
   readonly filterValues?: Readonly<Record<string, string | undefined>>
   /** 提交或重置筛选；调用方应同时回到第一页 */
   readonly onFiltersChange?: (values: Record<string, string>) => void
-  readonly labels?: Partial<DataTableLabels>
+  /** 全部可读文案，必须由应用按语言传入（tasks 4.2：组件不带英文默认值） */
+  readonly labels: DataTableLabels
   readonly className?: string
 }
 
@@ -95,16 +91,15 @@ function knownRowCount(page: DataTablePage, rows: number): number {
 }
 
 export function DataTable<TRow extends RowData>(props: DataTableProps<TRow>) {
-  const labels = { ...defaultLabels, ...props.labels }
+  const labels = props.labels
   const { columns: specs, getRowId } = props
+  // 表格模型只用列 id；表头与单元格内容在渲染时直接调用最新的 spec（函数调用而非组件类型），
+  // 调用方每次渲染新建 columns 时单元格不会重新挂载，行内按钮的焦点与确认框的焦点返回都得以保留
+  const columnKey = specs.map((spec) => spec.id).join('\u0000')
+  // biome-ignore lint/correctness/useExhaustiveDependencies: 只随列 id 变化重建，内容取渲染时的最新 spec
   const columns = useMemo<ColumnDef<typeof features, TRow>[]>(
-    () =>
-      specs.map((spec) => ({
-        id: spec.id,
-        header: () => spec.header,
-        cell: ({ row }) => spec.cell(row.original),
-      })),
-    [specs],
+    () => specs.map((spec) => ({ id: spec.id })),
+    [columnKey],
   )
   const data = useMemo(() => [...props.rows], [props.rows])
   const pagination: PaginationState = {
@@ -124,9 +119,13 @@ export function DataTable<TRow extends RowData>(props: DataTableProps<TRow>) {
       if (next.pageIndex !== pagination.pageIndex) props.onPageChange(next.pageIndex)
     },
   })
-  const classNames = new Map(specs.map((spec) => [spec.id, spec.className]))
+  const specById = new Map(specs.map((spec) => [spec.id, spec]))
   const rows = table.getRowModel().rows
   const pageCount = props.page.rowCount === undefined ? null : Math.max(1, table.getPageCount())
+  const size = useSize()
+  const compact = size.variant === 'compact'
+  // 单元格内边距跟随尺寸阶梯：一行 = 正文行高 + 上下内边距，default 约 36px、compact 约 28px（Fluid table）
+  const cellPadding = compact ? 'px-2.5 py-1' : 'px-3 py-2'
 
   return (
     <div data-slot="data-table" className={cn('flex flex-col gap-3', props.className)}>
@@ -140,9 +139,10 @@ export function DataTable<TRow extends RowData>(props: DataTableProps<TRow>) {
           onChange={props.onFiltersChange}
         />
       ) : null}
-      <div className="overflow-x-auto rounded-md border">
-        <table aria-label={props.label} className="w-full caption-bottom text-sm">
-          <thead className="bg-muted/50">
+      <div className="overflow-x-auto rounded-xl border">
+        <table aria-label={props.label} className={cn('w-full caption-bottom', size.type.body)}>
+          {/* 模板改动（tasks 4.4 余项）：表头底色由 bg-muted/50 改为 Fluid 交互 token bg-hover */}
+          <thead className="bg-hover">
             {table.getHeaderGroups().map((group) => (
               <tr key={group.id} className="border-b">
                 {group.headers.map((header) => (
@@ -150,11 +150,12 @@ export function DataTable<TRow extends RowData>(props: DataTableProps<TRow>) {
                     key={header.id}
                     scope="col"
                     className={cn(
-                      'h-10 px-3 text-left align-middle font-medium text-muted-foreground',
-                      classNames.get(header.column.id),
+                      'text-left align-middle font-medium text-muted-foreground',
+                      cellPadding,
+                      specById.get(header.column.id)?.className,
                     )}
                   >
-                    {header.isPlaceholder ? null : <table.FlexRender header={header} />}
+                    {header.isPlaceholder ? null : specById.get(header.column.id)?.header}
                   </th>
                 ))}
               </tr>
@@ -169,13 +170,20 @@ export function DataTable<TRow extends RowData>(props: DataTableProps<TRow>) {
               </tr>
             ) : (
               rows.map((row) => (
-                <tr key={row.id} className="border-b last:border-0 hover:bg-muted/30">
+                <tr
+                  key={row.id}
+                  className="border-b transition-colors duration-80 last:border-0 hover:bg-hover"
+                >
                   {row.getAllCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className={cn('px-3 py-2 align-middle', classNames.get(cell.column.id))}
+                      className={cn(
+                        'align-middle',
+                        cellPadding,
+                        specById.get(cell.column.id)?.className,
+                      )}
                     >
-                      <table.FlexRender cell={cell} />
+                      {specById.get(cell.column.id)?.cell(row.original)}
                     </td>
                   ))}
                 </tr>
@@ -184,7 +192,10 @@ export function DataTable<TRow extends RowData>(props: DataTableProps<TRow>) {
           </tbody>
         </table>
       </div>
-      <nav aria-label={labels.pagination} className="flex items-center justify-end gap-3 text-sm">
+      <nav
+        aria-label={labels.pagination}
+        className={cn('flex items-center justify-end gap-3', size.type.body)}
+      >
         <span role="status">{labels.page(props.page.pageIndex + 1, pageCount)}</span>
         <Button
           type="button"
@@ -222,7 +233,7 @@ function DataTableFilters(props: {
     const values: Record<string, string> = {}
     for (const filter of props.filters) {
       const value = String(form.get(filter.id) ?? '').trim()
-      if (value) values[filter.id] = value
+      if (value && value !== EMPTY_OPTION) values[filter.id] = value
     }
     props.onChange?.(values)
   }
@@ -239,18 +250,8 @@ function DataTableFilters(props: {
           <div key={filter.id} className="flex flex-col gap-1.5">
             <Label htmlFor={id}>{filter.label}</Label>
             {filter.type === 'select' ? (
-              <select
-                id={id}
-                name={filter.id}
-                defaultValue={value}
-                className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs dark:bg-input/30"
-              >
-                {(filter.options ?? []).map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              // 值变化（重置、前进后退）时重新挂载，非受控的 Select 回显新值
+              <FilterSelect key={value} id={id} filter={filter} value={value} />
             ) : (
               <Input
                 id={id}
@@ -273,6 +274,43 @@ function DataTableFilters(props: {
   )
 }
 
+/**
+ * Select 的选项值不能为空串（Radix 约定），「全部」等空值选项用占位值代替，提交时还原为空（即不筛选）。
+ * 隐藏的原生 select 随表单提交 `name` 对应的值（Radix Select 的表单支持）。
+ */
+// 以 NUL 开头，不可能与 URL / 表单里的真实筛选值冲突（search 参数不会含 NUL）
+const EMPTY_OPTION = '\u0000empty'
+
+function FilterSelect(props: {
+  readonly id: string
+  readonly filter: DataTableFilter
+  readonly value: string
+}) {
+  const { id, filter, value } = props
+  const options = filter.options ?? []
+  // 与原生 <select> 一致：没有值且没有空值选项时默认第一项
+  const initial =
+    value || (options.some((option) => !option.value) ? '' : (options[0]?.value ?? ''))
+  return (
+    <Select name={filter.id} defaultValue={initial || EMPTY_OPTION}>
+      <SelectTrigger
+        id={id}
+        className="w-56"
+        placeholder={filter.placeholder ?? filter.label}
+        // SSR 与水合前即显示选中项文字（Select valueLabel，tasks 5.1）
+        valueLabel={options.find((option) => option.value === initial)?.label}
+      />
+      <SelectContent>
+        {options.map((option, index) => (
+          <SelectItem key={option.value} index={index} value={option.value || EMPTY_OPTION}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
 export interface DetailField {
   readonly label: string
   readonly value: ReactNode
@@ -289,7 +327,7 @@ export function DetailList({
   return (
     <dl
       data-slot="detail-list"
-      className={cn('grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[12rem_1fr]', className)}
+      className={cn('grid gap-x-6 gap-y-2 text-body sm:grid-cols-[12rem_1fr]', className)}
     >
       {fields.map((field) => (
         <div key={field.label} className="contents">

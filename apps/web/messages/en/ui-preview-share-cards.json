@@ -1,0 +1,5 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "ui_preview_share_cards_desc": "Result share cards rendered by the real renderer from fixed sample data: Chinese, English and long titles in light and dark, plus the default build-time image. Compare with the share-cards/Card.dc.html design copy.",
+  "ui_preview_share_cards_alt": "Share card preview: {variant}, {mode}"
+}

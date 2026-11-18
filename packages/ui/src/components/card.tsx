@@ -27,11 +27,7 @@ export function CardHeader({ className, ...props }: ComponentProps<'div'>) {
 /** 标题容器（div，与 shadcn/ui 一致）；页面在其中放合适层级的标题标签 */
 export function CardTitle({ className, ...props }: ComponentProps<'div'>) {
   return (
-    <div
-      data-slot="card-title"
-      className={cn('font-semibold text-xl leading-none', className)}
-      {...props}
-    />
+    <div data-slot="card-title" className={cn('font-semibold text-title', className)} {...props} />
   )
 }
 
@@ -39,7 +35,7 @@ export function CardDescription({ className, ...props }: ComponentProps<'p'>) {
   return (
     <p
       data-slot="card-description"
-      className={cn('text-muted-foreground text-sm', className)}
+      className={cn('text-body text-muted-foreground', className)}
       {...props}
     />
   )

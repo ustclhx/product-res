@@ -1,5 +1,7 @@
 import type { Page } from '@playwright/test'
 import type { Pricing } from '@product-res/ai'
+import { DEFAULT_CHARGE_ON } from '../../src/features/ai/admin-model-params.ts'
+import { chooseOption } from '../select.ts'
 import { evidence, expect, query, sqlLiteral, test } from './support.ts'
 
 const prompt = 'A red square on a plain white background'
@@ -163,20 +165,24 @@ export async function createAcceptanceModel(
     model.kind !== 'text' && (await schema.count()) === 0,
     'Media model setup requires the admin Parameters schema (JSON) field; current UI cannot create a usable media model.',
   )
+  const pricingMode = form.getByRole('combobox', { name: 'Pricing mode', exact: true })
   // 新表单默认文本按 token 计费；动态按次字段出现才能证明 React 已接管。
   // 每次只切换一个状态并等待渲染，避免同一轮反复改 Kind 后立即检查旧 DOM。
   await expect
     .poll(async () => {
-      await form.getByLabel('Pricing mode').selectOption('per_call')
+      await chooseOption(pricingMode, { value: 'per_call' })
       return form.getByLabel('Credits per call', { exact: true }).isVisible()
     })
     .toBe(true)
-  await form.getByLabel('Kind').selectOption(model.kind)
+  await chooseOption(form.getByRole('combobox', { name: 'Kind', exact: true }), {
+    value: model.kind,
+  })
+  // 文本模型的服务商是输入框，媒体模型是 @product-res/ui Select（触发器为 button）
   await expect(form.locator('#new-provider')).toHaveJSProperty(
     'tagName',
-    model.kind === 'text' ? 'INPUT' : 'SELECT',
+    model.kind === 'text' ? 'INPUT' : 'BUTTON',
   )
-  await form.getByLabel('Pricing mode').selectOption(model.pricing.mode)
+  await chooseOption(pricingMode, { value: model.pricing.mode })
   await expect(
     form.getByLabel(model.pricing.mode === 'token' ? 'Input credits / 1k' : 'Credits per call', {
       exact: true,
@@ -185,7 +191,7 @@ export async function createAcceptanceModel(
   await form.getByLabel('Key', { exact: true }).fill(model.key)
   const provider = form.locator('#new-provider')
   if (model.kind === 'text') await provider.fill(model.provider)
-  else await provider.selectOption(model.provider)
+  else await chooseOption(provider, { value: model.provider })
   await form.getByLabel('Provider model ID', { exact: true }).fill(model.providerModelId)
   await form
     .getByLabel('Plan tags (comma separated)', { exact: true })
@@ -203,7 +209,10 @@ export async function createAcceptanceModel(
     await form.getByLabel('Minimum charge', { exact: true }).fill(String(model.pricing.minCharge))
   } else {
     await form.getByLabel('Credits per call', { exact: true }).fill(String(model.pricing.credits))
-    await form.getByLabel('Charge on').selectOption(model.pricing.chargeOn ?? '')
+    // 「默认」在页面上用占位值 DEFAULT_CHARGE_ON 表示（Radix 选项值不能为空字符串）
+    await chooseOption(form.getByRole('combobox', { name: 'Charge on', exact: true }), {
+      value: model.pricing.chargeOn ?? DEFAULT_CHARGE_ON,
+    })
     await form.getByLabel('Multipliers (JSON, optional)', { exact: true }).fill('')
     await form
       .getByLabel('Max input tokens', { exact: true })

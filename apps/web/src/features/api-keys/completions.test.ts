@@ -1,8 +1,11 @@
+import { CreditsError } from '@product-res/credits'
+import { AppError } from '@product-res/shared'
+import { log } from '@product-res/shared/log'
 import { MockLanguageModelV4 } from 'ai/test'
 import OpenAI from 'openai'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createChatStream } from '../ai/text-stream.ts'
-import { completionEventStream } from './completions.ts'
+import { apiError, completionEventStream } from './completions.ts'
 
 type UpstreamPart =
   Awaited<ReturnType<MockLanguageModelV4['doStream']>>['stream'] extends ReadableStream<infer T>
@@ -111,5 +114,25 @@ describe('streaming chat completions', () => {
     }
     expect(text).toBe('answer')
     expect(usage).toEqual({ prompt_tokens: 10, completion_tokens: 20, total_tokens: 30 })
+  })
+})
+
+describe('API error boundary', () => {
+  it('内部积分错误记录日志且响应不泄露错误码', async () => {
+    const logger = vi.spyOn(log, 'error').mockImplementation(() => {})
+    try {
+      const error = new CreditsError('HOLD_NOT_ACTIVE')
+      const response = apiError(error)
+      expect(logger).toHaveBeenCalledWith('api.failed', { error })
+      expect(response.status).toBe(500)
+      expect(await response.json()).toMatchObject({
+        error: { code: 'INTERNAL_ERROR', message: 'Internal error', type: 'server_error' },
+      })
+      logger.mockClear()
+      apiError(new AppError('DENIED', 'Denied', { status: 403 }))
+      expect(logger).not.toHaveBeenCalled()
+    } finally {
+      logger.mockRestore()
+    }
   })
 })

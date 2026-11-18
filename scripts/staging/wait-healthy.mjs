@@ -5,7 +5,13 @@ import { fileURLToPath } from 'node:url'
 export async function waitHealthy(
   url,
   expectedVersion,
-  { intervalMs = 5_000, timeoutMs = 180_000, write = console.error } = {},
+  {
+    intervalMs = 5_000,
+    timeoutMs = 180_000,
+    // 单次请求时限默认等于轮询间隔；与间隔分开，便于测试用短间隔而不让冷启动的首个请求被提前中止（#212）
+    requestTimeoutMs = intervalMs,
+    write = console.error,
+  } = {},
 ) {
   const deadline = performance.now() + timeoutMs
   while (performance.now() < deadline) {
@@ -17,7 +23,7 @@ export async function waitHealthy(
       // 单次请求也受总时限约束，避免无响应的端点使发布无限等待。
       const response = await fetch(url, {
         signal: AbortSignal.timeout(
-          Math.max(1, Math.ceil(Math.min(intervalMs, deadline - started))),
+          Math.max(1, Math.ceil(Math.min(requestTimeoutMs, deadline - started))),
         ),
         redirect: 'error',
       })

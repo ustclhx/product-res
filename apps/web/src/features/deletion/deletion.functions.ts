@@ -1,5 +1,6 @@
 import { deleteAccount, deleteTeamWorkspace } from '@product-res/auth'
 import { AppError } from '@product-res/shared'
+import { createShareCardInvalidator } from '@product-res/storage'
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest, setResponseStatus } from '@tanstack/react-start/server'
 import { z } from 'zod'
@@ -17,6 +18,11 @@ async function remove(workspaceId?: string) {
     headers: getRequest().headers,
     clientIp: runtime.requestMeta.clientIp,
     kv: runtime.cache,
+    ...(runtime.files?.available &&
+      runtime.files.value.shareCards && {
+        cleanupShareCards: createShareCardInvalidator(runtime.files.value.shareCards, runtime.cache)
+          .cleanupWorkspaceShareCards,
+      }),
     additionalSteps: createBillingDeletionSteps(runtime.config, db, runtime.cache),
   }
   try {

@@ -1,4 +1,4 @@
-import { AppError } from '@product-res/shared'
+import { AppError, insufficientCreditsError } from '@product-res/shared'
 import { z } from 'zod'
 import type { AvailableModel } from '../models.ts'
 import { DEFAULT_MIN_CHARGE, estimateCredits, type Pricing } from '../pricing.ts'
@@ -20,7 +20,7 @@ export const MIN_OUTPUT_TOKENS = 256
 /** 模型未配置输出上限时使用的值 */
 export const DEFAULT_MAX_OUTPUT_TOKENS = 4096
 
-export const INSUFFICIENT_CREDITS = 'INSUFFICIENT_CREDITS'
+export { INSUFFICIENT_CREDITS } from '@product-res/shared'
 export const INPUT_TOO_LONG = 'INPUT_TOO_LONG'
 
 /** 文本模型的估算参数与 Provider 能力声明 */
@@ -124,8 +124,8 @@ export interface TextBudget {
   readonly holdAmount: number
 }
 
-function insufficient(): never {
-  throw new AppError(INSUFFICIENT_CREDITS, 'Insufficient credits', { status: 402 })
+function insufficient(estimatedCredits: number, availableCredits: number): never {
+  throw insufficientCreditsError(estimatedCredits, availableCredits)
 }
 
 /**
@@ -141,7 +141,7 @@ export function planTextBudget(input: TextBudgetInput): TextBudget {
   switch (pricing.mode) {
     case 'per_call': {
       const holdAmount = estimateCredits(pricing, input.params ? { params: input.params } : {})
-      if (holdAmount > balance) insufficient()
+      if (holdAmount > balance) insufficient(holdAmount, balance)
       return {
         maxOutputTokens: pricing.limits?.maxOutputTokens ?? input.maxOutputTokens,
         holdAmount,
@@ -150,7 +150,8 @@ export function planTextBudget(input: TextBudgetInput): TextBudget {
     case 'token': {
       const cost = (maxOutputTokens: number) =>
         estimateCredits(pricing, { inputTokens: input.inputTokens, maxOutputTokens })
-      if ((pricing.minCharge ?? DEFAULT_MIN_CHARGE) > balance) insufficient()
+      if ((pricing.minCharge ?? DEFAULT_MIN_CHARGE) > balance)
+        insufficient(cost(minOutput), balance)
       let maxOutputTokens = input.maxOutputTokens
       if (pricing.outputPer1k > 0) {
         // 余额为整数时 ceil(x) ≤ 余额 ⇔ x ≤ 余额，下式即精确解；先乘后除减少浮点误差，
@@ -163,10 +164,10 @@ export function planTextBudget(input: TextBudgetInput): TextBudget {
         while (maxOutputTokens < input.maxOutputTokens && cost(maxOutputTokens + 1) <= balance)
           maxOutputTokens++
       }
-      if (maxOutputTokens < minOutput) insufficient()
+      if (maxOutputTokens < minOutput) insufficient(cost(minOutput), balance)
       const holdAmount = cost(maxOutputTokens)
       // 输出单价为 0 时没有收缩，输入费用本身可能超过余额
-      if (holdAmount > balance) insufficient()
+      if (holdAmount > balance) insufficient(holdAmount, balance)
       return { maxOutputTokens, holdAmount }
     }
     case 'per_unit':

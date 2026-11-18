@@ -1,0 +1,18 @@
+{
+  "kind": "generation",
+  "promptVersion": "product-intro@v1",
+  "renderedHash": "sha256:287cdf2992b839e0d1359e7f55d024763ad18c09f8de091e3157a34d3f06b034",
+  "model": {
+    "key": "deepseek-chat",
+    "provider": "deepseek",
+    "providerModelId": "deepseek-chat"
+  },
+  "output": "## Overview\nBuild a practical Spanish vocabulary with a flashcard deck designed for busy adults. This set covers 500 everyday words, each presented with an example sentence that shows how the word is used in real conversation. A built-in spaced review schedule helps you revisit words at the right time, so new vocabulary moves from short-term recognition to lasting memory.\n\n## Highlights\n- 500 everyday words selected for real-life situations\n- Example sentence on every card for context-based learning\n- Spaced review schedule that reinforces words at optimal intervals\n- Designed for adult learners who want steady, efficient progress",
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 83,
+    "outputTokens": 118
+  },
+  "recordedAt": "2026-11-14T07:12:01.867Z",
+  "source": "recorded"
+}

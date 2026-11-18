@@ -19,7 +19,7 @@ export function Section({
     <section id={id} aria-labelledby={id && `${id}-title`} className={cn('py-20', className)}>
       <div className="mx-auto grid max-w-6xl gap-10 px-4">
         <div className="mx-auto grid max-w-2xl gap-3 text-center">
-          <h2 id={id && `${id}-title`} className="font-semibold text-3xl tracking-tight">
+          <h2 id={id && `${id}-title`} className="font-bold text-3xl tracking-tight">
             {title}
           </h2>
           {subtitle && <p className="text-muted-foreground">{subtitle}</p>}

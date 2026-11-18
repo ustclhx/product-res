@@ -1,5 +1,8 @@
+import type { ShareCardObjects } from './share-cards.ts'
+
 /** C 的对象存储 adapter 接口；不暴露目标 SDK 的对象与元数据。 */
 export interface Storage {
+  readonly shareCards?: ShareCardObjects
   head(key: string): Promise<{ readonly size: number; readonly mime: string | null } | null>
   delete(key: string): Promise<void>
   presignUpload(

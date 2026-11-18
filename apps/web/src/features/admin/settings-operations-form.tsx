@@ -1,8 +1,8 @@
-import { Button, Input } from '@product-res/ui'
+import { Button, Checkbox, Input, Label } from '@product-res/ui'
 import { type FormEvent, useEffect, useState } from 'react'
 import { m } from '../../paraglide/messages.js'
 import { getOperationsSettings, saveOperationsSettings } from './settings-operations.functions.ts'
-import { CheckboxField, Field, panelClass } from './ui.tsx'
+import { Field, panelClass } from './ui.tsx'
 
 export function OperationsSettingsForm() {
   const [saved, setSaved] = useState<Awaited<ReturnType<typeof getOperationsSettings>>>()
@@ -71,11 +71,14 @@ export function OperationsSettingsForm() {
                 onChange={(event) => setToken(event.target.value)}
               />
             </Field>
-            <CheckboxField
-              label={m.admin_clear_telegram_token()}
-              checked={clearToken}
-              onChange={(event) => setClearToken(event.target.checked)}
-            />
+            <Label htmlFor="clear-telegram-token" className="font-normal text-sm leading-normal">
+              <Checkbox
+                id="clear-telegram-token"
+                checked={clearToken}
+                onCheckedChange={setClearToken}
+              />
+              {m.admin_clear_telegram_token()}
+            </Label>
             <Field label={m.admin_telegram_chat_id()} htmlFor="telegram-chat">
               <Input
                 id="telegram-chat"
@@ -98,11 +101,14 @@ export function OperationsSettingsForm() {
                 onChange={(event) => setWebhook(event.target.value)}
               />
             </Field>
-            <CheckboxField
-              label={m.admin_clear_discord_webhook()}
-              checked={clearWebhook}
-              onChange={(event) => setClearWebhook(event.target.checked)}
-            />
+            <Label htmlFor="clear-discord-webhook" className="font-normal text-sm leading-normal">
+              <Checkbox
+                id="clear-discord-webhook"
+                checked={clearWebhook}
+                onCheckedChange={setClearWebhook}
+              />
+              {m.admin_clear_discord_webhook()}
+            </Label>
           </div>
         </div>
         <p className="text-muted-foreground text-sm">

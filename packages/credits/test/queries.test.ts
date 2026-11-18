@@ -6,6 +6,10 @@ import {
   creditLedger,
   member,
   organization,
+  payment,
+  plan,
+  planPrice,
+  subscription,
   user,
 } from '@product-res/db'
 import * as schema from '@product-res/db/schema'
@@ -13,7 +17,7 @@ import { newId } from '@product-res/shared'
 import { eq, inArray, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { capture, grant, hold } from '../src/index.ts'
 
 const url = process.env.CREDITS_TEST_DATABASE_URL
@@ -37,6 +41,70 @@ const holdInput = (amount = 8) => ({
   refType: 'ai_message' as const,
   refId: newId(),
 })
+
+async function subscriptionPayment(
+  interval: 'month' | 'year',
+  periodStart: Date,
+  periodEnd: Date,
+  rollover: boolean,
+) {
+  await db.insert(plan).values({
+    id: ws,
+    key: ws,
+    name: 'Subscription',
+    type: 'subscription',
+    credits: 30,
+    rollover,
+    features: {
+      models: [],
+      maxConcurrentTasks: 3,
+      maxSeats: 1,
+      storageGb: 5,
+      publicApi: false,
+      priorityQueue: false,
+      watermark: true,
+    },
+  })
+  const priceId = newId()
+  const subId = newId()
+  const paymentId = newId()
+  await db.insert(planPrice).values({
+    id: priceId,
+    planId: ws,
+    provider: 'stripe',
+    providerPriceId: newId(),
+    interval,
+    amount: 1000,
+    currency: 'usd',
+  })
+  await db.insert(subscription).values({
+    id: subId,
+    workspaceId: ws,
+    planId: ws,
+    planPriceId: priceId,
+    provider: 'stripe',
+    providerSubscriptionId: newId(),
+    status: 'active',
+    currentPeriodStart: periodStart,
+    currentPeriodEnd: periodEnd,
+    lastEventAt: periodStart,
+  })
+  await db.insert(payment).values({
+    id: paymentId,
+    workspaceId: ws,
+    provider: 'stripe',
+    providerPaymentId: newId(),
+    subscriptionId: subId,
+    planPriceId: priceId,
+    kind: 'initial',
+    periodStart,
+    periodEnd,
+    amount: 1000,
+    currency: 'usd',
+    paidAt: periodStart,
+  })
+  return { paymentId, priceId, subId }
+}
 
 beforeEach(async () => {
   ws = newId()
@@ -67,6 +135,10 @@ afterEach(async () => {
   await db.delete(creditHold).where(inArray(creditHold.workspaceId, workspaces))
   await db.delete(creditGrant).where(inArray(creditGrant.workspaceId, workspaces))
   await db.delete(creditDebt).where(inArray(creditDebt.workspaceId, workspaces))
+  await db.delete(payment).where(inArray(payment.workspaceId, workspaces))
+  await db.delete(subscription).where(inArray(subscription.workspaceId, workspaces))
+  await db.delete(planPrice).where(eq(planPrice.planId, ws))
+  await db.delete(plan).where(eq(plan.id, ws))
   await db.delete(member).where(inArray(member.organizationId, workspaces))
   await db.delete(organization).where(inArray(organization.id, workspaces))
   await db.delete(user).where(eq(user.id, userId))
@@ -79,6 +151,7 @@ import {
   getCreditBalance,
   getCreditBatches,
   getCreditLedger,
+  getCreditSummary,
   reconcileWorkspaceCredits,
 } from '../src/queries.ts'
 
@@ -127,6 +200,127 @@ describe('credit queries on PostgreSQL', () => {
     })
     expect(await getCreditBalance(db, otherWs)).toEqual({ available: 99, held: 0, debt: 0 })
     expect(await getCreditBalance(db, newId())).toEqual({ available: 0, held: 0, debt: 0 })
+  })
+
+  it('summarizes spendable sources with held/expired/revoked exclusion and annual month-end rollover', async () => {
+    await grant(db, { ...grantInput(20), source: 'purchase' })
+    await hold(db, holdInput(8))
+    await grant(db, { ...grantInput(5), source: 'signup' })
+    await grant(db, grantInput(7))
+    const expired = await grant(db, grantInput(99))
+    await db
+      .update(creditGrant)
+      .set({ expiresAt: new Date(0) })
+      .where(eq(creditGrant.id, expired.id))
+    const revoked = await grant(db, grantInput(99))
+    await db.update(creditGrant).set({ status: 'revoked' }).where(eq(creditGrant.id, revoked.id))
+    await grant(db, { ...grantInput(999), workspaceId: otherWs })
+    const { paymentId } = await subscriptionPayment(
+      'year',
+      new Date('2026-01-31T12:30:00Z'),
+      new Date('2027-01-31T12:30:00Z'),
+      true,
+    )
+    for (const [n, amount] of [
+      [1, 10],
+      [2, 30],
+    ] as const) {
+      await grant(db, {
+        ...grantInput(amount),
+        source: 'subscription',
+        sourceRef: `${paymentId}:${n}`,
+        paymentId,
+      })
+    }
+    // Arrival time does not define the paid monthly grant window.
+    await db
+      .update(creditGrant)
+      .set({ createdAt: new Date(0) })
+      .where(eq(creditGrant.paymentId, paymentId))
+    const before = await getCreditSummary(db, ws, new Date('2026-03-31T12:29:59Z'))
+    expect(before.subscription.currentPeriod).toBe(10)
+    const summary = await getCreditSummary(db, ws, new Date('2026-03-31T12:30:00Z'))
+    expect(summary).toEqual({
+      subscription: { total: 40, currentPeriod: 30 },
+      purchase: 12,
+      free: { signup: 5, daily: 0, total: 5 },
+      other: 7,
+      available: 64,
+    })
+    expect(summary.subscription.total + summary.purchase + summary.free.total + summary.other).toBe(
+      summary.available,
+    )
+    expect((await getCreditSummary(db, otherWs)).available).toBe(999)
+    expect((await getCreditSummary(db, newId())).available).toBe(0)
+  })
+
+  it('counts the current monthly payment separately from non-rollover grace credits', async () => {
+    const periodStart = new Date('2026-03-15T12:30:00Z')
+    const { paymentId, priceId, subId } = await subscriptionPayment(
+      'month',
+      periodStart,
+      new Date('2026-04-15T12:30:00Z'),
+      false,
+    )
+    const previousPaymentId = newId()
+    await db.insert(payment).values({
+      id: previousPaymentId,
+      workspaceId: ws,
+      provider: 'stripe',
+      providerPaymentId: newId(),
+      subscriptionId: subId,
+      planPriceId: priceId,
+      kind: 'initial',
+      periodStart: new Date('2026-02-15T12:30:00Z'),
+      periodEnd: periodStart,
+      amount: 1000,
+      currency: 'usd',
+      paidAt: new Date('2026-02-15T12:30:00Z'),
+    })
+    await grant(db, {
+      ...grantInput(10),
+      source: 'subscription',
+      sourceRef: `${previousPaymentId}:0`,
+      paymentId: previousPaymentId,
+      expiresAt: new Date('2026-03-17T12:30:00Z'),
+    })
+    await grant(db, {
+      ...grantInput(30),
+      source: 'subscription',
+      sourceRef: `${paymentId}:0`,
+      paymentId,
+    })
+    const summary = await getCreditSummary(db, ws, periodStart)
+    expect(summary.subscription).toEqual({ total: 40, currentPeriod: 30 })
+    expect(summary.available).toBe(40)
+    expect((await getCreditSummary(db, ws, new Date('2026-03-17T12:30:00Z'))).subscription).toEqual(
+      { total: 30, currentPeriod: 30 },
+    )
+  })
+
+  it('uses database time for spendable summary, balance and holds despite application clock skew', async () => {
+    const spendable = await grant(db, grantInput(10))
+    const expired = await grant(db, grantInput(99))
+    await db
+      .update(creditGrant)
+      .set({ expiresAt: sql`now() + interval '1 hour'` })
+      .where(eq(creditGrant.id, spendable.id))
+    await db
+      .update(creditGrant)
+      .set({ expiresAt: sql`now() - interval '1 hour'` })
+      .where(eq(creditGrant.id, expired.id))
+    const reservation = holdInput(8)
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2100-01-01T00:00:00Z'))
+    try {
+      expect((await getCreditSummary(db, ws)).available).toBe(10)
+      expect((await getCreditBalance(db, ws)).available).toBe(10)
+      await hold(db, reservation)
+      expect((await getCreditSummary(db, ws)).available).toBe(2)
+      expect(await getCreditBalance(db, ws)).toMatchObject({ available: 2, held: 8 })
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('paginates tied timestamps newest first by ID without losing microseconds or leaking workspaces', async () => {

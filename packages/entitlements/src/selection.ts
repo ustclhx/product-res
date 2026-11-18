@@ -22,6 +22,8 @@ export const DEFAULT_FREE_FEATURES: PlanFeatures = {
 
 export interface Entitlements {
   readonly key: string
+  /** 套餐显示名；只有内置免费兜底没有名称（账单页据此显示本地化文案而不是 key） */
+  readonly name?: string
   readonly sort: number
   readonly features: PlanFeatures
 }
@@ -38,6 +40,30 @@ export interface EntitlementOptions {
   readonly pastDueGraceDays?: number
 }
 
+/** 与套餐选择和账单摘要共用订阅生效规则。 */
+export function isSubscriptionEffective(
+  sub: Pick<EntitlementSubscription, 'status' | 'pastDueSince' | 'currentPeriodEnd'>,
+  { now = new Date(), pastDueGraceDays = 7 }: EntitlementOptions = {},
+): boolean {
+  // Provider 尚未确认服务周期时，不授予付费权益。
+  if (sub.currentPeriodEnd === null) return false
+  switch (sub.status) {
+    case 'trialing':
+    case 'active':
+      return true
+    case 'past_due':
+      return (
+        sub.pastDueSince !== null &&
+        now.getTime() < new Date(sub.pastDueSince).getTime() + pastDueGraceDays * 86_400_000
+      )
+    case 'canceled':
+    case 'expired':
+      return now.getTime() < new Date(sub.currentPeriodEnd).getTime()
+    case 'paused':
+      return false
+  }
+}
+
 export function selectEntitlements(
   subscriptions: readonly EntitlementSubscription[],
   free: Entitlements | undefined,
@@ -45,28 +71,11 @@ export function selectEntitlements(
 ): Entitlements {
   let highest: Entitlements | undefined
   for (const sub of subscriptions) {
-    // A provider activation without a confirmed period grants no paid entitlement.
-    if (sub.currentPeriodEnd === null) continue
-    let effective: boolean
-    switch (sub.status) {
-      case 'trialing':
-      case 'active':
-        effective = true
-        break
-      case 'past_due':
-        effective =
-          sub.pastDueSince !== null &&
-          now.getTime() < new Date(sub.pastDueSince).getTime() + pastDueGraceDays * 86_400_000
-        break
-      case 'canceled':
-      case 'expired':
-        effective = now.getTime() < new Date(sub.currentPeriodEnd).getTime()
-        break
-      case 'paused':
-        effective = false
-        break
-    }
-    if (effective && (!highest || sub.plan.sort > highest.sort)) highest = sub.plan
+    if (
+      isSubscriptionEffective(sub, { now, pastDueGraceDays }) &&
+      (!highest || sub.plan.sort > highest.sort)
+    )
+      highest = sub.plan
   }
   return highest ?? free ?? { key: 'free', sort: 0, features: DEFAULT_FREE_FEATURES }
 }
@@ -83,14 +92,24 @@ export function can(
   capability: 'ai.useModel',
   options: { readonly modelKey: string; readonly tags?: readonly string[] },
 ): boolean
-export function can(ctx: Context, capability: BooleanCapability): boolean
+export function can<const Capability extends string>(
+  ctx: Context,
+  capability: Exclude<Capability, 'ai.useModel'>,
+): boolean
 export function can(
   ctx: Context,
-  capability: 'ai.useModel' | BooleanCapability,
+  capability: string,
   options?: { readonly modelKey: string; readonly tags?: readonly string[] },
 ): boolean {
   const features = featuresOf(ctx)
-  if (capability !== 'ai.useModel') return features[capability]
+  if (capability === 'publicApi' || capability === 'priorityQueue' || capability === 'watermark')
+    return features[capability]
+  if (capability !== 'ai.useModel')
+    return (
+      features.capabilities !== undefined &&
+      Object.hasOwn(features.capabilities, capability) &&
+      features.capabilities[capability] === true
+    )
   return (
     options !== undefined &&
     features.models.some(
@@ -103,8 +122,9 @@ export function limit(ctx: Context, key: EntitlementLimit): number {
   return featuresOf(ctx)[key]
 }
 
-export type EntitlementRequirement =
+export type EntitlementRequirement<Capability extends string = never> =
   | { readonly capability: BooleanCapability }
+  | { readonly capability: Exclude<Capability, 'ai.useModel'> }
   | {
       readonly capability: 'ai.useModel'
       readonly modelKey: string
@@ -115,15 +135,18 @@ export type EntitlementRequirement =
 export const UPGRADE_REQUIRED = 'UPGRADE_REQUIRED'
 
 /** Numeric value is the requested total (e.g. current tasks + the new task). */
-export function requireEntitlement(ctx: Context, requirement: EntitlementRequirement): void {
+export function requireEntitlement<const Capability extends string>(
+  ctx: Context,
+  requirement: EntitlementRequirement<Capability>,
+): void {
   const allowed =
     'limit' in requirement
       ? Number.isFinite(requirement.value) &&
         requirement.value >= 0 &&
         requirement.value <= limit(ctx, requirement.limit)
       : requirement.capability === 'ai.useModel'
-        ? can(ctx, requirement.capability, requirement)
-        : can(ctx, requirement.capability)
+        ? 'modelKey' in requirement && can(ctx, 'ai.useModel', requirement)
+        : can<string>(ctx, requirement.capability)
   if (!allowed)
     throw new AppError(UPGRADE_REQUIRED, 'Upgrade your plan to use this feature', { status: 403 })
 }

@@ -1,4 +1,11 @@
-import { creditDebt, creditGrant, creditHold, creditLedger } from '@product-res/db'
+import {
+  creditDebt,
+  creditGrant,
+  creditHold,
+  creditLedger,
+  payment,
+  planPrice,
+} from '@product-res/db'
 import { and, desc, eq, lt, or, sql } from 'drizzle-orm'
 import {
   type CreditsExecutor,
@@ -66,6 +73,62 @@ export async function hasAdminGrant(db: CreditsExecutor, workspaceId: string): P
     .where(and(eq(creditGrant.workspaceId, workspaceId), eq(creditGrant.source, 'admin')))
     .limit(1)
   return row !== undefined
+}
+
+export interface CreditSummary {
+  subscription: { total: number; currentPeriod: number }
+  purchase: number
+  free: { signup: number; daily: number; total: number }
+  other: number
+  available: number
+}
+
+/** One snapshot; remaining already excludes allocations reserved by held credits. */
+export async function getCreditSummary(
+  db: CreditsExecutor,
+  workspaceId: string,
+  now?: Date,
+  tx?: CreditsTransaction,
+): Promise<CreditSummary> {
+  // 默认与余额和预扣共用数据库时钟；显式时间只用于周期锚点查询。
+  const at = now ? sql`${now.toISOString()}::timestamptz` : sql`now()`
+  // UTC interval arithmetic starts at the original payment anchor, preserving Jan 31 -> Feb 28 -> Mar 31.
+  const [totals] = await (tx ?? db)
+    .select({
+      subscriptionTotal: sql<number>`coalesce(sum(${creditGrant.remaining}) filter (where ${creditGrant.source} = 'subscription'), 0)::float8`,
+      subscriptionCurrentPeriod: sql<number>`coalesce(sum(${creditGrant.remaining}) filter (where ${creditGrant.source} = 'subscription' and exists (
+      select 1 from generate_series(0, case when ${planPrice.interval} = 'year' then 11 else 0 end) as months(n)
+      where ${creditGrant.sourceRef} = ${payment.id}::text || ':' || months.n::text
+      and ${at} >= ((${payment.periodStart} at time zone 'UTC') + months.n * interval '1 month') at time zone 'UTC'
+      and ${at} < least(${payment.periodEnd},
+        case when ${planPrice.interval} = 'year' then ((${payment.periodStart} at time zone 'UTC') + (months.n + 1) * interval '1 month') at time zone 'UTC' else ${payment.periodEnd} end)
+    )), 0)::float8`,
+      purchase: sql<number>`coalesce(sum(${creditGrant.remaining}) filter (where ${creditGrant.source} = 'purchase'), 0)::float8`,
+      signup: sql<number>`coalesce(sum(${creditGrant.remaining}) filter (where ${creditGrant.source} = 'signup'), 0)::float8`,
+      daily: sql<number>`coalesce(sum(${creditGrant.remaining}) filter (where ${creditGrant.source} = 'daily'), 0)::float8`,
+      other: sql<number>`coalesce(sum(${creditGrant.remaining}) filter (where ${creditGrant.source} not in ('subscription', 'purchase', 'signup', 'daily')), 0)::float8`,
+      available: sql<number>`coalesce(sum(${creditGrant.remaining}), 0)::float8`,
+    })
+    .from(creditGrant)
+    .leftJoin(
+      payment,
+      and(eq(payment.id, creditGrant.paymentId), eq(payment.workspaceId, workspaceId)),
+    )
+    .leftJoin(planPrice, eq(planPrice.id, payment.planPriceId))
+    .where(
+      and(
+        eq(creditGrant.workspaceId, workspaceId),
+        eq(creditGrant.status, 'active'),
+        or(sql`${creditGrant.expiresAt} is null`, sql`${creditGrant.expiresAt} > ${at}`),
+      ),
+    )
+  if (!totals) throw new Error('Credit summary query returned no row')
+  const { subscriptionTotal, subscriptionCurrentPeriod, signup, daily, ...summary } = totals
+  return {
+    ...summary,
+    subscription: { total: subscriptionTotal, currentPeriod: subscriptionCurrentPeriod },
+    free: { signup, daily, total: signup + daily },
+  }
 }
 
 /** All grant statuses are visible as batch history, newest first. */

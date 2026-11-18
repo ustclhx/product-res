@@ -1,0 +1,28 @@
+name: Setup workspace
+description: Initialize optional temporary Postgres roles, install pnpm, Node and workspace dependencies
+inputs:
+  database:
+    description: Temporary Postgres database name; empty skips role initialization
+    required: false
+    default: ''
+runs:
+  using: composite
+  # ci.yml 拆成多个并行 job 后共用的准备步骤（实测约 20–30 秒）。
+  steps:
+    # 与 infra/local/docker-compose.yml 的容器初始化相同：集群级账号 + 单库权限
+    - name: Initialize database roles
+      if: inputs.database != ''
+      env:
+        PGURL: postgres://postgres:postgres@localhost:5432/${{ inputs.database }}
+      shell: bash
+      run: |
+        psql "$PGURL" -v ON_ERROR_STOP=1 -f infra/local/initdb/01-roles.sql
+        psql "$PGURL" -v ON_ERROR_STOP=1 -f infra/local/initdb/02-db-grants.sql
+    # 版本取自根 package.json 的 packageManager
+    - uses: pnpm/action-setup@v6
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 22
+        cache: pnpm
+    - shell: bash
+      run: pnpm install --frozen-lockfile

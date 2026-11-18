@@ -4,6 +4,7 @@ import { capture, grant, hold } from '@product-res/credits'
 import { DEFAULT_FREE_FEATURES } from '@product-res/entitlements'
 import { actionDb, actor } from './billing-actions-helper.ts'
 import { fixtureDb, register, simulateClientIp, uiText } from './fixtures.ts'
+import { chooseOption } from './select.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 /** 调用浏览器实际导入的 Start 客户端桩，POST 仍进入真实服务端中间件与 handler。 */
@@ -47,7 +48,9 @@ async function makeAdmin(page: Page) {
 
 async function banForm(page: Page, reason: string, button: string) {
   await page.getByLabel(uiText('admin_reason'), { exact: true }).fill(reason)
-  await page.getByLabel(uiText('admin_i_confirm_this_user_status_change')).check()
+  await page
+    .getByRole('checkbox', { name: uiText('admin_i_confirm_this_user_status_change'), exact: true })
+    .check()
   await page.getByRole('button', { name: button, exact: true }).click()
 }
 
@@ -87,7 +90,12 @@ test('用户封禁后旧会话结账立即被拒绝，解封与自封禁约束�
     ])
     await page.goto(`/admin/users/${admin.userId}`)
     await page.getByLabel(uiText('admin_reason'), { exact: true }).fill('Self ban')
-    await page.getByLabel(uiText('admin_i_confirm_this_user_status_change')).check()
+    await page
+      .getByRole('checkbox', {
+        name: uiText('admin_i_confirm_this_user_status_change'),
+        exact: true,
+      })
+      .check()
     await expect(
       page.getByRole('button', { name: uiText('admin_ban_user'), exact: true }),
     ).toBeDisabled()
@@ -249,9 +257,18 @@ test('空间详情展示积分、重叠订阅，并恢复原 owner 的访问', a
     ).toBeVisible()
     await page.goto('/admin/workspaces')
     await page.getByLabel(uiText('admin_search_workspaces')).fill(workspaceId)
-    await page.getByLabel(uiText('admin_status'), { exact: true }).selectOption('deleted')
+    // DataTable 筛选下拉为 @product-res/ui Select（add-ui-design-system 4.2）
+    await chooseOption(
+      page.getByRole('combobox', { name: uiText('admin_status'), exact: true }),
+      uiText('admin_deleted'),
+    )
     await page.getByRole('button', { name: uiText('admin_apply'), exact: true }).click()
-    await page.getByRole('link', { name: 'Recoverable workspace' }).click()
+    // 筛选结果加载前旧列表仍在，且可能含同名空间：按本用例的空间 id 定位行
+    await expect(page).toHaveURL(/status=deleted/)
+    await page
+      .getByRole('link', { name: 'Recoverable workspace' })
+      .and(page.locator(`a[href$="/admin/workspaces/${workspaceId}"]`))
+      .click()
     await expect(
       page.locator('strong').filter({ hasText: uiText('admin_overlapping_period') }),
     ).toHaveCount(2)
@@ -261,7 +278,12 @@ test('空间详情展示积分、重叠订阅，并恢复原 owner 的访问', a
     await expect(
       page.getByRole('heading', { name: uiText('admin_recent_credit_ledger') }),
     ).toBeVisible()
-    await page.getByLabel(uiText('admin_i_confirm_restoring_this_workspace')).check()
+    await page
+      .getByRole('checkbox', {
+        name: uiText('admin_i_confirm_restoring_this_workspace'),
+        exact: true,
+      })
+      .check()
     await page.getByRole('button', { name: uiText('admin_restore_workspace') }).click()
     await expect(
       page.getByText(uiText('admin_workspace_restored_original_owners_can_access_it_again')),

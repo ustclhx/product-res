@@ -1,7 +1,14 @@
 import { randomUUID } from 'node:crypto'
-import { expect, type Page, test } from '@playwright/test'
-import { DEFAULT_FREE_FEATURES } from '@product-res/entitlements'
+import { expect, test } from '@playwright/test'
 import { newId } from '@product-res/shared'
+import {
+  newConversation,
+  removeModel,
+  STREAM_HEADERS,
+  seedChatModel,
+  slugOf,
+  uiStream,
+} from './chat-fixtures.ts'
 import {
   activateWorkspace,
   fixtureDb,
@@ -11,12 +18,11 @@ import {
   simulateClientIp,
   uiText,
 } from './fixtures.ts'
+import { chooseOption } from './select.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // 对话列表与对话页（tasks.md 3.1）。本地没有真实模型：发送消息时拦截 POST /api/ai/chat，
 // 返回模拟的 UI message 流或错误码；停止接口（p3-chat-edge 实现）同样在测试中拦截。
-
-const UUID = '[0-9a-f-]{36}'
 
 test.beforeEach(async ({ page }) => {
   await simulateClientIp(page)
@@ -28,16 +34,6 @@ test.afterEach(async ({ page }, info) => {
     await page.screenshot({ path: info.outputPath('failure.png'), fullPage: true })
   }
 })
-
-const slugOf = (page: Page) => new URL(page.url()).pathname.split('/')[2] ?? ''
-
-async function newConversation(page: Page, slug: string) {
-  await page.goto(`/app/${slug}/chat`)
-  await expect(page.getByRole('heading', { name: 'Chats' })).toBeVisible()
-  await page.getByRole('button', { name: 'New chat' }).click()
-  await expect(page).toHaveURL(new RegExp(`/app/${slug}/chat/${UUID}$`))
-  return new URL(page.url()).pathname.split('/').at(-1) ?? ''
-}
 
 test('creates, renames and archives own conversations', async ({ page }) => {
   const email = `chat-list-${randomUUID()}@example.com`
@@ -128,67 +124,6 @@ test('another member of the workspace gets 404 for a conversation', async ({ pag
   }
 })
 
-/** 让空间的权益包含一个按次计费的测试模型（模型标签写入套餐 features.models） */
-async function seedChatModel(slug: string) {
-  const sql = fixtureDb()
-  const tag = `e2e-chat-${randomUUID().slice(0, 8)}`
-  const modelId = newId()
-  try {
-    const [workspace] = await sql`select id from organization where slug = ${slug}`
-    if (!workspace) throw new Error('Workspace fixture is missing')
-    const planId = newId()
-    const priceId = newId()
-    const features = JSON.stringify({ ...DEFAULT_FREE_FEATURES, models: [tag] })
-    await sql`insert into plan (id,key,name,type,credits,features,sort,active)
-      values (${planId},${tag},'E2E chat','subscription',0,${features}::jsonb,1000,false)`
-    await sql`insert into plan_price (id,plan_id,provider,provider_price_id,interval,amount,currency,active)
-      values (${priceId},${planId},'stripe',${`e2e:${priceId}`},'month',0,'usd',false)`
-    await sql`insert into subscription (id,workspace_id,plan_id,plan_price_id,provider,
-      provider_subscription_id,status,current_period_start,current_period_end,
-      cancel_at_period_end,canceled_at,last_event_at)
-      values (${newId()},${workspace.id},${planId},${priceId},'stripe',${`e2e:${planId}`},
-        'canceled',now(),now()+interval '1 day',true,now(),now())`
-    const pricing = {
-      mode: 'per_call',
-      credits: 2,
-      limits: { maxInputTokens: 8000, maxOutputTokens: 2000 },
-    }
-    await sql`insert into ai_model (id,key,kind,provider,provider_model_id,pricing,min_plan_features,sort)
-      values (${modelId},${tag},'text','openai','gpt-fixture',${sql.json(pricing)},${sql.json([tag])},-1000)`
-  } finally {
-    await sql.end()
-  }
-  return { modelId, key: tag }
-}
-
-async function removeModel(modelId: string) {
-  const sql = fixtureDb()
-  try {
-    await sql`update ai_model set enabled = false where id = ${modelId}`
-  } finally {
-    await sql.end()
-  }
-}
-
-/** UI message 流（SSE）：start 事件带上 conversationId / messageId 元数据 */
-function uiStream(conversationId: string, messageId: string, deltas: string[]) {
-  const chunks = [
-    { type: 'start', messageId, messageMetadata: { conversationId, messageId } },
-    { type: 'start-step' },
-    { type: 'text-start', id: 't1' },
-    ...deltas.map((delta) => ({ type: 'text-delta', id: 't1', delta })),
-    { type: 'text-end', id: 't1' },
-    { type: 'finish-step' },
-    { type: 'finish' },
-  ]
-  return `${chunks.map((chunk) => `data: ${JSON.stringify(chunk)}\n\n`).join('')}data: [DONE]\n\n`
-}
-
-const STREAM_HEADERS = {
-  'content-type': 'text/event-stream',
-  'x-vercel-ai-ui-message-stream': 'v1',
-}
-
 test('chat page picks a model, streams replies, stops and explains errors', async ({ page }) => {
   test.setTimeout(150_000)
   await register(page, `chat-page-${randomUUID()}@example.com`)
@@ -197,16 +132,21 @@ test('chat page picks a model, streams replies, stops and explains errors', asyn
   try {
     const conversationId = await newConversation(page, slug)
     // 模型列表经 KV 缓存（TTL 60 秒）：刷新直到新模型出现在选择器中
-    await expect
-      .poll(
-        async () => {
-          await page.reload()
-          return page.getByLabel('Model').locator(`option[value="${model.modelId}"]`).count()
-        },
-        { timeout: 90_000, intervals: [2_000, 5_000] },
-      )
-      .toBe(1)
-    await page.getByLabel('Model').selectOption(model.modelId)
+    await expect(async () => {
+      await page.reload()
+      const trigger = page.getByRole('combobox', { name: 'Model', exact: true })
+      expect(await trigger.count()).toBe(1)
+      await expect(async () => {
+        if (!(await page.getByRole('listbox').isVisible())) await trigger.click({ timeout: 1_000 })
+        await expect(page.getByRole('listbox')).toBeVisible({ timeout: 500 })
+      }).toPass({ timeout: 10_000, intervals: [100, 250, 500] })
+      expect(
+        await page.locator(`[role="option"][data-value=${JSON.stringify(model.modelId)}]`).count(),
+      ).toBe(1)
+      await page.keyboard.press('Escape')
+      await expect(page.getByRole('listbox')).toHaveCount(0)
+      await chooseOption(trigger, { value: model.modelId })
+    }).toPass({ timeout: 90_000, intervals: [2_000, 5_000] })
     await expect(page.getByTestId('credit-estimate')).toHaveText(/2 credits/)
 
     // 1. 正常回复：只提交本轮用户消息，逐段渲染模拟流
@@ -262,6 +202,33 @@ test('chat page picks a model, streams replies, stops and explains errors', asyn
       await expect(page.getByRole('link', { name: 'Go to billing' })).toHaveCount(billing)
       await page.unroute('**/api/ai/chat')
     }
+
+    // 3. 带数值的积分不足：弹出余额不足弹窗（add-ui-design-system 8.6），Esc 关闭后可再次打开并去购买
+    await page.route('**/api/ai/chat', (route) =>
+      route.fulfill({
+        status: 402,
+        json: {
+          error: {
+            code: 'INSUFFICIENT_CREDITS',
+            message: 'Insufficient credits',
+            details: { estimatedCredits: 30, availableCredits: 10 },
+          },
+        },
+      }),
+    )
+    await message.fill('Trigger the credits dialog')
+    await page.getByRole('button', { name: 'Send' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Insufficient credits' })
+    await expect(dialog).toBeVisible()
+    await expect(dialog).toContainText('30 credits')
+    await expect(dialog).toContainText('10 credits')
+    await expect(dialog).toContainText('20 more credits needed')
+    await page.keyboard.press('Escape')
+    await expect(dialog).toHaveCount(0)
+    await page.getByRole('button', { name: 'Top up credits' }).click()
+    await dialog.getByRole('button', { name: 'Buy credit packs' }).click()
+    await expect(page).toHaveURL(new RegExp(`/app/${slug}/billing#credit-packs$`))
+    await page.unroute('**/api/ai/chat')
   } finally {
     await removeModel(model.modelId)
   }
@@ -327,16 +294,21 @@ test('stop button calls the stop endpoint with the streaming message id', async 
     })
 
     await newConversation(page, slug)
-    await expect
-      .poll(
-        async () => {
-          await page.reload()
-          return page.getByLabel('Model').locator(`option[value="${model.modelId}"]`).count()
-        },
-        { timeout: 90_000, intervals: [2_000, 5_000] },
-      )
-      .toBe(1)
-    await page.getByLabel('Model').selectOption(model.modelId)
+    await expect(async () => {
+      await page.reload()
+      const trigger = page.getByRole('combobox', { name: 'Model', exact: true })
+      expect(await trigger.count()).toBe(1)
+      await expect(async () => {
+        if (!(await page.getByRole('listbox').isVisible())) await trigger.click({ timeout: 1_000 })
+        await expect(page.getByRole('listbox')).toBeVisible({ timeout: 500 })
+      }).toPass({ timeout: 10_000, intervals: [100, 250, 500] })
+      expect(
+        await page.locator(`[role="option"][data-value=${JSON.stringify(model.modelId)}]`).count(),
+      ).toBe(1)
+      await page.keyboard.press('Escape')
+      await expect(page.getByRole('listbox')).toHaveCount(0)
+      await chooseOption(trigger, { value: model.modelId })
+    }).toPass({ timeout: 90_000, intervals: [2_000, 5_000] })
     await page.getByLabel('Message', { exact: true }).fill('Write a long story')
     await page.getByRole('button', { name: 'Send' }).click()
     const replies = page.getByRole('list', { name: 'Messages' }).getByRole('listitem', {

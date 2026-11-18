@@ -489,6 +489,20 @@ describe('Stripe adapter with cryptographically signed synthetic fixtures', () =
       mock.complete()
     },
   )
+  it('portal period-end cancellation (cancel_at only) reaches the snapshot as cancelAtPeriodEnd', async () => {
+    const mock = mockProvider()
+    const result = await mock.verify('customer.subscription.updated', {
+      ...subscription,
+      cancel_at_period_end: false,
+      cancel_at: end,
+    })
+    expect(result.events).toHaveLength(1)
+    expect(result.events[0]).toMatchObject({
+      type: 'subscription.updated',
+      subscription: { cancelAtPeriodEnd: true, currentPeriodEnd: new Date(end * 1000) },
+    })
+    mock.complete()
+  })
   it('deletion preserves the snapshot and emits terminal cancellation with the real period', async () => {
     const mock = mockProvider()
     const result = await mock.verify('customer.subscription.deleted', {

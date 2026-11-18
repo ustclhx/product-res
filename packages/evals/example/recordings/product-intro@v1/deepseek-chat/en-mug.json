@@ -1,0 +1,18 @@
+{
+  "kind": "generation",
+  "promptVersion": "product-intro@v1",
+  "renderedHash": "sha256:3e3ba3e032a4baa3e34d812c44c14876a25284948dbae433dd3065f6707ba40f",
+  "model": {
+    "key": "deepseek-chat",
+    "provider": "deepseek",
+    "providerModelId": "deepseek-chat"
+  },
+  "output": "## Overview\nA thoughtfully designed insulated ceramic mug built for people who spend their day at a desk. It keeps your coffee or tea warm for up to 90 minutes, so you can stay focused on work instead of reheating your drink.\n\n## Highlights\n- Keeps drinks warm for 90 minutes\n- Dishwasher safe for effortless cleaning\n- Fits under most coffee machines",
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 91,
+    "outputTokens": 76
+  },
+  "recordedAt": "2026-11-14T07:12:05.083Z",
+  "source": "recorded"
+}

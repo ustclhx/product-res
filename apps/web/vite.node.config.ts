@@ -48,7 +48,8 @@ export default defineConfig({
       preset: 'node_server',
       sourcemap: true,
       // bootstrap 独立编译，SDK 仍需被 trace 到可复制的生产产物。
-      traceDeps: ['@sentry/node'],
+      // cf-workers-og 的 Node 入口按 import.meta.url 读取包内 WASM，必须保留包目录结构，不能打进 _libs。
+      traceDeps: ['@sentry/node', 'cf-workers-og'],
       entry: fileURLToPath(new URL('./src/node/http.ts', import.meta.url)),
       serverEntry: false,
       // 默认 sourcemapMinify 会删除 sourcesContent，并清空来源全在 node_modules（含上述中间产物）的 mappings。

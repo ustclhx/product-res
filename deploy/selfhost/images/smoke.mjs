@@ -4,11 +4,11 @@ import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync 
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
-import { assertTokenRefusal, numericImageUid } from './policy.mjs'
+import { assertTokenRefusal, localArchitectures, numericImageUid } from './policy.mjs'
 
 const root = resolve(import.meta.dirname, '../../..')
 const [sha, arch, directory] = process.argv.slice(2)
-if (!/^[a-f0-9]{40}$/.test(sha ?? '') || !['amd64', 'arm64'].includes(arch) || !directory)
+if (!/^[a-f0-9]{40}$/.test(sha ?? '') || !localArchitectures.includes(arch) || !directory)
   throw new Error('Usage: smoke.mjs <fullSha> <amd64|arm64> <output-dir>')
 const output = resolve(directory)
 const catalog = JSON.parse(readFileSync(join(import.meta.dirname, 'catalog.json'), 'utf8'))

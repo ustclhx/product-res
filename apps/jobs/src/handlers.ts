@@ -3,11 +3,13 @@ import type { EmailSender } from '@product-res/email'
 import type {
   Capability,
   DeadLetterSink,
+  KeyValueStore,
   QueueBatch,
   ScheduledHandler,
   Scheduler,
 } from '@product-res/platform'
 import { log, newRequestId, withLogContext } from '@product-res/shared/log'
+import type { ShareCardObjects } from '@product-res/storage'
 import {
   BILLING_DAILY_CRON,
   BILLING_HOURLY_CRON,
@@ -24,12 +26,15 @@ import { runWorkspaceCleanup, WORKSPACE_CLEANUP_CRON } from './cron/workspace-cl
 import { type JobObserver, withJobObserver } from './observer.ts'
 import { handleBillingBatch } from './queues/billing.ts'
 import { handleEmailBatch, type JobsEmailTransport } from './queues/email.ts'
+import { handleEventsDeadLetterBatch } from './queues/events-dead-letter.ts'
 
 export interface JobsContext extends BillingEnv {
   config: BillingEnv['config'] & AiFaultInjectionEnv
   emailTransport: JobsEmailTransport
   emailSender?: EmailSender
   files: Capability<{ delete(key: string | string[]): Promise<void> }>
+  shareCardCache?: KeyValueStore
+  shareCards?: ShareCardObjects
   observer: JobObserver
   emailDeadLetters?: DeadLetterSink<unknown>
   eventsDeadLetters?: DeadLetterSink<unknown>
@@ -59,6 +64,9 @@ async function consumeBatch(batch: QueueBatch<unknown>, context: JobsContext) {
       ...(context.emailSender && { sender: context.emailSender }),
       ...(context.emailDeadLetters && { deadLetters: context.emailDeadLetters }),
     })
+  }
+  if (['product-res-events-dlq', 'product-res-events-dlq-staging', 'product-res-events-dlq-production'].includes(batch.queue)) {
+    return handleEventsDeadLetterBatch(batch, context.db.business())
   }
   if (EVENTS_QUEUES.has(batch.queue)) {
     return handleBillingBatch(batch, context, context.observer, {

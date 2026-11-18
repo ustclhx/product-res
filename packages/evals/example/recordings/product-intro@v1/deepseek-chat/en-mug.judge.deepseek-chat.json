@@ -1,0 +1,19 @@
+{
+  "kind": "judge",
+  "promptVersion": "product-intro@v1",
+  "rubricVersion": "r1",
+  "outputHash": "sha256:ba988137633ebd7739a4c95da8e7ca5ac469402e64ee4e0b4e1e15d8fbb5762a",
+  "model": {
+    "key": "deepseek-chat",
+    "provider": "deepseek",
+    "providerModelId": "deepseek-chat"
+  },
+  "output": "{\"criteria\":{\"accuracy\":{\"score\":5,\"reason\":\"All claims map directly to the listed features; no invented facts.\"},\"clarity\":{\"score\":5,\"reason\":\"Concise, well-structured with clear overview and scannable bullet highlights.\"},\"audience-fit\":{\"score\":5,\"reason\":\"Explicitly addresses desk-bound remote workers and their needs (staying focused, easy cleaning).\"}},\"summary\":\"Accurate, clear, and well-targeted to remote workers; every claim is supported by the given features.\"}",
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 556,
+    "outputTokens": 110
+  },
+  "recordedAt": "2026-11-14T07:12:06.737Z",
+  "source": "recorded"
+}

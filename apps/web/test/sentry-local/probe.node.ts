@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto'
 import { once } from 'node:events'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:net'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createAuth } from '@product-res/auth'
 import { defineTemplateConfig } from '@product-res/config'
@@ -210,7 +210,10 @@ it('triggers one audited admin HTTP error and one durable SMTP job failure in th
         'Inspect event JSON for redaction and duplicate events',
       ],
     }
-    const directory = join(repository, 'docs/runbooks/evidence/selfhost')
+    const directory = resolve(
+      process.env.EVIDENCE_DIR || join(repository, 'test-results/evidence'),
+      'selfhost',
+    )
     await mkdir(directory, { recursive: true })
     await writeFile(
       join(directory, 'c-2.5-sentry-node-trigger.json'),

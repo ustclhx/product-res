@@ -20,11 +20,20 @@ export const PASSWORD = 'correct-horse-battery'
 const uiLocale = templateConfig.i18n.enabled ? 'en' : templateConfig.i18n.defaultLocale
 const messages: Record<string, string> = Object.assign(
   {},
-  ...['auth', 'auth-errors', 'errors', 'admin', 'account', 'app', 'workspace', 'invite-links'].map(
-    (domain) =>
-      JSON.parse(
-        readFileSync(new URL(`../messages/${uiLocale}/${domain}.json`, import.meta.url), 'utf8'),
-      ),
+  ...[
+    'auth',
+    'auth-errors',
+    'errors',
+    'common',
+    'admin',
+    'account',
+    'app',
+    'workspace',
+    'invite-links',
+  ].map((domain) =>
+    JSON.parse(
+      readFileSync(new URL(`../messages/${uiLocale}/${domain}.json`, import.meta.url), 'utf8'),
+    ),
   ),
 )
 export function uiText(key: string, values: Record<string, string | number> = {}) {
@@ -132,7 +141,9 @@ export async function register(
   await form.getByLabel(authText('auth_email'), { exact: true }).fill(email)
   await form.getByLabel(authText('auth_password'), { exact: true }).fill(PASSWORD)
   await form.getByRole('button', { name: authText('auth_create_account') }).click()
-  await expect(page).toHaveURL(APP_URL)
+  // 注册接口要做密码哈希并创建个人空间，成功后再整页加载 /app；dev server 在并行负载下
+  // 常超过默认 5 秒，此前表现为「停在 /register」，实际注册已成功、只是跳转尚未完成
+  await expect(page).toHaveURL(APP_URL, { timeout: 15_000 })
   // 内测准入（add-beta-access-gate）：注册后开通个人空间，再刷新进入工作台
   if (activate && templateConfig.credits.requireGrantForAccess) {
     await activateAccount(email)

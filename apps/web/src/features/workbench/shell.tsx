@@ -4,7 +4,7 @@ import { type ReactNode, useEffect, useState } from 'react'
 import { m } from '../../paraglide/messages.js'
 import { templateConfig } from '../../server/template-config.ts'
 import { authClient } from '../auth/auth-client.ts'
-import { NotificationCenter } from '../notifications/center.tsx'
+import { NotificationBell } from '../notifications/bell.tsx'
 import { ThemeToggle } from '../theme/theme-toggle.tsx'
 import { TransferBanner } from '../transfer/banner.tsx'
 import { type WorkspacePage, WorkspaceSwitcher } from '../workspace/components.tsx'
@@ -78,7 +78,7 @@ export function WorkbenchShell({ page, children }: { page: WorkspacePage; childr
                 只读
               </span>
             ) : null}
-            <NotificationCenter key={slug} slug={slug} />
+            <NotificationBell />
             <AccountMenu page={page} />
           </div>
         </header>

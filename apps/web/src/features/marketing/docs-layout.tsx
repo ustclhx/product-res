@@ -84,7 +84,7 @@ function DocsSearch({ index }: { index: readonly DocsSearchEntry[] }) {
                   to="/docs/$slug"
                   params={{ slug: entry.slug }}
                   onClick={() => setQuery('')}
-                  className="grid rounded px-2 py-1 text-sm hover:bg-accent"
+                  className="grid rounded px-2 py-1 text-sm hover:bg-hover"
                 >
                   <span className="font-medium">{entry.title}</span>
                   <span className="text-muted-foreground text-xs">{entry.description}</span>

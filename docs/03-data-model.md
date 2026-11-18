@@ -88,12 +88,19 @@ credit_ledger (只增不改的流水)
 | `setting` | key (pk), value jsonb, updated_by | 运行时可改设置，KV 缓存 |
 | `waitlist` | id, email (unique), source, created_at | 可选 |
 
+`user_attribution`：用户首次进站来源（UTM、来源主机、落地路径、设备），主键 `user_id`，注册时写入一次，账号删除时一并清除。见 [埋点](analytics.md)。
+
 ## 7. 索引与约束要点
 
 - 所有带 `ws` 的表：`(ws, id desc)` 复合索引。UUIDv7 本身按时间有序，按 id 排序即按创建时间排序，列表分页用 id 做游标，不需要再单独建 `created_at` 索引。
 - 幂等唯一键：`webhook_event(provider, provider_event_id)`、`credit_grant(source, source_ref)`、`payment(provider, provider_payment_id)`。
-- 订阅：`unique (ws) where status in ('trialing','active','past_due','paused') and cancel_at_period_end = false`（部分唯一索引），保证同一空间只有一个「会续费的」订阅；已设置周期末取消的旧订阅不计入，允许换套餐 / 换支付平台时新旧订阅短暂重叠（见 05-billing §6）。
+- 订阅：`unique (ws) where status in ('trialing','active','past_due','paused') and cancel_at_period_end = false`（部分唯一索引），保证同一空间只有一个「会续费的」订阅；已设置周期末取消的旧订阅不计入，允许换套餐 / 换支付平台时新旧订阅短暂重叠（见 05-billing §6）。Stripe Customer Portal 以 `cancel_at`（≤ 当前周期末）表达的周期末取消同样写为 `cancel_at_period_end=true`（见 05-billing「Stripe 实现要点」）。
 - 删除策略：
   - `organization` 与 `user` **只软删 / 匿名化，从不物理删除**，因此所有外键统一使用 `on delete restrict`（作为防误删的保险），不使用 `cascade`。
-  - 软删后的数据清理由 Cron 执行：可再生或无审计价值的数据（`ai_conversation`、`ai_message`、`ai_task`、`file` 及其 R2 对象、`notification`、`invitation`）在保留期（如 30 天）后物理删除；`credit_*`、`payment`、`subscription`、`purchase`、`refund_request`（`contact_email` 除外）、`audit_log`、`webhook_event` 永久保留以供财务审计。
+  - 软删后的数据清理由 Cron 执行（jobs 每日 03:00 UTC 的 `workspace-cleanup` 与十分钟一次的 `files-cleanup`）：
+    - **空间保留期**：空间软删 30 天后，`notification`、`invitation` 在首次清理时删除并写入 `workspace.cleanup.completed` 审计；`ai_message` → `ai_conversation` → `ai_task` 按外键顺序分批物理删除（每批一个事务，单批 500 行、单轮最多 200 批，剩余的下一轮继续）；`file` 及其 R2 对象由 `files-cleanup` 删除。
+    - **删号**：删号事务内匿名化账号，并删除该用户的 `notification`，以及 `newsletter_subscriber`、`waitlist` 中该邮箱（原值小写与 `normalizeSignupEmail` 规范化值）的记录，均在邮箱被替换为占位值之前完成。该用户在团队空间中的 `ai_conversation`、`ai_message`、`ai_task` 不放进删号事务，由同一个 `workspace-cleanup` 按已删除用户（邮箱为 `deleted+<id>@invalid`）分批删除，日常数据量下在 24 小时内完成删除；个人空间随账号软删，走上面的保留期规则。团队空间中该用户的产出文件属于空间共享资产，保留，只把 `file.source_task_id` 置空。
+    - **跳过规则**：仍有 `held` 预扣的消息或任务（以及该消息所在的对话）、一天内仍在生成（`streaming` / `queued` / `running`）的行先跳过，等兜底处理器结算后下一轮再删。`credit_hold` 以 `ref_type` / `ref_id` 文本指向这些行，不受删除影响。
+    - **永久保留**：`credit_*`、`payment`、`subscription`、`purchase`、`refund_request`（`contact_email` 除外）、`audit_log`、`webhook_event` 永久保留以供财务审计。
+    - **审计记录不存个人信息**：`audit_log` 对 `app` 只追加，删号时无法改写，因此写入方只记录用户 id、邀请 id 与变更的字段名，不写入邮箱、姓名、头像；用户行匿名化后，审计页显示为已删除用户。
   - 指向 `user` 的列（`credit_ledger.user_id`、`audit_log.actor_user_id` 等）在用户删除后仍指向已匿名化的 user 行，不置空。

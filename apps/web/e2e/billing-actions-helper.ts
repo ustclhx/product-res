@@ -10,10 +10,7 @@ const start = createRequire(require.resolve('@tanstack/react-start/package.json'
 const client = createRequire(start.resolve('@tanstack/start-client-core/package.json'))
 const serializer = client('seroval') as {
   fromJSON(value: unknown): { data: Record<string, unknown> }
-  fromCrossJSON(
-    value: unknown,
-    options: { refs: Map<unknown, unknown> },
-  ): { result?: Record<string, unknown> }
+  fromCrossJSON(value: unknown, options: { refs: Map<unknown, unknown> }): { result?: unknown }
   toCrossJSONAsync(value: unknown, options: { refs: Map<unknown, unknown> }): Promise<unknown>
 }
 
@@ -74,12 +71,12 @@ export async function offlineProviderTransport(
     expect(response.headers()['x-tss-serialized']).toBe('true')
     const envelope = serializer.fromCrossJSON(await response.json(), { refs: new Map() })
     const result = envelope.result
-    if (result && 'catalog' in result) {
+    if (result && typeof result === 'object' && 'catalog' in result) {
       const catalog = result.catalog as { providers: { id: string; available: boolean }[] }
       for (const provider of catalog.providers)
         if (provider.id === 'stripe') provider.available = true
     }
-    if (result && 'rows' in result)
+    if (result && typeof result === 'object' && 'rows' in result)
       for (const row of result.rows as { provider: string; providerAvailable: boolean }[])
         if (row.provider === 'stripe') row.providerAvailable = true
     await route.fulfill({

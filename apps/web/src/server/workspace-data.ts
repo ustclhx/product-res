@@ -8,9 +8,18 @@ import {
 import { eq } from 'drizzle-orm'
 import { templateConfig } from './template-config.ts'
 
+/** 空间当前生效的套餐与席位上限；未开启计费时都为 null。 */
+export interface WorkspacePlan {
+  planKey: string | null
+  maxSeats: number | null
+}
+
 /** Reads through the caller's transaction, preserving the auth workspace lock. */
-export const resolveWorkspaceMaxSeats: ResolveMaxSeats = async (workspaceId, sql) => {
-  if (!templateConfig.billing.enabled) return null
+export async function resolveWorkspacePlan(
+  workspaceId: string,
+  sql: Parameters<ResolveMaxSeats>[1],
+): Promise<WorkspacePlan> {
+  if (!templateConfig.billing.enabled) return { planKey: null, maxSeats: null }
   const now = new Date()
   const subscriptions = await sql.unsafe<EntitlementSubscription[]>(
     `select s.status, s.past_due_since as "pastDueSince", s.current_period_end as "currentPeriodEnd",
@@ -21,11 +30,16 @@ export const resolveWorkspaceMaxSeats: ResolveMaxSeats = async (workspaceId, sql
   const [free] = await sql.unsafe<Entitlements[]>(
     `select key, sort, features from plan where key = 'free'`,
   )
-  return selectEntitlements(subscriptions, free, {
+  const entitlements = selectEntitlements(subscriptions, free, {
     now,
     pastDueGraceDays: templateConfig.billing.pastDueGraceDays,
-  }).features.maxSeats
+  })
+  return { planKey: entitlements.key, maxSeats: entitlements.features.maxSeats }
 }
+
+/** Reads through the caller's transaction, preserving the auth workspace lock. */
+export const resolveWorkspaceMaxSeats: ResolveMaxSeats = async (workspaceId, sql) =>
+  (await resolveWorkspacePlan(workspaceId, sql)).maxSeats
 
 export async function workspaceMembers(db: Database, workspaceId: string) {
   return scoped(db, workspaceId)

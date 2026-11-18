@@ -27,9 +27,7 @@
   "workspace_role_member": "Member",
   "workspace_role_for": "Role for {name}",
   "workspace_remove": "Remove",
-  "workspace_remove_confirm": "Remove {name} from this workspace?",
   "workspace_transfer": "Transfer ownership",
-  "workspace_transfer_confirm": "Transfer ownership to {name}? You will become an admin.",
   "workspace_update_failed": "Could not update workspace. Please try again.",
   "workspace_email_invite_title": "Email invitation",
   "workspace_email_invite_hint": "Requires email delivery. The recipient must sign in with that address and verify it before accepting. Use invite links during the beta.",
@@ -40,5 +38,9 @@
   "workspace_invitation_row": "{email} · {role} · {status} · expires {date}",
   "workspace_revoke_invitation": "Revoke invitation",
   "workspace_delete_team": "Delete team workspace",
-  "workspace_pending_other_spaces": "You can still open these workspaces:"
+  "workspace_pending_other_spaces": "You can still open these workspaces:",
+  "workspace_transfer_confirm_title": "Transfer ownership?",
+  "workspace_transfer_confirm_description": "Transfer ownership to {name}? You will become an admin.",
+  "workspace_remove_confirm_title": "Remove member?",
+  "workspace_remove_confirm_description": "Remove {name} from this workspace? They will lose access to this workspace."
 }

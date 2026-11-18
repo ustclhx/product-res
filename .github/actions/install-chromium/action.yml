@@ -1,0 +1,37 @@
+name: Install Chromium
+description: Restore the cached Playwright Chromium headless shell and install its system dependencies with apt timeouts
+runs:
+  using: composite
+  # 从 prepare-local-tests 提取；CI 的 test-web 与本地冒烟/夜间验收共用。默认 headless 启动使用 headless shell。
+  steps:
+    - name: Get Playwright version
+      id: playwright
+      working-directory: apps/web
+      shell: bash
+      run: node -p "'version=' + require('@playwright/test/package.json').version" >> "$GITHUB_OUTPUT"
+    - uses: actions/cache@v5
+      id: browsers
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright.outputs.version }}-chromium-shell
+    # apt 镜像偶发卡死（曾整步挂满 5 分钟）：给 apt 单次请求加超时，并对整次安装限时重试。
+    # runner 启动时的 apt-daily 常占着 dpkg 锁，apt 默认立即失败；改为最多等待 90 秒。
+    - name: Configure apt timeouts
+      shell: bash
+      run: printf 'Acquire::Retries "3";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\nDPkg::Lock::Timeout "90";\n' | sudo tee /etc/apt/apt.conf.d/99ci-timeouts >/dev/null
+    - name: Install Chromium
+      if: steps.browsers.outputs.cache-hit != 'true'
+      shell: bash
+      run: timeout -k 10 600 pnpm --filter @product-res/web exec playwright install --with-deps --only-shell chromium
+    - name: Install Chromium system dependencies
+      if: steps.browsers.outputs.cache-hit == 'true'
+      shell: bash
+      run: |
+        for attempt in 1 2 3; do
+          if timeout -k 10 220 pnpm --filter @product-res/web exec playwright install-deps chromium; then exit 0; fi
+          echo "::warning::playwright install-deps 第 ${attempt} 次失败或超时，重试"
+          # 被中断的 dpkg 会留下半配置状态，下一次安装前先修复。
+          sudo dpkg --configure -a || true
+          sleep 5
+        done
+        exit 1

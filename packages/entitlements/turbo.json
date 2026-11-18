@@ -1,0 +1,14 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    // 测试直接导入 apps/web/src/server，后者又依赖本包依赖闭包之外的业务包，无法用 inputs 精确覆盖
+    "test": {
+      "cache": false
+    },
+    // 检查器不解析 tsconfig include，按目录把 test/ 的引用也计入 typecheck；多算只会多一次未命中
+    "typecheck": {
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/web/src/server/**"]
+    }
+  }
+}

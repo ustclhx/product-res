@@ -43,6 +43,9 @@ export const ADMIN_COPY = {
         return m.admin_operations()
       },
     },
+    get feedback() {
+      return m.admin_feedback_nav()
+    },
     get users() {
       return m.admin_users()
     },

@@ -39,6 +39,12 @@ robots 与 sitemap 不加入路由，营销页不预渲染，也不生成营销 
 
 默认开启文本、图片、视频、Stripe、PayPal、Google、GitHub 与 Turnstile，
 可选功能仅开启 blog。列表传空字符串可全部关闭；交互时输入 `-` 可关闭列表。
+`--analytics plausible|off` 选择产品分析：默认 plausible（新词站），长期词站可 off，写入
+`features.analytics`。`--plausible-domain` 是该站 site_id（默认项目名，staging 自动加 `-staging`），
+`--plausible-host` 是共用的自建实例 HTTPS 地址；未提供地址时脚本不注入，配置后才启用，见
+[埋点文档](analytics.md)。staging 的 APP_URL 默认生成为 `https://staging.<域名>`，不沿用生产域名，
+部署前改成实际 staging 地址。
+`--features guides` 开启答案优先指南页（`/guides`），副本带三类可修改的示例，默认关闭。
 `--turnstile false` 关闭 Turnstile，`--multi-tenant true` 启用团队空间，
 `--support-email` 设置支持邮箱。完整参数见帮助命令。
 
@@ -48,8 +54,18 @@ robots 与 sitemap 不加入路由，营销页不预渲染，也不生成营销 
 
 生成内容包含改名的包作用域、Worker / Queue / Workflow 名称、站点品牌、
 `template.config.ts`、根目录及两个 app 的 `.dev.vars.example` 和 `PROJECT_SETUP.md`。
+副本根目录还包含 `.template-base.json`，用于之后采纳模板更新，请将它一起提交到项目仓库。
+记录的字段为 `schemaVersion`（当前为 1）、`repository`（去凭据的 HTTPS origin，无 origin 时为 null）、
+`commit`（源模板的完整 40 位 SHA）、`version`（HEAD 上最高的合法 `template-v<SemVer>`
+版本，未打模板 tag 时为 null）、`clean`（源工作区是否干净）、`params`（展开默认值的
+CLI 参数，键排序、列表去重保序，不包含输出目录）和 `migrations`（副本 journal 中的迁移 tag）。
+生成器不记录本机源目录、输出目录或 Git 用户信息；参数中的支持邮箱是项目配置的公开联系地址。
+源目录不是 Git 仓库时，`repository`、`commit`、`version` 为 null，`clean=false`；
+有未提交改动时也标记 `clean=false`，这种来源不能作为可信同步基准。
+用已生成副本再次生成时，会重新记录当前源状态，不继承旧记录。
+同一源与参数的生成文件列表、内容和权限保持一致；普通文件为 0644、可执行文件和目录为 0755。
 Hyperdrive / KV 的部署 ID 重置为零占位值，AI Gateway / R2 账号标识清空，所有环境都需配置新资源；
-Rate Limiting 的 RL_AUTH / RL_AI / RL_API 命名空间需独立分配。Queue 名会同步到 jobs 消费者与测试。
+Rate Limiting 的 RL_AUTH / RL_AI / RL_API / RL_SHARE_CARD 命名空间需独立分配。Queue 名会同步到 jobs 消费者与测试。
 FILES 桶按项目改名，R2_FILES_BUCKET 与绑定保持一致；文本模式也保留文件清理 Cron 所需的 FILES 桶。
 清单按 AI、支付、OAuth 与 Turnstile 开关列出资源与密钥；关闭图片和视频时移除 Workflow 绑定，
 清单不包含媒体服务商、Workflow 与媒体 R2 S3 密钥。
@@ -80,11 +96,11 @@ Compose、同 SHA release、health/jobs/heartbeat、兼容回滚、ownership 与
 `compose.proxy.yaml`；配套 Python/防火墙文件一并继承。参考
 [部署](runbooks/selfhost-deploy.md)、[初始化](runbooks/selfhost-init.md)、
 [release](runbooks/selfhost-release.md) 和 [代理](runbooks/selfhost-proxy.md) runbook。
-恢复/drill 材料尚未交付，首次真实 registry 发布与 B/D ownership 签收仍待协调者确认。缺失文件
-在清单中标为待交付，不将生成成功当成实际部署或恢复验收通过。
 自托管 secret 通过受限文件与对应 `_FILE` 配置，示例值为空；不使用 CF staging 凭据。
-自托管副本不复制自动 CF staging 发布 workflow；Cloudflare 副本继续保留原发布路径。
+自托管副本不复制 Cloudflare staging/production 发布与 Neon 备份 workflow；Cloudflare 副本保留这些通用发布/备份入口，需配置自身资源与凭据。
 OAuth/Turnstile 关闭时副本 Compose 和示例同步移除其要求；原模板文件保持不变。
+
+生成器只交付初始化与运行新项目需要的材料：排除模板路线图、并行波次、一次性验收/交接记录、全部历史 change、Phase 0 探针、Orca 生命周期脚本与模板验收 workflow。业务单测/类型检查依赖的本地夹具、脱敏支付回调录制、OpenSpec 主规格及项目扩展技能保留。Neon staging / production 与 staging 准备 runbook 保留建库、受限角色、资源、密钥和发布/回滚步骤，资源名随项目改写。混合文档以 `template-only` 注释标明仅供模板维护的部分，派生时删除；指向排除资料的链接改为说明文字。新项目自行建立私有验收记录，证据写入 `EVIDENCE_DIR`，默认落在已忽略的 `test-results/evidence/`。
 
 复制排除各级 `.git`、node_modules、`.env` / `.env.*` 和 `.dev.vars*`（保留 example）、
 `.wrangler`、dist、`.turbo`、coverage、构建和测试生成目录、进行中的 `openspec/changes`、
@@ -96,13 +112,6 @@ backups/backup-data/、releases/release-state/、state/.state/ 等运行目录�
 
 测试使用 Node 内置 test runner，在临时目录验证改名、真值排除、功能清单和路径边界，
 无论成功或失败均清理测试目录；不向源树注入测试密钥。
-
-完整副本验证使用 `pnpm test:create-project:verify`：从真实工作树生成 CF 默认、selfhost 默认、
-selfhost 全关计费/积分/营销/i18n/AI 三个临时项目，逐文件确认模板原名称与排除目录不存在，
-安装依赖并运行 typecheck、单元测试与 Node build，同时验证副本再次生成。结束后清理临时目录。
-独立只读 `selfhost-features.yml` 从真实源生成全关副本、构建镜像并在空卷 Compose 启动，
-实际验证 SSR/静态资源、登录/空间、关闭入口、成功 heartbeat 与完整 SHA。
-该命令单独运行，避免日常边界测试重复安装完整依赖。
 
 新库初始化时，先以 migrator 应用已有迁移，再将新库 app 连接通过进程环境传给
 `pnpm billing:seed`（变量名为 `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE`）。
@@ -131,15 +140,75 @@ AI 关闭且积分模块可按需保留。仅清空支付 Provider 列表时 bil
 Neon staging 使用 TLS 直连与两个 Hyperdrive，不需要 Tunnel / Workers VPC 或自建库备份；
 实际部署顺序为迁移 → seed → jobs → web，再登录后台创建模型及配置套餐模型权限。
 
-2026-10-12 临时 `product-res-smoke` 部署验收已通过，临时云资源与本地副本已清理，
-脱敏状态、ID 与界面观察见 [6.1 证据](runbooks/evidence/create-project/2026-10-12/acceptance.json)
-及 [资源清单](runbooks/evidence/create-project/2026-10-12/resources.md)。
-临时 jobs 删除前需先移除其两个 Queue consumer，否则 Cloudflare 会拒绝删除 Worker；
-限流 namespace 为 Worker 绑定内的独立整数标识，清理时随临时 Worker 移除绑定。
+上线前按 [成本基线](runbooks/production-neon.md#4-项目设置与预算) 配置：Neon 0.25–1 CU、production reduced Cron、扫描路径 WAF 规则，且不做高频健康轮询。
+
+## 采纳模板更新
+
+同步脚本以目标版本的模板为准，不运行项目里的旧副本。先克隆目标版本，再对项目执行同步：
+
+```bash
+git clone --branch template-v0.3.0 "$(node -p "require('./.template-base.json').repository")" /tmp/template
+node /tmp/template/scripts/template-sync.mjs sync --project . --to template-v0.3.0
+```
+
+- `--to` 指定版本 tag、分支或提交，缺省为最高版本的 `template-v*` 发布；没有模板发布时退回模板默认分支，并在报告中注明。未指定 `--to` 时报告在目标后标明「默认」；目标提交没有发布 tag 时报告标明「目标未发布」，基准记录的 `version` 写 null。
+- `--template` 覆盖 `.template-base.json` 中的仓库地址，可以是本地路径。
+- `--skip-migration <模板迁移 tag>` 可重复：项目有意删除了某些表时，跳过依赖它们的模板迁移。跳过的迁移不移植，但登记为已处理，以后不会再出现；请自行确认项目代码不依赖它。
+- `--verify-db <URL>` 指向一个空的隔离库：先执行项目已有迁移，再执行移植的迁移，确认增量路径会执行全部移植迁移。未提供时报告标为跳过。
+- `--confirm-deployed <版本号>` 可重复，声明该模板版本已部署且线上健康，用于越过升级说明的 `requiresDeployed` 边界。
+- `--skip-verify` 只供同步工具自身的测试使用：仍完成合并与迁移移植，但不更新基准记录，并以非 0 退出。
+
+开始前，同步会检查：基准记录有效且 `clean=true`、工作区干净（含未跟踪文件）、模板可克隆、基准与目标提交都存在。任一项失败都会直接退出，不创建分支，也不改文件。基准与目标相同时报告「已是最新」并以 0 退出。缺少记录时，先做基准推断。
+
+同步过程：
+
+1. 用基准提交和目标提交各自的生成器，按记录的参数各生成一份副本；两份副本之间的差异就是改名后的模板变更。
+2. 在新分支 `template-sync/<目标短 SHA>` 上逐个文件做三方合并，当前分支不动。迁移目录、`.template-base.json`、`PROJECT_SETUP.md` 和 `pnpm-lock.yaml` 不参与合并。模板删除的文件不会从项目中删除，只在报告中列出。
+3. 模板新增的迁移追加到项目迁移序列末尾，见 [迁移约定](02-project-structure.md#4-编码约定)。模板改动或删除了已发布的迁移时，同步停止。
+4. 任一 `package.json` 有变化时，先 `pnpm install --no-frozen-lockfile` 重新解析锁文件，再用 `--frozen-lockfile` 确认；随后检查 `drizzle-kit generate` 无变化，再运行 `pnpm typecheck` 和 `pnpm test`。
+5. 全部通过后，在同步分支上提交基准记录的更新。工具不会推送，也不会合并。
+
+报告默认写到 `<项目 git 目录>/template-sync/<目标短 SHA>.md`，不进入仓库，路径会打印在终端。报告包含：
+
+- 冲突文件及原因；
+- 模板已删除、项目中保留的文件（标明项目是否改过）；
+- 已应用的变更；
+- 移植的迁移（原 tag → 新 tag）与已跳过的迁移；
+- 按版本顺序排列的升级概要、说明链接，以及按基准参数过滤后的「必须执行的动作」待办；
+- 说明中的迁移清单与实际处理的迁移（包括主动跳过的迁移）不一致、或缺少升级说明时的警告；
+- 锁文件中版本变化的包；
+- 各项验证结果；
+- `PROJECT_SETUP.md` 的变化：只列出，不写入项目。
+
+**冲突处理**：冲突文件保留冲突标记，留在同步分支的工作区，不提交；这时跳过依赖安装、迁移移植和验证，基准记录不变。「项目已删除、模板修改了的文件」也算冲突，项目一侧保持原样，由使用者决定保留还是删除。模板删除的文件不算冲突：确认项目不再使用后自行删除并提交，仍在使用的今后由项目自己维护。模板只改了已发布迁移的整行注释时不会停止同步，报告单列这些迁移。逐个解决并提交后，在同步分支上用相同的 `--to` 再运行一次：工具识别出当前就是该同步分支，跳过文件合并，继续迁移移植、验证和基准更新。验证失败时也一样，修复、提交后重跑即可，已移植的迁移会沿用，不重复追加。
+
+**按版本分段同步**：同步读取目标树中的 [升级说明](upgrades/README.md)，依版本顺序汇总，后续对旧说明的勘误也会生效。动作的适用条件来自基准记录的 `params`：列表参数表示包含该值，多个条件必须全部满足。基准位于两个版本之间时，第一份说明会提示「部分动作可能已随基准完成，需逐项核对」。
+
+如果目标区间内的升级说明声明了 `requiresDeployed: N`，工具会先将目标截断到 N，并提示先部署 N，再继续同步。例如从 0.2.0 升至 0.4.0，而 0.4.0 要求先部署 0.3.0：
+
+```bash
+node /tmp/template/scripts/template-sync.mjs sync --project . --to template-v0.4.0
+# 审阅并采纳同步分支，完成 0.3.0 部署，确认线上健康后再运行：
+node /tmp/template/scripts/template-sync.mjs sync --project . --to template-v0.4.0 --confirm-deployed 0.3.0
+```
+
+`--confirm-deployed` 是使用者的部署声明，工具不会替你部署或检查线上环境；有多个边界时逐段完成并重复传入已部署版本。
+
+**已有项目没有基准记录**：用 `infer-base` 从项目首个提交的树还原生成参数，并在模板 main 的首父提交历史中逐一生成候选副本。默认时间窗为项目首个提交前后各 3 天，可指定日期范围：
+
+```bash
+node /tmp/template/scripts/template-sync.mjs infer-base --project . --since 2026-10-16 --until 2026-10-20
+# 无法还原的参数按提示补齐，例如：
+node /tmp/template/scripts/template-sync.mjs infer-base --project . --param media-providers=fal,workers-ai
+# 审阅候选和参数后，明确指定候选完整 SHA 才会写入：
+node /tmp/template/scripts/template-sync.mjs infer-base --project . --write <候选完整SHA>
+```
+
+推断默认使用脚本所在的模板仓库，`--template <URL|路径>` 可覆盖来源；`--param key=value` 可重复。cloudflare 项目找不到镜像 namespace 时沿用生成器默认值 `ghcr.io/configure-owner/<项目名称>`，来源标为生成器默认。输出包含参数及来源、分数最低的前 5 个候选（SHA、日期、标题、差异行数和差异最大的 5 个文件）。评分只统计生成副本中存在的路径，项目独有文件单独列出，`.template-base.json` 不计分。候选超过 `--threshold <行数>`（默认 50）时拒绝写入；没有 `--write` 时仅展示结果。写出的记录包含候选发布版本和生成副本的迁移 tag，工具不提交到 Git，请审阅后自行提交。
 
 ## Agent Skills
 
-项目内提供 8 个技能，Codex 使用 `.agents/skills/`，Claude 使用 `.claude/skills/`。
+项目内提供 10 个技能，Codex 使用 `.agents/skills/`，Claude 使用 `.claude/skills/`。
 在项目根按技能名发起请求，例如 Codex `$quick-start`、Claude `/quick-start`；
 也可直接要求 agent 阅读对应 `SKILL.md` 执行。生成副本会一起继承技能并改写包 scope。
 
@@ -153,6 +222,8 @@ Neon staging 使用 TLS 直连与两个 Hyperdrive，不需要 Tunnel / Workers 
 | [new-static-page](../.agents/skills/new-static-page/SKILL.md) | 多语言营销/法务 MDX 或静态路由、SEO、sitemap 与预渲染 |
 | [add-ai-model](../.agents/skills/add-ai-model/SKILL.md) | 后台模型编辑器、参数 schema/定价/套餐授权；必要时新增 Provider |
 | [security-scan](../.agents/skills/security-scan/SKILL.md) | 工程检查、敏感路径与凭据扫描、鉴权/注入/账本等 diff 审查 |
+| [template-sync](../.agents/skills/template-sync/SKILL.md) | 衍生项目采纳模板更新：版本区间与升级说明预检、本地分支三方合并、迁移移植与验证、基准推断、UI 截图对比 |
+| [ui-design](../.agents/skills/ui-design/SKILL.md) | 是否需要设计稿的判断、衍生项目视觉方向（brand.css / 多站点）、Design 画布状态矩阵与确认、离线副本与 OpenSpec 记录 |
 
 示例：`$quick-start 创建 acme，目标 selfhost，默认中文，关闭计费和 AI`；
 `/deploy-cloudflare --env staging --domain app.example.com --admin-email <管理员邮箱>`；
@@ -163,13 +234,3 @@ Neon staging 使用 TLS 直连与两个 Hyperdrive，不需要 Tunnel / Workers 
 quick-start 的生成/安装/typecheck/unit 与本地/外部验收分开报告：
 缺凭据的 AI、邮件、支付和部署保持待验收，dry-run 不代表部署成功。
 
-维护时编辑 `.agents/skills/<name>/SKILL.md` 后复制到 `.claude` 同名路径，
-新技能两份逐字节一致，不用符号链接（生成器不复制符号链接）。提交前核对：
-
-```sh
-for skill in quick-start deploy-cloudflare deploy-selfhost new-page new-module new-static-page add-ai-model security-scan; do
-  cmp ".agents/skills/$skill/SKILL.md" ".claude/skills/$skill/SKILL.md" || exit 1
-done
-```
-
-现有 OpenSpec 技能保留各 agent 的调用语法差异，不纳入此复制命令。

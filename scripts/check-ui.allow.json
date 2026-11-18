@@ -1,0 +1,73 @@
+{
+  "description": "exceptions 为正式逐文件/规则例外。pendingReplacement 为第 5 组待替换项，按规则、原值和数量限制，不豁免该文件新增违例。项目自有登记使用同结构的 check-ui.allow.local.json。",
+  "exceptions": {
+    "apps/web/src/routes/(auth)/login.tsx": [
+      {
+        "rule": "color-literal",
+        "reason": "Google 等第三方品牌图标使用官方品牌颜色。",
+        "value": "#4285F4"
+      },
+      {
+        "rule": "color-literal",
+        "reason": "Google 等第三方品牌图标使用官方品牌颜色。",
+        "value": "#34A853"
+      },
+      {
+        "rule": "color-literal",
+        "reason": "Google 等第三方品牌图标使用官方品牌颜色。",
+        "value": "#FBBC05"
+      },
+      {
+        "rule": "color-literal",
+        "reason": "Google 等第三方品牌图标使用官方品牌颜色。",
+        "value": "#EA4335"
+      }
+    ]
+  },
+  "pendingReplacement": {
+    "apps/web/src/features/ai-media/tasks-page.tsx": [
+      {
+        "rule": "arbitrary-class",
+        "value": "grid-cols-[auto_1fr]",
+        "count": 1,
+        "reason": "存量任意值工具类，待第 5 组改用设计 token 工具类或共享组件（基线第 291 行）。"
+      },
+      {
+        "rule": "arbitrary-class",
+        "value": "max-h-[32rem]",
+        "count": 1,
+        "reason": "存量任意值工具类，待第 5 组改用设计 token 工具类或共享组件（基线第 406 行）。"
+      },
+      {
+        "rule": "arbitrary-class",
+        "value": "max-h-[32rem]",
+        "count": 1,
+        "reason": "存量任意值工具类，待第 5 组改用设计 token 工具类或共享组件（基线第 415 行）。"
+      }
+    ],
+    "apps/web/src/features/auth/auth-layout.tsx": [
+      {
+        "rule": "arbitrary-class",
+        "value": "focus-visible:ring-[3px]",
+        "count": 1,
+        "reason": "存量任意值工具类，待第 5 组改用设计 token 工具类或共享组件（基线第 37 行）。"
+      }
+    ],
+    "apps/web/src/features/auth/turnstile.tsx": [
+      {
+        "rule": "arbitrary-class",
+        "value": "min-h-[65px]",
+        "count": 1,
+        "reason": "存量任意值工具类，待第 5 组改用设计 token 工具类或共享组件（基线第 126 行）。"
+      }
+    ],
+    "apps/web/src/features/marketing/docs-layout.tsx": [
+      {
+        "rule": "arbitrary-class",
+        "value": "md:grid-cols-[14rem_1fr]",
+        "count": 1,
+        "reason": "存量任意值工具类，待第 5 组改用设计 token 工具类或共享组件（基线第 25 行）。"
+      }
+    ]
+  }
+}

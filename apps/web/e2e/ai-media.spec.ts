@@ -8,7 +8,9 @@ import { newId } from '@product-res/shared'
 import templateConfig from '../../../template.config.ts'
 import type { MediaTask } from '../src/features/ai-media/tasks-client.ts'
 import { fixtureDb, register, simulateClientIp } from './fixtures.ts'
+import { chooseOption } from './select.ts'
 import { stubTurnstile } from './turnstile.ts'
+import { workersAiSkipReason } from './workers-ai.ts'
 
 test.skip(!templateConfig.ai.image, '本套件使用图片任务，模板配置关闭了 AI 图片')
 
@@ -61,6 +63,7 @@ function taskFixture(
     finishedAt: null,
     deadlineAt: new Date(Date.now() + 7_200_000).toISOString(),
     creditsCharged: 0,
+    cancelBilling: null,
     errorCode: null,
     errorMessage: null,
     params: { prompt: 'A forest' },
@@ -115,6 +118,9 @@ async function seedMediaModel(workspaceId: string) {
 test('submits, follows progress, previews and downloads a result, and manages its share', async ({
   page,
 }) => {
+  // seedMediaModel 写入 workers-ai 模型；项目未启用 Workers AI 时提交页没有可用模型。
+  const skipReason = workersAiSkipReason()
+  test.skip(skipReason !== null, skipReason ?? '')
   test.setTimeout(150_000)
   const workspace = await workspaceFixture(page)
   const model = await seedMediaModel(workspace.workspaceId)
@@ -141,16 +147,21 @@ test('submits, follows progress, previews and downloads a result, and manages it
         ${`ws/${workspace.workspaceId}/${fileId}`},'image/png',68)`
     await page.goto(`/app/${workspace.slug}/media/new`)
     // 模型注册表有 60 秒 KV 缓存，等待真实 loader 读到本测试模型。
-    await expect
-      .poll(
-        async () => {
-          await page.reload()
-          return page.getByLabel('Model').locator(`option[value="${model.key}"]`).count()
-        },
-        { timeout: 90_000, intervals: [2_000, 5_000] },
-      )
-      .toBe(1)
-    await page.getByLabel('Model').selectOption(model.key)
+    await expect(async () => {
+      await page.reload()
+      const trigger = page.getByRole('combobox', { name: 'Model', exact: true })
+      expect(await trigger.count()).toBe(1)
+      await expect(async () => {
+        if (!(await page.getByRole('listbox').isVisible())) await trigger.click({ timeout: 1_000 })
+        await expect(page.getByRole('listbox')).toBeVisible({ timeout: 500 })
+      }).toPass({ timeout: 10_000, intervals: [100, 250, 500] })
+      expect(
+        await page.locator(`[role="option"][data-value=${JSON.stringify(model.key)}]`).count(),
+      ).toBe(1)
+      await page.keyboard.press('Escape')
+      await expect(page.getByRole('listbox')).toHaveCount(0)
+      await chooseOption(trigger, { value: model.key })
+    }).toPass({ timeout: 90_000, intervals: [2_000, 5_000] })
     await page.getByLabel('Prompt').fill('A forest')
     await expect(page.getByTestId('media-credit-estimate')).toHaveText('Estimated cost: 2 credits')
 
@@ -303,23 +314,48 @@ test('restores pending external cancellation after reload and explains uncertain
   let task = taskFixture(workspace)
   await page.route(`**/api/ai/tasks/${task.id}?*`, (route) => route.fulfill({ json: { task } }))
   const cancelBodies: unknown[] = []
+  await page.route(`**/api/ai/tasks/${task.id}/cancel?*`, (route) =>
+    route.fulfill({
+      json: {
+        taskId: task.id,
+        cancelable: true,
+        started: true,
+        charged: false,
+        credits: 0,
+        freeStartedRemaining: 1,
+      },
+    }),
+  )
   await page.route(`**/api/ai/tasks/${task.id}/cancel`, async (route) => {
     cancelBodies.push(route.request().postDataJSON())
     task = {
       ...task,
       status: 'canceled',
       canCancel: false,
+      cancelBilling: 'free_started',
       errorCode: cancelBodies.length === 1 ? 'MEDIA_CANCEL_PENDING' : null,
     }
     await route.fulfill({
-      json: { taskId: task.id, status: 'canceled', cancellationPending: cancelBodies.length === 1 },
+      json: {
+        taskId: task.id,
+        status: 'canceled',
+        cancellationPending: cancelBodies.length === 1,
+        cancelBilling: 'free_started',
+        creditsCharged: 0,
+      },
     })
   })
   await page.goto(`/app/${workspace.slug}/tasks/${task.id}`)
   await page.getByRole('button', { name: 'Cancel task', exact: true }).click()
+  // 先展示取消计费说明，确认后才执行取消。
+  await expect(page.getByRole('alertdialog')).toContainText(
+    'Each workspace gets one free cancellation of a started task',
+  )
+  expect(cancelBodies).toEqual([])
+  await page.getByRole('button', { name: 'Confirm cancellation' }).click()
   await expect(page.getByTestId('media-task-status')).toHaveText('Canceled')
   const pending = page.getByText(
-    'The task is canceled and credits have been returned. External cancellation is still pending; you can retry it.',
+    'The task is canceled. External cancellation is still pending; you can retry it.',
   )
   await expect(pending).toBeVisible()
   await page.reload()

@@ -1,12 +1,11 @@
 # Bundle 运维入口
 
-> **模板测试实例状态（2026-10-18）**：用户确认拆除 `product-res-ecs` 上的 `product-res-selfhost` 项目。当前部署的基础 / S3 / backup / replica Compose 栈、项目卷、本机项目镜像和 `/opt/product-res-selfhost` 已清理，80/443 已释放；其他容器、匿名卷、镜像与 `warp-svc` 状态保留。三个 selfhost R2 桶已解除锁并设为所有对象 1 天后过期，待次日核空删除；域名 DNS 与桶级 token 的手动收尾见[拆除记录](../../docs/runbooks/evidence/teardown-2026-10-18.md)。本目录部署材料、runbook 与远端 GHCR 镜像保留供派生项目使用。
 
 仅使用受信 Actions 发布成功的 `image-set.json` / 同 SHA bundle。校验 checksum 用于传输
-完整性；不替代来源核实。先校验源 SHA、发布 run、所有镜像两架构、namespace/revision。
+完整性；不替代来源核实。先校验源 SHA、发布 run、所有镜像 linux/amd64、namespace/revision。
 发布需要明确授权；首次模板发布的源 SHA 与 run 见仓库发布 runbook，本地 fixture 不能用于服务器。
 
-1. 在明确选择的**空白** Ubuntu24.04 / Debian12 amd64/arm64 上，单命令运行
+1. 在明确选择的**空白** Ubuntu24.04 / Debian12 amd64 上（正式镜像只发布 linux/amd64，arm64 主机被拒绝），单命令运行
    `sudo ./init-server.sh --dir /srv/product-res-selfhost`。已有主机只使用经审阅的既有 Docker / 入口，
    不运行空白初始化。初始化不部署应用或安装 Dokploy。
 2. 部署目录0700，`.env`0600。复制本 bundle `.env.example`，填写域名、APP_URL和公开集成

@@ -40,7 +40,7 @@ class BundleTest(unittest.TestCase):
         self.sha = self.git('rev-parse', 'HEAD').strip()
         self.image_set = {'schemaVersion': 1, 'sha': self.sha,
                           'namespace': 'ghcr.io/fixture/project',
-                          'platforms': ['linux/amd64', 'linux/arm64'], 'images': []}
+                          'platforms': ['linux/amd64'], 'images': []}
         for index, name in enumerate(bundle.SERVICE_ENV):
             digest = 'sha256:' + format(index, '064x')
             self.image_set['images'].append({
@@ -99,7 +99,9 @@ class BundleTest(unittest.TestCase):
         mutations = [lambda value: value['images'].pop(),
                      lambda value: value['images'][0].update(tag='wrong-sha'),
                      lambda value: value['images'][0].update(reference='wrong-digest'),
-                     lambda value: value.update(platforms=['linux/arm64'])]
+                     lambda value: value.update(platforms=['linux/arm64']),
+                     lambda value: value.update(platforms=['linux/amd64', 'linux/arm64', 'linux/s390x']),
+                     lambda value: value.update(platforms=['linux/amd64', 'linux/amd64'])]
         for mutate in mutations:
             with self.subTest(mutate=mutate):
                 value = copy.deepcopy(self.image_set)
@@ -111,6 +113,16 @@ class BundleTest(unittest.TestCase):
         pending = dict(self.catalog, pendingServices=['backup'])
         with self.assertRaisesRegex(ValueError, 'incomplete image catalog'):
             bundle.validate_image_set(self.image_set, self.sha, pending)
+
+    def test_published_releases_are_amd64_and_legacy_two_platform_sets_stay_valid(self):
+        # 停止 arm64 后新发布只含 amd64；既有双架构发布仍可作为回滚与验收输入。
+        self.assertEqual(bundle.validate_image_set(self.image_set, self.sha, self.catalog).keys(),
+                         set(bundle.SERVICE_ENV))
+        legacy = dict(self.image_set, platforms=['linux/arm64', 'linux/amd64'])
+        bundle.validate_image_set(legacy, self.sha, self.catalog)
+        for platforms in [[], ['linux/arm64'], ['linux/amd64', 'linux/s390x']]:
+            with self.subTest(platforms=platforms), self.assertRaisesRegex(ValueError, 'linux/amd64'):
+                bundle.validate_image_set(dict(self.image_set, platforms=platforms), self.sha, self.catalog)
 
     def test_tampered_extra_and_symlink_files_rejected(self):
         self.build()

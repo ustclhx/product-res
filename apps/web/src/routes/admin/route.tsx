@@ -42,8 +42,8 @@ function AdminLayout() {
                     <li key={link.to}>
                       <Link
                         {...link}
-                        className="block rounded-md px-3 py-1.5 text-sm hover:bg-accent"
-                        activeProps={{ className: 'bg-accent font-medium', 'aria-current': 'page' }}
+                        className="block rounded-md px-3 py-1.5 text-sm hover:bg-hover"
+                        activeProps={{ className: 'bg-active font-medium', 'aria-current': 'page' }}
                       >
                         {label}
                       </Link>

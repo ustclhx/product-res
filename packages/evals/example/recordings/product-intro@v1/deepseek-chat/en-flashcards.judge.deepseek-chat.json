@@ -1,0 +1,19 @@
+{
+  "kind": "judge",
+  "promptVersion": "product-intro@v1",
+  "rubricVersion": "r1",
+  "outputHash": "sha256:d67ec3e6ca09c815226719a9de2685f858ce158f451c661b65905c6285dee354",
+  "model": {
+    "key": "deepseek-chat",
+    "provider": "deepseek",
+    "providerModelId": "deepseek-chat"
+  },
+  "output": "{\"criteria\":{\"accuracy\":{\"score\":4,\"reason\":\"All claims trace to the listed features; minor embellishments like 'real-life situations' and 'optimal intervals' are reasonable paraphrases, though 'selected for real-life situations' and 'short-term recognition to lasting memory' slightly extend beyond the given facts.\"},\"clarity\":{\"score\":5,\"reason\":\"Well-structured with clear Overview and Highlights sections; concise bullet points are easy to scan.\"},\"audience-fit\":{\"score\":5,\"reason\":\"Directly addresses busy adult learners and their need for efficient, steady progress, matching the stated audience.\"}},\"summary\":\"A strong, well-organized output that accurately reflects the three features and speaks clearly to adult Spanish learners. Only minor unsupported embellishments keep accuracy just below perfect.\"}",
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 589,
+    "outputTokens": 160
+  },
+  "recordedAt": "2026-11-14T07:12:03.676Z",
+  "source": "recorded"
+}

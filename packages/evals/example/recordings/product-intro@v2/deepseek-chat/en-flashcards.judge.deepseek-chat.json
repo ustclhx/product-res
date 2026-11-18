@@ -1,0 +1,19 @@
+{
+  "kind": "judge",
+  "promptVersion": "product-intro@v2",
+  "rubricVersion": "r1",
+  "outputHash": "sha256:c170f15415443d63561b96e014f4c339607561e5a4dd365e9ef59285aaaf4e25",
+  "model": {
+    "key": "deepseek-chat",
+    "provider": "deepseek",
+    "providerModelId": "deepseek-chat"
+  },
+  "output": "{\"criteria\":{\"accuracy\":{\"score\":5,\"reason\":\"All claims are directly supported by the listed features; no invented facts.\"},\"clarity\":{\"score\":5,\"reason\":\"Concise, well-structured with clear sections and scannable bullets.\"},\"audience-fit\":{\"score\":5,\"reason\":\"Directly addresses adult Spanish learners and their vocabulary-building needs.\"}},\"summary\":\"Accurate, clear, and well-targeted output that faithfully reflects the given features and audience.\"}",
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 566,
+    "outputTokens": 99
+  },
+  "recordedAt": "2026-11-14T07:12:33.023Z",
+  "source": "recorded"
+}

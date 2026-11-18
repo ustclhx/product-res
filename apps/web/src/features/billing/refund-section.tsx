@@ -1,6 +1,6 @@
-import { Button } from '@product-res/ui'
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, Textarea } from '@product-res/ui'
 import { useRouter } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { m } from '../../paraglide/messages.js'
 import { type getCustomerRefunds, requestCustomerRefund } from './refund.functions.ts'
 
@@ -17,6 +17,8 @@ export function RefundSection({
 }) {
   const [ready, setReady] = useState(false)
   const [busy, setBusy] = useState(false)
+  const paymentSelectId = useId()
+  const reasonId = useId()
   const [paymentId, setPaymentId] = useState('')
   const [reason, setReason] = useState('')
   const [contactEmail, setContactEmail] = useState(page?.contactEmail ?? '')
@@ -25,6 +27,7 @@ export function RefundSection({
   useEffect(() => setReady(true), [])
   if (!page) return null
   const payments = page.payments.filter((p) => !pendingPayments.includes(p.id))
+  const selectedPayment = payments.find((payment) => payment.id === paymentId)
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setBusy(true)
@@ -64,29 +67,36 @@ export function RefundSection({
       </p>
       {payments.length > 0 ? (
         <form onSubmit={(e) => void submit(e)} aria-label="Request a refund" className="grid gap-3">
-          <label>
-            Payment{' '}
-            <select
+          <div className="grid gap-2">
+            <label htmlFor={paymentSelectId}>Payment</label>
+            <Select
               required
-              value={paymentId}
-              onChange={(e) => setPaymentId(e.target.value)}
+              value={selectedPayment ? paymentId : ''}
+              onValueChange={setPaymentId}
               disabled={readOnly || busy}
             >
-              <option value="">Choose a payment</option>
-              {payments.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.provider} ·{' '}
-                  {new Date(p.paidAt).toLocaleDateString('en-US', { timeZone: 'UTC' })} ·{' '}
-                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
-                    p.remainingRefundable / 100,
-                  )}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
+              <SelectTrigger
+                id={paymentSelectId}
+                className="w-full"
+                placeholder="Choose a payment"
+              />
+              <SelectContent>
+                {payments.map((p, index) => (
+                  <SelectItem key={p.id} index={index} value={p.id}>
+                    {p.provider} ·{' '}
+                    {new Date(p.paidAt).toLocaleDateString('en-US', { timeZone: 'UTC' })} ·{' '}
+                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
+                      p.remainingRefundable / 100,
+                    )}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <label htmlFor={reasonId}>
             Reason{' '}
-            <textarea
+            <Textarea
+              id={reasonId}
               required
               maxLength={2000}
               value={reason}
@@ -107,7 +117,9 @@ export function RefundSection({
           </label>
           <Button
             type="submit"
-            disabled={!ready || busy || readOnly || !paymentId || !reason.trim() || !contactEmail}
+            disabled={
+              !ready || busy || readOnly || !selectedPayment || !reason.trim() || !contactEmail
+            }
           >
             Submit refund request
           </Button>

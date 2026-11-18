@@ -156,6 +156,14 @@ function ConversationRow({
       >
         {name}
       </Link>
+      {item.subjectLabel ? (
+        <span
+          className="rounded-full border px-2 py-0.5 text-muted-foreground text-xs"
+          data-testid="conversation-subject"
+        >
+          {item.subjectLabel}
+        </span>
+      ) : null}
       {item.archived ? null : (
         <Button
           variant="outline"

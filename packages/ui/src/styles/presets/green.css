@@ -1,0 +1,19 @@
+/* 主题预设 green：只换颜色，见 neutral.css 与 blue.css 的说明。 */
+:root[data-preset="green"] {
+  --ui-preset: green;
+  --primary: #15803d;
+  --primary-foreground: #ffffff;
+  --fluid-accent: #16a34a;
+  --focus-ring: #171717;
+}
+
+:root[data-preset="green"].dark {
+  --primary: #15803d;
+  --primary-foreground: #ffffff;
+  /* 强调色作文字（link 变体）：实心主按钮色在深色页面上不足 4.5:1，改用 green 400 号色 */
+  --primary-text: #4ade80;
+  --fluid-accent: #4ade80;
+  --focus-ring: #bbf7d0;
+  /* 浅色强调色上白色滑块不足 3:1，开启态滑块改用深色 */
+  --switch-thumb-on: #171717;
+}

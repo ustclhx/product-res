@@ -2,8 +2,10 @@ import {
   createMediaFault,
   createTaskMediaProvider,
   dbModelStore,
+  decideCancelBilling,
   estimateCredits,
   type FaultAccessContext,
+  freeStartedCancelsRemaining,
   getMediaProviderDefinition,
   initialMediaFaultProof,
   isSyncMediaProvider,
@@ -11,6 +13,7 @@ import {
   MEDIA_TASK_TTL_MS,
   type MediaProviderEnv,
   type MediaWebhook,
+  mediaTaskFullCredits,
   readMediaFault,
   requireAvailableModel,
   settleMediaTask,
@@ -20,7 +23,7 @@ import {
 } from '@product-res/ai'
 import { type AuthContextSource, requireFreshSession } from '@product-res/auth'
 import type { AiFaultInjectionEnv } from '@product-res/config'
-import { CreditsError, hold, lockWorkspaceCredits } from '@product-res/credits'
+import { hold, lockWorkspaceCredits } from '@product-res/credits'
 import {
   type AiTask,
   aiTask,
@@ -104,18 +107,9 @@ async function response(action: () => Promise<Response>) {
     result.headers.set('cache-control', 'no-store')
     return result
   } catch (error) {
-    let mapped = error
-    if (
-      error instanceof CreditsError &&
-      ['CREDIT_DEBT', 'INSUFFICIENT_CREDITS'].includes(error.code)
-    )
-      mapped = new AppError(
-        error.code,
-        error.code === 'CREDIT_DEBT' ? 'Workspace has unpaid credit debt' : 'Insufficient credits',
-        { status: 402 },
-      )
-    if (!(mapped instanceof AppError)) log.error('ai.media.request_failed', { error: mapped })
-    const result = toErrorResponse(mapped)
+    if (!(error instanceof AppError) || error.status >= 500)
+      log.error('ai.media.request_failed', { error })
+    const result = toErrorResponse(error)
     return Response.json(result.body, {
       status: result.status,
       headers: { 'cache-control': 'no-store' },
@@ -335,6 +329,7 @@ function publicTask(task: AiTask, userId: string) {
     finishedAt: task.finishedAt,
     deadlineAt: task.deadlineAt,
     creditsCharged: task.creditsCharged,
+    cancelBilling: task.cancelBilling,
     errorCode: task.errorCode,
     errorMessage: task.errorMessage,
     params: task.input.params,
@@ -407,86 +402,154 @@ function cancelErrorFields(error: unknown) {
   }
 }
 
+const CANCEL_PENDING_MESSAGE = 'Task canceled; external cancellation needs retry'
+
+/**
+ * 服务商是否已开始生成（D2）：没有作业 ID 且未尝试提交视为未开始（异步 Provider 即使 Workflow 已
+ * running）；已尝试提交却没有作业 ID（提交在途或结果不确定）与同步 Provider 运行中无法查询，
+ * 按已开始处理；查询失败同样按已开始。
+ */
+async function providerStarted(deps: MediaHttpDeps, task: AiTask): Promise<boolean> {
+  if (!task.providerJobId) {
+    if (task.output?.submissionAttempted) return true
+    // 异步 Provider 尚未尝试提交时服务商从未收到请求；只有运行中的同步 Provider 才算已开始。
+    if (task.status !== 'running') return false
+    try {
+      return isSyncMediaProvider(taskProvider(deps, task))
+    } catch (error) {
+      log.warn('ai.media.cancel_status_failed', { taskId: task.id, ...cancelErrorFields(error) })
+      return true
+    }
+  }
+  try {
+    const provider = taskProvider(deps, task)
+    if (isSyncMediaProvider(provider)) return true
+    return (await provider.getStatus(task.providerJobId)).status !== 'queued'
+  } catch (error) {
+    log.warn('ai.media.cancel_status_failed', { taskId: task.id, ...cancelErrorFields(error) })
+    return true
+  }
+}
+
+async function cancelTarget(request: Request, taskId: string, deps: MediaHttpDeps, body: unknown) {
+  const parsed = workspaceInput.safeParse(body)
+  if (!parsed.success) throw invalid()
+  const { user } = await context(request, parsed.data.workspaceId, deps, true)
+  const task = await scoped(deps.db, parsed.data.workspaceId).findById(aiTask, taskId)
+  if (task.userId !== user.id) throw notFound()
+  return task
+}
+
+/** 只读预览：本次取消是否计费、计费额与剩余免费次数；执行时以服务端重新判断为准。 */
+export function handleMediaCancelPreview(
+  request: Request,
+  taskId: string,
+  deps: MediaHttpDeps,
+): Promise<Response> {
+  return response(async () => {
+    const task = await cancelTarget(
+      request,
+      taskId,
+      deps,
+      Object.fromEntries(new URL(request.url).searchParams),
+    )
+    const freeStartedRemaining = await freeStartedCancelsRemaining(deps.db, task.workspaceId)
+    if (terminal(task))
+      return Response.json({
+        taskId,
+        cancelable: false,
+        started: false,
+        charged: false,
+        credits: 0,
+        freeStartedRemaining,
+      })
+    const started = await providerStarted(deps, task)
+    const charged = decideCancelBilling(started, freeStartedRemaining) === 'charged'
+    return Response.json({
+      taskId,
+      cancelable: true,
+      started,
+      charged,
+      credits: charged ? mediaTaskFullCredits(task) : 0,
+      freeStartedRemaining,
+    })
+  })
+}
+
 export function handleMediaCancel(
   request: Request,
   taskId: string,
   deps: MediaHttpDeps,
 ): Promise<Response> {
   return response(async () => {
-    const parsed = workspaceInput.safeParse(await request.json().catch(() => undefined))
-    if (!parsed.success) throw invalid()
-    const { user } = await context(request, parsed.data.workspaceId, deps, true)
-    const initial = await scoped(deps.db, parsed.data.workspaceId).findById(aiTask, taskId)
-    if (initial.userId !== user.id) throw notFound()
-    if (terminal(initial) && initial.errorCode !== 'MEDIA_CANCEL_PENDING')
-      return Response.json({ taskId, status: initial.status, cancellationPending: false })
-    const task = await settleMediaTask(deps.db, {
-      workspaceId: initial.workspaceId,
+    const initial = await cancelTarget(
+      request,
       taskId,
-      outcome: 'canceled',
-      error: {
-        code: 'MEDIA_CANCEL_PENDING',
-        message: 'Credits returned; external cancellation needs retry',
-      },
-    })
-    if (task.status !== 'canceled')
-      return Response.json({ taskId, status: task.status, cancellationPending: false })
+      deps,
+      await request.json().catch(() => undefined),
+    )
+    const result = (task: AiTask, pending: boolean) =>
+      Response.json(
+        {
+          taskId,
+          status: task.status,
+          cancellationPending: pending,
+          cancelBilling: task.cancelBilling,
+          creditsCharged: task.creditsCharged,
+        },
+        { status: pending ? 202 : 200 },
+      )
+    if (terminal(initial) && initial.errorCode !== 'MEDIA_CANCEL_PENDING')
+      return result(initial, false)
     let pending = false
     const markPending = (operation: 'provider' | 'workflow', error: unknown) => {
       pending = true
       log.warn('ai.media.cancel_pending', { taskId, operation, ...cancelErrorFields(error) })
     }
-    // 积分释放已持久化；外部取消失败记可重试标记，同一取消接口重试不会再次退款。
-    for (const [operation, action] of [
-      [
-        'provider',
-        async () => {
-          if (task.providerJobId) {
-            const provider = taskProvider(deps, task)
-            if (!isSyncMediaProvider(provider)) await provider.cancel?.(task.providerJobId)
-          }
-        },
-      ],
-      [
-        'workflow',
-        async () => {
-          if (task.workflowInstanceId) {
-            const instance = await requireCapability(deps.workflow, 'Media workflow').get(
-              task.workflowInstanceId,
-            )
-            if (
-              ['queued', 'running', 'paused', 'waiting'].includes((await instance.status()).status)
-            )
-              await instance.terminate()
-          }
-        },
-      ],
-    ] as const) {
+    const cancelJob = async (task: AiTask) => {
+      if (!task.providerJobId) return
       try {
-        await action()
-      } catch (error) {
-        markPending(operation, error)
-      }
-    }
-    // 提交可能在取消期间才返回 jobId，不能据旧快照清除恢复标记。
-    const latest = await scoped(deps.db, task.workspaceId).findById(aiTask, task.id)
-    if (latest.providerJobId && latest.providerJobId !== task.providerJobId) {
-      try {
-        const provider = taskProvider(deps, latest)
-        if (!isSyncMediaProvider(provider)) await provider.cancel?.(latest.providerJobId)
+        const provider = taskProvider(deps, task)
+        if (!isSyncMediaProvider(provider)) await provider.cancel?.(task.providerJobId)
       } catch (error) {
         markPending('provider', error)
       }
     }
+    let task = initial
+    if (!terminal(initial)) {
+      // 先按取消前的服务商状态定计费，再尽力通知取消；结算在锁内只发生一次，重复调用不会重复退款或扣费。
+      const started = await providerStarted(deps, initial)
+      await cancelJob(initial)
+      task = await settleMediaTask(deps.db, {
+        workspaceId: initial.workspaceId,
+        taskId,
+        outcome: 'canceled',
+        cancelStarted: started,
+        error: { code: 'MEDIA_CANCEL_PENDING', message: CANCEL_PENDING_MESSAGE },
+      })
+      if (task.status !== 'canceled') return result(task, false)
+    } else await cancelJob(initial)
+    try {
+      if (task.workflowInstanceId) {
+        const instance = await requireCapability(deps.workflow, 'Media workflow').get(
+          task.workflowInstanceId,
+        )
+        if (['queued', 'running', 'paused', 'waiting'].includes((await instance.status()).status))
+          await instance.terminate()
+      }
+    } catch (error) {
+      markPending('workflow', error)
+    }
+    // 提交可能在取消期间才返回 jobId，不能据旧快照清除恢复标记。
+    const latest = await scoped(deps.db, task.workspaceId).findById(aiTask, task.id)
+    if (latest.providerJobId && latest.providerJobId !== initial.providerJobId)
+      await cancelJob(latest)
     if (latest.output?.submissionAttempted && !latest.providerJobId) pending = true
-    await scoped(deps.db, task.workspaceId).updateById(aiTask, task.id, {
+    const updated = await scoped(deps.db, task.workspaceId).updateById(aiTask, task.id, {
       errorCode: pending ? 'MEDIA_CANCEL_PENDING' : null,
-      errorMessage: pending ? 'Credits returned; external cancellation needs retry' : null,
+      errorMessage: pending ? CANCEL_PENDING_MESSAGE : null,
     })
-    return Response.json(
-      { taskId, status: task.status, cancellationPending: pending },
-      { status: pending ? 202 : 200 },
-    )
+    return result(updated, pending)
   })
 }
 
@@ -523,7 +586,7 @@ export function handleMediaWebhook(
     const fault = readMediaFault(located)
     // 故障失败/轮询模式只接收验签证据，不能被真实成功回调抢先恢复成功。
     if (fault && fault.mode !== 'fal-callback-early') return Response.json({ ok: true })
-    await deps.db.transaction(async (tx) => {
+    const accepted = await deps.db.transaction(async (tx) => {
       if (fault)
         await tx.execute(
           sql`select pg_advisory_xact_lock(hashtextextended(${`ws:${located.workspaceId}`}, 0))`,
@@ -531,12 +594,23 @@ export function handleMediaWebhook(
       const tenant = scoped(tx, located.workspaceId)
       const [task] = await tenant.select(aiTask, { where: eq(aiTask.id, taskId) }).for('update')
       if (!task) throw notFound()
+      // 已结算的任务不再接收结果；晚到回调只记日志，不改变结算。
+      if (terminal(task)) {
+        log.info('ai.media.callback_after_terminal', { taskId, status: task.status })
+        return false
+      }
       if (task.providerJobId && task.providerJobId !== payload.jobId)
         throw new AppError('MEDIA_WEBHOOK_INVALID', 'Callback does not match the task job')
+      // 不确定提交没有作业 ID：任务 HMAC 与服务商签名均已通过，采用回调中的作业 ID（D3）。
+      const adopt =
+        !task.providerJobId &&
+        task.status === 'running' &&
+        task.errorCode === 'MEDIA_SUBMISSION_UNCERTAIN'
       await tenant.update(
         aiTask,
         {
           callbackPayload: payload,
+          ...(adopt ? { providerJobId: payload.jobId, errorCode: null, errorMessage: null } : {}),
           ...(fault && !task.callbackPayload
             ? {
                 input: sql`${aiTask.input} || jsonb_build_object('acceptanceFaultProof', coalesce(${aiTask.input}->'acceptanceFaultProof', '{}'::jsonb) || jsonb_build_object('callbackStoredAt', now()))`,
@@ -545,7 +619,9 @@ export function handleMediaWebhook(
         },
         and(eq(aiTask.id, taskId), isNull(aiTask.callbackPayload)),
       )
+      return true
     })
+    if (!accepted) return Response.json({ ok: true })
     try {
       if (located.workflowInstanceId)
         await (

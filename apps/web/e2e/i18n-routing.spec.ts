@@ -47,7 +47,7 @@ for (const locale of otherLocales) {
 }
 
 test('未配置的语言前缀返回 404', async ({ request }) => {
-  test.skip(!unconfigured)
+  test.skip(!unconfigured, 'fr、de、ja、es 均已配置，没有可测的未配置前缀')
   for (const path of [`/${unconfigured}`, `/${unconfigured}/pricing`]) {
     expect((await request.get(path)).status(), path).toBe(404)
   }

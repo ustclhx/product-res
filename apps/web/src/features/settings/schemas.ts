@@ -9,6 +9,8 @@ import { ACCOUNT_COPY } from './copy.ts'
 // 设置页表单的校验（TanStack Form + Zod）。字段规则与服务端共用 @product-res/auth/settings-schema；
 // 表单里空字符串表示「未设置」，提交时转换为 null。
 
+export const LOCALE_DEFAULT = '__default__'
+
 export const profileFormSchema = z.object({
   name: profileNameSchema,
   image: z.union([z.literal(''), profileImageSchema.unwrap()]),

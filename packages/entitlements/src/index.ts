@@ -19,7 +19,7 @@ export async function getEntitlements(
         status: subscription.status,
         pastDueSince: subscription.pastDueSince,
         currentPeriodEnd: subscription.currentPeriodEnd,
-        plan: { key: plan.key, sort: plan.sort, features: plan.features },
+        plan: { key: plan.key, name: plan.name, sort: plan.sort, features: plan.features },
       },
     })
     .innerJoin(plan, eq(subscription.planId, plan.id))

@@ -77,8 +77,7 @@ export function accountSettings(db: Database, config: TemplateConfig, clientIp?:
               const changes = parsed.data
               const actor = fresh.value
               await db.$client.begin(async (sql) => {
-                const [before] =
-                  await sql`select name,image,locale,timezone from "user" where id=${actor.user.id} for update`
+                await sql`select id from "user" where id=${actor.user.id} for update`
                 const [live] =
                   await sql`select id from session where id=${actor.session.id} and expires_at>now()`
                 if (!live)
@@ -87,10 +86,11 @@ export function accountSettings(db: Database, config: TemplateConfig, clientIp?:
                     message: 'Session expired',
                   })
                 if (Object.keys(changes).length) {
+                  // 审计只记录改了哪些字段：审计行永久保留且只追加，不能写入姓名、头像等个人信息。
                   await sql`update "user" set ${sql({ ...changes, updated_at: new Date().toISOString() })} where id=${actor.user.id}`
                   await sql`insert into audit_log (id,actor_user_id,action,target_type,target_id,ip,meta)
                     values (${newId()},${actor.user.id},'user.profile_updated','user',${actor.user.id},
-                    ${clientIp ?? null},${JSON.stringify({ before, after: changes, impersonatedBy: actor.session.impersonatedBy })}::jsonb)`
+                    ${clientIp ?? null},${JSON.stringify({ fields: Object.keys(changes).sort(), impersonatedBy: actor.session.impersonatedBy })}::jsonb)`
                 }
               })
               // 清除被模拟用户的会话缓存，下次读取数据库中的新资料。

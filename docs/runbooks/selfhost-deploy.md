@@ -6,7 +6,7 @@
 
 ## 准备
 
-确认成功发布 run、完整 SHA、namespace、八服务 digest / revision / 双架构，并从受信
+确认成功发布 run、完整 SHA、namespace、八服务 digest / revision / linux/amd64，并从受信
 Actions artifact 取得同 SHA bundle。核对来源后解压到独立目录，运行：
 
 ```sh
@@ -93,29 +93,3 @@ app健康不能代表backup成功；backup另查真实base/dump/WAL链状态。
 不会随PG回退。restore/drill已交付，见[恢复runbook](selfhost-restore.md)；旧版部署bundle不含恢复器，
 必须另取匹配材料。异机ownership仍待B签收，交协调者确认切流量，不对原卷降级。
 
-## 证据与限制
-
-`python3 -m unittest discover -s deploy/selfhost -p 'test_deploy.py'`覆盖重要发布失败门
-及本地HTTP旧SHA/503/半开响应/脱敏；`python3 deploy/selfhost/test-deploy-compose.py`
-使用真实本机registry digest和隔离Compose，验证初始/升级、pull/迁移/health失败、兼容
-回滚、持久marker及并发文件锁。轻量Node镜像只证明编排顺序和卷保留，不证明PG迁移/
-DBOS checkpoint/ownership恢复或真实五分钟slot。正式业务镜像的空卷部署、升级和回滚另由`test-release-compose.py`验收；它使用成功发布
-bundle与registry镜像，第二版仅为本地registry版本元数据fixture。保留真实已完成DBOS
-状态不等于未完成任务恢复；后者及6.3仍依赖1.5签收，2.1/2.3仅按已完成证据判断。
-
-第二次真实GHCR发布已授权并成功，完整恢复bundle已齐，见[release](selfhost-release.md#第二次正式-ghcr-集合与完整-bundle2026-10-14)。
-第二次发布时2.1/2.3仍依赖B/D1.5签收，第7组主机/入口/备份/重启均BLOCKED；
-没有连接 `product-res-ecs` 或其他真实服务器，不手动部署Cloudflare staging。
-
-2026-10-15 的 [d-vm验收](evidence/selfhost/d-vm-2026-10-15/report.md)补充临时Debian VM、
-真实SSH入口、完整backup和宿主reboot证据，并发现固定正式`0813050`的B退出证明缺口。
-本PR补修同机身份/namespace及guard；旧记录与异机迁移、新正式镜像仍待签收，
-不以本地新源码fixture提前勾选1.5或依赖它的2.1/2.3/6.3。
-
-2026-10-15 的第三次正式发布 `598d1f68b6ef7b19e8a6d30c13575bac1701b7c2` 已在
-新Lima `selfhost-d-vm2` 完成正式flock生命周期、全栈实际reboot、严格SSH部署与真实
-PG/DBOS升级/失败/兼容回滚，1.5/2.1/2.3/6.3已勾选。
-详见[d-vm2证据](evidence/selfhost/d-vm2-2026-10-15/report.md)；升级回滚第二版明确为
-本地registry仅SHA元数据fixture，不是第二个正式版本或补修源码镜像。
-修复前镜像从未部署真实服务器，不提供旧缺machineId/token锁记录的迁移，要求新卷
-部署；异机退出证明仍开放，第7组不变。VM及所属资源已清理。

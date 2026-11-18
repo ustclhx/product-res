@@ -319,22 +319,73 @@ afterAll(async () => {
   await sql.end()
 })
 
-it('lost submission response leaves a durable marker, blocks replay and refunds the whole hold', async () => {
+it('lost submission response keeps the hold, waits the configured period without replay, then refunds', async () => {
   const f = await fixture()
   const fake = provider()
   fake.submit.mockRejectedValue(new Error('Accepted by provider, response lost'))
   const h = harness(fake)
   const task = await scoped(db, f.workspaceId).findById(aiTask, f.taskId)
-  await expect(submitMediaOnce(task, h.deps)).rejects.toBeInstanceOf(NonRetryableError)
-  expect((await state(f)).task.output).toMatchObject({ submissionAttempted: true })
-  await expect(submitMediaOnce(task, h.deps)).rejects.toBeInstanceOf(NonRetryableError)
+  expect(await submitMediaOnce(task, h.deps)).toMatchObject({ uncertain: true, stopped: false })
+  // 不确定提交不立即退款：预扣保留，任务保持 running 并带标记。
+  const waiting = await state(f)
+  expect(waiting.task).toMatchObject({
+    status: 'running',
+    providerJobId: null,
+    errorCode: 'MEDIA_SUBMISSION_UNCERTAIN',
+    output: { submissionAttempted: true },
+  })
+  expect(waiting.hold?.status).toBe('held')
+  expect(waiting.balance).toMatchObject({ available: 85, held: 15 })
+  expect(await submitMediaOnce(task, h.deps)).toMatchObject({ uncertain: true })
   expect(await runMediaTask(f.taskId, h.step, h.deps)).toEqual({
     taskId: f.taskId,
     status: 'failed',
   })
+  expect(h.waits).toEqual([{ type: MEDIA_DONE_EVENT, timeoutMs: 3600_000 }])
   expect(fake.submit).toHaveBeenCalledTimes(1)
   expect(fake.getStatus).not.toHaveBeenCalled()
+  expect((await state(f)).task.errorCode).toBe('MEDIA_SUBMISSION_UNCERTAIN')
   await refunded(f)
+})
+
+it('uncertain submission settles normally when a verified callback arrives within the wait', async () => {
+  const f = await fixture()
+  const fake = provider()
+  fake.submit.mockRejectedValue(new Error('Accepted by provider, response lost'))
+  const h = harness(fake, {
+    onWait: async () => {
+      // 回调路由验签后写入的状态：采用回调作业 ID 并清除标记。
+      await scoped(db, f.workspaceId).updateById(aiTask, f.taskId, {
+        providerJobId: 'job-callback',
+        errorCode: null,
+        errorMessage: null,
+        callbackPayload: { jobId: 'job-callback', result },
+      })
+    },
+  })
+  await runMediaTask(f.taskId, h.step, h.deps)
+  expect(h.waits).toEqual([{ type: MEDIA_DONE_EVENT, timeoutMs: 3600_000 }])
+  expect(fake.submit).toHaveBeenCalledTimes(1)
+  expect(fake.getStatus).not.toHaveBeenCalled()
+  expect((await state(f)).task.providerJobId).toBe('job-callback')
+  await succeeded(f)
+})
+
+it('uncertain submission adopts a callback stored before the marker and polls when it has no result', async () => {
+  const f = await fixture()
+  const fake = provider()
+  fake.submit.mockImplementation(async () => {
+    await scoped(db, f.workspaceId).updateById(aiTask, f.taskId, {
+      callbackPayload: { jobId: 'job-early' },
+    })
+    throw new Error('Accepted by provider, response lost')
+  })
+  const h = harness(fake)
+  await runMediaTask(f.taskId, h.step, h.deps)
+  expect(fake.submit).toHaveBeenCalledTimes(1)
+  expect(fake.getStatus).toHaveBeenCalledWith('job-early')
+  expect((await state(f)).task).toMatchObject({ providerJobId: 'job-early', errorCode: null })
+  await succeeded(f)
 })
 
 it('persisted job and output survive step replays, charge capped usage once and create one file', async () => {
@@ -791,7 +842,8 @@ it.each(['fal-submit-response-lost', 'fal-provider-error', 'fal-timeout'] as con
       })
       expect(proof?.pollCount).toBe(0)
       expect(fake.getStatus).not.toHaveBeenCalled()
-      expect(h.waits).toEqual([])
+      // 故障模式的不确定等待沿用其初始等待，晚到的成功回调也不能被采用。
+      expect(h.waits).toEqual([{ type: MEDIA_DONE_EVENT, timeoutMs: 5_000 }])
     } else {
       expect(h.waits).toEqual([{ type: MEDIA_DONE_EVENT, timeoutMs: 5_000 }])
       expect(fake.getStatus).toHaveBeenCalledTimes(mode === 'fal-timeout' ? 2 : 1)

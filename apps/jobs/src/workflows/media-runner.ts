@@ -16,11 +16,11 @@ import {
   wrapMediaFaultProvider,
 } from '@product-res/ai'
 import { type AiFaultInjectionEnv, isAiFaultInjectionEnabled } from '@product-res/config'
-import { type AiTask, aiTask, type Database, scoped } from '@product-res/db'
+import { type AiTask, aiTask, type Database, dbSettingStore, getSetting, scoped } from '@product-res/db'
 import { NonRetryableError, type WorkflowStep } from '@product-res/platform'
 import { AppError, MEDIA_DONE_EVENT } from '@product-res/shared'
 import { log, setLogContext } from '@product-res/shared/log'
-import { and, eq, inArray, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { type JobObserver, logJobObserver } from '../observer.ts'
 
 export interface MediaRunnerDeps {
@@ -73,6 +73,27 @@ const errorOf = (error: unknown): MediaError => ({
         ? 'Submission outcome is uncertain; credits were returned'
         : 'Media generation failed',
 })
+const UNCERTAIN = 'MEDIA_SUBMISSION_UNCERTAIN'
+const UNCERTAIN_WAITING = 'Submission outcome is uncertain; waiting for provider callback'
+
+/** 提交结果不确定：保留预扣，任务保持 running 并打标记，等待已验签回调写入作业 ID（D3）。 */
+async function markSubmissionUncertain(db: Database, task: AiTask) {
+  await scoped(db, task.workspaceId).update(
+    aiTask,
+    {
+      status: 'running',
+      startedAt: sql`coalesce(${aiTask.startedAt}, now())`,
+      errorCode: UNCERTAIN,
+      errorMessage: UNCERTAIN_WAITING,
+    },
+    and(
+      eq(aiTask.id, task.id),
+      inArray(aiTask.status, ['queued', 'running']),
+      isNull(aiTask.providerJobId),
+    ),
+  )
+}
+
 const SYNC_SUBMIT_RETRIES = { limit: 2, delayMs: 10_000, backoff: 'exponential' } as const
 
 /** 同步提交只重试 Provider 标明的瞬时失败；其余失败带原错误码直接终止，不再推理。 */
@@ -100,7 +121,12 @@ function syncSubmitFailure(taskId: string, error: unknown): Error {
 export async function submitMediaOnce(
   task: AiTask,
   deps: MediaRunnerDeps,
-): Promise<{ jobId: string; sync: StepData<MediaResult> | null; stopped: boolean }> {
+): Promise<{
+  jobId: string
+  sync: StepData<MediaResult> | null
+  stopped: boolean
+  uncertain?: boolean
+}> {
   const { db } = deps
   if (!deps.callbackSecret)
     throw new AppError('MEDIA_WEBHOOK_NOT_CONFIGURED', 'Media callback is not configured', {
@@ -119,8 +145,9 @@ export async function submitMediaOnce(
     )[0]
     if (!current) throw new AppError('NOT_FOUND', 'Not found', { status: 404 })
     if (terminal(current) || current.providerJobId) return current
+    // 上次提交可能已被受理（进程中断或步骤重放）：不重提，转入等待回调。
     if (current.output?.submissionAttempted && !provider.capabilities.idempotentSubmit)
-      throw new NonRetryableError('MEDIA_SUBMISSION_UNCERTAIN')
+      return { ...current, errorCode: UNCERTAIN }
     const fault = readMediaFault(current)
     await tenant.updateById(aiTask, task.id, {
       output: { submissionAttempted: true },
@@ -139,6 +166,10 @@ export async function submitMediaOnce(
     return current
   })
   if (terminal(fresh)) return { jobId: '', sync: null, stopped: true }
+  if (!fresh.providerJobId && fresh.errorCode === UNCERTAIN) {
+    await markSubmissionUncertain(db, task)
+    return { jobId: '', sync: null, stopped: false, uncertain: true }
+  }
   if (fresh.providerJobId)
     return {
       jobId: fresh.providerJobId,
@@ -193,7 +224,7 @@ export async function submitMediaOnce(
         if (after.status === 'canceled')
           await scoped(db, task.workspaceId).updateById(aiTask, task.id, {
             errorCode: 'MEDIA_CANCEL_PENDING',
-            errorMessage: 'Credits returned; external cancellation needs retry',
+            errorMessage: 'Task canceled; external cancellation needs retry',
           })
         log.warn('ai.media.cancel_pending', { taskId: task.id })
       }
@@ -228,7 +259,8 @@ export async function submitMediaOnce(
             ? error.causeName
             : undefined,
       })
-      throw new NonRetryableError('MEDIA_SUBMISSION_UNCERTAIN')
+      await markSubmissionUncertain(db, task)
+      return { jobId: '', sync: null, stopped: false, uncertain: true }
     }
     throw error
   }
@@ -431,6 +463,48 @@ export async function runMediaTask(taskId: string, step: WorkflowStep, deps: Med
       return stopped()
     }
     if (!(await active())) return stopped()
+    let jobId = submitted.jobId
+    if (submitted.uncertain) {
+      // 等待时限为运行时设置；验收故障沿用其初始等待，且都不超过任务期限。
+      const waitUntil = await step.do('uncertain-wait-until', async () => {
+        const seconds = fault
+          ? fault.initialWaitMs / 1000
+          : await getSetting({ store: dbSettingStore(deps.db) }, 'ai.mediaUncertainWaitSeconds')
+        return Math.min(deadline, now() + Math.max(0, seconds) * 1000)
+      })
+      // 回调路由已验签并写入作业 ID；这里只补写先于标记到达的回调并清除标记。
+      const adopt = async () => {
+        if (!(await active())) return null
+        if (faultFails()) return null
+        const callback = await readCallback()
+        if (!callback?.jobId) return null
+        await scoped(deps.db, task.workspaceId).update(
+          aiTask,
+          { providerJobId: callback.jobId, errorCode: null, errorMessage: null },
+          and(
+            eq(aiTask.id, task.id),
+            eq(aiTask.status, 'running'),
+            eq(aiTask.errorCode, UNCERTAIN),
+          ),
+        )
+        return callback.jobId
+      }
+      let adopted = await step.do('uncertain-check-callback', adopt)
+      if (!adopted && now() < waitUntil) {
+        await step
+          .waitForEvent('wait-uncertain-callback', {
+            type: MEDIA_DONE_EVENT,
+            timeoutMs: Math.max(1, waitUntil - now()),
+          })
+          .catch(() => null)
+        if (!(await active())) return stopped()
+        adopted = await step.do('uncertain-recheck-callback', adopt)
+      }
+      if (!(await active())) return stopped()
+      if (!adopted)
+        throw new AppError(UNCERTAIN, 'Submission outcome is uncertain; credits were returned')
+      jobId = adopted
+    }
     if (fault?.mode === 'fal-callback-early') {
       const barrierMs = fault.barrierMs
       const barrierDeadline = await step.do('fault-early-barrier-deadline', async () =>
@@ -463,7 +537,7 @@ export async function runMediaTask(taskId: string, step: WorkflowStep, deps: Med
       return faultFails() || fault?.mode === 'fal-callback-lost' ? null : readCallback()
     }
     let callback: Callback | null = submitted.sync
-      ? { jobId: submitted.jobId, result: submitted.sync }
+      ? { jobId, result: submitted.sync }
       : await step.do('check-callback', checkCallback)
     if (!callback?.result && !callback?.error) {
       if (!(await active())) return stopped()
@@ -490,14 +564,12 @@ export async function runMediaTask(taskId: string, step: WorkflowStep, deps: Med
             const previous = fresh.input?.acceptanceFaultProof as { pollCount?: number } | undefined
             await proof({ pollCount: (previous?.pollCount ?? 0) + 1 })
           }
-          return provider.getStatus(submitted.jobId)
+          return provider.getStatus(jobId)
         },
       )
       if (status.status === 'stopped') return stopped()
-      if (status.status === 'succeeded')
-        callback = { jobId: submitted.jobId, result: status.result }
-      else if (status.status === 'failed')
-        callback = { jobId: submitted.jobId, error: status.error }
+      if (status.status === 'succeeded') callback = { jobId, result: status.result }
+      else if (status.status === 'failed') callback = { jobId, error: status.error }
       else {
         if (!(await active())) return stopped()
         const remaining = deadline - now()

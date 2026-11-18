@@ -38,6 +38,10 @@ export async function summarizeDailyMetrics(db: Database, day: string) {
     const [credits] = await sql<{ consumed: number }[]>`
       select coalesce(-sum(delta),0)::int as consumed from credit_ledger
       where type='consume' and created_at >= ${start.toISOString()} and created_at < ${end.toISOString()}`
+    const [daily] = await sql<{ count: number; credits: number }[]>`
+      select count(*)::int as count, coalesce(sum(delta),0)::float8 as credits from credit_ledger
+      where type='grant' and ref_type='daily'
+        and created_at >= ${start.toISOString()} and created_at < ${end.toISOString()}`
     // hold 的 updated_at 是结算时间；无消息的媒体 hold 归入 unknown，P4 可扩展关联。
     const overage = await sql<{ model: string; amount: number }[]>`
       select coalesce(m.model_key,'unknown') as model, sum(h.overage_absorbed)::int as amount
@@ -55,15 +59,16 @@ export async function summarizeDailyMetrics(db: Database, day: string) {
         and updated_at >= ${start.toISOString()} and updated_at < ${end.toISOString()}`
     const [result] = await sql`
       insert into metrics_daily (day,registrations,total_users,total_workspaces,paid_workspaces,
-        mrr_by_currency,credits_consumed,overage_absorbed,overage_by_model,
+        mrr_by_currency,credits_consumed,daily_grant_count,daily_grant_credits,overage_absorbed,overage_by_model,
         text_completed,text_failed,text_aborted,data_through,computed_at)
       values (${day},${users?.registrations ?? 0},${users?.total ?? 0},${spaces?.total ?? 0},
         ${new Set(paid.map((row) => row.workspace_id)).size},${JSON.stringify(mrr)}::jsonb,${credits?.consumed ?? 0},
-        ${absorbed},${JSON.stringify(byModel)}::jsonb,${text?.completed ?? 0},${text?.failed ?? 0},${text?.aborted ?? 0},
+        ${daily?.count ?? 0},${daily?.credits ?? 0},${absorbed},${JSON.stringify(byModel)}::jsonb,${text?.completed ?? 0},${text?.failed ?? 0},${text?.aborted ?? 0},
         ${end.toISOString()},now())
       on conflict (day) do update set registrations=excluded.registrations,total_users=excluded.total_users,
         total_workspaces=excluded.total_workspaces,paid_workspaces=excluded.paid_workspaces,
         mrr_by_currency=excluded.mrr_by_currency,credits_consumed=excluded.credits_consumed,
+        daily_grant_count=excluded.daily_grant_count,daily_grant_credits=excluded.daily_grant_credits,
         overage_absorbed=excluded.overage_absorbed,overage_by_model=excluded.overage_by_model,
         text_completed=excluded.text_completed,text_failed=excluded.text_failed,text_aborted=excluded.text_aborted,
         data_through=excluded.data_through,computed_at=excluded.computed_at returning *`

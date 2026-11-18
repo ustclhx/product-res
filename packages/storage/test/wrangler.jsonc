@@ -10,5 +10,6 @@
       "localConnectionString": "postgres://app:app@localhost:5432/product_res_dev"
     }
   ],
+  "kv_namespaces": [{ "binding": "CACHE", "id": "share-card-test-cache" }],
   "r2_buckets": [{ "binding": "FILES", "bucket_name": "files" }]
 }

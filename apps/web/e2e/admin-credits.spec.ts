@@ -39,8 +39,21 @@ test('管理员通过统一导航补发、收回指定批次，账务页保留�
     const row = page.getByRole('row').filter({ hasText: batch.id })
     await expect(row).toContainText('25 / 25')
     await page.getByLabel(uiText('admin_reason'), { exact: true }).fill('撤回误发测试')
-    page.once('dialog', (dialog) => dialog.accept())
-    await row.getByRole('button', { name: uiText('admin_revoke_batch') }).click()
+    const revoke = row.getByRole('button', { name: uiText('admin_revoke_batch') })
+    // 取消：不发请求，焦点回到行内按钮
+    await revoke.click()
+    const dialog = page.getByRole('alertdialog', {
+      name: uiText('admin_revoke_batch_confirm_title'),
+    })
+    await expect(dialog).toContainText(batch.id)
+    await dialog.getByRole('button', { name: uiText('common_cancel'), exact: true }).click()
+    await expect(dialog).toHaveCount(0)
+    await expect(revoke).toBeFocused()
+    await expect(row).toContainText('25 / 25')
+    // 确认：请求完成后关闭
+    await revoke.click()
+    await dialog.getByRole('button', { name: uiText('admin_revoke_batch'), exact: true }).click()
+    await expect(dialog).toHaveCount(0)
     await expect(row).toContainText('revoked')
     await expect(row).toContainText('25 / 0')
     const [audit] =

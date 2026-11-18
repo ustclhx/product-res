@@ -4,17 +4,110 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      probe_sha:
+        description: 'Only log whether a main push of this SHA would reuse PR CI (always runs full)'
+        type: string
+        required: false
+
+permissions:
+  contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # PR 新提交取消旧运行；main 每个提交独立分组且不取消：被取消的 main 运行没有成功结论，
+  # 该 SHA 既不会触发 staging 发布，也无法通过生产发布门禁。
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # 恢复的缓存条目保留原 mtime；按年龄与体积淘汰，避免 restore-keys 链无限增长。
+  TURBO_CACHE_MAX_AGE: 7d
+  TURBO_CACHE_MAX_SIZE: 2GB
 
 jobs:
-  check:
+  # 计划规则与安全条件见 scripts/ci/plan.mjs：
+  # full 跑全部 job；docs 只跑 lint；reuse 表示 PR 已在同一棵树上全量通过，跳过其余全部 job。
+  # 被 if 跳过的 job 不影响运行结论，workflow_run 与发布门禁看到的仍是 success。
+  changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    outputs:
+      mode: ${{ steps.plan.outputs.mode }}
+      tree: ${{ steps.plan.outputs.tree }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          CI_PLAN_PROBE_SHA: ${{ inputs.probe_sha }}
+        run: node scripts/ci/plan.mjs
 
-    # 集成测试（@product-res/db、@product-res/web、@product-res/jobs 的 vitest-plugin 项目）使用的本地 Postgres，
-    # 账号与权限按 infra/local/initdb 的约定在下面的步骤中初始化。
+  lint:
+    needs: changes
+    if: needs.changes.outputs.mode != 'reuse'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-workspace
+      - name: Lint added migration SQL
+        env:
+          MIGRATION_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$MIGRATION_BASE" ] || [[ "$MIGRATION_BASE" =~ ^0+$ ]]; then
+            MIGRATION_BASE=$(git hash-object -t tree /dev/null)
+          fi
+          node scripts/production/lint-migrations.mjs "$MIGRATION_BASE"
+      # lockfile 必须已去重，且 drizzle-orm / react 只有一个实例（scripts/check-singletons.mjs 说明了原因）
+      - run: pnpm dedupe --check
+      - run: pnpm check:singletons
+      - run: pnpm check:deps
+      # pnpm check 与生成器测试会读取 docs/、技能与 openspec 文件，文档变更也必须运行
+      - run: pnpm check
+
+  build:
+    needs: changes
+    if: needs.changes.outputs.mode == 'full'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TURBO_CACHE_DIR: ${{ github.workspace }}/.turbo/cache
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+      # 未改动的包命中缓存；缓存安全依赖 turbo.json 的 inputs（scripts/check-turbo-inputs.mjs 检查）
+      - uses: actions/cache@v5
+        with:
+          path: .turbo/cache
+          key: turbo-${{ runner.os }}-${{ github.job }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: turbo-${{ runner.os }}-${{ github.job }}-${{ hashFiles('pnpm-lock.yaml') }}-
+      - run: pnpm typecheck
+      # turbo run build：没有 build 脚本的包会被跳过
+      - run: pnpm build
+
+  # pnpm test 拆成两个 job：web 的 vitest 最慢，且它与 jobs 共享 jobs.lastCronAt 键而在同一库中串行；
+  # 各用独立的临时 Postgres 后可以并行。两个 job 合起来仍是 turbo run test 的全部任务。
+  test-packages:
+    needs: changes
+    if: needs.changes.outputs.mode == 'full'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # 集成测试（@product-res/db、@product-res/auth、@product-res/jobs 的 vitest-plugin 项目）使用的本地 Postgres，
+    # 账号与权限按 infra/local/initdb 的约定初始化。
     services:
       postgres:
         image: postgres:17
@@ -29,49 +122,76 @@ jobs:
           --health-interval 2s
           --health-timeout 3s
           --health-retries 30
-
     env:
       # 设置后各包的 vitest.config.ts 才会运行集成测试（CI 中缺省时跳过）
       CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: postgres://app:app@localhost:5432/product_res_ci
       MIGRATION_DATABASE_URL: postgres://migrator:migrator@localhost:5432/product_res_ci
-
+      TURBO_CACHE_DIR: ${{ github.workspace }}/.turbo/cache
     steps:
       - uses: actions/checkout@v7
-
-      # 与 infra/local/docker-compose.yml 的容器初始化相同：集群级账号 + 单库权限
-      - name: Initialize database roles
-        env:
-          PGURL: postgres://postgres:postgres@localhost:5432/product_res_ci
-        run: |
-          psql "$PGURL" -v ON_ERROR_STOP=1 -f infra/local/initdb/01-roles.sql
-          psql "$PGURL" -v ON_ERROR_STOP=1 -f infra/local/initdb/02-db-grants.sql
-
-      # 版本取自根 package.json 的 packageManager
-      - uses: pnpm/action-setup@v6
-
-      - uses: actions/setup-node@v7
+      - uses: ./.github/actions/setup-workspace
         with:
-          node-version: 22
-          cache: pnpm
+          database: product_res_ci
+      - uses: actions/cache@v5
+        with:
+          path: .turbo/cache
+          key: turbo-${{ runner.os }}-${{ github.job }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: turbo-${{ runner.os }}-${{ github.job }}-${{ hashFiles('pnpm-lock.yaml') }}-
+      # entitlements / jobs 的测试导入 apps/web 源码，需要 web typecheck 生成的路由、文案与内容
+      - name: Generate web route tree, messages and content
+        working-directory: apps/web
+        run: |
+          node scripts/generate-route-tree.mjs
+          node scripts/compile-messages.mjs
+          node scripts/build-content.mjs
+      - run: pnpm exec turbo run test --filter='!@product-res/web'
 
-      - run: pnpm install --frozen-lockfile
-      # lockfile 必须已去重，且 drizzle-orm / react 只有一个实例（scripts/check-singletons.mjs 说明了原因）
-      - run: pnpm dedupe --check
-      - run: pnpm check:singletons
-      - run: pnpm check:deps
-      - run: pnpm check
-      - run: pnpm typecheck
-      - run: pnpm test
-      # turbo run build：没有 build 脚本的包会被跳过
-      - run: pnpm build
+  test-web:
+    needs: changes
+    if: needs.changes.outputs.mode == 'full'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: product_res_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d product_res_ci"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: postgres://app:app@localhost:5432/product_res_ci
+      MIGRATION_DATABASE_URL: postgres://migrator:migrator@localhost:5432/product_res_ci
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+        with:
+          database: product_res_ci
+      - name: Generate web route tree, messages and content
+        working-directory: apps/web
+        run: |
+          node scripts/generate-route-tree.mjs
+          node scripts/compile-messages.mjs
+          node scripts/build-content.mjs
+      # 每日领取提示的组件回归在 Chromium（默认 headless shell）中验证真实 effect 和重渲染；
+      # 复用浏览器缓存与 apt 超时重试，apt 镜像慢时曾让整步耗时 5 分钟以上。
+      - uses: ./.github/actions/install-chromium
+      # --only：依赖包的 typecheck / test 由 build 与 test-packages 覆盖；web 测试自行迁移本 job 的数据库
+      - run: pnpm exec turbo run test --filter=@product-res/web --only
 
-  node:
+  # Node 目标拆成三组并行；与 CF job 完全独立的临时数据服务，不读取 staging secrets 或执行部署。
+  node-web:
+    needs: changes
+    if: needs.changes.outputs.mode == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    permissions:
-      contents: read
-    # 与 CF job 完全独立的临时数据服务，不读取 staging secrets 或执行部署。
-    services:
+    services: &node-services
       postgres:
         image: postgres:17
         env:
@@ -94,42 +214,65 @@ jobs:
           --health-interval 2s
           --health-timeout 3s
           --health-retries 30
-    env:
+    env: &node-env
       CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: postgres://app:app@localhost:5432/product_res_ci
       MIGRATION_DATABASE_URL: postgres://migrator:migrator@localhost:5432/product_res_ci
       TEST_VALKEY_URL: redis://localhost:6379
       APP_VERSION: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v7
-      - name: Initialize database roles
-        env:
-          PGURL: postgres://postgres:postgres@localhost:5432/product_res_ci
-        run: |
-          psql "$PGURL" -v ON_ERROR_STOP=1 -f infra/local/initdb/01-roles.sql
-          psql "$PGURL" -v ON_ERROR_STOP=1 -f infra/local/initdb/02-db-grants.sql
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
+      - uses: ./.github/actions/setup-workspace
         with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          database: product_res_ci
       - name: Run Node unit and isolated business integration tests
         run: pnpm --filter @product-res/web test:node
+
+  node-jobs:
+    needs: changes
+    if: needs.changes.outputs.mode == 'full'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services: *node-services
+    env: *node-env
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+        with:
+          database: product_res_ci
       - name: Run Node jobs tests
         run: pnpm --filter @product-res/jobs test:node
       - name: Smoke Node jobs production entry
         run: pnpm --filter @product-res/jobs test:node:integration
+
+  node-build:
+    needs: changes
+    if: needs.changes.outputs.mode == 'full'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services: *node-services
+    env: *node-env
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+        with:
+          database: product_res_ci
       - name: Build Node production outputs
         run: pnpm build:node
+      # 拆分前由同 job 的前序测试迁移业务库与 DBOS 系统表（apps/jobs/test/node-jobs-setup.ts）；
+      # 生产入口不自行迁移，独立 job 需显式执行，否则 jobs 以 JOB_ENGINE_START_FAILED 退出。
+      - name: Migrate temporary database
+        run: |
+          pnpm --filter @product-res/db db:migrate
+          pnpm --filter @product-res/platform dbos:migrate
       - name: Smoke Node production HTTP server
         run: pnpm --filter @product-res/web test:node:production
 
   e2e-smoke:
+    needs: changes
+    if: needs.changes.outputs.mode == 'full'
     runs-on: ubuntu-latest
     # 正常约 2–3 分钟；留出 apt 镜像偶发缓慢的余量，单步再设上限避免挂死占满整个 job。
-    timeout-minutes: 12
-    permissions:
-      contents: read
+    timeout-minutes: 16
     services:
       postgres:
         image: postgres:17
@@ -151,44 +294,9 @@ jobs:
       WRANGLER_SEND_METRICS: 'false'
     steps:
       - uses: actions/checkout@v7
-      - name: Initialize database roles
-        env:
-          PGURL: postgres://postgres:postgres@localhost:5432/product_res_ci_e2e
-        run: |
-          psql "$PGURL" -v ON_ERROR_STOP=1 -f infra/local/initdb/01-roles.sql
-          psql "$PGURL" -v ON_ERROR_STOP=1 -f infra/local/initdb/02-db-grants.sql
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
+      - uses: ./.github/actions/prepare-local-tests
         with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Get Playwright version
-        id: playwright
-        working-directory: apps/web
-        run: node -p "'version=' + require('@playwright/test/package.json').version" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v5
-        id: browsers
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright.outputs.version }}-chromium-shell
-      - name: Install Chromium
-        if: steps.browsers.outputs.cache-hit != 'true'
-        run: pnpm --filter @product-res/web exec playwright install --with-deps --only-shell chromium
-      - name: Install Chromium system dependencies
-        if: steps.browsers.outputs.cache-hit == 'true'
-        timeout-minutes: 5
-        run: pnpm --filter @product-res/web exec playwright install-deps chromium
-      - name: Prepare local authentication and migrate
-        run: |
-          node --input-type=module <<'NODE'
-          import { readFileSync, writeFileSync } from 'node:fs'
-          import { randomBytes } from 'node:crypto'
-          const vars = readFileSync('apps/web/.dev.vars.example', 'utf8')
-            .replace(/^BETTER_AUTH_SECRET=.*$/m, `BETTER_AUTH_SECRET=${randomBytes(32).toString('base64')}`)
-          writeFileSync('apps/web/.dev.vars', vars, { mode: 0o600 })
-          NODE
-          pnpm --filter @product-res/db db:migrate
+          database: product_res_ci_e2e
       - name: Run local e2e smoke
         run: pnpm --filter @product-res/web test:e2e:smoke
       # 只上传 HTML report；冒烟配置禁用 trace、video 和 screenshot，不上传服务器日志。
@@ -199,3 +307,16 @@ jobs:
           path: apps/web/playwright-report/
           retention-days: 7
           if-no-files-found: ignore
+
+  # 全量模式下全部 job 成功的记录。job 名携带被测合并树，main push 据此判断能否复用
+  # （scripts/ci/plan.mjs 的 findReuse）；增删上面的 job 时同步 needs。
+  tested:
+    name: tested-tree ${{ needs.changes.outputs.tree }}
+    needs: [changes, lint, build, test-packages, test-web, node-web, node-jobs, node-build, e2e-smoke]
+    if: needs.changes.outputs.mode == 'full'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: echo "全部 job 已在树 $TREE 上通过"
+        env:
+          TREE: ${{ needs.changes.outputs.tree }}

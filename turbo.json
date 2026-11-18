@@ -1,5 +1,6 @@
 {
   "$schema": "https://turborepo.com/schema.json",
+  "globalDependencies": ["tsconfig.base.json", "template.config.ts", "scripts/local-payment-env.*"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -9,6 +10,7 @@
       "dependsOn": ["^typecheck"]
     },
     "test": {
+      "env": ["EVIDENCE_DIR"],
       "dependsOn": ["^typecheck", "^test"]
     },
     "dev": {

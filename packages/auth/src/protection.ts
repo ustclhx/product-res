@@ -7,6 +7,7 @@ import { APIError, createAuthMiddleware } from 'better-auth/api'
  * 认证入口防刷（specs/user-auth「认证入口防刷」，docs/04-auth-and-tenancy.md §1）：
  * 注册、登录、发送验证码 / 魔法链接、找回密码在执行前依次检查
  * 1. RL_AUTH 按 IP 限流；2. Turnstile 令牌（启用时）；3. RL_AUTH 按邮箱限流。
+ * 验证邮箱与重置密码的消费接口只检查同一组 IP / 邮箱额度，不要求 Turnstile。
  * 任一不通过即返回错误，接口本身不执行，因此不会创建用户或发送邮件。
  * 只拦截经 `auth.handler` 进入的 HTTP 请求；服务端直接调用 `auth.api.*` 视为可信调用。
  *
@@ -30,6 +31,14 @@ export const PROTECTED_AUTH_PATHS = [
   // 主动发起邮箱验证（账号设置、领取注册赠送积分，email-verification.ts）：同样发邮件，一并限流；
   // 带有效签名会话 Cookie 的请求（已登录用户）不要求 Turnstile
   '/send-verification-email',
+] as const
+
+/** 消费凭据时复用发信入口的额度；已受保护的登录路径保留原 Turnstile 行为。 */
+export const RATE_LIMIT_ONLY_AUTH_PATHS = [
+  '/email-otp/verify-email',
+  '/email-otp/reset-password',
+  '/reset-password',
+  '/sign-in/email-otp',
 ] as const
 
 /** 已登录用户调用时免 Turnstile 的接口 */
@@ -83,7 +92,8 @@ export async function verifyTurnstile(
 }
 
 export function authProtection(options: AuthProtectionOptions) {
-  const paths = new Set<string>(PROTECTED_AUTH_PATHS)
+  const protectedPaths = new Set<string>(PROTECTED_AUTH_PATHS)
+  const paths = new Set<string>([...PROTECTED_AUTH_PATHS, ...RATE_LIMIT_ONLY_AUTH_PATHS])
   const { rateLimiter, turnstileSecret } = options
   const ip = options.clientIp ?? 'unknown'
   async function allow(key: string): Promise<boolean> {
@@ -116,7 +126,7 @@ export function authProtection(options: AuthProtectionOptions) {
                   ctx.context.secret,
                 ),
               )
-            if (turnstileSecret !== null && !signedIn) {
+            if (protectedPaths.has(ctx.path ?? '') && turnstileSecret !== null && !signedIn) {
               const token = headers.get(TURNSTILE_TOKEN_HEADER)
               const passed =
                 token !== null &&

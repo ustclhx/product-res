@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["src", "example", "scripts"],
+  "compilerOptions": {
+    // 只在 Node 命令行运行；被导入的 @product-res/ai 源码使用 Web 全局类型
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"]
+  }
+}

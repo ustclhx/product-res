@@ -4,7 +4,12 @@ import { newId } from '@product-res/shared'
 import { eq, sql } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createCloudflareMediaCopier } from '../src/cloudflare/index.ts'
-import { cleanupFiles, getStorageUsage, persistMediaOutputs } from '../src/index.ts'
+import {
+  cleanupFiles,
+  getStorageUsage,
+  persistMediaOutputs,
+  persistMediaOutputsWithQuota,
+} from '../src/index.ts'
 
 const db = createDb(env.HYPERDRIVE)
 let ws: string
@@ -123,7 +128,7 @@ describe('safe media persistence', () => {
     expect((await env.FILES.get(key(0)))?.size).toBe(3)
   })
 
-  it('rejects MIME, length, and quota limits without leaving ready files', async () => {
+  it('rejects MIME and length limits without leaving ready files', async () => {
     for (const [headers, code] of [
       [{ 'Content-Type': 'text/html', 'Content-Length': '3' }, 'FILE_TYPE_NOT_ALLOWED'],
       [
@@ -135,18 +140,48 @@ describe('safe media persistence', () => {
         copy({ fetch: vi.fn(async () => new Response('png', { headers })) }),
       ).rejects.toMatchObject({ code })
     }
-    await expect(copy({ limits: { ...limits, storageBytes: 2 } })).rejects.toMatchObject({
-      code: 'UPGRADE_REQUIRED',
-    })
     expect(await scoped(db, ws).count(file, eq(file.status, 'ready'))).toBe(0)
     expect(await env.FILES.head(key(0))).toBeNull()
   })
 
-  it('enforces type, byte size and quota limits on synchronous outputs', async () => {
+  it('keeps outputs that exceed the quota after generation and reports overQuota', async () => {
+    const persist = (
+      storageBytes: number,
+      result?: Parameters<typeof persistMediaOutputs>[0]['result'],
+    ) =>
+      persistMediaOutputsWithQuota({
+        db,
+        storage: env.FILES,
+        copyOutput: createCloudflareMediaCopier(env.FILES, {
+          fetch: async () =>
+            new Response('png', {
+              headers: { 'Content-Type': 'image/png', 'Content-Length': '3' },
+            }),
+        }),
+        task: { id: taskId, workspaceId: ws, userId },
+        result: result ?? { outputs: [output] },
+        limits: { ...limits, storageBytes },
+      })
+    // 生成后才超额：产出保存为 ready，由调用方按成功结算。
+    const saved = await persist(2)
+    expect(saved.overQuota).toBe(true)
+    expect(saved.files).toEqual([expect.objectContaining({ mime: 'image/png', size: 3 })])
+    expect(await scoped(db, ws).count(file, eq(file.status, 'ready'))).toBe(1)
+    expect((await env.FILES.head(key(0)))?.size).toBe(3)
+    expect(await getStorageUsage(db, ws)).toBe(3)
+    // 兼容入口同样保存并只返回文件描述；未超额时标记为 false。
+    expect(await copy({ limits: { ...limits, storageBytes: 2 } })).toEqual(saved.files)
+    await db.delete(file).where(eq(file.workspaceId, ws))
+    await env.FILES.delete(key(0))
+    expect(
+      (await persist(3, { outputs: [{ body: new Uint8Array(3), mime: 'image/png' }] })).overQuota,
+    ).toBe(false)
+  })
+
+  it('enforces type and byte size limits on synchronous outputs', async () => {
     for (const [body, mime, expected] of [
       [new Uint8Array(3), 'text/html', 'FILE_TYPE_NOT_ALLOWED'],
       [new Uint8Array(limits.maxFileBytes + 1), 'image/png', 'FILE_TOO_LARGE'],
-      [new Uint8Array(3), 'image/png', 'UPGRADE_REQUIRED'],
     ] as const) {
       await expect(
         copy({

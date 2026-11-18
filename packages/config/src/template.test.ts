@@ -1,4 +1,5 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
+import { plausibleSite } from './analytics.ts'
 import {
   defineTemplateConfig,
   type MediaProviderId,
@@ -20,9 +21,16 @@ describe('defineTemplateConfig', () => {
     expect(config).toEqual({ app, ...templateConfigDefaults })
     expect(config.billing.enabled).toBe(true)
     expect(config.credits.enabled).toBe(true)
+    expect(config.credits.dailyEnabled).toBe(false)
+    expect(config.shareCards.defaultTtlDays).toBe(90)
     expect(config.marketing.enabled).toBe(true)
+    // 模板不提供背书数值与产品示例：未配置时这两个区块不渲染
+    expect(config.marketing.stats).toEqual({ items: [], source: null })
+    expect(config.marketing.steps).toEqual([])
+    expect(config.marketing.products).toEqual([])
+    expect(config.marketing.aiEntry).toEqual({ enabled: false, href: '/app' })
     expect(config.i18n.enabled).toBe(true)
-    expect(config.features.analytics).toBe(false)
+    expect(config.features.analytics).toBe('plausible')
     expect(config.analytics.cloudflareToken).toBe('')
     expect(config.analytics.posthogKey).toBe('')
     expect(config.billing.overage).toEqual({
@@ -46,6 +54,108 @@ describe('defineTemplateConfig', () => {
     )
   })
 
+  it('lets projects change the shared default expiry or disable it', () => {
+    expect(defineTemplateConfig({ app, shareCards: { defaultTtlDays: 30 } }).shareCards).toEqual({
+      defaultTtlDays: 30,
+    })
+    expect(defineTemplateConfig({ app, shareCards: { defaultTtlDays: null } }).shareCards).toEqual({
+      defaultTtlDays: null,
+    })
+  })
+
+  it('rejects default share expiry values that are not positive integers or null', () => {
+    for (const defaultTtlDays of [Number.NaN, Number.POSITIVE_INFINITY, 0, -1, 1.5]) {
+      expect(() => defineTemplateConfig({ app, shareCards: { defaultTtlDays } })).toThrow(
+        /shareCards.defaultTtlDays must be a positive integer or null/,
+      )
+    }
+  })
+
+  it('marketing.performance defaults to the previous behaviour, merges partially and rejects bad values', () => {
+    expect(defineTemplateConfig({ app }).marketing.performance).toEqual({
+      hydration: 'eager',
+      criticalCss: 'full',
+      homeScriptGzipBudget: null,
+    })
+    expect(
+      defineTemplateConfig({ app, marketing: { performance: { hydration: 'after-paint' } } })
+        .marketing.performance,
+    ).toEqual({ hydration: 'after-paint', criticalCss: 'full', homeScriptGzipBudget: null })
+    expect(() =>
+      defineTemplateConfig({
+        app,
+        marketing: { performance: { hydration: 'lazy' as 'eager' } },
+      }),
+    ).toThrow(/performance.hydration/)
+    expect(() =>
+      defineTemplateConfig({
+        app,
+        marketing: { performance: { criticalCss: 'none' as 'full' } },
+      }),
+    ).toThrow(/performance.criticalCss/)
+    for (const homeScriptGzipBudget of [0, -1, 1.5, Number.NaN])
+      expect(() =>
+        defineTemplateConfig({ app, marketing: { performance: { homeScriptGzipBudget } } }),
+      ).toThrow(/homeScriptGzipBudget/)
+  })
+
+  it('merges marketing blocks and rejects malformed stats', () => {
+    const config = defineTemplateConfig({
+      app,
+      marketing: {
+        stats: { items: [{ value: '1,000+', label: { en: 'Users', zh: '用户' } }] },
+        aiEntry: { enabled: true },
+      },
+    })
+    expect(config.marketing.enabled).toBe(true)
+    expect(config.marketing.stats).toEqual({
+      items: [{ value: '1,000+', label: { en: 'Users', zh: '用户' } }],
+      source: null,
+    })
+    expect(config.marketing.aiEntry).toEqual({ enabled: true, href: '/app' })
+
+    const stat = { value: '1', label: 'Users' }
+    expect(() =>
+      defineTemplateConfig({ app, marketing: { stats: { items: Array(5).fill(stat) } } }),
+    ).toThrow(/at most 4/)
+    expect(() =>
+      defineTemplateConfig({ app, marketing: { stats: { items: [{ ...stat, value: ' ' }] } } }),
+    ).toThrow(/stats.items\[0\].value must not be empty/)
+    // 多语言数值逐语言校验
+    expect(() =>
+      defineTemplateConfig({
+        app,
+        marketing: { stats: { items: [{ value: { en: '1', zh: '' }, label: 'Users' }] } },
+      }),
+    ).toThrow(/stats.items\[0\].value/)
+    const product = {
+      title: 'Atlas',
+      description: '',
+      primary: { label: 'Open', href: '/register' },
+      secondaryHref: '#features',
+    }
+    expect(() =>
+      defineTemplateConfig({ app, marketing: { products: [{ ...product, title: '' }] } }),
+    ).toThrow(/products\[0\].title/)
+    expect(() =>
+      defineTemplateConfig({
+        app,
+        marketing: { products: [{ ...product, primary: { label: 'Open', href: ' ' } }] },
+      }),
+    ).toThrow(/products\[0\].primary.href/)
+    expect(() =>
+      defineTemplateConfig({ app, marketing: { steps: [{ title: '', description: 'x' }] } }),
+    ).toThrow(/steps\[0\].title/)
+    // 多语言文案缺少语言时类型检查报错，绕过类型时运行时同样拒绝
+    expect(() =>
+      defineTemplateConfig({
+        app,
+        // @ts-expect-error zh 缺失
+        marketing: { stats: { items: [{ value: '1', label: { en: 'Users' } }] } },
+      }),
+    ).toThrow(/stats.items\[0\].label/)
+  })
+
   it('merges nested sections field by field', () => {
     const config = defineTemplateConfig({
       app,
@@ -64,6 +174,10 @@ describe('defineTemplateConfig', () => {
       cloudflareToken: '',
       posthogKey: 'public-project-key',
       posthogHost: 'https://us.i.posthog.com',
+      plausibleDomain: '',
+      plausibleHost: '',
+      plausibleSites: '',
+      clarityProjectId: '',
     })
     expect(config.ai).toEqual({
       text: templateConfigDefaults.ai.text,
@@ -78,6 +192,13 @@ describe('defineTemplateConfig', () => {
     expect(defineTemplateConfig({ app }).auth.requireEmailVerification).toBe(false)
     const strict = defineTemplateConfig({ app, auth: { requireEmailVerification: true } })
     expect(strict.auth).toMatchObject({ requireEmailVerification: true, emailPassword: true })
+  })
+
+  it('enables daily grants explicitly without changing the credits module default', () => {
+    expect(defineTemplateConfig({ app, credits: { dailyEnabled: true } }).credits).toEqual({
+      enabled: true,
+      dailyEnabled: true,
+    })
   })
 
   it('replaces arrays instead of merging them', () => {
@@ -99,6 +220,30 @@ describe('defineTemplateConfig', () => {
 
   it('rejects an empty locale list at runtime', () => {
     expect(() => defineTemplateConfig({ app, i18n: { locales: [] } })).toThrow(RangeError)
+  })
+
+  it('defaults the UI to the neutral rounded preset and merges partial ui settings', () => {
+    expect(defineTemplateConfig({ app }).ui).toEqual({
+      preset: 'neutral',
+      shape: 'rounded',
+      density: 'default',
+      appLayout: 'sidebar',
+    })
+    const config = defineTemplateConfig({ app, ui: { preset: 'violet', density: 'compact' } })
+    expect(config.ui).toEqual({
+      preset: 'violet',
+      shape: 'rounded',
+      density: 'compact',
+      appLayout: 'sidebar',
+    })
+    expect(defineTemplateConfig({ app, ui: { appLayout: 'topbar' } }).ui.appLayout).toBe('topbar')
+  })
+
+  it('rejects an unknown UI preset, shape or density at definition time', () => {
+    expect(() => defineTemplateConfig({ app, ui: { preset: 'teal' as never } })).toThrow()
+    expect(() => defineTemplateConfig({ app, ui: { shape: 'square' as never } })).toThrow()
+    expect(() => defineTemplateConfig({ app, ui: { density: 'cozy' as never } })).toThrow()
+    expect(() => defineTemplateConfig({ app, ui: { appLayout: 'stacked' as never } })).toThrow()
   })
 
   it('accepts all modules disabled while retaining their existing parameters', () => {
@@ -204,15 +349,44 @@ it('merges text policy defaults and rejects invalid text policy values', () => {
     thinking: { default: 'off', userToggle: true },
     reasoning: { display: false },
     failedReplyRefund: 'no-visible-output',
+    followUps: { enabled: false, charge: false, count: 3, modelKey: null },
   })
+  expect(
+    defineTemplateConfig({ app, ai: { text: { followUps: { enabled: true, count: 2 } } } }).ai.text
+      .followUps,
+  ).toEqual({ enabled: true, charge: false, count: 2, modelKey: null })
   for (const text of [
     { enabled: 'false' },
     { thinking: { default: 'auto' } },
     { reasoning: { display: 1 } },
     { failedReplyRefund: 'none' },
+    { followUps: { count: 5 } },
+    { followUps: { enabled: 'yes' } },
     { extra: true },
   ]) {
     // 外部配置可能绕过 TypeScript，运行时也必须拒绝非法策略。
     expect(() => defineTemplateConfig({ app, ai: { text: text as never } })).toThrow()
   }
+})
+
+describe('plausibleSite', () => {
+  const env = { PLAUSIBLE_DOMAIN: 'acme-staging', PLAUSIBLE_HOST: 'https://plausible.example/x' }
+
+  it('按环境变量给出本站脚本与事件地址', () => {
+    expect(plausibleSite('plausible', env)).toEqual({
+      domain: 'acme-staging',
+      origin: 'https://plausible.example',
+      scriptUrl: 'https://plausible.example/js/script.manual.js',
+      eventUrl: 'https://plausible.example/api/event',
+    })
+  })
+
+  it('模板关闭、未配置或地址非法时不启用', () => {
+    expect(plausibleSite(false, env)).toBeNull()
+    expect(plausibleSite('posthog', env)).toBeNull()
+    expect(plausibleSite('plausible', {})).toBeNull()
+    expect(plausibleSite('plausible', { ...env, PLAUSIBLE_DOMAIN: ' ' })).toBeNull()
+    expect(plausibleSite('plausible', { ...env, PLAUSIBLE_HOST: 'not a url' })).toBeNull()
+    expect(plausibleSite('plausible', { ...env, PLAUSIBLE_HOST: 'ftp://x.example' })).toBeNull()
+  })
 })

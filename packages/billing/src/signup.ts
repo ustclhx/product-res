@@ -1,40 +1,23 @@
 import type { TemplateConfig } from '@product-res/config'
 import { CreditsError, grant, lockWorkspaceCredits } from '@product-res/credits'
 import { creditGrant, type Database, member, organization, setting, user } from '@product-res/db'
-import { AppError } from '@product-res/shared'
+import {
+  AppError,
+  isSignupEmailBlacklisted,
+  normalizeSignupEmail,
+  parseSignupBonusDomainBlacklist,
+  SIGNUP_BONUS_DOMAIN_BLACKLIST_KEY,
+} from '@product-res/shared'
 import { and, eq, isNull, sql } from 'drizzle-orm'
 
-export const SIGNUP_BONUS_DOMAIN_BLACKLIST_KEY = 'billing.signupBonusDomainBlacklist'
+export { SIGNUP_BONUS_DOMAIN_BLACKLIST_KEY }
 
 export type SignupBonusResult =
   | { status: 'granted'; credits: number }
   | { status: 'already_claimed' | 'unverified' | 'blacklisted' | 'disabled' }
 
-/** Gmail and Googlemail share one identity; other providers retain dots and tags. */
-export function normalizeSignupEmail(email: string): string {
-  const normalized = email.trim().toLowerCase()
-  const parts = normalized.split('@')
-  if (parts.length !== 2 || !parts[0] || !parts[1]) throw new Error('Invalid signup email')
-  let [local, domain] = parts as [string, string]
-  if (domain === 'gmail.com' || domain === 'googlemail.com') {
-    domain = 'gmail.com'
-    local = local.split('+')[0]?.replaceAll('.', '') ?? ''
-    if (!local) throw new Error('Invalid signup email')
-  }
-  return `${local}@${domain}`
-}
-
-function blacklistDomains(value: unknown): string[] {
-  if (!Array.isArray(value)) throw new Error('Invalid signup bonus domain blacklist')
-  return value.map((entry: unknown) => {
-    if (typeof entry !== 'string') throw new Error('Invalid signup bonus domain blacklist')
-    const domain = entry.trim().toLowerCase().replace(/\.$/, '')
-    if (!/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(domain)) {
-      throw new Error('Invalid signup bonus domain blacklist')
-    }
-    return domain
-  })
-}
+// 增长名单与删号清理共用同一规范化规则，实现放在 shared，避免 auth 反向依赖 billing。
+export { normalizeSignupEmail }
 
 /** No session/cookie email or verified flag is accepted. The database owns eligibility. */
 export async function grantSignupBonus(input: {
@@ -74,17 +57,8 @@ export async function grantSignupBonus(input: {
       .select({ value: setting.value })
       .from(setting)
       .where(eq(setting.key, SIGNUP_BONUS_DOMAIN_BLACKLIST_KEY))
-    const domains = persisted ? blacklistDomains(persisted.value) : []
-    const emailDomains = [
-      account.email.trim().toLowerCase().split('@')[1],
-      normalized.split('@')[1],
-    ]
-    if (
-      domains.some((blocked) =>
-        emailDomains.some((domain) => domain === blocked || domain?.endsWith(`.${blocked}`)),
-      )
-    )
-      return { status: 'blacklisted' }
+    const domains = persisted ? parseSignupBonusDomainBlacklist(persisted.value) : []
+    if (isSignupEmailBlacklisted(account.email, domains)) return { status: 'blacklisted' }
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(normalized))
     const sourceRef = Array.from(new Uint8Array(digest), (byte) =>
       byte.toString(16).padStart(2, '0'),

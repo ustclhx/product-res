@@ -2,6 +2,7 @@ import type { PlanPrice } from '@product-res/db/schema'
 import Stripe from 'stripe'
 import type { CheckoutInput, PaymentProvider, PlanSyncInput, RefundInput } from '../provider.ts'
 import { parseStripeMetadata } from './metadata.ts'
+import { stripeCancelsAtPeriodEnd } from './snapshots.ts'
 
 export type StripeOperations = Required<
   Pick<
@@ -46,6 +47,8 @@ export async function createStripeCheckout(stripe: Stripe, input: CheckoutInput)
       mode: input.mode === 'one_time' ? 'payment' : 'subscription',
       // 模板不由 Stripe 代销，避免账户默认的 Managed Payments 改变结算模式。
       managed_payments: { enabled: false },
+      // 平台价格只有 USD：关闭 Adaptive Pricing，避免 Stripe 按买家所在地换算成其他币种扣款。
+      adaptive_pricing: { enabled: false },
       line_items: [{ price: priceId(input.price), quantity: 1 }],
       success_url: input.successUrl,
       cancel_url: input.cancelUrl,
@@ -181,9 +184,22 @@ export async function cancelStripeSubscription(
   else await stripe.subscriptions.cancel(subId, { invoice_now: false, prorate: false })
 }
 
-/** Restore a period-end cancellation; an already canceled subscription cannot be restored. */
+/**
+ * Restore a period-end cancellation; an already canceled subscription cannot be restored.
+ * Customer Portal 以 cancel_at 表达周期末取消，cancel_at_period_end=false 无法清除它，
+ * 需按 Stripe 约定传空字符串清空 cancel_at；API 形态仍只撤销 cancel_at_period_end。
+ */
 export async function resumeStripeSubscription(stripe: Stripe, subId: string): Promise<void> {
-  await stripe.subscriptions.update(subId, { cancel_at_period_end: false })
+  const subscription = await stripe.subscriptions.retrieve(subId)
+  const item = subscription.items.data[0]
+  const portalStyle =
+    !subscription.cancel_at_period_end &&
+    item !== undefined &&
+    stripeCancelsAtPeriodEnd(subscription, item.current_period_end)
+  await stripe.subscriptions.update(
+    subId,
+    portalStyle ? { cancel_at: '' } : { cancel_at_period_end: false },
+  )
 }
 
 export async function changeStripePlan(
@@ -200,9 +216,10 @@ export async function changeStripePlan(
     throw new Error('Plan changes require a single subscription item')
   }
   if (subscription.pending_update) throw new Error('Subscription has a pending payment update')
-  if (subscription.cancel_at_period_end)
+  if (stripeCancelsAtPeriodEnd(subscription, item.current_period_end))
     throw new Error('Resume the subscription before changing plan')
   const metadata = { ...subscription.metadata, planPriceId: newPrice.id }
+  const intervalChange = item.price.recurring?.interval !== newPrice.interval
   if (!opts.atPeriodEnd) {
     await releaseSchedule(stripe, subscription)
     await stripe.subscriptions.update(subId, {
@@ -271,6 +288,9 @@ export async function changeStripePlan(
         items: [{ ...itemSettings, price: target }],
         metadata,
         proration_behavior: 'none',
+        // 月付↔年付：默认锚点在不按比例结算时沿用原锚点、把当前周期直接延长为新周期且不开票；
+        // 从新阶段起点重置锚点，周期末才会按新价格开出整周期发票（同周期降级保持原锚点）。
+        ...(intervalChange ? { billing_cycle_anchor: 'phase_start' as const } : {}),
       },
     ],
   })

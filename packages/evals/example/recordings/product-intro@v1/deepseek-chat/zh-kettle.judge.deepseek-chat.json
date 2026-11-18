@@ -1,0 +1,19 @@
+{
+  "kind": "judge",
+  "promptVersion": "product-intro@v1",
+  "rubricVersion": "r1",
+  "outputHash": "sha256:848b9161571a3df58b6755a4b489978af44c65f8fa5717a9ca0ae766f077721c",
+  "model": {
+    "key": "deepseek-chat",
+    "provider": "deepseek",
+    "providerModelId": "deepseek-chat"
+  },
+  "output": "{\"criteria\":{\"accuracy\":{\"score\":4,\"reason\":\"所有内容均基于所列功能（五档水温、两小时保温、1.7升容量）。对绿茶、红茶、乌龙茶的提及是对“五档水温可选”的合理延伸，但“自动保温”和“自动恒温”暗示了未明确说明的自动功能，属于轻微推断。\"},\"clarity\":{\"score\":5,\"reason\":\"结构清晰，包含概述和亮点两部分，要点简洁、易于浏览，语言流畅。\"},\"audience-fit\":{\"score\":5,\"reason\":\"直接面向每天泡茶的上班族，强调工作间隙泡茶、开会后取用、减少反复烧水等贴合办公场景的需求。\"}},\"summary\":\"输出准确、清晰，且很好地契合上班族泡茶场景。仅有的小瑕疵是“自动保温/自动恒温”略微超出了所列功能，但整体质量很高。\"}",
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 633,
+    "outputTokens": 188
+  },
+  "recordedAt": "2026-11-14T07:11:48.755Z",
+  "source": "recorded"
+}

@@ -1,0 +1,18 @@
+{
+  "kind": "generation",
+  "promptVersion": "product-intro@v2",
+  "renderedHash": "sha256:1f34f0b5cad6a9571e880d006c1703215fd9ef1f234f2ad4d81d2e6887ddb75d",
+  "model": {
+    "key": "deepseek-chat",
+    "provider": "deepseek",
+    "providerModelId": "deepseek-chat"
+  },
+  "output": "## 概述\n\n恒温电水壶提供五档水温可选，保温时长两小时，容量一点七升。适合日常需要多次泡茶的办公场景使用。\n\n## 亮点\n\n- 五档水温可选，可按不同茶类选择对应水温\n- 保温两小时，烧水后可维持设定温度\n- 一点七升容量，一次烧水可满足多次冲泡\n\n## 适合人群\n\n适合每天在办公室泡茶、希望按茶类控制水温并减少反复烧水的上班族。",
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 134,
+    "outputTokens": 108
+  },
+  "recordedAt": "2026-11-14T07:12:19.023Z",
+  "source": "recorded"
+}

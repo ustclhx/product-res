@@ -1,6 +1,7 @@
 import { validateMediaParams as validateServerMediaParams } from '@product-res/ai'
 import { renderToString } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { m } from '../../paraglide/messages.js'
 import { fileUploadActions, type MediaFile, submitMediaTask, uploadMediaFile } from './client.ts'
 import { MediaParameterFields } from './parameter-form.tsx'
 import {
@@ -55,10 +56,10 @@ const render = (values = params) =>
 afterEach(() => vi.unstubAllGlobals())
 
 describe('媒体 schema 参数组件', () => {
-  it('枚举显示 schema 选项及默认选中值，并拒绝不支持的分辨率', () => {
+  it('枚举在 SSR 显示默认选中值，并拒绝不支持的分辨率', () => {
     const html = render()
-    expect(html).toContain('<option value="0" selected="">720p</option>')
-    expect(html).toContain('<option value="1">1080p</option>')
+    expect(html).toContain('role="combobox"')
+    expect(html).toContain('>720p</span>')
     expect(validateMediaParams(schema, { ...params, resolution: '4k' }, [ready]).success).toBe(
       false,
     )
@@ -75,8 +76,9 @@ describe('媒体 schema 参数组件', () => {
 
   it('文件字段只列出 ready 文件，未确认和任意文件 ID 都不能提交', () => {
     const html = render()
-    expect(html).toContain(`<option value="${ready.id}" selected="">`)
+    expect(html).toContain(`${ready.mime} · ${ready.size} B · ${ready.id}`)
     expect(html).not.toContain(pending.id)
+    expect(render({ ...params, input: pending.id })).not.toContain(ready.id)
     expect(html).toContain('type="file"')
     expect(
       validateMediaParams(schema, { ...params, input: pending.id }, [ready, pending]).success,
@@ -87,6 +89,38 @@ describe('媒体 schema 参数组件', () => {
         ready,
       ]).success,
     ).toBe(false)
+  })
+
+  it('失效枚举和文件选值显示占位，忙碌状态显式禁用 Select 并保留字段说明', () => {
+    const described = parseMediaSchema({
+      ...schema,
+      properties: {
+        ...schema.properties,
+        resolution: { ...schema.properties.resolution, description: 'Output size' },
+      },
+    })
+    const html = renderToString(
+      <MediaParameterFields
+        schema={described}
+        params={{ ...params, resolution: '4k', input: pending.id }}
+        files={[ready, pending]}
+        errors={{ resolution: ['Invalid resolution'] }}
+        disabled
+        onChange={() => {}}
+        onUpload={() => {}}
+      />,
+    )
+    const triggers = html.match(/<button[^>]*role="combobox"[^>]*>/g) ?? []
+    expect(triggers).toHaveLength(2)
+    expect(triggers.every((trigger) => trigger.includes('disabled=""'))).toBe(true)
+    expect(triggers[0]).toContain('aria-invalid="true"')
+    expect(triggers[0]).toContain('-resolution-description')
+    expect(triggers[0]).toContain('-resolution-error')
+    // 期望文案取自 m.*：衍生项目默认语言可能为 zh，不能写死英文
+    expect(html).toContain(m.media_select())
+    expect(html).toContain(m.media_file())
+    expect(html).not.toContain(ready.id)
+    expect(html).not.toContain(pending.id)
   })
 
   it('文本约束和必填布尔 false 保留 schema 语义，清空数字不会变成零', () => {

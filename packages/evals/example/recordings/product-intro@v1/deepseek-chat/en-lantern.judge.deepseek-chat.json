@@ -1,0 +1,19 @@
+{
+  "kind": "judge",
+  "promptVersion": "product-intro@v1",
+  "rubricVersion": "r1",
+  "outputHash": "sha256:f8de9e768cbc0ec10147d5922129eee38f9c9857936ba7f6387dac7b47f0920e",
+  "model": {
+    "key": "deepseek-chat",
+    "provider": "deepseek",
+    "providerModelId": "deepseek-chat"
+  },
+  "output": "{\"criteria\":{\"accuracy\":{\"score\":4,\"reason\":\"All claims trace to the listed features (six-hour solar charge, three brightness levels, folds flat). Minor embellishment: 'leave the batteries at home' and 'without relying on batteries or power outlets' imply battery-free operation, which isn't explicitly stated in the features.\"},\"clarity\":{\"score\":5,\"reason\":\"Well-structured with clear Overview and Highlights sections, concise bullet points, and easy to scan.\"},\"audience-fit\":{\"score\":5,\"reason\":\"Directly addresses weekend campers' needs—reliable light, no batteries, portability, and packing convenience.\"}},\"summary\":\"A strong, well-organized output that accurately reflects the given features and speaks well to weekend campers. The only slight issue is a mild inference about battery-free operation not explicitly supported by the feature list.\"}",
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 609,
+    "outputTokens": 176
+  },
+  "recordedAt": "2026-11-14T07:12:00.101Z",
+  "source": "recorded"
+}

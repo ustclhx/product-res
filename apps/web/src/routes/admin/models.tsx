@@ -1,4 +1,13 @@
-import { Button, DataTable, Input } from '@product-res/ui'
+import {
+  Button,
+  DataTable,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  Textarea,
+} from '@product-res/ui'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { useEffect, useId, useState } from 'react'
 import {
@@ -7,9 +16,12 @@ import {
   filtersToSearch,
   offsetOfPage,
 } from '../../features/admin/list.ts'
-import { AdminPage, adminTableLabels, NativeSelect, Textarea } from '../../features/admin/ui.tsx'
+import { AdminPage, adminTableLabels } from '../../features/admin/ui.tsx'
 import {
+  CHARGE_ON_VALUES,
+  DEFAULT_CHARGE_ON,
   PARAMS_SCHEMA_TEMPLATES,
+  PRICING_UNITS,
   parseAdminParamsSchema,
 } from '../../features/ai/admin-model-params.ts'
 import {
@@ -163,6 +175,7 @@ function ParamsSchemaEditor({
   provider,
   mediaProviders,
   value,
+  disabled,
   onChange,
   onTemplate,
 }: {
@@ -171,6 +184,8 @@ function ParamsSchemaEditor({
   provider: string
   mediaProviders: readonly string[]
   value: string
+  /** 外层 fieldset 的禁用态：它不会进入 Radix Select 的状态，需显式传入，避免禁用期间仍能打开 */
+  disabled: boolean
   onChange: (value: string) => void
   onTemplate: (message: string) => void
 }) {
@@ -188,7 +203,7 @@ function ParamsSchemaEditor({
       </label>
       <Textarea
         id={`${id}-schema`}
-        className="font-mono md:text-sm"
+        className="font-mono"
         rows={12}
         spellCheck={false}
         value={value}
@@ -197,12 +212,12 @@ function ParamsSchemaEditor({
       <label className="grid gap-2 text-sm font-medium" htmlFor={`${id}-template`}>
         {m.admin_insert_reference_template()}
       </label>
-      <NativeSelect
-        id={`${id}-template`}
+      {/* 动作型选择：值固定为 ''，选中后执行插入，触发器回到占位文字 */}
+      <Select
         value=""
-        disabled={templates.length === 0}
-        onChange={(event) => {
-          const template = templates.find((item) => item.id === event.target.value)
+        disabled={disabled || templates.length === 0}
+        onValueChange={(templateId) => {
+          const template = templates.find((item) => item.id === templateId)
           if (!template) return
           onChange(JSON.stringify(template.schema, null, 2))
           onTemplate(
@@ -214,13 +229,19 @@ function ParamsSchemaEditor({
           )
         }}
       >
-        <option value="">{m.admin_choose_a_reference_template()}</option>
-        {templates.map((template) => (
-          <option key={template.id} value={template.id}>
-            {template.id === 'text-defaults' ? m.admin_text_schema_defaults() : template.label}
-          </option>
-        ))}
-      </NativeSelect>
+        <SelectTrigger
+          id={`${id}-template`}
+          className="w-full"
+          placeholder={m.admin_choose_a_reference_template()}
+        />
+        <SelectContent>
+          {templates.map((template, index) => (
+            <SelectItem key={template.id} index={index} value={template.id}>
+              {template.id === 'text-defaults' ? m.admin_text_schema_defaults() : template.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <p className="text-muted-foreground text-sm">
         {m.admin_templates_replace_the_schema_check_the_parameters_against()}
       </p>
@@ -439,14 +460,15 @@ function ModelEditor({
         <label className="grid gap-2 text-sm font-medium" htmlFor={`${model?.id ?? 'new'}-key`}>
           {m.admin_key()} <Input required maxLength={64} {...field('key')} />
         </label>
-        <label className="grid gap-2 text-sm font-medium" htmlFor={`${model?.id ?? 'new'}-kind`}>
-          {m.admin_kind()}{' '}
-          <NativeSelect
-            id={`${model?.id ?? 'new'}-kind`}
+        <div className="grid gap-2">
+          <label className="font-medium text-sm" htmlFor={`${model?.id ?? 'new'}-kind`}>
+            {m.admin_kind()}
+          </label>
+          <Select
             value={draft.kind}
-            disabled={Boolean(model)}
-            onChange={(event) => {
-              const kind = event.target.value as Kind
+            disabled={disabled || Boolean(model)}
+            onValueChange={(value) => {
+              const kind = value as Kind
               // 新建时切换类型按模板配置重新预填计费方式
               setDraft((current) => ({
                 ...current,
@@ -456,29 +478,58 @@ function ModelEditor({
               }))
             }}
           >
-            <option value="text">{m.admin_text()}</option>
-            <option value="image">{m.admin_image()}</option>
-            <option value="video">{m.admin_video()}</option>
-          </NativeSelect>
-        </label>
-        <label
-          className="grid gap-2 text-sm font-medium"
-          htmlFor={`${model?.id ?? 'new'}-provider`}
-        >
-          {m.admin_provider()}{' '}
-          {draft.kind === 'text' ? (
-            <Input required maxLength={64} {...field('provider')} />
-          ) : (
-            <NativeSelect required {...field('provider')}>
-              <option value="">{m.admin_choose_a_provider()}</option>
-              {mediaProviders.map((provider) => (
-                <option key={provider} value={provider}>
-                  {provider}
-                </option>
-              ))}
-            </NativeSelect>
-          )}
-        </label>
+            <SelectTrigger
+              id={`${model?.id ?? 'new'}-kind`}
+              className="w-full"
+              placeholder={m.admin_kind()}
+            />
+            <SelectContent>
+              <SelectItem index={0} value="text">
+                {m.admin_text()}
+              </SelectItem>
+              <SelectItem index={1} value="image">
+                {m.admin_image()}
+              </SelectItem>
+              <SelectItem index={2} value="video">
+                {m.admin_video()}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {draft.kind === 'text' ? (
+          <label
+            className="grid gap-2 text-sm font-medium"
+            htmlFor={`${model?.id ?? 'new'}-provider`}
+          >
+            {m.admin_provider()} <Input required maxLength={64} {...field('provider')} />
+          </label>
+        ) : (
+          <div className="grid gap-2">
+            <label className="font-medium text-sm" htmlFor={`${model?.id ?? 'new'}-provider`}>
+              {m.admin_provider()}
+            </label>
+            <Select
+              required
+              disabled={disabled}
+              // 值必须在选项里：已停用的服务商显示占位文字，而不是空白触发器
+              value={mediaProviders.includes(draft.provider) ? draft.provider : ''}
+              onValueChange={(provider) => set({ provider })}
+            >
+              <SelectTrigger
+                id={`${model?.id ?? 'new'}-provider`}
+                className="w-full"
+                placeholder={m.admin_choose_a_provider()}
+              />
+              <SelectContent>
+                {mediaProviders.map((provider, index) => (
+                  <SelectItem key={provider} index={index} value={provider}>
+                    {provider}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <label
           className="grid gap-2 text-sm font-medium"
           htmlFor={`${model?.id ?? 'new'}-providerModelId`}
@@ -510,24 +561,40 @@ function ModelEditor({
           provider={draft.provider}
           mediaProviders={mediaProviders}
           value={draft.paramsSchema}
+          disabled={disabled}
           onChange={(paramsSchema) => set({ paramsSchema })}
           onTemplate={setMessage}
         />
       </fieldset>
       <fieldset disabled={disabled} className="grid gap-4 sm:grid-cols-2">
         <legend className="mb-3 font-medium">{m.admin_pricing()}</legend>
-        <label className="grid gap-2 text-sm font-medium" htmlFor={`${model?.id ?? 'new'}-mode`}>
-          {m.admin_pricing_mode()}{' '}
-          <NativeSelect
-            id={`${model?.id ?? 'new'}-mode`}
+        <div className="grid gap-2">
+          <label className="font-medium text-sm" htmlFor={`${model?.id ?? 'new'}-mode`}>
+            {m.admin_pricing_mode()}
+          </label>
+          <Select
+            disabled={disabled}
             value={draft.mode}
-            onChange={(event) => set({ mode: event.target.value as Mode })}
+            onValueChange={(mode) => set({ mode: mode as Mode })}
           >
-            <option value="per_call">{m.admin_per_call()}</option>
-            <option value="token">{m.admin_per_token()}</option>
-            <option value="per_unit">{m.admin_per_unit()}</option>
-          </NativeSelect>
-        </label>
+            <SelectTrigger
+              id={`${model?.id ?? 'new'}-mode`}
+              className="w-full"
+              placeholder={m.admin_pricing_mode()}
+            />
+            <SelectContent>
+              <SelectItem index={0} value="per_call">
+                {m.admin_per_call()}
+              </SelectItem>
+              <SelectItem index={1} value="token">
+                {m.admin_per_token()}
+              </SelectItem>
+              <SelectItem index={2} value="per_unit">
+                {m.admin_per_unit()}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         {draft.mode === 'per_call' && (
           <>
             <label
@@ -537,17 +604,40 @@ function ModelEditor({
               {m.admin_credits_per_call()}{' '}
               <Input type="number" min="0" step="1" {...field('credits')} />
             </label>
-            <label
-              className="grid gap-2 text-sm font-medium"
-              htmlFor={`${model?.id ?? 'new'}-chargeOn`}
-            >
-              {m.admin_charge_on()}{' '}
-              <NativeSelect {...field('chargeOn')}>
-                <option value="">{m.admin_default()}</option>
-                <option value="any_output">{m.admin_any_output()}</option>
-                <option value="success">{m.admin_success()}</option>
-              </NativeSelect>
-            </label>
+            <div className="grid gap-2">
+              <label className="font-medium text-sm" htmlFor={`${model?.id ?? 'new'}-chargeOn`}>
+                {m.admin_charge_on()}
+              </label>
+              <Select
+                disabled={disabled}
+                // 「默认」用占位值表示；未知的已存值同样落到「默认」显示
+                value={
+                  CHARGE_ON_VALUES.some((value) => value === draft.chargeOn)
+                    ? draft.chargeOn
+                    : DEFAULT_CHARGE_ON
+                }
+                onValueChange={(value) =>
+                  set({ chargeOn: value === DEFAULT_CHARGE_ON ? '' : value })
+                }
+              >
+                <SelectTrigger
+                  id={`${model?.id ?? 'new'}-chargeOn`}
+                  className="w-full"
+                  placeholder={m.admin_default()}
+                />
+                <SelectContent>
+                  <SelectItem index={0} value={DEFAULT_CHARGE_ON}>
+                    {m.admin_default()}
+                  </SelectItem>
+                  <SelectItem index={1} value="any_output">
+                    {m.admin_any_output()}
+                  </SelectItem>
+                  <SelectItem index={2} value="success">
+                    {m.admin_success()}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <label
               className="grid gap-2 text-sm font-medium"
               htmlFor={`${model?.id ?? 'new'}-maxInputTokens`}
@@ -591,16 +681,30 @@ function ModelEditor({
         )}
         {draft.mode === 'per_unit' && (
           <>
-            <label
-              className="grid gap-2 text-sm font-medium"
-              htmlFor={`${model?.id ?? 'new'}-unit`}
-            >
-              {m.admin_unit()}{' '}
-              <NativeSelect {...field('unit')}>
-                <option value="image">{m.admin_image()}</option>
-                <option value="second">{m.admin_second()}</option>
-              </NativeSelect>
-            </label>
+            <div className="grid gap-2">
+              <label className="font-medium text-sm" htmlFor={`${model?.id ?? 'new'}-unit`}>
+                {m.admin_unit()}
+              </label>
+              <Select
+                disabled={disabled}
+                value={PRICING_UNITS.some((unit) => unit === draft.unit) ? draft.unit : ''}
+                onValueChange={(unit) => set({ unit })}
+              >
+                <SelectTrigger
+                  id={`${model?.id ?? 'new'}-unit`}
+                  className="w-full"
+                  placeholder={m.admin_unit()}
+                />
+                <SelectContent>
+                  <SelectItem index={0} value="image">
+                    {m.admin_image()}
+                  </SelectItem>
+                  <SelectItem index={1} value="second">
+                    {m.admin_second()}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <label
               className="grid gap-2 text-sm font-medium"
               htmlFor={`${model?.id ?? 'new'}-perUnit`}
@@ -655,6 +759,7 @@ function ModelEditor({
             provider={model.provider}
             mediaProviders={mediaProviders}
             value={copyParamsSchema}
+            disabled={disabled}
             onChange={setCopyParamsSchema}
             onTemplate={setMessage}
           />

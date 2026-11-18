@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { baseLocale, getLocale, isLocale } from '../../paraglide/runtime.js'
 import type { WebRuntime } from '../../server/runtime.ts'
 import { templateConfig } from '../../server/template-config.ts'
-import { languageUrl, preferredLocale } from './preference.ts'
+import { languageUrl } from './preference.ts'
 import { localizeRequest } from './request.server.ts'
 import { readRequestSession, withSessionCache } from './session.server.ts'
 
@@ -116,13 +116,4 @@ it('账号语言只在多语言模式读取，单语言忽略 Cookie 和账号�
     expect(response.headers.get('set-cookie')).toBeNull()
     expect(response.headers.get('location')).toBeNull()
   }
-})
-
-describe('首次访问建议', () => {
-  it('按 Accept-Language 的 q 权重、地区语言和禁用项匹配，默认语言也尊重优先级', () => {
-    expect(preferredLocale('fr,zh-CN;q=0.8,en;q=0.2')).toBe(isLocale('zh') ? 'zh' : baseLocale)
-    expect(preferredLocale('zh;q=0,en;q=0.9')).toBe(isLocale('en') ? 'en' : baseLocale)
-    expect(preferredLocale('en-US;q=0.9,zh;q=0.8')).toBe(isLocale('en') ? 'en' : baseLocale)
-    expect(preferredLocale('zh;q=oops,fr')).toBe(baseLocale)
-  })
 })

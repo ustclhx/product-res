@@ -60,6 +60,10 @@ RUNTIME_FILES = (
     'compose.s3.yaml', 'compose.tunnel.yaml',
 )
 GENERATED_FILES = ('image-set.json', 'image-catalog.json', 'images.env')
+# 新发布只含 linux/amd64；此前已发布的双架构集合仍是有效的回滚/验收输入，不能因停止 arm64 而失效。
+PUBLISHED_PLATFORMS = (['linux/amd64'], ['linux/amd64', 'linux/arm64'])
+# 本地夹具只记录实际运行的单架构，Apple Silicon 本机 arm64 夹具继续可用。
+FIXTURE_PLATFORMS = (['linux/amd64'], ['linux/arm64'])
 
 
 def require(condition, message):
@@ -77,9 +81,8 @@ def validate_image_set(image_set, sha, catalog, fixture=False, runtime_files=RUN
             'invalid image namespace')
     platforms = image_set.get('platforms', [])
     require(isinstance(platforms, list) and len(set(platforms)) == len(platforms) and
-            (sorted(platforms) == ['linux/amd64', 'linux/arm64'] or
-             (fixture and platforms in [['linux/amd64'], ['linux/arm64']])),
-            'published releases require two platforms; fixtures must name their actual platform')
+            (sorted(platforms) in PUBLISHED_PLATFORMS or (fixture and platforms in FIXTURE_PLATFORMS)),
+            'published releases require linux/amd64; fixtures must name their actual platform')
     require(catalog.get('schemaVersion') == 1 and catalog.get('pendingServices', []) == [],
             'incomplete image catalog')
     names = [item['name'] for item in catalog['services']]

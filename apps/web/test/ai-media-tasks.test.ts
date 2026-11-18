@@ -15,7 +15,7 @@ import {
 } from '@product-res/ai'
 import { createAuth } from '@product-res/auth'
 import { defineTemplateConfig } from '@product-res/config'
-import { getCreditBalance, grant } from '@product-res/credits'
+import { getCreditBalance, grant, hold } from '@product-res/credits'
 import { aiModel, aiTask, createDb, file, member as membership, scoped } from '@product-res/db'
 import { DEFAULT_FREE_FEATURES } from '@product-res/entitlements'
 import {
@@ -26,6 +26,7 @@ import { AppError, newId } from '@product-res/shared'
 import { afterAll, describe, expect, it } from 'vitest'
 import {
   handleMediaCancel,
+  handleMediaCancelPreview,
   handleMediaDetail,
   handleMediaList,
   handleMediaSubmit,
@@ -209,17 +210,24 @@ function dependencies(
     finishesBeforeTerminate?: boolean
     callback?: MediaWebhook
     invalidProviderSignature?: boolean
+    /** 服务商作业状态；'error' 表示状态查询失败。 */
+    providerStatus?: 'queued' | 'running' | 'error'
   } = {},
 ) {
   let parsed = 0
   let canceled = 0
   let terminated = 0
   let events = 0
+  let statusChecks = 0
   const provider: MediaProvider = {
     id: 'fal',
     capabilities: { idempotentSubmit: false },
     submit: async () => ({ jobId: 'unused' }),
-    getStatus: async () => ({ status: 'queued' }),
+    getStatus: async () => {
+      statusChecks++
+      if (options.providerStatus === 'error') throw new Error('fixture status unavailable')
+      return { status: options.providerStatus ?? 'queued' }
+    },
     parseWebhook: async () => {
       parsed++
       if (options.invalidProviderSignature)
@@ -287,7 +295,7 @@ function dependencies(
       } as unknown as Parameters<typeof createCloudflareWorkflow>[0]),
     },
   }
-  return { deps, counts: () => ({ parsed, canceled, terminated, events }) }
+  return { deps, counts: () => ({ parsed, canceled, terminated, events, statusChecks }) }
 }
 function post(path: string, who: { cookie: string }, body: unknown) {
   return new Request(`${APP_URL}${path}`, {
@@ -610,6 +618,29 @@ describe.skipIf(!templateConfig.ai.image && !templateConfig.ai.video)('media tas
     }
   })
 
+  it('media insufficient credits preserves the shared numeric 402 contract', async () => {
+    const who = await account('insufficient-credits')
+    await hold(db, {
+      workspaceId: who.workspaceId,
+      userId: who.userId,
+      amount: 98,
+      refType: 'ai_message',
+      refId: newId(),
+    })
+    const { deps } = dependencies()
+    const response = await submit(who, await model(), deps)
+    expect(response.status).toBe(402)
+    expect(await response.json()).toEqual({
+      error: {
+        code: 'INSUFFICIENT_CREDITS',
+        message: 'Insufficient credits',
+        details: { estimatedCredits: 3, availableCredits: 2 },
+      },
+    })
+    expect(await scoped(db, who.workspaceId).count(aiTask)).toBe(0)
+    expect(await getCreditBalance(db, who.workspaceId)).toMatchObject({ available: 2, held: 98 })
+  })
+
   it('rejects an unavailable workflow before rate limiting, task creation or credit holds', async () => {
     const who = await account('workflow-unavailable')
     const { deps } = dependencies()
@@ -918,6 +949,230 @@ describe.skipIf(!templateConfig.ai.image && !templateConfig.ai.video)('media tas
     expect((await scoped(db, who.workspaceId).findById(aiTask, taskId)).errorCode).toBe(
       'MEDIA_CANCEL_PENDING',
     )
+    expect(await getCreditBalance(db, who.workspaceId)).toMatchObject({ available: 100, held: 0 })
+  })
+})
+
+describe('媒体取消计费、不确定提交回调与存储配额', () => {
+  const cancelUrl = (who: { workspaceId: string }, taskId: string) =>
+    `${APP_URL}/api/ai/tasks/${taskId}/cancel?workspaceId=${who.workspaceId}`
+  async function preview(
+    who: { workspaceId: string; cookie: string },
+    taskId: string,
+    deps: MediaHttpDeps,
+  ) {
+    const response = await handleMediaCancelPreview(
+      new Request(cancelUrl(who, taskId), { headers: { cookie: who.cookie } }),
+      taskId,
+      deps,
+    )
+    expect(response.status).toBe(200)
+    return (await response.json()) as Record<string, unknown>
+  }
+  async function cancel(
+    who: { workspaceId: string; cookie: string },
+    taskId: string,
+    deps: MediaHttpDeps,
+  ) {
+    const response = await handleMediaCancel(
+      post(`/api/ai/tasks/${taskId}/cancel`, who, { workspaceId: who.workspaceId }),
+      taskId,
+      deps,
+    )
+    return { status: response.status, body: (await response.json()) as Record<string, unknown> }
+  }
+  // 模拟 Workflow 已提交：服务商已受理并返回作业 ID。
+  async function accepted(who: { workspaceId: string; cookie: string }, deps: MediaHttpDeps) {
+    const taskId = await submitted(who, await model(), deps)
+    await scoped(db, who.workspaceId).updateById(aiTask, taskId, {
+      providerJobId: `job-${taskId}`,
+      status: 'running',
+    })
+    return taskId
+  }
+
+  it('排队中的任务取消免费且不占用免费次数', async () => {
+    const who = await account('cancel-queued')
+    const state = dependencies({ providerStatus: 'queued' })
+    const taskId = await accepted(who, state.deps)
+    expect(await preview(who, taskId, state.deps)).toMatchObject({
+      cancelable: true,
+      started: false,
+      charged: false,
+      credits: 0,
+      freeStartedRemaining: 1,
+    })
+    expect(await cancel(who, taskId, state.deps)).toMatchObject({
+      status: 200,
+      body: { status: 'canceled', cancelBilling: 'free_unstarted', creditsCharged: 0 },
+    })
+    expect(await getCreditBalance(db, who.workspaceId)).toMatchObject({ available: 100, held: 0 })
+    const next = await accepted(who, dependencies({ providerStatus: 'running' }).deps)
+    expect(
+      await preview(who, next, dependencies({ providerStatus: 'running' }).deps),
+    ).toMatchObject({ started: true, charged: false, freeStartedRemaining: 1 })
+  })
+
+  it('异步任务 Workflow 运行中但尚未尝试提交：取消免费且不占用已开始免费次数', async () => {
+    const who = await account('cancel-running-unsubmitted')
+    const state = dependencies({ providerStatus: 'running' })
+    const taskId = await submitted(who, await model(), state.deps)
+    await scoped(db, who.workspaceId).updateById(aiTask, taskId, { status: 'running' })
+    expect(await preview(who, taskId, state.deps)).toMatchObject({
+      started: false,
+      charged: false,
+      freeStartedRemaining: 1,
+    })
+    expect((await cancel(who, taskId, state.deps)).body).toMatchObject({
+      status: 'canceled',
+      cancelBilling: 'free_unstarted',
+      creditsCharged: 0,
+    })
+    expect(await getCreditBalance(db, who.workspaceId)).toMatchObject({ available: 100, held: 0 })
+    expect(state.counts().statusChecks).toBe(0)
+    const next = await accepted(who, state.deps)
+    expect(await preview(who, next, state.deps)).toMatchObject({
+      started: true,
+      charged: false,
+      freeStartedRemaining: 1,
+    })
+  })
+
+  it('已开始生成：首次免费取消全额退回，第二次按定价快照全价扣费，重复取消不重复结算', async () => {
+    const who = await account('cancel-started')
+    const state = dependencies({ providerStatus: 'running' })
+    const first = await accepted(who, state.deps)
+    expect(await preview(who, first, state.deps)).toMatchObject({
+      started: true,
+      charged: false,
+      credits: 0,
+      freeStartedRemaining: 1,
+    })
+    expect((await cancel(who, first, state.deps)).body).toMatchObject({
+      status: 'canceled',
+      cancelBilling: 'free_started',
+      creditsCharged: 0,
+    })
+    expect(await getCreditBalance(db, who.workspaceId)).toMatchObject({ available: 100, held: 0 })
+    expect(state.counts().canceled).toBe(1)
+
+    const second = await accepted(who, state.deps)
+    expect(await preview(who, second, state.deps)).toMatchObject({
+      started: true,
+      charged: true,
+      credits: 3,
+      freeStartedRemaining: 0,
+    })
+    for (let repeat = 0; repeat < 2; repeat++)
+      expect((await cancel(who, second, state.deps)).body).toMatchObject({
+        status: 'canceled',
+        cancelBilling: 'charged',
+        creditsCharged: 3,
+      })
+    expect(await getCreditBalance(db, who.workspaceId)).toMatchObject({ available: 97, held: 0 })
+    const [consumed] = await sql<{ total: number }[]>`
+      select coalesce(sum(delta),0)::integer as total from credit_ledger
+      where workspace_id=${who.workspaceId} and type='consume'`
+    expect(consumed?.total).toBe(-3)
+    expect(await preview(who, second, state.deps)).toMatchObject({
+      cancelable: false,
+      freeStartedRemaining: 0,
+    })
+  })
+
+  it('状态查询失败按已开始处理，并发取消只使用一次免费次数', async () => {
+    const who = await account('cancel-status-error')
+    const state = dependencies({ providerStatus: 'error' })
+    const [a, b] = [await accepted(who, state.deps), await accepted(who, state.deps)]
+    expect(await preview(who, a, state.deps)).toMatchObject({ started: true, charged: false })
+    const results = await Promise.all([cancel(who, a, state.deps), cancel(who, b, state.deps)])
+    expect(results.map((result) => result.body.cancelBilling).sort()).toEqual([
+      'charged',
+      'free_started',
+    ])
+    expect(await getCreditBalance(db, who.workspaceId)).toMatchObject({ available: 97, held: 0 })
+    expect(state.counts().statusChecks).toBeGreaterThanOrEqual(3)
+  })
+
+  it('数据库层保证每个工作区终身只有一次已开始免费取消', async () => {
+    const who = await account('cancel-unique')
+    const state = dependencies()
+    const [a, b] = [
+      await submitted(who, await model(), state.deps),
+      await submitted(who, await model(), state.deps),
+    ]
+    await scoped(db, who.workspaceId).updateById(aiTask, a, { cancelBilling: 'free_started' })
+    await expect(
+      scoped(db, who.workspaceId).updateById(aiTask, b, { cancelBilling: 'free_started' }),
+    ).rejects.toThrow()
+  })
+
+  it('不确定提交的任务接受已验签回调并写入作业 ID；终态后的晚到回调只记日志', async () => {
+    const who = await account('uncertain-callback')
+    const state = dependencies({
+      callback: {
+        jobId: 'job-from-callback',
+        result: { outputs: [{ url: 'https://v3.fal.media/output.png', mime: 'image/png' }] },
+      },
+    })
+    const taskId = await submitted(who, await model(), state.deps)
+    const tenant = scoped(db, who.workspaceId)
+    await tenant.updateById(aiTask, taskId, {
+      status: 'running',
+      errorCode: 'MEDIA_SUBMISSION_UNCERTAIN',
+      output: { submissionAttempted: true },
+    })
+    const url = await mediaCallbackUrl(APP_URL, SECRET, { id: taskId, provider: 'fal' })
+    const callback = () =>
+      handleMediaWebhook(new Request(url, { method: 'POST', body: '{}' }), 'fal', state.deps)
+    expect((await callback()).status).toBe(200)
+    expect(await tenant.findById(aiTask, taskId)).toMatchObject({
+      status: 'running',
+      providerJobId: 'job-from-callback',
+      errorCode: null,
+      callbackPayload: { jobId: 'job-from-callback' },
+    })
+    expect(state.counts().events).toBe(1)
+
+    const late = await submitted(who, await model(), state.deps)
+    await settleMediaTask(db, {
+      workspaceId: who.workspaceId,
+      taskId: late,
+      outcome: 'failed',
+      error: { code: 'MEDIA_SUBMISSION_UNCERTAIN', message: 'timed out' },
+    })
+    const lateUrl = await mediaCallbackUrl(APP_URL, SECRET, { id: late, provider: 'fal' })
+    expect(
+      (
+        await handleMediaWebhook(
+          new Request(lateUrl, { method: 'POST', body: '{}' }),
+          'fal',
+          state.deps,
+        )
+      ).status,
+    ).toBe(200)
+    expect(await tenant.findById(aiTask, late)).toMatchObject({
+      status: 'failed',
+      providerJobId: null,
+      callbackPayload: null,
+      creditsCharged: 0,
+    })
+    expect(state.counts().events).toBe(1)
+    expect(await getCreditBalance(db, who.workspaceId)).toMatchObject({ available: 97, held: 3 })
+  })
+
+  it('存储用量已达配额时在预扣前拒绝提交，不创建任务', async () => {
+    const who = await account('storage-full')
+    const state = dependencies()
+    state.deps.entitlements = async () => ({
+      key: 'fixture',
+      sort: 0,
+      features: { ...DEFAULT_FREE_FEATURES, models: ['*'], maxConcurrentTasks: 3, storageGb: 0 },
+    })
+    const response = await submit(who, await model(), state.deps)
+    expect(response.status).toBe(403)
+    expect(await response.json()).toMatchObject({ error: { code: 'STORAGE_QUOTA_EXCEEDED' } })
+    expect(await scoped(db, who.workspaceId).count(aiTask)).toBe(0)
     expect(await getCreditBalance(db, who.workspaceId)).toMatchObject({ available: 100, held: 0 })
   })
 })

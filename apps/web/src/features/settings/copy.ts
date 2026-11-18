@@ -1,4 +1,5 @@
 import { m } from '../../paraglide/messages.js'
+import { templateConfig } from '../../server/template-config.ts'
 
 // 按当前页面语言惰性取文案，避免模块初始化时固定为默认语言。
 export const ACCOUNT_COPY = {
@@ -36,7 +37,9 @@ export const ACCOUNT_COPY = {
   },
   preferences: {
     get heading() {
-      return m.account_preferences_heading()
+      return templateConfig.i18n.enabled
+        ? m.account_preferences_heading()
+        : m.account_preferences_timezoneheading()
     },
     get locale() {
       return m.account_preferences_locale()

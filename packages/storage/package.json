@@ -21,6 +21,7 @@
     "@product-res/db": "workspace:*",
     "@product-res/entitlements": "workspace:*",
     "@product-res/shared": "workspace:*",
+    "@product-res/platform": "workspace:*",
     "aws4fetch": "^1.0.20",
     "drizzle-orm": "^0.45.3"
   },

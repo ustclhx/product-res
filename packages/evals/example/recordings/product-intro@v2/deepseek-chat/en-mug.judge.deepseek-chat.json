@@ -1,0 +1,19 @@
+{
+  "kind": "judge",
+  "promptVersion": "product-intro@v2",
+  "rubricVersion": "r1",
+  "outputHash": "sha256:2a1cb3d124369ec62d7e48f4aaba844aed45b783c64e4c6f6a696f55d728e1e8",
+  "model": {
+    "key": "deepseek-chat",
+    "provider": "deepseek",
+    "providerModelId": "deepseek-chat"
+  },
+  "output": "{\"criteria\":{\"accuracy\":{\"score\":5,\"reason\":\"All claims are directly supported by the listed features; no invented facts.\"},\"clarity\":{\"score\":5,\"reason\":\"Concise, well-structured with clear sections and scannable bullets.\"},\"audience-fit\":{\"score\":5,\"reason\":\"Directly addresses remote desk workers' needs for warmth and easy cleaning.\"}},\"summary\":\"Accurate, clear, and well-targeted output that faithfully reflects the given features and speaks to the stated audience.\"}",
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 593,
+    "outputTokens": 105
+  },
+  "recordedAt": "2026-11-14T07:12:36.054Z",
+  "source": "recorded"
+}

@@ -120,15 +120,15 @@ export const withWorkspace = createMiddleware({ type: 'function' })
  * Limits accept a requested total, or a callback using validated input and fresh context.
  * Mutations reject read-only team workspaces; read operations opt in with `access: 'read'`.
  */
-export function withEntitlement(
+export function withEntitlement<const Capability extends string = never>(
   requirement:
-    | EntitlementRequirement
+    | EntitlementRequirement<Capability>
     | ((ctx: {
         db: Database
         workspaceId: string
         userId: string
         data: { slug?: string | undefined }
-      }) => EntitlementRequirement | Promise<EntitlementRequirement>),
+      }) => EntitlementRequirement<Capability> | Promise<EntitlementRequirement<Capability>>),
   { access = 'write' }: { access?: 'read' | 'write' } = {},
 ) {
   return createMiddleware({ type: 'function' })

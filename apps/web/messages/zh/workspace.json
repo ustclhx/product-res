@@ -27,9 +27,7 @@
   "workspace_role_member": "成员",
   "workspace_role_for": "{name} 的角色",
   "workspace_remove": "移除",
-  "workspace_remove_confirm": "确定将 {name} 移出此空间？",
   "workspace_transfer": "转移所有权",
-  "workspace_transfer_confirm": "确定把所有权转移给 {name}？你将变为管理员。",
   "workspace_update_failed": "操作失败，请重试。",
   "workspace_email_invite_title": "邮件邀请",
   "workspace_email_invite_hint": "需要邮件服务；收件人须用该邮箱登录并完成邮箱验证后才能接受。内测期间请使用邀请链接。",
@@ -40,5 +38,9 @@
   "workspace_invitation_row": "{email} · {role} · {status} · {date} 过期",
   "workspace_revoke_invitation": "撤回邀请",
   "workspace_delete_team": "删除团队空间",
-  "workspace_pending_other_spaces": "你还可以进入以下空间："
+  "workspace_pending_other_spaces": "你还可以进入以下空间：",
+  "workspace_transfer_confirm_title": "转移所有权？",
+  "workspace_transfer_confirm_description": "确定把所有权转移给 {name}？你将变为管理员。",
+  "workspace_remove_confirm_title": "移除成员？",
+  "workspace_remove_confirm_description": "确定将 {name} 移出此空间？对方将无法再访问此空间。"
 }

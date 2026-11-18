@@ -39,7 +39,8 @@
   "admin_never": "永不过期",
   "admin_status": "状态",
   "admin_revoke_remaining": "撤销剩余积分",
-  "admin_revoke_remaining_credits_in_batch": "确定撤销批次 {batchId} 中的剩余积分吗？",
+  "admin_revoke_batch_confirm_title": "撤销剩余积分？",
+  "admin_revoke_batch_confirm_description": "将按上方填写的原因撤销批次 {batchId} 中的剩余积分，此操作无法撤销。",
   "admin_revoke_batch": "撤销批次",
   "admin_business_metrics": "业务指标",
   "admin_apply": "应用",
@@ -335,5 +336,9 @@
   "admin_filters": "筛选",
   "admin_pagination": "分页",
   "admin_payment_amount": "金额",
-  "admin_text_schema_defaults": "文本 · x-text 默认参数"
+  "admin_text_schema_defaults": "文本 · x-text 默认参数",
+  "admin_ai_free_failure_count": "每个空间的 AI 免费失败次数",
+  "admin_ai_free_failure_count_description": "对话回复没有可见正文就失败时，窗口内前这么多次全额退回预扣；之后按最后一次上游尝试的用量结算（不超过预扣）。填 0 表示每次都结算。",
+  "admin_ai_free_failure_window_minutes": "免费失败计数窗口（分钟）",
+  "admin_ai_free_failure_window_description": "统计免费失败次数的滚动窗口，默认 60 分钟。"
 }

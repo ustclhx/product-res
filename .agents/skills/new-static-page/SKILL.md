@@ -7,7 +7,17 @@ description: 在本模板新增或修改公开静态页、法律页、博客与�
 
 从含 `package.json` 与 `template.config.ts` 的项目根执行命令。下列路径均相对项目根；生成后的项目包 scope 可能改变，执行包命令前从 `apps/web/package.json` 读取真实包名，将示例的 `@product-res/web` 替换。先读 `AGENTS.md`、`docs/02-project-structure.md` 和 `apps/web/src/features/seo/README.md`。
 
-## 1. 确定内容入口
+## 1. 检查设计稿，确定内容入口
+
+先过设计稿关卡：
+
+1. 判断是否需要设计稿：新增独立页面、新营销区块或改变现有版式需要；在已有集合（legal、blog、docs、guides）中新增或修改文章、文案、小样式与缺陷修复免。唯一标准见 `docs/design-system.md` §8.1，拿不准时向使用者确认。
+2. 需要时查原型索引（衍生项目 `docs/design/prototypes/README.md`，模板 `docs/design-system/prototypes/README.md`）：本页面有一行且该行的副本文件存在才算通过。
+   ```sh
+   INDEX=$(test -f .template-base.json && echo docs/design/prototypes/README.md || echo docs/design-system/prototypes/README.md)
+   grep -n '<页面或路由>' "$INDEX"
+   ```
+3. 不通过时转入 `ui-design` 技能；在此之前不创建路由或组件文件。不能与使用者直接对话的 agent 停止并报告。
 
 确认用户给出的 URL、集合、slug、启用语言、标题/描述、正文和上线时间。检查 `template.config.ts` 的 `marketing.enabled`、`i18n.enabled`、`i18n.locales`、默认语言，以及博客/文档功能开关。
 
@@ -39,9 +49,11 @@ UI 文案写入 `apps/web/messages/<locale>/<feature>.json`，沿用现有键名
 
 内容动态路由沿用 `apps/web/src/features/seo/metadata.ts` 的 `pageHead` 和 `originFromMatches`，得到标题、描述、canonical、hreflang、OG/Twitter。独立路由也使用此入口，避免重复写元标签。
 
-`apps/web/src/features/seo/pages.ts` 的 `publicPages` 是 sitemap 与 OG 的共同清单：现有集合自动收录；新增独立页面须在清单及 `metadata.ts` 的 `staticPage` 中补齐语言元数据。核对 `apps/web/src/routes/sitemap[.]xml.ts` 与 `apps/web/src/features/seo/og-card.ts`，地图和图片不能出现草稿、未来内容或关闭功能的路由。新语言的标题/描述也应补入元数据，当前 `staticPage` 内置文案只区分 zh 与其他语言。
+`apps/web/src/features/seo/pages.ts` 的 `publicPages` 是 sitemap 与 OG 的共同清单：现有集合自动收录；新增独立页面须在清单及 `metadata.ts` 的 `staticPage` 中补齐语言元数据。核对 `apps/web/src/routes/sitemap[.]xml.ts` 与 `apps/web/scripts/og-images.ts`（版式为 `apps/web/src/features/share-cards/layout.tsx` 的 `defaultShareCardLayout`），地图和图片不能出现草稿、未来内容或关闭功能的路由。新语言的标题/描述也应补入元数据，当前 `staticPage` 内置文案只区分 zh 与其他语言。
 
-`apps/web/src/features/marketing/prerender.ts` 默认预渲染首页、`/blog`、`/legal`、`/docs`；其他页面根据需求加入匹配范围并提供可爬取链接，入口由各语言首页开始。`/pricing` 有自己的数据策略，保留现有处理。
+答案优先指南页放在 `apps/web/content/guides/<locale>/<slug>.mdx`（需 `features.guides`），frontmatter 必填 `title`、`answer_summary`、`faq[]`、`kind`、`updatedAt`，FAQ JSON-LD 自动生成，见 `docs/analytics.md` §6。
+
+`apps/web/src/features/marketing/prerender.ts` 默认预渲染首页、`/blog`、`/legal`、`/docs`、`/guides`；其他页面根据需求加入匹配范围并提供可爬取链接，入口由各语言首页开始。`/pricing` 有自己的数据策略，保留现有处理。
 
 新增营销路由时同步检查 `apps/web/src/router.tsx` 的营销关闭裁剪规则，以及 `apps/web/vite.config.ts` 的预渲染配置。关闭营销时页面、地图、预渲染都应按现有开关消失；公开页读取失败时维持降级，数据库不可达不应阻止静态构建。导航入口放到现有营销布局的适当位置，使新页可被发现。
 

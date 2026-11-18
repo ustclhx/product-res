@@ -28,7 +28,8 @@ export default defineConfig({
     // postgres.js 在 workerd 中连接失败 / 断开时内部未处理的 rejection，见该函数注释
     onUnhandledError: (error) => !isPostgresSocketRejection(error),
     projects: [
-      { test: { name: 'unit', include: ['test/**/*.unit.test.ts'] } },
+      // src 内的单元测试（如 notifications/analytics.test.ts）此前未被任何 project 收录，一并运行。
+      { test: { name: 'unit', include: ['test/**/*.unit.test.ts', 'src/**/*.test.ts'] } },
       ...(integration
         ? [
             {

@@ -76,6 +76,33 @@ export function mediaTaskCredits(
   return actualCredits(pricing, { params: input.params, units: Math.min(reported, limit) })
 }
 
+/** 取消计费的全价：按提交时快照与请求参数决定的上限计算，等于预扣额。 */
+export function mediaTaskFullCredits(task: Pick<AiTask, 'kind' | 'pricing' | 'input'>): number {
+  const pricing = parsePricing(task.pricing, task.kind)
+  if (pricing.mode === 'token') {
+    throw new PricingError('INVALID_PRICING', 'Media tasks cannot use token pricing')
+  }
+  const input = task.input as unknown as MediaTaskInput
+  return actualCredits(pricing, { params: input.params, units: input.unitsLimit })
+}
+
+export type MediaCancelBilling = NonNullable<AiTask['cancelBilling']>
+
+/** 每个工作区终身一次「已开始生成」的免费取消；返回剩余次数（0 或 1）。 */
+export async function freeStartedCancelsRemaining(
+  db: CreditsExecutor,
+  workspaceId: string,
+): Promise<number> {
+  const used = await scoped(db, workspaceId).count(aiTask, eq(aiTask.cancelBilling, 'free_started'))
+  return used > 0 ? 0 : 1
+}
+
+/** 未开始生成免费；已开始生成先用终身免费次数，用完后按全价。 */
+export function decideCancelBilling(started: boolean, freeRemaining: number): MediaCancelBilling {
+  if (!started) return 'free_unstarted'
+  return freeRemaining > 0 ? 'free_started' : 'charged'
+}
+
 export function loadMediaTask(
   db: CreditsExecutor,
   input: { workspaceId: string; taskId: string },
@@ -90,6 +117,11 @@ export interface SettleMediaTaskInput {
   result?: MediaResult
   files?: MediaTaskFile[]
   error?: MediaError
+  /**
+   * 仅用于用户取消：服务商是否已开始生成（查询失败按已开始传入）。
+   * 省略时按旧行为全额退回且不记录取消计费类型。
+   */
+  cancelStarted?: boolean
 }
 
 /**
@@ -116,6 +148,15 @@ export function settleMediaTask(
         where: eq(creditHold.id, task.holdId),
       })
       if (reservation?.status !== 'held') return task
+      if (task.status === 'canceled' && task.cancelBilling === 'charged') {
+        const charged = mediaTaskFullCredits(task)
+        await capture(
+          tx,
+          { workspaceId: task.workspaceId, holdId: task.holdId, actualAmount: charged },
+          tx,
+        )
+        return tenant.updateById(aiTask, task.id, { creditsCharged: charged })
+      }
       if (task.status === 'succeeded') {
         const result = task.output?.result as MediaResult | undefined
         if (!result)
@@ -139,10 +180,24 @@ export function settleMediaTask(
         'Successful task requires persisted files and result',
       )
     }
-    const charged = success && input.result ? mediaTaskCredits(task, input.result) : 0
+    // 免费次数在工作区锁内读取，并发取消只会串行判断；部分唯一索引兜底。
+    const cancelBilling =
+      input.outcome === 'canceled' && input.cancelStarted !== undefined
+        ? decideCancelBilling(
+            input.cancelStarted,
+            await freeStartedCancelsRemaining(tx, input.workspaceId),
+          )
+        : null
+    const charged =
+      success && input.result
+        ? mediaTaskCredits(task, input.result)
+        : cancelBilling === 'charged'
+          ? mediaTaskFullCredits(task)
+          : 0
+    const captured = success || cancelBilling === 'charged'
     if (task.holdId) {
       const reservation = { workspaceId: input.workspaceId, holdId: task.holdId }
-      if (success) await capture(tx, { ...reservation, actualAmount: charged }, tx)
+      if (captured) await capture(tx, { ...reservation, actualAmount: charged }, tx)
       else await release(tx, reservation, tx)
     } else if (charged > 0) {
       throw new AppError('MEDIA_HOLD_MISSING', 'Paid media task has no reservation', {
@@ -166,6 +221,7 @@ export function settleMediaTask(
           : null,
       errorCode: success ? null : (input.error?.code ?? null),
       errorMessage: success ? null : (input.error?.message ?? null),
+      cancelBilling,
       finishedAt: sql`now()`,
       updatedAt: sql`now()`,
     })

@@ -19,6 +19,7 @@ import { log, newRequestId, withLogContext } from '@product-res/shared/log'
 import { createNodeStorage } from '@product-res/storage/node'
 import templateConfig from '../../../../template.config.ts'
 import { registerAccuracyAudit } from '../accuracy/weekly-audit.ts'
+import { serverAnalyticsTarget } from '../billing.ts'
 import { registerNodeDataSources } from '../datasources/node.ts'
 import { DATASYNC_QUEUE } from '../datasources/sync.ts'
 import { consumeJobsBatch, type JobsContext } from '../handlers.ts'
@@ -112,6 +113,8 @@ export async function startNodeJobs(config: NodeEnv, options: NodeJobsOptions) {
     eventsQueue: createNodeQueueProducer(db, 'product-res-events').producer,
     emailTransport,
     ...(emailSender && { emailSender }),
+    shareCardCache: cache.kv('settings'),
+    ...(storage?.shareCards && { shareCards: storage.shareCards }),
     files: storage
       ? {
           available: true,
@@ -125,6 +128,7 @@ export async function startNodeJobs(config: NodeEnv, options: NodeJobsOptions) {
       : { available: false },
     observer,
     billingEnabled: features.billing,
+    analytics: serverAnalyticsTarget(config),
   }
   try {
     engine = await createNodeJobEngine({

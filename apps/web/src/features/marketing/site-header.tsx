@@ -9,11 +9,15 @@ const navLink = 'text-muted-foreground text-sm transition-colors hover:text-fore
 export function SiteHeader() {
   return (
     <header className="border-b">
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4">
+      {/* 窄屏允许换行：导航独占第二行（过长时行内横向滚动），登录与注册留在第一行，避免 390px 下整页横向溢出 */}
+      <div className="mx-auto flex min-h-14 max-w-6xl flex-wrap items-center gap-x-6 gap-y-1 px-4 py-2 sm:flex-nowrap sm:py-0">
         <Link to="/" className="font-semibold">
           {site.name}
         </Link>
-        <nav aria-label={m.marketing_nav_label()} className="flex flex-1 items-center gap-5">
+        <nav
+          aria-label={m.marketing_nav_label()}
+          className="order-last flex w-full items-center gap-5 overflow-x-auto pb-1 sm:order-none sm:w-auto sm:flex-1 sm:overflow-visible sm:pb-0"
+        >
           {templateConfig.billing.enabled && (
             <Link to="/pricing" className={navLink}>
               {m.marketing_nav_pricing()}
@@ -24,13 +28,18 @@ export function SiteHeader() {
               {m.marketing_nav_blog()}
             </Link>
           )}
+          {site.guides && (
+            <Link to="/guides" className={navLink}>
+              {m.marketing_nav_guides()}
+            </Link>
+          )}
           {site.docs && (
             <Link to="/docs" className={navLink}>
               {m.marketing_nav_docs()}
             </Link>
           )}
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2 sm:ml-0">
           <Button asChild variant="ghost" size="sm">
             <Link to="/login">{m.marketing_nav_sign_in()}</Link>
           </Button>

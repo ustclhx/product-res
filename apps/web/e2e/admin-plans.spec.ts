@@ -34,25 +34,35 @@ test('admin can save model selections, retain historical keys and explicitly rem
     await expect(editor).toContainText(
       uiText('admin_credit_pack_these_selections_do_not_grant_model'),
     )
-    await expect(
-      editor.getByLabel(uiText('admin_historical_model_missing', { key: historical })),
-    ).toBeChecked()
-    await editor.getByLabel(`${modelKey}${uiText('admin_disabled_suffix')}`).check()
+    const historicalBox = editor.getByRole('checkbox', {
+      name: uiText('admin_historical_model_missing', { key: historical }),
+      exact: true,
+    })
+    const modelBox = editor.getByRole('checkbox', {
+      name: `${modelKey}${uiText('admin_disabled_suffix')}`,
+      exact: true,
+    })
+    const allModelsBox = editor.getByRole('checkbox', {
+      name: uiText('admin_all_models'),
+      exact: true,
+    })
+    await expect(historicalBox).toBeChecked()
+    await modelBox.check()
     await editor.getByRole('button', { name: uiText('admin_save_model_access') }).click()
     await expect(editor.getByRole('status')).toHaveText(uiText('admin_saved'))
     await expect
       .poll(async () => (await sql`select features from plan where id=${planId}`)[0]?.features)
       .toEqual({ ...features, models: [historical, modelKey] })
-    await editor.getByLabel(uiText('admin_historical_model_missing', { key: historical })).uncheck()
-    await editor.getByLabel(uiText('admin_all_models')).check()
+    await historicalBox.uncheck()
+    await allModelsBox.check()
     await editor.getByRole('button', { name: uiText('admin_save_model_access') }).click()
     await expect
       .poll(async () => (await sql`select features from plan where id=${planId}`)[0]?.features)
       .toEqual({ ...features, models: [modelKey, '*'] })
     await expect(editor.getByRole('alert')).toHaveCount(0)
     await page.reload()
-    await expect(editor.getByLabel(uiText('admin_all_models'))).toBeChecked()
-    await expect(editor.getByLabel(`${modelKey}${uiText('admin_disabled_suffix')}`)).toBeChecked()
+    await expect(allModelsBox).toBeChecked()
+    await expect(modelBox).toBeChecked()
     const [audit] =
       await sql`select meta from audit_log where target_id=${planId} and action='admin.plan.models.update' order by created_at desc limit 1`
     expect(audit?.meta.models).toEqual({ before: [historical, modelKey], after: [modelKey, '*'] })

@@ -1,4 +1,23 @@
-import { Button, cn, Input, Label, Tag, useAppForm } from '@product-res/ui'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  cn,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  Tag,
+  useAppForm,
+} from '@product-res/ui'
 import { type ReactNode, useEffect, useState } from 'react'
 import { z } from 'zod'
 import { m } from '../../paraglide/messages.js'
@@ -145,7 +164,16 @@ function CreateTeam() {
   )
 }
 
-const selectClass = 'h-8 rounded-md border bg-background px-2 text-[13px]'
+// 角色选项文案随调用时语言取值
+const memberRoles = () => [
+  { value: 'member', label: m.workspace_role_member() },
+  { value: 'admin', label: m.workspace_role_admin() },
+]
+
+type ConfirmationTarget = {
+  action: 'remove' | 'transfer'
+  item: WorkspacePage['members'][number]
+}
 
 export function WorkspaceSettings({
   page,
@@ -158,6 +186,26 @@ export function WorkspaceSettings({
   const [pending, setPending] = useState(false)
   const [email, setEmail] = useState('')
   const [role, setRole] = useState('member')
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmTarget, setConfirmTarget] = useState<ConfirmationTarget | null>(null)
+  const roles = memberRoles()
+  const invitationRole = roles.find((option) => option.value === role)
+  const confirmCopy =
+    confirmTarget?.action === 'transfer'
+      ? {
+          title: m.workspace_transfer_confirm_title(),
+          description: m.workspace_transfer_confirm_description({ name: confirmTarget.item.name }),
+          action: m.workspace_transfer(),
+          variant: 'default' as const,
+        }
+      : {
+          title: m.workspace_remove_confirm_title(),
+          description: m.workspace_remove_confirm_description({
+            name: confirmTarget?.item.name ?? '',
+          }),
+          action: m.workspace_remove(),
+          variant: 'destructive' as const,
+        }
   const seatsFull = page.maxSeats !== null && page.memberCount >= page.maxSeats
   async function run(action: string, body: object) {
     setPending(true)
@@ -169,6 +217,13 @@ export function WorkspaceSettings({
       setError(e instanceof Error ? e.message : m.workspace_update_failed())
       setPending(false)
     }
+  }
+  async function confirmAction() {
+    if (!confirmTarget || pending) return
+    const { action, item } = confirmTarget
+    if (action === 'remove') await run('remove-member', { memberIdOrEmail: item.id })
+    else await run('transfer-owner', { memberId: item.id })
+    setConfirmOpen(false)
   }
   return (
     <div className="grid max-w-4xl gap-4">
@@ -202,57 +257,67 @@ export function WorkspaceSettings({
               </p>
             ) : null}
             <ul className="divide-y text-[13px]">
-              {page.members.map((member) => (
-                <li key={member.id} className="flex flex-wrap items-center gap-3 py-2">
-                  <span className="min-w-0 flex-1">
-                    <span className="font-medium">{member.name}</span>{' '}
-                    <span className="text-muted-foreground">({member.email})</span>{' '}
-                    <Tag tone={member.role === 'member' ? 'neutral' : 'info'}>
-                      {roleLabel(member.role)}
-                    </Tag>
-                  </span>
-                  {page.canManage && member.role !== 'owner' ? (
-                    <span className="flex flex-wrap items-center gap-2">
-                      <select
-                        aria-label={m.workspace_role_for({ name: member.name })}
-                        className={selectClass}
-                        value={member.role}
-                        onChange={(e) =>
-                          void run('update-member-role', {
-                            memberId: member.id,
-                            role: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="member">{m.workspace_role_member()}</option>
-                        <option value="admin">{m.workspace_role_admin()}</option>
-                      </select>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          if (window.confirm(m.workspace_remove_confirm({ name: member.name })))
-                            void run('remove-member', { memberIdOrEmail: member.id })
-                        }}
-                      >
-                        {m.workspace_remove()}
-                      </Button>
-                      {page.role === 'owner' ? (
+              {page.members.map((member) => {
+                const selectedRole = roles.find((option) => option.value === member.role)
+                return (
+                  <li key={member.id} className="flex flex-wrap items-center gap-3 py-2">
+                    <span className="min-w-0 flex-1">
+                      <span className="font-medium">{member.name}</span>{' '}
+                      <span className="text-muted-foreground">({member.email})</span>{' '}
+                      <Tag tone={member.role === 'member' ? 'neutral' : 'info'}>
+                        {roleLabel(member.role)}
+                      </Tag>
+                    </span>
+                    {page.canManage && member.role !== 'owner' ? (
+                      <span className="flex flex-wrap items-center gap-2">
+                        <Select
+                          size="compact"
+                          value={selectedRole?.value ?? ''}
+                          disabled={pending}
+                          onValueChange={(value) =>
+                            void run('update-member-role', { memberId: member.id, role: value })
+                          }
+                        >
+                          <SelectTrigger
+                            aria-label={m.workspace_role_for({ name: member.name })}
+                            placeholder={m.workspace_role_for({ name: member.name })}
+                            valueLabel={selectedRole?.label}
+                          />
+                          <SelectContent>
+                            {roles.map((option, index) => (
+                              <SelectItem key={option.value} index={index} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            if (window.confirm(m.workspace_transfer_confirm({ name: member.name })))
-                              void run('transfer-owner', { memberId: member.id })
+                            setConfirmTarget({ action: 'remove', item: member })
+                            setConfirmOpen(true)
                           }}
                         >
-                          {m.workspace_transfer()}
+                          {m.workspace_remove()}
                         </Button>
-                      ) : null}
-                    </span>
-                  ) : null}
-                </li>
-              ))}
+                        {page.role === 'owner' ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setConfirmTarget({ action: 'transfer', item: member })
+                              setConfirmOpen(true)
+                            }}
+                          >
+                            {m.workspace_transfer()}
+                          </Button>
+                        ) : null}
+                      </span>
+                    ) : null}
+                  </li>
+                )
+              })}
             </ul>
           </Section>
           {inviteLinks ? (
@@ -285,15 +350,25 @@ export function WorkspaceSettings({
                 </span>
                 <span className="grid gap-1">
                   <Label htmlFor="invite-role">{m.workspace_invite_role()}</Label>
-                  <select
-                    id="invite-role"
-                    className={selectClass}
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
+                  <Select
+                    size="compact"
+                    value={invitationRole?.value ?? ''}
+                    disabled={pending}
+                    onValueChange={setRole}
                   >
-                    <option value="member">{m.workspace_role_member()}</option>
-                    <option value="admin">{m.workspace_role_admin()}</option>
-                  </select>
+                    <SelectTrigger
+                      id="invite-role"
+                      placeholder={m.workspace_invite_role()}
+                      valueLabel={invitationRole?.label}
+                    />
+                    <SelectContent>
+                      {roles.map((option, index) => (
+                        <SelectItem key={option.value} index={index} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </span>
                 <Button type="submit" disabled={seatsFull}>
                   {m.workspace_send_invite()}
@@ -328,6 +403,32 @@ export function WorkspaceSettings({
           ) : null}
         </fieldset>
       </HydratedControls>
+      <AlertDialog
+        open={confirmOpen}
+        onOpenChange={(open) => {
+          if (!pending) setConfirmOpen(open)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmCopy.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmCopy.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={pending}>{m.common_cancel()}</AlertDialogCancel>
+            <AlertDialogAction
+              variant={confirmCopy.variant}
+              loading={pending}
+              onClick={(event) => {
+                event.preventDefault()
+                void confirmAction()
+              }}
+            >
+              {confirmCopy.action}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

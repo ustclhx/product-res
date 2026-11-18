@@ -1,0 +1,7 @@
+{
+  "daily_credits_granted": "已向个人空间赠送 {credits} 个每日积分。本月已领取 {daysThisMonth}/{maxDaysPerMonth} 天。",
+  "daily_credits_expiry": "到期时间：{expiresAt}。",
+  "daily_credits_dismiss": "关闭",
+  "daily_credits_verify": "验证邮箱以领取每日积分",
+  "daily_credits_source": "每日赠送积分"
+}

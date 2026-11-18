@@ -351,5 +351,65 @@
     "httpStatus": 200,
     "bytes": 6308,
     "fixture": "downgrade-renewal-event.json"
+  },
+  "interval-change-renewal-event": {
+    "event": "evt_1UTyXiL3UTpBAoXo1pBIGuCK",
+    "type": "invoice.paid",
+    "receivedAt": "2026-10-24T06:35:08.103Z",
+    "source": "Stripe CLI --latest local mirror of actual test-clock event after monthly→yearly phase_start transition",
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "892c5fae34f0a9546790a450a34a62a503de580d0d6147bbb2519d31330f719c",
+    "fixture": "interval-change-renewal-event.json"
+  },
+  "interval-change-renewal-invoice-payments": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/invoice_payments",
+    "query": {
+      "invoice": "in_1UTyXbL3UTpBAoXo4uOCDBAR",
+      "status": "paid",
+      "limit": "2"
+    },
+    "recordedAt": "2026-10-24T06:35:08.627Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "d101cd4bb84a09d5f387310d20b1bb28e832ce5971b39e678cbc1edc61d9c746",
+    "fixture": "interval-change-renewal-invoice-payments.json"
+  },
+  "interval-change-renewal-intent": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/payment_intents/pi_3UTyXeL3UTpBAoXo1gtdzpHr",
+    "query": {
+      "expand[]": "latest_charge"
+    },
+    "recordedAt": "2026-10-24T06:35:08.935Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "968dd98dac93fef7fb3b92f742c30b2d7cab8f9abbe5c3d5657e0c4182add895",
+    "fixture": "interval-change-renewal-intent.json"
+  },
+  "interval-change-renewal-intent-invoices": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/invoice_payments",
+    "query": {
+      "payment[type]": "payment_intent",
+      "payment[payment_intent]": "pi_3UTyXeL3UTpBAoXo1gtdzpHr",
+      "status": "paid",
+      "limit": "2"
+    },
+    "recordedAt": "2026-10-24T06:35:09.158Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "d101cd4bb84a09d5f387310d20b1bb28e832ce5971b39e678cbc1edc61d9c746",
+    "fixture": "interval-change-renewal-intent-invoices.json"
+  },
+  "interval-change-renewal-invoice": {
+    "source": "Stripe test API GET, not original webhook HTTP bytes",
+    "path": "/v1/invoices/in_1UTyXbL3UTpBAoXo4uOCDBAR",
+    "query": {},
+    "recordedAt": "2026-10-24T06:35:09.427Z",
+    "status": 200,
+    "apiVersion": "2026-09-30.endive",
+    "sha256": "9ff75c82c6549af956e1246b3d02cfcebc2b868788041b8e4cf340f19a36a939",
+    "fixture": "interval-change-renewal-invoice.json"
   }
 }

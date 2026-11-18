@@ -2,9 +2,12 @@ import { describe, expect, it, vi } from 'vitest'
 import { examplePricingCatalog } from '../../../scripts/pricing-snapshot.ts'
 import {
   createPricingCache,
+  groupPricingPlans,
   marketingPlans,
   PRICING_RETRY_MS,
   PRICING_TTL_MS,
+  pricingFeatures,
+  pricingForInterval,
 } from './pricing-data.ts'
 
 describe('公开定价缓存（tasks.md 3.2）', () => {
@@ -51,6 +54,40 @@ describe('公开定价缓存（tasks.md 3.2）', () => {
     now++
     await cached(offline)
     expect(offline).toHaveBeenCalledTimes(3)
+  })
+
+  it('groups subscriptions and packs while changing only subscription intervals and retaining features', () => {
+    const catalog = examplePricingCatalog()
+    const groups = groupPricingPlans(marketingPlans(catalog))
+    expect(groups.subscriptions.every((plan) => plan.type === 'subscription')).toBe(true)
+    expect(groups.creditPacks.length).toBeGreaterThan(0)
+    for (const plan of groups.subscriptions) {
+      expect(pricingForInterval(plan, 'year').every((price) => price.interval === 'year')).toBe(
+        true,
+      )
+      expect(plan.features).toEqual(catalog.plans.find((entry) => entry.key === plan.key)?.features)
+      expect(pricingFeatures(plan.features)).toContainEqual({
+        key: 'maxConcurrentTasks',
+        value: plan.features.maxConcurrentTasks,
+      })
+    }
+    for (const pack of groups.creditPacks)
+      expect(pricingForInterval(pack, 'year')).toEqual(pricingForInterval(pack, 'month'))
+  })
+
+  it('仅有积分包的目录在两种订阅周期下仍返回全部一次性价格', () => {
+    const catalog = examplePricingCatalog()
+    const packPlans = catalog.plans.filter((plan) => plan.type === 'credit_pack')
+    const groups = groupPricingPlans(marketingPlans({ ...catalog, plans: packPlans }))
+    expect(groups.subscriptions).toEqual([])
+    expect(groups.creditPacks.map((plan) => plan.key)).toEqual(packPlans.map((plan) => plan.key))
+    expect(groups.creditPacks.length).toBeGreaterThan(0)
+    for (const pack of groups.creditPacks) {
+      const prices = pricingForInterval(pack, 'month')
+      expect(prices.length).toBeGreaterThan(0)
+      expect(prices.every((price) => price.interval === null)).toBe(true)
+      expect(pricingForInterval(pack, 'year')).toEqual(prices)
+    }
   })
 
   it('区块展示套餐的积分、权益与价格，并合并不同支付渠道的同周期报价', () => {

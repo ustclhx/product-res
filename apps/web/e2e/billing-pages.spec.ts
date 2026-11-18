@@ -12,12 +12,33 @@ test('public pricing describes unavailable payments without a checkout success',
 }) => {
   test.skip(!templateConfig.marketing.enabled, '模板配置关闭了公开定价页')
   await page.goto('/pricing')
-  await expect(page.getByRole('heading', { name: 'Pricing', exact: true })).toBeVisible()
+  // 首屏标题随套餐分组变化（订阅与积分包 / 只有订阅 / 只有积分包），只断言 h1 存在
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Frequently asked questions' })).toBeVisible()
+  // 本地离线 suite 不配置支付密钥：有套餐时给出不可用说明，没有套餐时显示空状态
   await expect(
-    page.getByText('Plans shown here are template examples.', { exact: false }),
+    page
+      .getByText('Payments are currently unavailable', { exact: false })
+      .or(page.getByRole('heading', { name: 'Plans are coming soon' })),
   ).toBeVisible()
-  await expect(page.getByRole('status')).toContainText('Payments are currently unavailable')
   await expect(page.getByRole('button', { name: /checkout|pay now/i })).toHaveCount(0)
+})
+
+test('public pricing renders before hydration', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({
+    ...(baseURL ? { baseURL } : {}),
+    javaScriptEnabled: false,
+  })
+  const page = await context.newPage()
+  try {
+    await page.goto('/pricing')
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    const language = page.getByRole('combobox', { name: 'Language', exact: true })
+    await expect(language).toHaveText('English')
+    await expect(language).toBeDisabled()
+  } finally {
+    await context.close()
+  }
 })
 
 test('billing and usage require a fresh authenticated workspace session', async ({ page }) => {

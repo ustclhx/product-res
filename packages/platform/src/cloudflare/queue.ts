@@ -13,7 +13,7 @@ export function createCloudflareQueue<T>(
   }
 }
 
-/** 保留原消息引用与方法 receiver，逐条 ack/retry 不改变 CF 的最终 drop 策略。 */
+/** 保留原消息引用与方法 receiver，逐条 ack/retry 沿用各队列配置的重试与死信策略。 */
 export function createCloudflareQueueBatch<T>(batch: MessageBatch<T>): QueueBatch<T> {
   return {
     queue: batch.queue,

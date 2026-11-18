@@ -17,8 +17,9 @@ KV 支持原字符串和 JSON 读取，缺失/过期返回 null；put 是字符�
 | auth / RL_AUTH | 10 | 60 秒 |
 | ai / RL_AI | 20 | 60 秒 |
 | api / RL_API | 60 | 60 秒 |
+| shareCard / RL_SHARE_CARD | 30 | 60 秒 |
 
-入口可用 `policies: { auth:{limit,periodSeconds}, ai:..., api:... }` 显式配置三策略，数值必须是正安全整数。缓存用于防刷，精确配额/积分仍由 PG 控制。禁用离线队列、自动重连和未完成命令重放，故障期间不放行、不回退内存，也不自动重放可能已经执行的 INCR；连接中断后持续返回 503，恢复需由进程资源 owner 重新装配或重启。`cache.ping()` 用于实时依赖探测；`cache.close()` 只在请求和后台任务排空后调用。
+入口可用 `policies: { auth:{limit,periodSeconds}, ai:..., api:..., shareCard:... }` 显式配置各策略，未传的策略使用上表默认值，数值必须是正安全整数。缓存用于防刷，精确配额/积分仍由 PG 控制。禁用离线队列、自动重连和未完成命令重放，故障期间不放行、不回退内存，也不自动重放可能已经执行的 INCR；连接中断后持续返回 503，恢复需由进程资源 owner 重新装配或重启。`cache.ping()` 用于实时依赖探测；`cache.close()` 只在请求和后台任务排空后调用。
 
 ## HTTP 信任与关联
 

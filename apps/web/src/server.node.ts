@@ -1,4 +1,5 @@
-import { AppError } from '@product-res/shared'
+import { plausibleSite } from '@product-res/config'
+import { AppError, toErrorResponse } from '@product-res/shared'
 import { log, redactUrlPath, withLogContext } from '@product-res/shared/log'
 import { createStartHandler, defaultStreamHandler } from '@tanstack/react-start/server'
 import { gateAdminRequest } from './features/admin/gate.ts'
@@ -10,6 +11,8 @@ import {
 import { gateLocaleRequest } from './features/i18n/gate.ts'
 import { localizeRequest } from './features/i18n/request.server.ts'
 import { requestWebRuntime } from './node/request-runtime.ts'
+import { withSecurityNonce } from './security-context.server.ts'
+import { withSecurityHeaders } from './security-headers.ts'
 import { withWebRuntime } from './server/runtime.ts'
 import { captureServerError } from './server/sentry.ts'
 import { SENTRY_TEST_PATH, sentryTest } from './server/sentry-test.ts'
@@ -24,37 +27,56 @@ const startHandler = createStartHandler((context) => {
 })
 
 export default {
-  fetch(request: Request): Promise<Response> {
+  async fetch(request: Request): Promise<Response> {
     const runtime = requestWebRuntime(request)
-    return withLogContext(
-      { requestId: runtime.requestMeta.requestId, cfRay: runtime.requestMeta.cfRay },
-      () =>
-        withWebRuntime(runtime, async () => {
-          const started = Date.now()
-          const path = new URL(request.url).pathname
-          try {
-            if (path === SENTRY_TEST_PATH) return await sentryTest(request, runtime)
-            const gated = gatePublicApiRequest(request, templateConfig)
-            const localized = gateLocaleRequest(await gateAdminRequest(request, runtime))
-            const response =
-              gated ?? (await localizeRequest(localized, runtime, () => startHandler(localized)))
-            const result = isPublicApiPath(path)
-              ? await normalizePublicApiNotFound(response)
-              : response
-            log.info('http.request', {
-              method: request.method,
-              path: redactUrlPath(path),
-              status: result.status,
-              durationMs: Date.now() - started,
-            })
-            return result
-          } catch (error) {
-            runtime.observability?.captureError(error)
-            return error instanceof AppError
-              ? Response.json(error.toJSON(), { status: error.status })
-              : new Response('Internal Server Error', { status: 500 })
-          }
-        }),
+    const nonce = crypto.randomUUID()
+    const response = await withSecurityNonce(nonce, () =>
+      withLogContext(
+        { requestId: runtime.requestMeta.requestId, cfRay: runtime.requestMeta.cfRay },
+        () =>
+          withWebRuntime(runtime, async () => {
+            const started = Date.now()
+            const path = new URL(request.url).pathname
+            try {
+              if (path === SENTRY_TEST_PATH) return await sentryTest(request, runtime)
+              const gated = gatePublicApiRequest(request, templateConfig)
+              const localized = gateLocaleRequest(await gateAdminRequest(request, runtime))
+              const response =
+                gated ?? (await localizeRequest(localized, runtime, () => startHandler(localized)))
+              const result = isPublicApiPath(path)
+                ? await normalizePublicApiNotFound(response)
+                : response
+              log.info('http.request', {
+                method: request.method,
+                path: redactUrlPath(path),
+                status: result.status,
+                durationMs: Date.now() - started,
+              })
+              return result
+            } catch (error) {
+              runtime.observability?.captureError(error)
+              if (error instanceof AppError) {
+                const { status, body } = toErrorResponse(error)
+                return Response.json(body, { status })
+              }
+              return new Response('Internal Server Error', { status: 500 })
+            }
+          }),
+      ),
     )
+    const headers = withSecurityHeaders(response.headers, {
+      https: new URL(request.url).protocol === 'https:',
+      nonce,
+      sentryDsn: process.env.SENTRY_DSN,
+      analyticsOrigin: plausibleSite(templateConfig.features.analytics, process.env)?.origin,
+      clarity: Boolean(templateConfig.analytics.clarityProjectId.trim()),
+      storageOrigin: process.env.S3_ENDPOINT,
+    })
+    headers.set('x-request-id', runtime.requestMeta.requestId)
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    })
   },
 }

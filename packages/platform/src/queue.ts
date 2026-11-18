@@ -31,12 +31,12 @@ export interface QueueBatch<T> {
   retryAll(options?: QueueSendOptions): void
 }
 
-/** 消费者可向 B 报告有效消息终态失败；成功/无效消息才直接 ack。 */
+/** 消费者报告有效消息终态失败；成功/无效消息才直接 ack。 */
 export interface QueueFailure {
   readonly code: string
   readonly retryable: boolean
 }
 export interface DeadLetterSink<T> {
-  /** 持久记录完成后才确认消息；CF 保留既有 ack/drop，不装配此 hook。 */
+  /** 持久记录或可靠投递至死信队列后才确认消息；邮件是否装配由目标策略决定。 */
   failed(message: QueueMessage<T>, failure: QueueFailure): Promise<void>
 }

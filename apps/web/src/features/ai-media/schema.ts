@@ -14,6 +14,9 @@ export {
   parseMediaSchema,
 } from '@product-res/ai/client'
 
+/** Select 的可清空项；读写参数时转换为 undefined。 */
+export const EMPTY_MEDIA_PARAMETER = '__default__'
+
 export interface MediaModel {
   key: string
   kind: 'text' | 'image' | 'video'

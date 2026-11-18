@@ -164,8 +164,8 @@ describe('billing jobs', () => {
     expect(mocks.runtime).not.toHaveBeenCalled()
   })
   it.each([
-    { status: 400, attempts: 2, code: 'BILLING_NON_RETRYABLE', retryable: false },
-    { status: 503, attempts: 6, code: 'BILLING_ATTEMPTS_EXHAUSTED', retryable: true },
+    { status: 400, attempts: 2, code: 'BILLING_FAILURE', retryable: false },
+    { status: 503, attempts: 6, code: 'BILLING_FAILURE', retryable: true },
   ])('records Node terminal failure $code before confirming', async (failure) => {
     mocks.runtime.mockImplementationOnce(() => {
       throw new AppError('BILLING_FAILURE', 'Unavailable', { status: failure.status })
@@ -197,7 +197,7 @@ describe('billing jobs', () => {
     expect(entry.ack).toHaveBeenCalledOnce()
     expect(entry.retry).not.toHaveBeenCalled()
   })
-  it('keeps CF failures retryable even on the final attempt', async () => {
+  it('retries a terminal failure when no dead-letter sink is supplied', async () => {
     mocks.runtime.mockImplementationOnce(() => {
       throw new AppError('BAD_INPUT', 'Invalid', { status: 400 })
     })

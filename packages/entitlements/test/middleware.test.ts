@@ -57,6 +57,25 @@ it('middleware keeps read-only team writes blocked before evaluating entitlement
   expect(next).not.toHaveBeenCalled()
 })
 
+it('middleware blocks a free custom feature before the handler and permits an entitled plan', async () => {
+  const middleware = withEntitlement({ capability: 'exports.advanced' })
+  const next = vi.fn(async (value) => value)
+  await expect(
+    middleware.options.server?.({ context, data: {}, next } as never),
+  ).rejects.toMatchObject({ code: UPGRADE_REQUIRED, status: 403 })
+  expect(next).not.toHaveBeenCalled()
+
+  const paid = {
+    key: 'pro',
+    sort: 10,
+    features: { ...DEFAULT_FREE_FEATURES, capabilities: { 'exports.advanced': true } },
+  }
+  vi.mocked(getEntitlements).mockResolvedValueOnce(paid)
+  await middleware.options.server?.({ context, data: {}, next } as never)
+  expect(next).toHaveBeenCalledOnce()
+  expect(next).toHaveBeenCalledWith({ context: { entitlements: paid } })
+})
+
 it('middleware permits an entitled read and injects request entitlements', async () => {
   const next = vi.fn(async (value) => value)
   const middleware = withEntitlement({ limit: 'maxSeats', value: 1 }, { access: 'read' })

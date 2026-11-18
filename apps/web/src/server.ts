@@ -5,7 +5,7 @@
 // 每个请求先建立日志上下文（新生成的 UUIDv7 请求 ID，附 Cloudflare 的 cf-ray 便于对照平台日志），
 // 结束时输出一行 `http.request`（@product-res/shared/log）。
 import { type AuthEmail, parseAuthEnv, type SendAuthEmail } from '@product-res/auth'
-import { loadEnv } from '@product-res/config'
+import { loadEnv, plausibleSite } from '@product-res/config'
 import type { Database } from '@product-res/db'
 import type { KeyValueStore, RequestMetadata } from '@product-res/platform'
 import {
@@ -17,14 +17,15 @@ import {
   createCloudflareRequestMetadata,
   createCloudflareWorkflow,
 } from '@product-res/platform/cloudflare'
-import { AppError } from '@product-res/shared'
+import { AppError, toErrorResponse } from '@product-res/shared'
 import { log, redactUrlPath, withLogContext } from '@product-res/shared/log'
-import { getFileDownload } from '@product-res/storage'
+import { createShareCardInvalidator, getFileDownload } from '@product-res/storage'
 import { createCloudflareStorage } from '@product-res/storage/cloudflare'
 import { createStartHandler, defaultStreamHandler } from '@tanstack/react-start/server'
 import { APIError } from 'better-auth/api'
 import { gateAdminRequest } from './features/admin/gate.ts'
 import { handleAuthRequest } from './features/admin/impersonation-http.ts'
+import { createSignUpRecorder } from './features/analytics/server.ts'
 import {
   gatePublicApiRequest,
   isPublicApiPath,
@@ -34,6 +35,8 @@ import { createBillingDeletionSteps } from './features/billing/deletion.server.t
 import { assertSignupAdmission } from './features/growth/service.ts'
 import { gateLocaleRequest } from './features/i18n/gate.ts'
 import { localizeRequest } from './features/i18n/request.server.ts'
+import { withSecurityNonce } from './security-context.server.ts'
+import { withSecurityHeaders, withStaticSecurityHeaders } from './security-headers.ts'
 import { createWebAuth } from './server/auth.ts'
 import { createQueueAuthEmailSender, userLocaleByEmail } from './server/auth-email.ts'
 import { checkEnv, webEnvSchema } from './server/cloudflare/env.ts'
@@ -70,36 +73,58 @@ export default {
     // 不信任入站的 x-request-id：可被客户端伪造，且会混入他人的检索结果
     const requestMeta = createCloudflareRequestMetadata(request)
     const context = { requestId: requestMeta.requestId, cfRay: requestMeta.cfRay }
-    return withLogContext(context, async () => {
-      try {
-        const invalid = checkEnv(env)
-        const response =
-          invalid ??
-          (await withWebRuntime(createCloudflareWebRuntime(env, requestMeta, ctx), () =>
-            worker.fetch(request, env, ctx),
-          ))
-        // 重定向与静态响应的 headers 可能只读，复制后再附请求 ID。
-        const headers = new Headers(response.headers)
-        headers.set('x-request-id', context.requestId)
-        return new Response(response.body, {
-          status: response.status,
-          statusText: response.statusText,
-          headers,
-        })
-      } catch (error) {
-        // 包装器已经捕获异常；返回无敏感细节的响应与请求 ID，便于管理员验收定位。
-        log.error('http.unhandled', { error })
-        if (error instanceof AppError)
-          return Response.json(error.toJSON(), {
-            status: error.status,
-            headers: { 'x-request-id': context.requestId },
+    const nonce = crypto.randomUUID()
+    const security = {
+      https: new URL(request.url).protocol === 'https:',
+      nonce,
+      r2AccountId: env.R2_ACCOUNT_ID,
+      sentryDsn: env.SENTRY_DSN,
+      analyticsOrigin: plausibleSite(templateConfig.features.analytics, env)?.origin,
+      clarity: Boolean(templateConfig.analytics.clarityProjectId.trim()),
+    }
+    return withSecurityNonce(nonce, () =>
+      withLogContext(context, async () => {
+        try {
+          const invalid = checkEnv(env)
+          if (!invalid && (request.method === 'GET' || request.method === 'HEAD') && env.ASSETS) {
+            const asset = await env.ASSETS.fetch(request)
+            if (asset.status !== 404) {
+              const response = await withStaticSecurityHeaders(asset, security)
+              response.headers.set('x-request-id', context.requestId)
+              return response
+            }
+            await asset.body?.cancel()
+          }
+          const response =
+            invalid ??
+            (await withWebRuntime(createCloudflareWebRuntime(env, requestMeta, ctx), () =>
+              worker.fetch(request, env, ctx),
+            ))
+          // 重定向与静态响应的 headers 可能只读，复制后再附请求 ID。
+          const headers = withSecurityHeaders(response.headers, security)
+          headers.set('x-request-id', context.requestId)
+          return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers,
           })
-        return new Response('Internal Server Error', {
-          status: 500,
-          headers: { 'x-request-id': context.requestId },
-        })
-      }
-    })
+        } catch (error) {
+          // 包装器已经捕获异常；返回无敏感细节的响应与请求 ID，便于管理员验收定位。
+          log.error('http.unhandled', { error })
+          if (error instanceof AppError) {
+            const { status, body } = toErrorResponse(error)
+            return Response.json(body, {
+              status,
+              headers: withSecurityHeaders({ 'x-request-id': context.requestId }, security),
+            })
+          }
+          return new Response('Internal Server Error', {
+            status: 500,
+            headers: withSecurityHeaders({ 'x-request-id': context.requestId }, security),
+          })
+        }
+      }),
+    )
   },
 } satisfies ExportedHandler<Cloudflare.Env>
 
@@ -135,6 +160,11 @@ function localized(request: Request): Promise<Response> {
   return localizeRequest(request, getWebRuntime(), () => startHandler(request))
 }
 
+/** Workers 的默认 Cache API；web 的 tsconfig 同时含 DOM 声明，`caches.default` 在此显式取用。 */
+function edgeCache(): Cache {
+  return (caches as unknown as { default: Cache }).default
+}
+
 /** CF bindings 仅在入口装配；getter 保证公开页降级时不提前创建认证/数据库资源。 */
 function createCloudflareWebRuntime(
   env: Cloudflare.Env,
@@ -144,9 +174,14 @@ function createCloudflareWebRuntime(
   const config = {
     ...parseAuthEnv(env, templateConfig),
     TURNSTILE_SITE_KEY: env.TURNSTILE_SITE_KEY,
+    PLAUSIBLE_DOMAIN: env.PLAUSIBLE_DOMAIN,
+    PLAUSIBLE_HOST: env.PLAUSIBLE_HOST,
+    PLAUSIBLE_SITES: env.PLAUSIBLE_SITES,
+    INDEXNOW_KEY: env.INDEXNOW_KEY,
     PAYMENT_MODE: env.PAYMENT_MODE,
     SENTRY_ENVIRONMENT: env.SENTRY_ENVIRONMENT,
     AI_FAULT_INJECTION: env.AI_FAULT_INJECTION,
+    UI_PREVIEW: env.UI_PREVIEW,
     ...(env.STRIPE_SECRET_KEY === undefined ? {} : { STRIPE_SECRET_KEY: env.STRIPE_SECRET_KEY }),
     ...(env.STRIPE_WEBHOOK_SECRET === undefined
       ? {}
@@ -182,7 +217,16 @@ function createCloudflareWebRuntime(
       rateLimiter,
       clientIp: requestMeta.clientIp,
       sendEmail,
+      ...(files.shareCards && {
+        cleanupShareCards: createShareCardInvalidator(files.shareCards, cache)
+          .cleanupWorkspaceShareCards,
+      }),
       deletionSteps: createBillingDeletionSteps(config, db, cache),
+      onUserSignedUp: createSignUpRecorder({
+        db,
+        queue: env.EVENTS_QUEUE && createCloudflareQueue(env.EVENTS_QUEUE),
+        clientIp: requestMeta.clientIp,
+      }),
       beforeUserCreate: async (user, headers) => {
         try {
           await assertSignupAdmission(
@@ -214,6 +258,26 @@ function createCloudflareWebRuntime(
     transferWorkflow: env.WORKSPACE_TRANSFER_WORKFLOW
       ? { available: true, value: createCloudflareWorkflow(env.WORKSPACE_TRANSFER_WORKFLOW) }
       : { available: false },
+    // 渲染器只在分享卡片路由首次调用时加载；首页与其他路由的闭包不含 satori / resvg / 字体
+    shareCardRenderer: env.ASSETS
+      ? {
+          available: true,
+          value: () =>
+            import('./server/cloudflare/share-card-renderer.ts').then((module) =>
+              module.workersShareCardRenderer(env.ASSETS),
+            ),
+        }
+      : { available: false },
+    // 分享卡片的数据中心级缓存；写入放进 waitUntil，不阻塞本次响应。
+    shareCardCache: {
+      available: true,
+      value: {
+        match: (url) => edgeCache().match(url),
+        put: async (url, response) => {
+          ctx.waitUntil(edgeCache().put(url, response))
+        },
+      },
+    },
     emailQueue: { available: true, value: queue },
     eventsQueue: env.EVENTS_QUEUE
       ? { available: true, value: createCloudflareQueue(env.EVENTS_QUEUE) }

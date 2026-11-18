@@ -283,8 +283,7 @@ describe('用户与空间后台', () => {
           ip: '203.0.113.9',
           meta: {
             impersonatedBy: admin.id,
-            before: { name: 'Searchable user' },
-            after: { name: 'Audited profile' },
+            fields: ['name'],
           },
         },
       },

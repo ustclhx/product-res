@@ -3,5 +3,22 @@
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/jetbrains-mono";
 @import "@product-res/ui/globals.css";
+/* 项目品牌层：必须是最后一个导入，覆盖基线与主题预设（分工见 brand.css 头部说明） */
+@import "./brand.css";
 
 @source "../";
+
+/* 对话页（features/ai/chat-page.tsx）：消息列至少占满内容面板的可视高度，短对话与空态时输入区也贴在底部
+   （设计稿 chat-components/Main.dc.html）。8.5rem 为侧边栏布局的面板外边距、顶部条与正文上下内边距之和 */
+@utility min-h-chat-page {
+  min-height: calc(100svh - 8.5rem);
+}
+
+/* 根布局有浮动主题切换时（body[data-floating-controls]，md 及以上右下 bottom-4、高约 42px），
+   右下的其他悬浮按钮（SubjectChat 触发器）上移 3rem 叠在它上方，与 Ask AI 的 md:bottom-18 一致（#373）。
+   手机端浮动控件已移入页脚设置行，不需要偏移 */
+@media (width >= 48rem) {
+  body[data-floating-controls] {
+    --floating-controls-offset: 3rem;
+  }
+}

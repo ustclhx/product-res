@@ -48,3 +48,6 @@ api-key/
 *.log
 backups/
 .claude/worktrees/
+
+# Python 测试缓存
+__pycache__/

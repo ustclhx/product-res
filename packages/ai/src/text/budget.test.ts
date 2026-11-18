@@ -28,6 +28,7 @@ function expectAppError(fn: () => unknown, code: string, status: number) {
   }
   expect(error).toBeInstanceOf(AppError)
   expect(error).toMatchObject({ code, status })
+  return error
 }
 
 describe('输入 token 保守估算', () => {
@@ -153,11 +154,12 @@ describe('按余额计算最大输出长度（token 计费）', () => {
 
   it('不足最小输出时报余额不足', () => {
     // 剩 2 积分 = 250 个输出 token < 256
-    expectAppError(
+    const error = expectAppError(
       () => planTextBudget({ pricing: token, inputTokens: 500, balance: 3, maxOutputTokens: 8000 }),
       INSUFFICIENT_CREDITS,
       402,
     )
+    expect(error).toMatchObject({ details: { estimatedCredits: 4, availableCredits: 3 } })
     // 输入费用已超过余额
     expectAppError(
       () =>

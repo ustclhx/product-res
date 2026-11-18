@@ -2,6 +2,7 @@ import { newId } from '@product-res/shared'
 import { sql } from 'drizzle-orm'
 import {
   check,
+  date,
   index,
   integer,
   pgTable,
@@ -31,7 +32,7 @@ export const creditGrant = pgTable(
       .notNull()
       .references(() => organization.id, { onDelete: 'restrict' }),
     source: text('source', {
-      enum: ['subscription', 'purchase', 'signup', 'admin', 'refund', 'promo'],
+      enum: ['subscription', 'purchase', 'signup', 'daily', 'admin', 'refund', 'promo'],
     }).notNull(),
     sourceRef: text('source_ref').notNull(),
     paymentId: uuid('payment_id').references(() => payment.id, { onDelete: 'restrict' }),
@@ -148,3 +149,24 @@ export type CreditHold = typeof creditHold.$inferSelect
 export type CreditDebt = typeof creditDebt.$inferSelect
 export type CreditHoldAllocation = typeof creditHoldAllocation.$inferSelect
 export type CreditLedger = typeof creditLedger.$inferSelect
+
+/** 不级联删除身份记录：邮箱散列随账务保留，避免删号重注册重置领取额度。 */
+export const creditDailyClaim = pgTable(
+  'credit_daily_claim',
+  {
+    id: uuid('id').primaryKey().$defaultFn(newId),
+    userId: uuid('user_id').notNull(),
+    emailHash: text('email_hash').notNull(),
+    day: date('day', { mode: 'string' }).notNull(),
+    grantId: uuid('grant_id')
+      .notNull()
+      .references(() => creditGrant.id, { onDelete: 'restrict' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('credit_daily_claim_user_day_unique').on(t.userId, t.day),
+    unique('credit_daily_claim_email_day_unique').on(t.emailHash, t.day),
+  ],
+)
+
+export type CreditDailyClaim = typeof creditDailyClaim.$inferSelect

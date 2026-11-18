@@ -15,6 +15,9 @@ export interface ChatUIMetadata {
   readonly conversationId?: string
   readonly messageId?: string
   readonly status?: ChatMessageStatus
+  /** 历史回复的结算积分与模型 key（流式回复刷新后才有） */
+  readonly credits?: number
+  readonly modelKey?: string
 }
 
 export type ChatUIMessage = UIMessage<ChatUIMetadata, { retry: { n: number } }>
@@ -78,6 +81,8 @@ export interface StoredMessage {
   readonly role: string
   readonly parts: readonly unknown[]
   readonly status: ChatMessageStatus
+  readonly credits?: number | null
+  readonly modelKey?: string | null
 }
 
 /** reasoning 只用于助手展示；请求与输入 token 估算仍只取正文。 */
@@ -102,10 +107,54 @@ export function toChatMessages(rows: readonly StoredMessage[]): ChatUIMessage[] 
         id: row.id,
         role: row.role,
         parts: [...reasoning, ...(text ? [{ type: 'text' as const, text }] : [])],
-        metadata: { messageId: row.id, status: row.status },
+        metadata: {
+          messageId: row.id,
+          status: row.status,
+          ...(row.role === 'assistant' && typeof row.credits === 'number'
+            ? { credits: row.credits }
+            : {}),
+          ...(row.role === 'assistant' && row.modelKey ? { modelKey: row.modelKey } : {}),
+        },
       },
     ]
   })
+}
+
+/**
+ * 回复结束后用已保存的消息校正本地消息（正文、状态、结算积分与模型）：停止后服务端可能多生成一段，
+ * 断开时可能只保存到最后一个检查点，界面以保存并计费的内容为准。
+ * 只改各 part 的内容、不增删已有 part：正文块的 key 取自 part 下标，保持不变即不会重新挂载 Markdown。
+ */
+export function mergeStoredReply(local: ChatUIMessage, row: StoredMessage): ChatUIMessage {
+  const stored = toChatMessages([row])[0]
+  const text = textOf(row.parts)
+  const reasoning = row.parts
+    .flatMap((part) => {
+      const parsed = z.object({ type: z.literal('reasoning'), text: z.string() }).safeParse(part)
+      return parsed.success ? [parsed.data.text] : []
+    })
+    .join('')
+  // 只替换最后一次尝试的 reasoning（与 messageReasoning 的展示范围一致）
+  const retry = local.parts.findLastIndex((part) => part.type === 'data-retry')
+  let textPlaced = false
+  let reasoningPlaced = false
+  const parts = local.parts.map((part, index) => {
+    if (part.type === 'text') {
+      const next = textPlaced ? '' : text
+      textPlaced = true
+      return { ...part, text: next, state: 'done' as const }
+    }
+    if (part.type === 'reasoning' && index > retry && reasoning) {
+      const next = reasoningPlaced ? '' : reasoning
+      reasoningPlaced = true
+      return { ...part, text: next, state: 'done' as const }
+    }
+    return part
+  })
+  if (reasoning && !reasoningPlaced)
+    parts.push({ type: 'reasoning', text: reasoning, state: 'done' })
+  if (text && !textPlaced) parts.push({ type: 'text', text, state: 'done' })
+  return { ...local, parts, metadata: { ...local.metadata, ...stored?.metadata } }
 }
 
 /** 每轮请求体：只发送最后一条用户消息的文本部分 */
@@ -115,6 +164,7 @@ export function chatRequestBody(input: {
   conversationId: string
   messages: readonly UIMessage[]
   thinking?: boolean
+  requestId?: string
 }): ChatRequest {
   const last = input.messages.findLast((message) => message.role === 'user')
   const parts = (last?.parts ?? []).flatMap((part) =>
@@ -126,6 +176,7 @@ export function chatRequestBody(input: {
     conversationId: input.conversationId,
     message: { role: 'user', parts },
     ...(input.thinking === undefined ? {} : { thinking: input.thinking }),
+    ...(input.requestId === undefined ? {} : { requestId: input.requestId }),
   }
 }
 
@@ -156,8 +207,6 @@ const CHAT_ERRORS: Record<string, () => string> = {
   INVALID_REQUEST: () => m.chat_error_invalid_request(),
 }
 
-export const CHAT_ERROR_FALLBACK = 'Something went wrong. Please try again.'
-
 export function chatErrorMessage(code: string | undefined): string {
   return (code && CHAT_ERRORS[code]?.()) || m.chat_error_unknown()
 }
@@ -180,3 +229,8 @@ export function chatErrorCode(error: unknown): string | undefined {
  * 先前已因出错结束时为 `failed`
  */
 export const stopResponseSchema = z.object({ status: z.enum(['aborted', 'completed', 'failed']) })
+
+/** `POST /api/ai/chat/stop`（按请求 ID 停止）的响应；`messageId` 为 null 表示回复没有入库 */
+export const requestStopResponseSchema = stopResponseSchema.extend({
+  messageId: z.string().nullable(),
+})

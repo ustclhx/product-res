@@ -1,0 +1,10 @@
+{
+  "billing_coexist_tasks": "{count} concurrent tasks",
+  "billing_coexist_api": "Public API: {value}",
+  "billing_coexist_priority": "Priority queue: {value}",
+  "billing_coexist_watermark": "Watermark: {value}",
+  "billing_coexist_models": "Models: {value}",
+  "billing_coexist_yes": "Yes",
+  "billing_coexist_no": "No",
+  "billing_coexist_order": "Subscription and pack credits combine; credits expiring first are used first."
+}

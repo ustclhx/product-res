@@ -14,9 +14,9 @@ spec.loader.exec_module(module)
 class InitializationSafety(unittest.TestCase):
     def test_fixed_supported_matrix_and_exact_packages(self):
         for distro, version, suite in [('ubuntu', '24.04', 'noble'), ('debian', '12', 'bookworm')]:
-            for arch in ['amd64', 'arm64']:
+            for arch, fixture in [('amd64', False), ('arm64', True)]:
                 release = f'ID={distro}\nVERSION_ID="{version}"\nVERSION_CODENAME={suite}\n'
-                self.assertEqual(module.supported(release, arch), (distro, version, suite))
+                self.assertEqual(module.supported(release, arch, fixture), (distro, version, suite))
                 versions = module.package_versions(distro, version, suite)
                 self.assertEqual(versions['docker-ce'], f'5:28.5.1-1~{distro}.{version}~{suite}')
                 self.assertEqual(versions['docker-compose-plugin'], f'2.40.3-1~{distro}.{version}~{suite}')
@@ -24,6 +24,18 @@ class InitializationSafety(unittest.TestCase):
                               ('ID=debian\nVERSION_ID=12\nVERSION_CODENAME=bookworm', 'armhf')]:
             with self.assertRaises(module.Refused):
                 module.supported(release, arch)
+            with self.assertRaises(module.Refused):
+                module.supported(release, arch, local_arm64_fixture=True)
+
+    def test_published_hosts_require_amd64_and_arm64_only_as_explicit_local_fixture(self):
+        # 正式镜像只有 linux/amd64：未声明本机夹具的 arm64 主机在任何安装前被拒绝并说明原因。
+        release = 'ID=debian\nVERSION_ID=12\nVERSION_CODENAME=bookworm\n'
+        with self.assertRaisesRegex(module.Refused, 'linux/amd64 only'):
+            module.supported(release, 'arm64')
+        self.assertEqual(module.supported(release, 'arm64', local_arm64_fixture=True),
+                         ('debian', '12', 'bookworm'))
+        self.assertEqual(module.supported(release, 'amd64', local_arm64_fixture=True),
+                         ('debian', '12', 'bookworm'))
 
     def test_port_conflicts_rejected_even_when_only_loopback(self):
         tcp = 'LISTEN 0 128 0.0.0.0:22 0.0.0.0:*'

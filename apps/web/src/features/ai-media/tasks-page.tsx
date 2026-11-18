@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import { m } from '../../paraglide/messages.js'
 import { getLocale } from '../../paraglide/runtime.js'
+import { trackEvent } from '../analytics/track.ts'
 import { createFileShareToken, revokeFileShareToken } from '../files/files.functions.ts'
 import type { WorkspacePage } from '../workspace/components.tsx'
 import { pollMediaTask } from './polling.ts'
@@ -10,9 +11,11 @@ import {
   cancelMediaTask,
   getMediaTask,
   listMediaTasks,
+  type MediaCancelPreview,
   type MediaTask,
   type MediaTaskFile,
   type MediaTaskPage,
+  previewMediaCancel,
 } from './tasks-client.ts'
 
 function statusText(status: MediaTask['status']) {
@@ -28,6 +31,47 @@ function statusText(status: MediaTask['status']) {
     case 'canceled':
       return m.media_tasks_canceled()
   }
+}
+
+/** 取消前的计费说明：未开始免费、首次已开始免费、免费次数用完按全价。 */
+export function cancelPreviewText(preview: MediaCancelPreview) {
+  if (!preview.started) return m.media_tasks_cancel_unstarted()
+  if (!preview.charged) return m.media_tasks_cancel_free_started()
+  return m.media_tasks_cancel_charged({ credits: preview.credits })
+}
+
+export function CancelConfirmation({
+  preview,
+  busy,
+  onConfirm,
+  onDismiss,
+}: {
+  preview: MediaCancelPreview
+  busy: boolean
+  onConfirm: () => void
+  onDismiss: () => void
+}) {
+  return (
+    <div
+      role="alertdialog"
+      aria-labelledby="media-cancel-title"
+      aria-describedby="media-cancel-body"
+      className="grid gap-3 rounded-lg border p-4"
+    >
+      <h3 id="media-cancel-title" className="font-semibold">
+        {m.media_tasks_cancel_confirm_title()}
+      </h3>
+      <p id="media-cancel-body">{cancelPreviewText(preview)}</p>
+      <div className="flex flex-wrap gap-3">
+        <Button disabled={busy} onClick={onConfirm}>
+          {busy ? m.media_tasks_canceling() : m.media_tasks_cancel_confirm()}
+        </Button>
+        <Button disabled={busy} onClick={onDismiss}>
+          {m.media_tasks_cancel_keep()}
+        </Button>
+      </div>
+    </div>
+  )
 }
 
 function TaskTime({ value }: { value: string | null }) {
@@ -155,11 +199,19 @@ export function MediaTaskDetailPage({ page, taskId }: { page: WorkspacePage; tas
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [cancelPending, setCancelPending] = useState(false)
+  const [preview, setPreview] = useState<MediaCancelPreview>()
+  const [cancelNotice, setCancelNotice] = useState('')
   const polling = useRef<ReturnType<typeof pollMediaTask<MediaTask>> | null>(null)
+  const lastStatus = useRef<MediaTask['status']>(undefined)
   useEffect(() => {
     const poll = pollMediaTask({
       load: (signal) => getMediaTask(page.workspace.id, taskId, signal),
       onTask: (task) => {
+        // 只记录本次观察到的状态转换，重新打开已结束的任务不重复计数。
+        const wasActive = lastStatus.current === 'queued' || lastStatus.current === 'running'
+        if (wasActive && task.status === 'succeeded') trackEvent('generate_success')
+        if (wasActive && task.status === 'failed') trackEvent('generate_fail')
+        lastStatus.current = task.status
         setTask(task)
         setError('')
         setCancelPending(task.errorCode === 'MEDIA_CANCEL_PENDING')
@@ -177,12 +229,39 @@ export function MediaTaskDetailPage({ page, taskId }: { page: WorkspacePage; tas
       polling.current = null
     }
   }, [page.workspace.id, taskId])
+  async function requestCancel() {
+    // 外部取消重试不再结算，无需确认计费。
+    if (cancelPending) return void cancel()
+    setBusy(true)
+    setError('')
+    setCancelNotice('')
+    try {
+      const value = await previewMediaCancel(page.workspace.id, taskId)
+      if (value.cancelable) setPreview(value)
+      else polling.current?.refresh()
+    } catch {
+      setError(m.media_tasks_cancel_preview_error())
+    } finally {
+      setBusy(false)
+    }
+  }
   async function cancel() {
     setBusy(true)
     setError('')
     try {
       const result = await cancelMediaTask(page.workspace.id, taskId)
       setCancelPending(result.cancellationPending)
+      if (preview && result.status === 'canceled') {
+        const charged = result.cancelBilling === 'charged'
+        const notice = charged
+          ? m.media_tasks_cancel_result_charged({ credits: result.creditsCharged })
+          : m.media_tasks_cancel_result_refunded()
+        // 服务端以执行时的状态为准；与预览不一致时明确提示。
+        setCancelNotice(
+          charged === preview.charged ? notice : `${notice} ${m.media_tasks_cancel_changed()}`,
+        )
+      }
+      setPreview(undefined)
       // 取消已落库再读取最新详情，避免旧的进行中轮询响应覆盖终态。
       polling.current?.refresh()
     } catch {
@@ -227,15 +306,28 @@ export function MediaTaskDetailPage({ page, taskId }: { page: WorkspacePage; tas
               <TaskTime value={task.finishedAt} />
             </dd>
           </dl>
-          {(task.canCancel || (owner && cancelPending)) && !page.readOnly ? (
-            <Button disabled={busy} onClick={() => void cancel()}>
+          {task.status === 'running' && task.errorCode === 'MEDIA_SUBMISSION_UNCERTAIN' ? (
+            <p role="status">{m.media_tasks_confirming()}</p>
+          ) : null}
+          {preview && task.canCancel && !page.readOnly ? (
+            <CancelConfirmation
+              preview={preview}
+              busy={busy}
+              onConfirm={() => void cancel()}
+              onDismiss={() => setPreview(undefined)}
+            />
+          ) : (task.canCancel || (owner && cancelPending)) && !page.readOnly ? (
+            <Button disabled={busy} onClick={() => void requestCancel()}>
               {busy
-                ? m.media_tasks_canceling()
+                ? cancelPending
+                  ? m.media_tasks_canceling()
+                  : m.media_tasks_cancel_checking()
                 : cancelPending
                   ? m.media_tasks_cancel_retry()
                   : m.media_tasks_cancel()}
             </Button>
           ) : null}
+          {cancelNotice ? <p role="status">{cancelNotice}</p> : null}
           {cancelPending ? <p role="status">{m.media_tasks_cancel_pending()}</p> : null}
           {task.status === 'failed' ? (
             <div role="alert" className="grid gap-2">

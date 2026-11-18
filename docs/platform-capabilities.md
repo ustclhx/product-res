@@ -11,7 +11,7 @@
 | env | `PlatformEnv<C>`，只读已校验标量配置及能力表 | `createCloudflareEnv` 接收 app schema 校验后挑选的标量，binding 引用留在入口 |
 | db | `DatabaseAccess.business()/public()`，返回现有 `Database` | `createCloudflareDatabase` 在每请求/事件内创建，分别使用 HYPERDRIVE / HYPERDRIVE_CACHED，闭包限于该次调用，不结束 workerd 客户端 |
 | KV | `KeyValueStore`，text/JSON get、string put、秒 TTL、delete | `createCloudflareKv` 使用原 KV binding，TTL 至少 60 秒 |
-| 限流 | `RateLimiter.limit('auth'|'ai'|'api', key)` | 原 RL_AUTH / RL_AI / RL_API；保留 key 与限额，缺 binding 拒绝执行 |
+| 限流 | `RateLimiter.limit('auth'|'ai'|'api'|'shareCard', key)` | 原 RL_AUTH / RL_AI / RL_API，及分享卡片的 RL_SHARE_CARD；保留 key 与限额，缺 binding 拒绝执行 |
 | 延续 | `BackgroundTasks.waitUntil(promise)` | `createCloudflareBackgroundTasks(ctx)` 保留 ctx receiver 和原 Promise，CF 继续管理生命周期 |
 | 请求 | `RequestMetadata`，应用 requestId、可空 clientIp、可选 cfRay | `createCloudflareRequestMetadata(request)` 仅由可信 CF 入口调用；cf-ray 只是附加字段 |
 
@@ -62,7 +62,7 @@ web 的 `server/cloudflare/env.ts` 与 `server/cloudflare/sentry.ts` 是显式 C
 
 账号、删除、dev 邮件/Workflow 和 health 均使用 runtime。health 注入惰性无缓存业务数据库 getter，数据库创建/查询失败仍返回脱敏 503；facade 不关闭借用池。Node 完整 readiness 扩展留组 8。`getAuth(env, db)`、`billingDeletionSteps(env, db)`、`legacyRequestMetadata`、auth 旧 `KvStore`/`RateLimiter` 导出均已移除。
 
-`apps/web/tsconfig.neutral.json` 在默认 typecheck 中检查整个中立 src，仅加载 Node/Vite 全局声明，排除 CF entry、绑定声明和 CF composition 辅助文件。CF 仍单独检查完整 src 和目标夹具。定向扫描的允许位置和本批验收见 [A 4.6 记录](runbooks/selfhost-a46.md)。
+`apps/web/tsconfig.neutral.json` 在默认 typecheck 中检查整个中立 src，仅加载 Node/Vite 全局声明，排除 CF entry、绑定声明和 CF composition 辅助文件。CF 仍单独检查完整 src 和目标夹具。定向扫描的允许位置和本批验收见 A 4.6 记录（模板维护资料；请为本项目建立相应记录）。
 
 ## 本批验证
 
@@ -82,7 +82,7 @@ web 的 `server/cloudflare/env.ts` 与 `server/cloudflare/sentry.ts` 是显式 C
 | --- | --- |
 | `config` | 已校验的认证标量与 Turnstile site key；不含 bindings，不能整个返回前端 |
 | `db` / `auth` | 本请求的业务 facade 与认证实例；实时守卫继续查数据库 |
-| `cache` / `rateLimiter` | 平台 KV / 限流契约，限流传入 auth、ai、api policy |
+| `cache` / `rateLimiter` | 平台 KV / 限流契约，限流传入 auth、ai、api、shareCard policy |
 | `requestMeta` | 入口解析的可信 clientIp、应用 requestId 和可选 cfRay |
 | `createAuth(db, cache?)` | 为后台事务 facade 与延后提交缓存创建认证实例 |
 | `handleAuthRequest(request)` | 保留后台 HTTP 白名单、模拟限制、实时守卫与事务审计 |
@@ -115,7 +115,7 @@ manifest 与 lockfile 仅增加 platform workspace 依赖。共享入口及后�
 
 ## A 4.4：文件、growth 与公开读取
 
-`WebRuntime.files` 注入 `Capability<Storage>`，`publicDb` 为惰性的公开读 facade。文件 HTTP 与 RPC 在副作用前检查文件能力，媒体提交 POST 也先检查存储，Node 在 C 之前明确返回 503，无任务/预扣。Cloudflare storage 工厂在 web/jobs entry 装配；R2/FixedLengthStream 细节仅由 `@product-res/storage/cloudflare` 导出。C 的 `Storage`/`MediaOutputCopier` 接口见 [storage README](../packages/storage/README.md)，本批验证及 Node 生产预渲染的组 5 边界见 [验收说明](runbooks/selfhost-a4-storage.md)。
+`WebRuntime.files` 注入 `Capability<Storage>`，`publicDb` 为惰性的公开读 facade。文件 HTTP 与 RPC 在副作用前检查文件能力，媒体提交 POST 也先检查存储，Node 在 C 之前明确返回 503，无任务/预扣。Cloudflare storage 工厂在 web/jobs entry 装配；R2/FixedLengthStream 细节仅由 `@product-res/storage/cloudflare` 导出。C 的 `Storage`/`MediaOutputCopier` 接口见 [storage README](../packages/storage/README.md)，本批验证及 Node 生产预渲染的组 5 边界见 验收说明（模板维护资料；请为本项目建立相应记录）。
 
 公开定价读取接受借用的 Database，不终止进程池；构建快照由脚本关闭自有池。公开页沿用数据库不可达降级，语言处理仅在账号区域读取 auth/db。growth 限流使用请求 runtime 的可信 IP 与 auth policy，发信依赖缺失时在业务写入前拒绝。
 
@@ -125,13 +125,13 @@ Node 生产配置完整时，web 的 `files` 与 `ai.downloadFile` 使用 `@prod
 jobs 仅注入删除能力，批量 key 逐个等待删除。十分钟维护只在 files 已装配时执行文件清理。
 全部 S3 参数未配置和构建预渲染继续 unavailable，部分配置拒绝启动。
 媒体 workflow 仍独立 unavailable，storage-only 提交在创建 task/hold 前返回 503。
-存储工厂、copier 与 C→B 5.3/5.4 交接见 [文件验收](runbooks/selfhost-c-storage.md)。
+存储工厂、copier 与 C→B 5.3/5.4 交接见 文件验收（模板维护资料；请为本项目建立相应记录）。
 
 Node SMTP 由 jobs composition 显式选择并注入既有 EmailSender；web 继续只负责持久入队，
 CF 的 log/resend 通道不变。原初次加五次重试、混合批次独立确认、终态先持久 DLQ 再确认
-沿用 B，SMTP 稳定 Message-ID 不承诺幂等。详情见 [jobs 接线](runbooks/selfhost-c-jobs-wire.md)。
+沿用 B，SMTP 稳定 Message-ID 不承诺幂等。详情见 jobs 接线（模板维护资料；请为本项目建立相应记录）。
 
 Node 早期 ESM 入口在加载应用前初始化唯一进程 observer。web 在 bootstrap、Nitro、Start
 之间显式传递身份与受信任 AppError 摘要；每请求与后台成员使用独立 scope，不存全局身份。
 正常停机在 A 的业务排空/资源关闭后只使用剩余 deadline 关闭监控，监控失败不改业务退出结果。
-source maps、上传入口和未完成外部验收见 [共享接线验收](runbooks/selfhost-c-wire.md)。
+source maps、上传入口和未完成外部验收见 共享接线验收（模板维护资料；请为本项目建立相应记录）。

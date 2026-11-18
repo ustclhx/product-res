@@ -1,7 +1,25 @@
-import { createFileRoute, notFound as featureNotFound, Link } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { createFileRoute, notFound as featureNotFound, useRouter } from '@tanstack/react-router'
+import { type ReactNode, useEffect, useState } from 'react'
+import { trackEvent } from '../features/analytics/track.ts'
+import { MarketingShell } from '../features/marketing/marketing-shell.tsx'
 import { getMarketingPricing } from '../features/marketing/pricing.functions.ts'
-import { PRICING_TTL_MS } from '../features/marketing/pricing-data.ts'
+import {
+  groupPricingPlans,
+  marketingPlans,
+  PRICING_TTL_MS,
+  packExpiryDays,
+} from '../features/marketing/pricing-data.ts'
+import {
+  PricingBody,
+  PricingError,
+  PricingFacts,
+  PricingFaq,
+  PricingGroups,
+  PricingHero,
+  type PricingKind,
+  PricingSkeleton,
+  pricingKind,
+} from '../features/marketing/pricing-page.tsx'
 import { originFromMatches, pageHead, staticPage } from '../features/seo/metadata.ts'
 import { pricingData } from '../features/seo/structured-data.ts'
 import { getLocale } from '../paraglide/runtime.js'
@@ -13,6 +31,12 @@ export const Route = createFileRoute('/pricing')({
   },
   loader: () => getMarketingPricing(),
   component: PricingPage,
+  pendingComponent: () => (
+    <PricingFrame>
+      <PricingSkeleton />
+    </PricingFrame>
+  ),
+  errorComponent: PricingFailed,
   head: ({ matches, loaderData }) =>
     pageHead(
       staticPage('/pricing', getLocale()),
@@ -20,14 +44,39 @@ export const Route = createFileRoute('/pricing')({
       loaderData ? pricingData(loaderData, originFromMatches(matches), getLocale()) : [],
     ),
 })
+
+function PricingFrame({
+  children,
+  facts,
+  kind,
+}: {
+  children: ReactNode
+  facts?: ReactNode
+  kind?: PricingKind
+}) {
+  return (
+    <MarketingShell>
+      <PricingHero kind={kind} />
+      {facts}
+      <PricingBody>{children}</PricingBody>
+      <PricingFaq />
+    </MarketingShell>
+  )
+}
+
+function PricingFailed() {
+  const router = useRouter()
+  return (
+    <PricingFrame>
+      <PricingError onRetry={() => void router.invalidate()} />
+    </PricingFrame>
+  )
+}
+
 function PricingPage() {
   const initialCatalog = Route.useLoaderData()
   const [catalog, setCatalog] = useState(initialCatalog)
-  const [ready, setReady] = useState(false)
-  const [provider, setProvider] = useState(
-    catalog.providers.find((p) => p.available)?.id ?? catalog.providers[0]?.id ?? '',
-  )
-  useEffect(() => setReady(true), [])
+  useEffect(() => trackEvent('paywall_view'), [])
   useEffect(() => {
     setCatalog(initialCatalog)
     let active = true
@@ -44,58 +93,18 @@ function PricingPage() {
       window.clearInterval(timer)
     }
   }, [initialCatalog])
+  const groups = groupPricingPlans(marketingPlans(catalog))
+  const kind = pricingKind(groups)
+  const both = kind === 'both' && groups.subscriptions.length > 0
   return (
-    <main className="mx-auto grid max-w-4xl gap-6 p-6">
-      <h1 className="text-2xl font-semibold">Pricing</h1>
-      <p>Choose a subscription or buy extra credits.</p>
-      <label>
-        Payment method{' '}
-        <select
-          value={provider}
-          disabled={!ready}
-          onChange={(event) => setProvider(event.target.value)}
-        >
-          {catalog.providers.map((p) => (
-            <option key={p.id} value={p.id} disabled={!p.available}>
-              {p.id}
-              {p.available ? '' : ' — unavailable'}
-            </option>
-          ))}
-        </select>
-      </label>
-      {!catalog.providers.some((p) => p.available) && (
-        <p role="status">Payments are currently unavailable. You can still explore the plans.</p>
-      )}
-      <div className="grid gap-4 sm:grid-cols-2">
-        {catalog.plans.map((plan) => (
-          <section key={plan.id} className="grid gap-3 rounded-xl border p-6">
-            <h2 className="text-xl font-semibold">{plan.name}</h2>
-            <p>
-              {plan.credits} credits {plan.type === 'subscription' ? 'each month' : 'per pack'}
-            </p>
-            <p>
-              {plan.features.maxSeats} seats · {plan.features.storageGb} GB storage
-            </p>
-            {plan.creditExpiryDays && <p>Credits expire after {plan.creditExpiryDays} days.</p>}
-            {catalog.prices
-              .filter((price) => price.planId === plan.id && price.provider === provider)
-              .map((price) => (
-                <p key={price.id}>
-                  {price.currency.toUpperCase() === 'USD'
-                    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
-                        price.amount / 100,
-                      )
-                    : 'Price unavailable'}
-                  {price.interval ? ` / ${price.interval}` : ''}
-                  {price.available ? '' : ' · Payments unavailable'}
-                </p>
-              ))}
-            <Link to="/app" className="underline">
-              View in my workspace
-            </Link>
-          </section>
-        ))}
-      </div>
-    </main>
+    <PricingFrame
+      kind={kind}
+      facts={both ? <PricingFacts packExpiry={packExpiryDays(groups.creditPacks)} /> : null}
+    >
+      <PricingGroups
+        groups={groups}
+        paymentsAvailable={catalog.providers.some((provider) => provider.available)}
+      />
+    </PricingFrame>
   )
 }

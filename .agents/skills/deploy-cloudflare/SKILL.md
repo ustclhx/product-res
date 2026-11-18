@@ -11,9 +11,9 @@ description: 为本 SaaS 模板准备或部署 Cloudflare 环境，检查 Worker
 
 ## 1. 只读预检
 
-完整阅读 `docs/07-infrastructure.md`、`docs/runbooks/staging-neon.md`、`docs/runbooks/p2-staging-preparation.md`、`docs/runbooks/sentry.md`，核对两个 Wrangler 文件及 `.github/workflows/deploy-staging.yml`。仓库没有 `docs/runbooks/staging-deployment.md`；部署契约见 `openspec/specs/staging-deployment/spec.md`。
+完整阅读 `docs/07-infrastructure.md` 与 `docs/runbooks/sentry.md`。staging 读 `docs/runbooks/staging-neon.md`、`docs/runbooks/p2-staging-preparation.md`；production 读 `docs/runbooks/production-neon.md`。核对两个 Wrangler 文件与对应的 `.github/workflows/deploy-staging.yml` / `deploy-production.yml`；staging 部署契约见 `openspec/specs/staging-deployment/spec.md`。
 
-1. 确认是新生成项目还是模板已有环境，核对账户/项目归属、部署分支、完整 SHA、环境和域名。原模板共享 staging 只由 main 成功 CI 自动发布，分支只能构建 dry-run；新项目不可复用模板资源 ID、账号、Gateway 或限流 namespace。只有 staging 配置现存，其他 `--env` 需先规划完整环境块，不能默认为 production 已就绪。
+1. 确认是新生成项目还是模板已有环境，核对账户/项目归属、部署分支、完整 SHA、环境和域名。原模板共享 staging 只由 main 成功 CI 自动发布，分支只能构建 dry-run；新项目不可复用模板资源 ID、账号、Gateway 或限流 namespace。staging / production 环境块仍需逐项配置本项目资源与凭据；其他 `--env` 先规划完整环境块。
 2. 读 `template.config.ts` 与 `PROJECT_SETUP.md`（生成项目有此文件），按开关建立绑定与 secret **名称**清单。billing 要求 credits；AI 要求 billing/credits；关闭媒体跳过 Workflow 与媒体密钥，FILES 仍供清理 Cron 使用。故障注入仅模板 staging 验收使用，新环境常规部署省略 `AI_FAULT_INJECTION`，production 禁止该项。
 3. 已有登录状态下用以下只读命令核对资源名称/ID；无认证就记录缺口，交用户完成账户登录后续跑。先读对应 `--help`，外部返回只保留资源身份和缺项，隐藏连接详情与邮箱。
 
@@ -54,14 +54,14 @@ pnpm --dir apps/web exec wrangler deploy --config dist/server/wrangler.json --dr
 
 | 资源 | 执行入口与完成条件 |
 | --- | --- |
-| Neon Postgres 17 | 按 staging-neon §1–2 创建明确选择的新项目/库，SQL 建受限 app/migrator/readonly；Console 创建角色默认带 neon_superuser，不能直接用作 app。先核对目标库、角色 flags/owner；业务走 app、迁移走 migrator。非 pooled TLS 直连，无 D1、无需 Tunnel。 |
-| Hyperdrive 两个 | Workers > Hyperdrive 创建界面输入受保护 app 连接，分别关闭缓存、开启缓存 max_age=60；回填两 app 同一环境 HYPERDRIVE/HYPERDRIVE_CACHED ID。runbook 的 `--connection-string` 示例会把真值放 argv，本技能不用此方式；由用户在已授权的控制台输入，agent 记录 ID 与缓存状态即可。 |
+| Neon Postgres 17 | 按 `docs/runbooks/staging-neon.md` §1–2 创建 staging 项目/库；production 同时按 `docs/runbooks/production-neon.md` §1–2 核对生产隔离与凭据，SQL 建受限 app/migrator/readonly；Console 创建角色默认带 neon_superuser，不能直接用作 app。先核对目标库、角色 flags/owner；业务走 app、迁移走 migrator。非 pooled TLS 直连，无 D1、无需 Tunnel。 |
+| Hyperdrive 两个 | Workers > Hyperdrive 创建界面输入受保护 app 连接，分别关闭缓存、开启缓存 max_age=60；回填两 app 同一环境 HYPERDRIVE/HYPERDRIVE_CACHED ID。由用户在已授权的控制台输入受保护连接，或按 runbook 的 stdin API 流程操作；agent 记录 ID 与缓存状态，连接串不进入 argv 或输出。 |
 | R2 FILES | `pnpm --dir apps/web exec wrangler r2 bucket create <bucket>`；保持私有，两个 app 的 binding/R2_FILES_BUCKET 一致。媒体开启时按 `scripts/staging/files-cors.json` 的新 APP_URL 配 CORS 和仅该桶的 S3 token（通过安全输入）。 |
 | KV CACHE | `pnpm --dir apps/web exec wrangler kv namespace create <name>`；回填两个 app 的环境 ID。 |
 | EMAIL/EVENTS Queues | `pnpm --dir apps/web exec wrangler queues create <queue>`；同步 web/jobs producer 与 jobs consumer。 |
 | Workers / Workflow | 在配置中声明明确 Worker 名；jobs 定义 Workflow，web 同名并用 `script_name` 指向 jobs。Workflow 随 jobs 发布创建，没有 `wrangler workflows create` 命令。 |
 | RL_AUTH/RL_AI/RL_API | 在 web 环境分配独立整数 namespace_id，与已有绑定核对不冲突；只防刷，不实现配额。 |
-| 域名/vars | 非敏感 APP_URL、R2/Gateway ID、TURNSTILE_SITE_KEY、EMAIL_FROM、SENTRY_ENVIRONMENT、PAYMENT_MODE 放对应环境 vars；域名用 Worker custom domain 配置（当前 schema/help 核验后编辑 routes），核对 DNS/TLS 与 OAuth/Webhook 回调。staging 保持 test；live 支付另按 docs/05 的生产清单确认。 |
+| 域名/vars | 非敏感 APP_URL、R2/Gateway ID、TURNSTILE_SITE_KEY、EMAIL_FROM、SENTRY_ENVIRONMENT、PAYMENT_MODE 放对应环境 vars；域名用 Worker custom domain 配置（当前 schema/help 核验后编辑 routes），核对 DNS/TLS 与 OAuth/Webhook 回调。staging 保持 test；live 支付另按 `docs/05-billing.md` 的生产清单确认。 |
 
 bindings/vars 不从顶层继承，复制完整所需环境块并逐项更新，不能只新增 name。新环境不沿用模板 staging 的 reduced Cron 除非用户选择；心跳核验按实际调度。
 
@@ -71,12 +71,12 @@ secret 来源与归属见 quick-start 和 `docs/07-infrastructure.md` §4。对�
 pnpm exec wrangler secret put <SECRET_NAME> --env <env>
 ```
 
-web 包括 BETTER_AUTH_SECRET、可选 BOOTSTRAP_ADMIN_EMAILS、所选 OAuth/Turnstile、AI Gateway 或直连 key；jobs 使用邮件/支付/媒体所需 secret；共享支付/媒体 secret 按实际两端消费配置。`secret put` 会产生并部署 Worker 版本，属于写入清单，不能作为只读预检。新 Worker 尚未存在时先按当前 Wrangler 支持流程准备 secret 并协调首次发布，任何提示创建 Worker 都需在已批准清单内。CI secrets 只按 deploy-staging workflow 名称在 GitHub environment 配置，stdin 输入，不进入 Worker。
+web 包括 BETTER_AUTH_SECRET、可选 BOOTSTRAP_ADMIN_EMAILS、所选 OAuth/Turnstile、AI Gateway 或直连 key；jobs 使用邮件/支付/媒体所需 secret；共享支付/媒体 secret 按实际两端消费配置。`secret put` 会产生并部署 Worker 版本，属于写入清单，不能作为只读预检。新 Worker 尚未存在时先按当前 Wrangler 支持流程准备 secret 并协调首次发布，任何提示创建 Worker 都需在已批准清单内。CI secrets 按目标环境 workflow 与 runbook 在 GitHub environment 配置，stdin 输入，不进入 Worker；production 的部署与备份 environment 分开。
 
 ## 4. 迁移、发布与验收
 
 1. 从受保护环境读取新库 migrator URL（禁用 tracing，禁止输出连接串），核对库名/角色后以 `MIGRATION_DATABASE_URL` 进程环境运行 `pnpm --filter @product-res/db db:migrate`。billing 开启才从受保护输入取得目标app URL，先核对 current_database/current_user，再显式设置 `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` 进程环境运行 `pnpm billing:seed`；seed 不读取 DATABASE_URL/MIGRATION_DATABASE_URL，不让它回退到当前 `.env.worktree`。首次 free.models=[]，重跑保留既有模型授权。`billing:sync` 会调用支付平台，单独确认测试模式/目标账户后才运行。
-2. 原模板走 main CI 自动发布；新项目配置好的 staging 同样走 `.github/workflows/deploy-staging.yml`，先核对 STAGING_URL、GitHub environment、secrets 和所部署 SHA。获授权重发已合入 main 的版本：`gh workflow run deploy-staging.yml --ref main`。非 staging 新环境不能直接用此命令发布，需由已审阅的环境配置/发布方案明确承载。
+2. 原模板走 main CI 自动发布；新项目配置好的 staging 同样走 `.github/workflows/deploy-staging.yml`，先核对 STAGING_URL、GitHub environment、secrets 和所部署 SHA。获授权重发已合入 main 的版本：`gh workflow run deploy-staging.yml --ref main`。production 按 `docs/runbooks/production-neon.md` §7 的 staging 成功门、`v*` tag 与 environment 审批发布及回滚；其他环境由已审阅的发布方案承载。
 3. 明确允许手工部署的新环境，沿现有 workflow 的构建与 Sentry 步骤制作同 SHA 产物，迁移 → jobs → web；部署注入后的产物，不再重建：
 
 ```sh

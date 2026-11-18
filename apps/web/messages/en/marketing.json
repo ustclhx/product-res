@@ -80,5 +80,13 @@
   "marketing_docs_nav_label": "Documentation",
   "marketing_docs_search_label": "Search documentation",
   "marketing_docs_search_placeholder": "Search…",
-  "marketing_docs_search_empty": "No results."
+  "marketing_docs_search_empty": "No results.",
+  "marketing_nav_guides": "Guides",
+  "marketing_guides_title": "Guides",
+  "marketing_guides_subtitle": "Short answers to common questions.",
+  "marketing_guides_back": "All guides",
+  "marketing_guides_faq": "Frequently asked questions",
+  "marketing_not_found_title": "Page not found",
+  "marketing_not_found_body": "This page doesn't exist or has moved.",
+  "marketing_not_found_home": "Back to home"
 }

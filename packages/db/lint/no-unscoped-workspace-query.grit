@@ -17,6 +17,7 @@ pattern workspace_table() {
     `accuracyAuditItem`,
     `aiConversation`,
     `aiMessage`,
+    `aiMessageFeedback`,
     `aiTask`,
     `auditLog`,
     `billingCompensation`,

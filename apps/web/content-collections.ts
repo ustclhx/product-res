@@ -54,8 +54,21 @@ const legalPlaceholders: Record<string, string> = {
   refundWindowDays: String(templateConfig.billing.refundWindowDays),
 }
 
-export function fillPlaceholders(text: string): string {
-  return text.replace(/\{\{(\w+)\}\}/g, (match, key: string) => legalPlaceholders[key] ?? match)
+/** 模板默认邮箱不公开展示：读者发邮件只会石沉大海，明确提示尚未配置（create-project 会写入真实地址）。 */
+const unconfiguredSupportEmail: Record<string, string> = {
+  en: '[support email not configured yet]',
+  zh: '[尚未配置支持邮箱]',
+}
+
+export function fillPlaceholders(text: string, locale = 'en'): string {
+  return text.replace(/\{\{(\w+)\}\}/g, (match, key: string) => {
+    if (
+      key === 'supportEmail' &&
+      /@example\.(?:com|org|net)$/i.test(templateConfig.app.supportEmail)
+    )
+      return unconfiguredSupportEmail[locale] ?? unconfiguredSupportEmail.en ?? match
+    return legalPlaceholders[key] ?? match
+  })
 }
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}(T[\d:.]+(Z|[+-]\d{2}:\d{2}))?$/)
@@ -94,12 +107,14 @@ const legalPages = defineCollection({
   }),
   transform: async (document, context) => {
     const { content, ...data } = document
+    const { locale, slug } = localeAndSlug(document._meta)
     return {
       ...data,
-      ...localeAndSlug(document._meta),
-      title: fillPlaceholders(data.title),
-      description: fillPlaceholders(data.description),
-      html: await renderMdx(context, { ...document, content: fillPlaceholders(content) }),
+      locale,
+      slug,
+      title: fillPlaceholders(data.title, locale),
+      description: fillPlaceholders(data.description, locale),
+      html: await renderMdx(context, { ...document, content: fillPlaceholders(content, locale) }),
     }
   },
 })
@@ -124,10 +139,36 @@ const docs = defineCollection({
     if (document.requires && !templateConfig.features[document.requires])
       return context.skip(`features.${document.requires}=false`)
     const { content, requires: _requires, ...data } = document
-    const html = await renderMdx(context, { ...document, content: fillPlaceholders(content) })
+    const html = await renderMdx(context, {
+      ...document,
+      content: fillPlaceholders(content, localeAndSlug(document._meta).locale),
+    })
     // 构建期生成的搜索文本，客户端按它做全文匹配（design.md 决策 1）
     return { ...data, ...localeAndSlug(document._meta), html, searchText: plainText(html) }
   },
 })
 
-export default defineConfig({ content: [posts, legalPages, docs] })
+const guides = defineCollection({
+  name: 'guides',
+  directory: 'content/guides',
+  include: '*/*.mdx',
+  schema: z.object({
+    title: z.string().min(1),
+    /** 结论：页面置顶显示，也是 meta description */
+    answer_summary: z.string().min(1),
+    /** 同时渲染为页面 FAQ 与 FAQPage JSON-LD */
+    faq: z.array(z.object({ q: z.string().min(1), a: z.string().min(1) })).min(1),
+    kind: z.enum(['how-to', 'is-it-free', 'trends']),
+    updatedAt: isoDate,
+    draft: z.boolean().default(false),
+    content: z.string(),
+  }),
+  transform: async (document, context) => {
+    if (!templateConfig.features.guides) return context.skip('features.guides=false')
+    if (document.draft && !includeDrafts) return context.skip('draft')
+    const { content, ...data } = document
+    return { ...data, ...localeAndSlug(document._meta), html: await renderMdx(context, document) }
+  },
+})
+
+export default defineConfig({ content: [posts, legalPages, docs, guides] })
