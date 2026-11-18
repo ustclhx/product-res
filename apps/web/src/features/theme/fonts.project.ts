@@ -5,7 +5,7 @@
 // - 项目在 brand.css 用 --font-sans 换掉了 Inter 时，返回 [] 关闭；
 // - 预加载自己的字体：`import url from './my-font.woff2?url'` 后返回 [{ href: url, type: 'font/woff2' }]；
 // - 追加：return [...defaults, { href: url, type: 'font/woff2' }]
-import type { FontPreload } from '@saas/ui/fonts'
+import type { FontPreload } from '@product-res/ui/fonts'
 
 export function projectFontPreloads(defaults: readonly FontPreload[]): readonly FontPreload[] {
   return defaults

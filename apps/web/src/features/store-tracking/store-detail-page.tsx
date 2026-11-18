@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { m } from '../../paraglide/messages.js'
 import { Section } from '../data-center/shared.tsx'
 import { ProductThumb } from '../follow/follow-ui.tsx'
+import { dataTableLabels } from '../i18n/table-labels.ts'
 import { ErrorText, useAction } from '../workbench/fields.tsx'
 import { getStoreDetail, updateTrackedStore } from './store-tracking.functions.ts'
 import type { ListingItem } from './store-tracking.server.ts'
@@ -301,6 +302,7 @@ export function StoreDetailPage({ slug, initial }: { slug: string; initial: Stor
           page={{ pageIndex, pageSize: PAGE_SIZE, rowCount: data.listings.length }}
           onPageChange={setPageIndex}
           labels={{
+            ...dataTableLabels(),
             empty: m.store_tracking_listings_empty(),
             previous: m.store_tracking_previous(),
             next: m.store_tracking_next(),

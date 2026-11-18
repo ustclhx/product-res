@@ -1,9 +1,0 @@
-{
-  "file": ".env.replica",
-  "key": "BACKUP_REPLICA_MAX_AGE_SECONDS",
-  "before": 900,
-  "after": 3600,
-  "intervalSeconds": 300,
-  "mode": "0600",
-  "otherLinesUnchanged": true
-}

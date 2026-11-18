@@ -1,9 +1,0 @@
-{
-  // 7.2 临时探针：定义 Workflow（模拟 apps/jobs）。实测完成后 wrangler delete，见 ../README.md
-  "$schema": "../../../../apps/jobs/node_modules/wrangler/config-schema.json",
-  "name": "probe-72-workflow",
-  "main": "./index.ts",
-  "compatibility_date": "2026-10-01",
-  "workers_dev": false,
-  "workflows": [{ "name": "probe-72-wf", "binding": "PROBE_WF", "class_name": "ProbeWorkflow" }]
-}

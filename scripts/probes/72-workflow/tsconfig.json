@@ -1,8 +1,0 @@
-{
-  "extends": "../../../tsconfig.base.json",
-  "compilerOptions": {
-    "typeRoots": ["../../../apps/jobs/node_modules/@cloudflare"],
-    "types": ["workers-types"]
-  },
-  "include": ["workflow", "caller"]
-}

@@ -1,6 +1,10 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { type AvailableModel, defaultLanguageModelFactory, type TextModelEnv } from '@product-res/ai'
+import {
+  type AvailableModel,
+  defaultLanguageModelFactory,
+  type TextModelEnv,
+} from '@product-res/ai'
 import type { LanguageModel } from 'ai'
 import { z } from 'zod'
 import { EvalConfigError, TEXT_ENV_KEYS } from './errors.ts'

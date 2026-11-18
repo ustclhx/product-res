@@ -11,7 +11,9 @@ vi.mock('@tanstack/react-start/server', () => ({
   createStartHandler: () => mocks.start,
   defaultStreamHandler: vi.fn(),
 }))
-vi.mock('@product-res/platform/cloudflare', () => ({ createCloudflareRequestMetadata: () => mocks.meta }))
+vi.mock('@product-res/platform/cloudflare', () => ({
+  createCloudflareRequestMetadata: () => mocks.meta,
+}))
 vi.mock('../../server/cloudflare/env.ts', () => ({ checkEnv: mocks.checkEnv }))
 vi.mock('../../server/cloudflare/sentry.ts', () => ({
   instrumentWeb: (handler: unknown) => handler,

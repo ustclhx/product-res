@@ -62,7 +62,9 @@ export function inspectHtml(html) {
     ),
     // 多站页面的内联映射（apps/web features/analytics/head.ts），浏览器据此按访问域名插入脚本。
     plausibleConfig:
-      /<script\b[^>]*\bid\s*=\s*["']product-res-plausible["'][^>]*>([\s\S]*?)<\/script>/i.exec(head)?.[1],
+      /<script\b[^>]*\bid\s*=\s*["']product-res-plausible["'][^>]*>([\s\S]*?)<\/script>/i.exec(
+        head,
+      )?.[1],
   }
 }
 

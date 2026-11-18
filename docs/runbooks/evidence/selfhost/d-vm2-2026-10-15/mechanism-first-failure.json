@@ -1,7 +1,0 @@
-{
-  "passed": false,
-  "reason": "FileNotFoundError: Git unavailable in blank VM",
-  "scope": "metadata-only mechanism fixture requires Git; official initial deployment and reboot passed without Git",
-  "ownedFixtureCleanupRan": true,
-  "correction": "install Git solely in disposable VM for fixture creation; retry unchanged test"
-}

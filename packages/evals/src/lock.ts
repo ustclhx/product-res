@@ -1,6 +1,11 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { promptCanonicalJson, promptSha256, renderedPromptDigest, renderPrompt } from '@product-res/ai'
+import {
+  promptCanonicalJson,
+  promptSha256,
+  renderedPromptDigest,
+  renderPrompt,
+} from '@product-res/ai'
 import { z } from 'zod'
 import { EvalConfigError } from './errors.ts'
 import type { Sample } from './sample.ts'

@@ -1,9 +1,0 @@
-{
-  "scope": "independent read-only executor review of diff/evidence/assigned acceptance",
-  "blockingFindings": 0,
-  "credentialValueLeaksObserved": false,
-  "corrected": "limited formal GHCR claim to initial deployment/reboot/lifecycle; metadata-only rollback fixture explicit",
-  "clarified": "ordered exit/namespace checks and runtime harness notVerified boundary",
-  "finalMechanismPassed": true,
-  "vmCleanupPendingAtAudit": true
-}

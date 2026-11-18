@@ -27,7 +27,7 @@ export {
   CardHeader,
   CardTitle,
 } from './components/card.tsx'
-export { CHART_COLORS, Chart, type ChartProps } from './components/chart.tsx'
+export { CHART_COLORS, Chart, type ChartProps } from './project/chart.tsx'
 export { Checkbox, type CheckboxProps } from './components/checkbox.tsx'
 export {
   Combobox,
@@ -336,7 +336,7 @@ export {
   StatusTag,
   Tag,
   type Tone,
-} from './components/workbench.tsx'
+} from './project/workbench.tsx'
 // 上下文 hooks 与 Provider 暂不导出（接口随上游月度变化），应用经 UiRoot 配置
 export type { IconComponent, IconName } from './lib/icon-context.tsx'
 export type { ShapeVariant } from './lib/shape-context.tsx'

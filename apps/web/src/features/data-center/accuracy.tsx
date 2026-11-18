@@ -2,6 +2,7 @@ import { parseBoughtText } from '@product-res/datasources'
 import { Button, DataTable, type DataTableColumn, Input, Tag } from '@product-res/ui'
 import { useCallback, useEffect, useState } from 'react'
 import { m } from '../../paraglide/messages.js'
+import { dataTableLabels } from '../i18n/table-labels.ts'
 import {
   generateAccuracyAudit,
   getAccuracy,
@@ -38,6 +39,7 @@ interface Collected {
 }
 
 const tableLabels = () => ({
+  ...dataTableLabels(),
   previous: m.accuracy_previous(),
   next: m.accuracy_next(),
   page: (page: number, count: number | null) =>

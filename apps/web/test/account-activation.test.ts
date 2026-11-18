@@ -11,7 +11,7 @@ import {
 
 // add-beta-access-gate 2.3：开通条件以真实账本判断（本地 PG 经 Hyperdrive）。
 const db = createDb(env.HYPERDRIVE)
-const gated = { credits: { enabled: true, requireGrantForAccess: true } }
+const gated = { credits: { enabled: true, requireGrantForAccess: true, dailyEnabled: false } }
 const member = { role: 'user' }
 
 async function workspace() {
@@ -39,12 +39,12 @@ describe('内测准入：管理员发放积分开通工作台', () => {
     expect(await isAccountActivated(db, { role: null }, id, gated)).toBe(false)
     expect(
       await isAccountActivated(db, member, id, {
-        credits: { enabled: true, requireGrantForAccess: false },
+        credits: { enabled: true, requireGrantForAccess: false, dailyEnabled: false },
       }),
     ).toBe(true)
     expect(
       await isAccountActivated(db, member, id, {
-        credits: { enabled: false, requireGrantForAccess: true },
+        credits: { enabled: false, requireGrantForAccess: true, dailyEnabled: false },
       }),
     ).toBe(true)
   })

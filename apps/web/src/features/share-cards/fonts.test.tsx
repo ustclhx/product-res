@@ -186,7 +186,11 @@ describe('多站点解析', () => {
       'https://www.ganjiday.com/s/report/x',
       'https://product-res-web-preview.example.workers.dev/s/report/x',
     ]) {
-      const request = resolveRequestShareCardSite(requestUrl, 'https://product.ezarouter.cc', canonical)
+      const request = resolveRequestShareCardSite(
+        requestUrl,
+        'https://product.ezarouter.cc',
+        canonical,
+      )
       expect(request.origin).toBe('https://ganjiday.com')
       // 同一站点多次解析得到同一地址
       expect(request.site.fingerprint).toBe(eastSite.fingerprint)

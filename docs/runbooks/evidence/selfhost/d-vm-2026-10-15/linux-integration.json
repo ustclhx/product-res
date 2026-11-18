@@ -1,7 +1,0 @@
-{
-  "check": "linux-integration",
-  "passed": true,
-  "statistics": ["Test Files  1 passed | 1 skipped (2)", "Tests  3 passed | 11 skipped (14)"],
-  "source": "patched B source mounted in official migration image",
-  "officialSha": "081305013b022f457c561eecf5828b1959e13908"
-}

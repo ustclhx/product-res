@@ -19,7 +19,10 @@ function message(body: unknown = { v: 1, deliveryId: 'fixture' }): QueueMessage<
 it('forwards original identity and failure before acknowledging, and retries failed sends', async () => {
   const original = message()
   const send = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(undefined)
-  const sink = createEventsDeadLetterSink('product-res-events-production', { send, sendBatch: vi.fn() })
+  const sink = createEventsDeadLetterSink('product-res-events-production', {
+    send,
+    sendBatch: vi.fn(),
+  })
   await expect(
     sink.failed(original, { code: 'UPSTREAM_TIMEOUT', retryable: true }),
   ).rejects.toThrow('offline')
@@ -40,10 +43,10 @@ it('forwards original identity and failure before acknowledging, and retries fai
 it('persists before alerting and acknowledges only after both succeed; retries independently', async () => {
   const source = message()
   const send = vi.fn()
-  await createEventsDeadLetterSink('product-res-events-production', { send, sendBatch: vi.fn() }).failed(
-    source,
-    { code: 'UPSTREAM_TIMEOUT', retryable: true },
-  )
+  await createEventsDeadLetterSink('product-res-events-production', {
+    send,
+    sendBatch: vi.fn(),
+  }).failed(source, { code: 'UPSTREAM_TIMEOUT', retryable: true })
   const first = message(send.mock.calls[0]?.[0])
   const second = message(send.mock.calls[0]?.[0])
   const commit = vi
@@ -77,7 +80,10 @@ it('retains raw native DLQ messages and explicitly marks unavailable platform fa
   } as unknown as Database
   const alert = vi.fn().mockResolvedValue(undefined)
   await handleEventsDeadLetterBatch(
-    { queue: 'product-res-events-dlq-staging', messages: [original] } as unknown as QueueBatch<unknown>,
+    {
+      queue: 'product-res-events-dlq-staging',
+      messages: [original],
+    } as unknown as QueueBatch<unknown>,
     db,
     alert,
   )

@@ -1,8 +1,0 @@
-[
-  {
-    "service": "web",
-    "success": false,
-    "timeout": true,
-    "elapsedSeconds": 900
-  }
-]

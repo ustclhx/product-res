@@ -25,10 +25,10 @@ it('records CF terminal failure with app permissions and deduplicates redelivery
     retry: vi.fn(),
   }
   const send = vi.fn()
-  await createEventsDeadLetterSink('product-res-events-production', { send, sendBatch: vi.fn() }).failed(
-    source,
-    { code: 'OPERATIONS_TELEGRAM_DELIVERY_FAILED', retryable: true },
-  )
+  await createEventsDeadLetterSink('product-res-events-production', {
+    send,
+    sendBatch: vi.fn(),
+  }).failed(source, { code: 'OPERATIONS_TELEGRAM_DELIVERY_FAILED', retryable: true })
   const message: QueueMessage<unknown> = {
     ...source,
     body: send.mock.calls[0]?.[0],

@@ -129,7 +129,8 @@ describe('trackEvent 多站', () => {
       scriptUrl: 'https://stats.example/js/script.manual.js',
     }),
   })
-  const plausibleScripts = () => scripts.filter((script) => script.id === 'product-res-plausible-script')
+  const plausibleScripts = () =>
+    scripts.filter((script) => script.id === 'product-res-plausible-script')
 
   it('按访问域名插入一次对应 site 的脚本，加载前的事件进队列等待补发', () => {
     scripts.push(config())

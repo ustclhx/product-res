@@ -136,10 +136,9 @@ test('chat section shows every component state', async ({ page, context }) => {
   const safety = chat.locator('[data-preview-safety]')
   await expect(safety.locator('img, script, iframe')).toHaveCount(0)
   await expect(safety.locator('a[href^="javascript:"], a[href^="data:"]')).toHaveCount(0)
-  await expect(chat.locator('a[href^="https://product.ezarouter.cc/reports"]').first()).toHaveAttribute(
-    'rel',
-    /noopener/,
-  )
+  await expect(
+    chat.locator('a[href^="https://product.ezarouter.cc/reports"]').first(),
+  ).toHaveAttribute('rel', /noopener/)
   const table = chat.locator('[data-preview-table]')
   await expect(table.locator('table')).toHaveCount(1)
   await expect(table.locator('[role="group"][tabindex="0"]:has(table)')).toHaveCount(1)

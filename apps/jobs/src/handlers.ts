@@ -65,7 +65,13 @@ async function consumeBatch(batch: QueueBatch<unknown>, context: JobsContext) {
       ...(context.emailDeadLetters && { deadLetters: context.emailDeadLetters }),
     })
   }
-  if (['product-res-events-dlq', 'product-res-events-dlq-staging', 'product-res-events-dlq-production'].includes(batch.queue)) {
+  if (
+    [
+      'product-res-events-dlq',
+      'product-res-events-dlq-staging',
+      'product-res-events-dlq-production',
+    ].includes(batch.queue)
+  ) {
     return handleEventsDeadLetterBatch(batch, context.db.business())
   }
   if (EVENTS_QUEUES.has(batch.queue)) {

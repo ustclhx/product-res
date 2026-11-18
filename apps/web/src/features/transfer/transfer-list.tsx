@@ -1,6 +1,7 @@
 import { DataTable, type DataTableColumn } from '@product-res/ui'
 import type { ReactNode } from 'react'
 import { m } from '../../paraglide/messages.js'
+import { dataTableLabels } from '../i18n/table-labels.ts'
 import { formatUtc, kindLabel } from './labels.ts'
 import {
   progressText,
@@ -58,6 +59,7 @@ export function TransferList({
       page={{ pageIndex: 0, pageSize: Math.max(1, transfers.length), rowCount: transfers.length }}
       onPageChange={() => {}}
       labels={{
+        ...dataTableLabels(),
         empty: m.transfer_list_empty(),
         previous: m.transfer_table_previous(),
         next: m.transfer_table_next(),

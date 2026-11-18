@@ -1,4 +1,9 @@
-import { type CreditsTransaction, capture, lockWorkspaceCredits, release } from '@product-res/credits'
+import {
+  type CreditsTransaction,
+  capture,
+  lockWorkspaceCredits,
+  release,
+} from '@product-res/credits'
 import { type AiUsageCheckpoint, type Database, getSetting, scoped } from '@product-res/db'
 import { PgDialect } from 'drizzle-orm/pg-core'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

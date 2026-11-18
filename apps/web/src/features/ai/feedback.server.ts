@@ -1,4 +1,10 @@
-import { aiConversation, aiMessage, aiMessageFeedback, type Database, scoped } from '@product-res/db'
+import {
+  aiConversation,
+  aiMessage,
+  aiMessageFeedback,
+  type Database,
+  scoped,
+} from '@product-res/db'
 import { AppError } from '@product-res/shared'
 import { and, eq, inArray, type SQL, sql } from 'drizzle-orm'
 import {

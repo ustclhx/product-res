@@ -1,9 +1,0 @@
-{
-  "primaryProvider": "R2",
-  "replicaProvider": "R2",
-  "sameEndpoint": true,
-  "differentBuckets": true,
-  "differentAccessKeys": true,
-  "differentSecretKeys": true,
-  "limitation": "同一R2账号的独立桶/凭据隔离，不提供供应商或整个账号失效时的独立恢复保证。"
-}

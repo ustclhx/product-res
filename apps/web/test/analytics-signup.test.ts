@@ -22,7 +22,10 @@ it('有首触 Cookie 时写入规范化的 signup_host，sign_up 带同一 host'
   const touch = captureFirstTouch({ url: new URL('https://arcanumber.com/?utm_source=chatgpt') })
   await createSignUpRecorder({ db, queue: { send } })(
     { id },
-    new Headers({ host: 'WWW.Arcanumber.com:443', cookie: `product_res_ft=${encodeFirstTouch(touch)}` }),
+    new Headers({
+      host: 'WWW.Arcanumber.com:443',
+      cookie: `product_res_ft=${encodeFirstTouch(touch)}`,
+    }),
   )
   const [row] = await db
     .select({ signupHost: userAttribution.signupHost, source: userAttribution.source })

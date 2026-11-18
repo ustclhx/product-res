@@ -1,4 +1,8 @@
-import { type DefinedPrompt, getTextProviderCapabilities, resolveTextThinking } from '@product-res/ai'
+import {
+  type DefinedPrompt,
+  getTextProviderCapabilities,
+  resolveTextThinking,
+} from '@product-res/ai'
 import { generateText, type LanguageModel, NoObjectGeneratedError, Output } from 'ai'
 import { z } from 'zod'
 import { safeErrorMessage } from './errors.ts'

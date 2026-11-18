@@ -1,6 +1,0 @@
-{
-  "patchedProbeUsesSanitizedEnvironment": true,
-  "target": "081305013b022f457c561eecf5828b1959e13908",
-  "observed": "081305013b022f457c561eecf5828b1959e13908",
-  "ambientProxyDeliberatelyUnreachable": true
-}

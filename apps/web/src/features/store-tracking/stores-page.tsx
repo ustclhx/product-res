@@ -4,6 +4,7 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { m } from '../../paraglide/messages.js'
 import { Section } from '../data-center/shared.tsx'
 import { marketplaceLabel } from '../follow/marketplaces.ts'
+import { dataTableLabels } from '../i18n/table-labels.ts'
 import {
   canTransfer,
   SelectBox,
@@ -382,6 +383,7 @@ export function StoresPage({ slug, initial }: { slug: string; initial: StoresDat
             }}
             onPageChange={() => {}}
             labels={{
+              ...dataTableLabels(),
               empty: m.store_tracking_empty(),
               previous: m.store_tracking_previous(),
               next: m.store_tracking_next(),
@@ -500,6 +502,7 @@ function TrackedProductsSection({
           page={{ pageIndex: 0, pageSize: Math.max(1, rows.length), rowCount: rows.length }}
           onPageChange={() => {}}
           labels={{
+            ...dataTableLabels(),
             empty: m.transfer_actions_tracked_products_empty(),
             previous: m.store_tracking_previous(),
             next: m.store_tracking_next(),

@@ -16,7 +16,14 @@ import {
   wrapMediaFaultProvider,
 } from '@product-res/ai'
 import { type AiFaultInjectionEnv, isAiFaultInjectionEnabled } from '@product-res/config'
-import { type AiTask, aiTask, type Database, dbSettingStore, getSetting, scoped } from '@product-res/db'
+import {
+  type AiTask,
+  aiTask,
+  type Database,
+  dbSettingStore,
+  getSetting,
+  scoped,
+} from '@product-res/db'
 import { NonRetryableError, type WorkflowStep } from '@product-res/platform'
 import { AppError, MEDIA_DONE_EVENT } from '@product-res/shared'
 import { log, setLogContext } from '@product-res/shared/log'

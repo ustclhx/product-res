@@ -45,6 +45,9 @@
  * 圆角基准 8px 与基线一致，不再覆盖；正文字体沿用基线的 Inter + 中文系统字体栈（含度量匹配回退字体）。
  */
 :root {
+  /* 工作台表格与次要文字为 13px（设计稿），caption 角色随之放大；micro 仍为基线 11px */
+  --fs-caption: 13px;
+  --lh-caption: 20px;
   --background: #ffffff;
   --foreground: #262626;
   --card: #ffffff;

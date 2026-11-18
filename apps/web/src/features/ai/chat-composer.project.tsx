@@ -19,6 +19,6 @@ export interface ComposerEstimateProps {
  *     model, inputTokens, session,
  *   }) => <SessionChatCost model={model} inputTokens={inputTokens} session={session} />
  *
- * 组件可以使用 hooks；返回 null 时右下角不显示。外观只用 @saas/ui 组件与 token（docs/design-system.md）。
+ * 组件可以使用 hooks；返回 null 时右下角不显示。外观只用 @product-res/ui 组件与 token（docs/design-system.md）。
  */
 export const ProjectComposerEstimate: ComponentType<ComposerEstimateProps> | undefined = undefined

@@ -1,4 +1,11 @@
-import { Button, cn, DropdownContent, DropdownMenu, DropdownTrigger, MenuItem } from '@product-res/ui'
+import {
+  Button,
+  cn,
+  DropdownContent,
+  DropdownMenu,
+  DropdownTrigger,
+  MenuItem,
+} from '@product-res/ui'
 import { ChevronLeft, Ellipsis } from '@product-res/ui/icons'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
