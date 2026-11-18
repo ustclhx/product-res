@@ -194,7 +194,7 @@ export function FileImport({
                 setFile(null)
               }}
             >
-              <SelectTrigger id="import-source" className="w-full" placeholder="数据源" />
+              <SelectTrigger id="import-source" className="w-full min-w-0" placeholder="数据源" />
               <SelectContent>
                 {data?.sources.map((s, index) => (
                   <SelectItem key={s.id} index={index} value={s.id}>
@@ -209,7 +209,11 @@ export function FileImport({
               站点
             </label>
             <Select value={marketplace} onValueChange={(v) => setMarketplace(v as Marketplace)}>
-              <SelectTrigger id="import-marketplace" className="w-full" placeholder="站点" />
+              <SelectTrigger
+                id="import-marketplace"
+                className="w-full min-w-0"
+                placeholder="站点"
+              />
               <SelectContent>
                 {MARKETPLACES.map((m, index) => (
                   <SelectItem key={m} index={index} value={m}>
@@ -229,7 +233,11 @@ export function FileImport({
                   value={entityType}
                   onValueChange={(v) => setEntityType(v as typeof entityType)}
                 >
-                  <SelectTrigger id="import-entity" className="w-full" placeholder="每行是" />
+                  <SelectTrigger
+                    id="import-entity"
+                    className="w-full min-w-0"
+                    placeholder="每行是"
+                  />
                   <SelectContent>
                     <SelectItem index={0} value="product">
                       商品
@@ -262,7 +270,11 @@ export function FileImport({
                   value={templates.some((t) => t.id === templateId) ? templateId : AUTO_TEMPLATE}
                   onValueChange={(v) => setTemplateId(v === AUTO_TEMPLATE ? '' : v)}
                 >
-                  <SelectTrigger id="import-template" className="w-full" placeholder="自动识别" />
+                  <SelectTrigger
+                    id="import-template"
+                    className="w-full min-w-0"
+                    placeholder="自动识别"
+                  />
                   <SelectContent>
                     <SelectItem index={0} value={AUTO_TEMPLATE}>
                       自动识别

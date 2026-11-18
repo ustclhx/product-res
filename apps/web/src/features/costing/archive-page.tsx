@@ -120,6 +120,7 @@ export function ArchivePage({
                     <Button
                       size="sm"
                       variant="ghost"
+                      className="text-foreground"
                       onClick={() => setOpenId(openId === r.id ? null : r.id)}
                     >
                       {openId === r.id ? '收起' : '查看快照'}

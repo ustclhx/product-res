@@ -123,7 +123,11 @@ export function InviteLinksPanel({
         <div className="grid gap-1">
           <Label htmlFor="invite-link-role">{m.invite_links_role()}</Label>
           <Select value={role} onValueChange={(v) => setRole(v === 'admin' ? 'admin' : 'member')}>
-            <SelectTrigger id="invite-link-role" placeholder={m.invite_links_role()} />
+            <SelectTrigger
+              id="invite-link-role"
+              className="min-w-0"
+              placeholder={m.invite_links_role()}
+            />
             <SelectContent>
               <SelectItem index={0} value="member">
                 {m.invite_links_role_member()}
@@ -140,7 +144,11 @@ export function InviteLinksPanel({
             value={String(ttlDays)}
             onValueChange={(v) => setTtlDays(Number(v) as 1 | 7 | 30)}
           >
-            <SelectTrigger id="invite-link-ttl" placeholder={m.invite_links_ttl()} />
+            <SelectTrigger
+              id="invite-link-ttl"
+              className="min-w-0"
+              placeholder={m.invite_links_ttl()}
+            />
             <SelectContent>
               {([1, 7, 30] as const).map((days, index) => (
                 <SelectItem key={days} index={index} value={String(days)}>
