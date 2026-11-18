@@ -953,7 +953,9 @@ describe.skipIf(!templateConfig.ai.image && !templateConfig.ai.video)('media tas
   })
 })
 
-describe('媒体取消计费、不确定提交回调与存储配额', () => {
+// 与上方一致：生成时关闭了图片和视频时，媒体提交与取消路由不存在
+const mediaEnabled = templateConfig.ai.image || templateConfig.ai.video
+describe.skipIf(!mediaEnabled)('媒体取消计费、不确定提交回调与存储配额', () => {
   const cancelUrl = (who: { workspaceId: string }, taskId: string) =>
     `${APP_URL}/api/ai/tasks/${taskId}/cancel?workspaceId=${who.workspaceId}`
   async function preview(

@@ -198,6 +198,8 @@ describe('defineTemplateConfig', () => {
     expect(defineTemplateConfig({ app, credits: { dailyEnabled: true } }).credits).toEqual({
       enabled: true,
       dailyEnabled: true,
+      // 项目扩展的准入开关保持默认关闭
+      requireGrantForAccess: false,
     })
   })
 

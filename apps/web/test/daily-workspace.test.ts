@@ -29,13 +29,14 @@ vi.mock('@tanstack/react-start', () => ({
 vi.mock('@tanstack/react-start/server', () => ({
   getRequest: () => new Request('https://app.test/app/team'),
 }))
-vi.mock('../src/server/middleware.ts', () => ({ withWorkspace: {} }))
+vi.mock('../src/server/middleware.ts', () => ({ withWorkspace: {}, withWorkspaceMembership: {} }))
 vi.mock('../src/server/runtime.ts', () => ({
   getWebRuntime: () => ({ auth: {}, cache: adminCache }),
 }))
 vi.mock('../src/server/template-config.ts', () => ({
   templateConfig: {
-    credits: { enabled: true, dailyEnabled: true },
+    // 准入门槛（add-beta-access-gate）由 middleware.activation.test.ts 覆盖，此处关闭以只验证每日领取
+    credits: { enabled: true, dailyEnabled: true, requireGrantForAccess: false },
     tenancy: { multiTenant: true },
     billing: { enabled: false },
   },
@@ -94,7 +95,14 @@ it('从团队空间访问 App 时，每日领取只记入该用户的个人空�
       user: account,
       session: { activeOrganizationId: teamId, impersonatedBy: null },
     })
-    const context = { db, workspace, member: membership, workspaceReadOnly: false }
+    const context = {
+      db,
+      workspace,
+      member: membership,
+      workspaceReadOnly: false,
+      workspaceTeamReadOnly: false,
+      workspaceTransferring: false,
+    }
     const result = await (
       getWorkspacePage as unknown as (input: { context: typeof context }) => Promise<{
         workspace: { id: string; isPersonal: boolean }
