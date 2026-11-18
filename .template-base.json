@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "repository": "https://github.com/ustclhx/saas-template",
-  "commit": "96f241e8fd54a2b2cacac0f29c2d8ba64cae44e0",
-  "version": "0.6.0",
+  "commit": "c1de6d2b0a9a5813ce989896a27d78c66130828c",
+  "version": "0.7.0",
   "clean": true,
   "params": {
     "ai": [
