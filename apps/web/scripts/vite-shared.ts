@@ -22,7 +22,7 @@ export function sitePlugins(serverEntry?: string) {
   return [
     clientTemplateConfig(templateConfigFile, templateConfig),
     clientPureSchemas(),
-    marketingPerformanceOptions(performanceOptionsFile, marketing.performance),
+    marketingPerformanceOptions(performanceOptionsFile, marketing.performance, marketing.enabled),
     tailwindcss(),
     i18nMessages({ i18n, appAreaPrefixes: APP_AREA_PREFIXES }),
     contentCollections(),

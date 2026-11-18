@@ -266,6 +266,11 @@ export function checkServerHomeBundle(serverDir) {
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const clientDir = resolve(process.argv[2] ?? join(dirname(process.argv[1]), '../dist/client'))
   const serverDir = resolve(process.argv[3] ?? join(clientDir, '../server'))
+  // 营销页未启用时没有预渲染首页，首页包检查不适用
+  if (readPerformanceOptions(join(clientDir, '..'))?.prerender === false) {
+    console.log('首页包检查跳过：营销页未启用，无预渲染首页')
+    process.exit(0)
+  }
   const {
     files,
     gzipBytes,

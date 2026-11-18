@@ -24,6 +24,12 @@ const performance = existsSync(optionsFile)
   : DEFAULT_PERFORMANCE
 const allowRules = [...projectCriticalCssAllowRules(DEFAULT_ALLOW_RULES)]
 
+// 营销页未启用时不预渲染任何页面，没有可处理的 HTML
+if (performance.prerender === false) {
+  console.log('inline-critical-css: 营销页未启用，无预渲染 HTML，跳过')
+  process.exit(0)
+}
+
 async function* htmlFiles(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const path = join(dir, entry.name)

@@ -46,13 +46,20 @@ function withoutUndefined(value: unknown): unknown {
  * 构建时把 `marketing.performance` 写到 dist/.build/marketing-performance.json，
  * 供构建后处理 scripts/inline-critical-css.mjs 读取（不在 dist/client，不会被公开）。
  */
-export function marketingPerformanceOptions(file: string, performance: unknown): Plugin {
+/**
+ * prerender：营销页未启用时没有预渲染 HTML，构建后处理（关键样式内联、首页包检查）据此跳过而不是报错。
+ */
+export function marketingPerformanceOptions(
+  file: string,
+  performance: unknown,
+  prerender = true,
+): Plugin {
   return {
     name: 'saas:marketing-performance-options',
     apply: 'build',
     buildStart() {
       mkdirSync(dirname(file), { recursive: true })
-      writeFileSync(file, `${JSON.stringify(performance, null, 2)}\n`)
+      writeFileSync(file, `${JSON.stringify({ ...(performance as object), prerender }, null, 2)}\n`)
     },
   }
 }
