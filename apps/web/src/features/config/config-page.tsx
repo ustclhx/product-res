@@ -1,5 +1,23 @@
-import { Button, cn, Input, Tag } from '@product-res/ui'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  cn,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  Tag,
+} from '@product-res/ui'
 import { type FormEvent, useState } from 'react'
+import { m } from '../../paraglide/messages.js'
 import {
   type CostingSettingsData,
   CostParamsTab,
@@ -14,14 +32,7 @@ import {
   marketplaceLabel,
   splitList,
 } from '../follow/marketplaces.ts'
-import {
-  controlClass,
-  EmptyState,
-  ErrorText,
-  Field,
-  ReadOnlyNotice,
-  useAction,
-} from '../workbench/fields.tsx'
+import { EmptyState, ErrorText, Field, ReadOnlyNotice, useAction } from '../workbench/fields.tsx'
 import {
   getConfigPage,
   removeBrandEntry,
@@ -70,7 +81,7 @@ export function ConfigPage({
     <div className="grid gap-4">
       <div className="grid gap-1">
         <h1 className="text-lg font-semibold">设置</h1>
-        <p className="text-[13px] text-muted-foreground">
+        <p className="text-caption text-muted-foreground">
           节点日历、品牌库、风险规则、物流方案与成本参数由团队维护，次日流水线起生效。
         </p>
       </div>
@@ -124,17 +135,26 @@ const PLATFORM_LABELS = { amazon: 'Amazon', ebay: 'eBay' } as const
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
+/** 「全部平台」的占位值：Select 的选项值不能为空串，读写时换回 '' */
+export const ALL_PLATFORMS = '__all__'
+
 function RowActions({
   canWrite,
   busy,
   onEdit,
+  confirmTitle,
+  confirmDescription,
   onDelete,
 }: {
   canWrite: boolean
   busy: boolean
   onEdit: () => void
-  onDelete: () => void
+  /** 删除确认对话框的标题 */
+  confirmTitle: string
+  confirmDescription?: string
+  onDelete: () => Promise<boolean>
 }) {
+  const [confirming, setConfirming] = useState(false)
   if (!canWrite) return null
   return (
     <div className="flex justify-end gap-1">
@@ -145,11 +165,43 @@ function RowActions({
         size="sm"
         variant="ghost"
         className="text-destructive"
-        onClick={onDelete}
+        onClick={() => setConfirming(true)}
         disabled={busy}
       >
         删除
       </Button>
+      <AlertDialog
+        open={confirming}
+        onOpenChange={(open) => {
+          if (!busy) setConfirming(open)
+        }}
+      >
+        {/* 没有补充说明时显式去掉 aria-describedby，避免 Radix 缺少 Description 的告警 */}
+        <AlertDialogContent {...(confirmDescription ? {} : { 'aria-describedby': undefined })}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmTitle}</AlertDialogTitle>
+            {confirmDescription ? (
+              <AlertDialogDescription>{confirmDescription}</AlertDialogDescription>
+            ) : null}
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>{m.common_cancel()}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              loading={busy}
+              onClick={(event) => {
+                event.preventDefault()
+                // 失败时保留对话框，错误信息显示在列表上方
+                void onDelete().then((ok) => {
+                  if (ok) setConfirming(false)
+                })
+              }}
+            >
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
@@ -222,10 +274,9 @@ function NodesTab({ slug, rows, canWrite, onChanged }: TabProps<NodeRow>) {
                   canWrite={canWrite}
                   busy={busy}
                   onEdit={() => setEditing(n)}
-                  onDelete={() => {
-                    if (window.confirm(`删除节点“${n.name}”？关联它的方向会同时取消关联。`))
-                      void run(() => removeSeasonalNode({ data: { slug, id: n.id } }))
-                  }}
+                  confirmTitle={`删除节点“${n.name}”？`}
+                  confirmDescription="关联它的方向会同时取消关联。"
+                  onDelete={() => run(() => removeSeasonalNode({ data: { slug, id: n.id } }))}
                 />
               </td>
             </tr>
@@ -294,7 +345,7 @@ function NodeForm({
           {(id) => (
             <Input
               id={id}
-              className="h-8 text-[13px]"
+              className="h-8 text-caption"
               value={name}
               maxLength={64}
               onChange={(e) => setName(e.target.value)}
@@ -305,7 +356,7 @@ function NodeForm({
           {(id) => (
             <Input
               id={id}
-              className="h-8 font-mono text-[13px]"
+              className="h-8 font-mono text-caption"
               placeholder="07-15"
               value={date}
               onChange={(e) => setDate(e.target.value)}
@@ -319,7 +370,7 @@ function NodeForm({
               type="number"
               min={1}
               max={366}
-              className="h-8 text-[13px]"
+              className="h-8 text-caption"
               value={salesDays}
               onChange={(e) => setSalesDays(e.target.value)}
             />
@@ -329,7 +380,7 @@ function NodeForm({
           {(id) => (
             <Input
               id={id}
-              className="h-8 text-[13px]"
+              className="h-8 text-caption"
               value={keywords}
               onChange={(e) => setKeywords(e.target.value)}
             />
@@ -394,10 +445,8 @@ function BrandsTab({ slug, rows, canWrite, onChanged }: TabProps<BrandRow>) {
                   canWrite={canWrite}
                   busy={busy}
                   onEdit={() => setEditing(b)}
-                  onDelete={() => {
-                    if (window.confirm(`删除品牌库条目“${b.name}”？`))
-                      void run(() => removeBrandEntry({ data: { slug, id: b.id } }))
-                  }}
+                  confirmTitle={`删除品牌库条目“${b.name}”？`}
+                  onDelete={() => run(() => removeBrandEntry({ data: { slug, id: b.id } }))}
                 />
               </td>
             </tr>
@@ -449,7 +498,7 @@ function BrandForm({
           {(id) => (
             <Input
               id={id}
-              className="h-8 text-[13px]"
+              className="h-8 text-caption"
               value={name}
               maxLength={128}
               onChange={(e) => setName(e.target.value)}
@@ -458,42 +507,45 @@ function BrandForm({
         </Field>
         <Field label="类型">
           {(id) => (
-            <select
-              id={id}
-              className={controlClass}
-              value={kind}
-              onChange={(e) => setKind(e.target.value as BrandRow['kind'])}
-            >
-              {BRAND_KINDS.map((k) => (
-                <option key={k} value={k}>
-                  {BRAND_KIND_LABELS[k]}
-                </option>
-              ))}
-            </select>
+            <Select value={kind} onValueChange={(v) => setKind(v as BrandRow['kind'])}>
+              <SelectTrigger id={id} className="h-8 w-full text-caption" placeholder="类型" />
+              <SelectContent>
+                {BRAND_KINDS.map((k, index) => (
+                  <SelectItem key={k} index={index} value={k}>
+                    {BRAND_KIND_LABELS[k]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
         </Field>
         <Field label="平台">
           {(id) => (
-            <select
-              id={id}
-              className={controlClass}
-              value={marketplace}
-              onChange={(e) => setMarketplace(e.target.value as DirectionMarketplace | '')}
+            <Select
+              value={marketplace || ALL_PLATFORMS}
+              onValueChange={(v) =>
+                setMarketplace(v === ALL_PLATFORMS ? '' : (v as DirectionMarketplace))
+              }
             >
-              <option value="">全部平台</option>
-              {DIRECTION_MARKETPLACES.map((m) => (
-                <option key={m} value={m}>
-                  {MARKETPLACE_LABELS[m]}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id={id} className="h-8 w-full text-caption" placeholder="全部平台" />
+              <SelectContent>
+                <SelectItem index={0} value={ALL_PLATFORMS}>
+                  全部平台
+                </SelectItem>
+                {DIRECTION_MARKETPLACES.map((mp, index) => (
+                  <SelectItem key={mp} index={index + 1} value={mp}>
+                    {MARKETPLACE_LABELS[mp]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
         </Field>
         <Field label="备注">
           {(id) => (
             <Input
               id={id}
-              className="h-8 text-[13px]"
+              className="h-8 text-caption"
               value={note}
               maxLength={500}
               onChange={(e) => setNote(e.target.value)}
@@ -575,10 +627,8 @@ function RulesTab({ slug, rows, canWrite, onChanged }: TabProps<RuleRow>) {
                   canWrite={canWrite}
                   busy={busy}
                   onEdit={() => setEditing(r)}
-                  onDelete={() => {
-                    if (window.confirm('删除这条风险规则？'))
-                      void run(() => removeRiskRule({ data: { slug, id: r.id } }))
-                  }}
+                  confirmTitle="删除这条风险规则？"
+                  onDelete={() => run(() => removeRiskRule({ data: { slug, id: r.id } }))}
                 />
               </td>
             </tr>
@@ -641,41 +691,37 @@ function RuleForm({
       <div className="grid gap-3 md:grid-cols-3">
         <Field label="类型">
           {(id) => (
-            <select
-              id={id}
-              className={controlClass}
-              value={kind}
-              onChange={(e) => setKind(e.target.value as RuleRow['kind'])}
-            >
-              {RULE_KINDS.map((k) => (
-                <option key={k} value={k}>
-                  {RULE_KIND_LABELS[k]}
-                </option>
-              ))}
-            </select>
+            <Select value={kind} onValueChange={(v) => setKind(v as RuleRow['kind'])}>
+              <SelectTrigger id={id} className="h-8 w-full text-caption" placeholder="类型" />
+              <SelectContent>
+                {RULE_KINDS.map((k, index) => (
+                  <SelectItem key={k} index={index} value={k}>
+                    {RULE_KIND_LABELS[k]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
         </Field>
         <Field label="等级">
           {(id) => (
-            <select
-              id={id}
-              className={controlClass}
-              value={level}
-              onChange={(e) => setLevel(e.target.value as RuleRow['level'])}
-            >
-              {RULE_LEVELS.map((l) => (
-                <option key={l} value={l}>
-                  {RULE_LEVEL_LABELS[l].label}
-                </option>
-              ))}
-            </select>
+            <Select value={level} onValueChange={(v) => setLevel(v as RuleRow['level'])}>
+              <SelectTrigger id={id} className="h-8 w-full text-caption" placeholder="等级" />
+              <SelectContent>
+                {RULE_LEVELS.map((l, index) => (
+                  <SelectItem key={l} index={index} value={l}>
+                    {RULE_LEVEL_LABELS[l].label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
         </Field>
         <Field label="说明">
           {(id) => (
             <Input
               id={id}
-              className="h-8 text-[13px]"
+              className="h-8 text-caption"
               value={description}
               maxLength={500}
               onChange={(e) => setDescription(e.target.value)}
@@ -686,7 +732,7 @@ function RuleForm({
           {(id) => (
             <Input
               id={id}
-              className="h-8 text-[13px]"
+              className="h-8 text-caption"
               value={categories}
               onChange={(e) => setCategories(e.target.value)}
             />
@@ -696,7 +742,7 @@ function RuleForm({
           {(id) => (
             <Input
               id={id}
-              className="h-8 text-[13px]"
+              className="h-8 text-caption"
               value={attributes}
               onChange={(e) => setAttributes(e.target.value)}
             />
@@ -704,20 +750,29 @@ function RuleForm({
         </Field>
         <Field label="适用平台">
           {(id) => (
-            <select
-              id={id}
-              className={controlClass}
-              value={platform}
-              onChange={(e) => setPlatform(e.target.value as 'amazon' | 'ebay' | '')}
+            <Select
+              value={platform || ALL_PLATFORMS}
+              onValueChange={(v) =>
+                setPlatform(v === ALL_PLATFORMS ? '' : (v as 'amazon' | 'ebay'))
+              }
             >
-              <option value="">全部平台</option>
-              <option value="amazon">{PLATFORM_LABELS.amazon}</option>
-              <option value="ebay">{PLATFORM_LABELS.ebay}</option>
-            </select>
+              <SelectTrigger id={id} className="h-8 w-full text-caption" placeholder="全部平台" />
+              <SelectContent>
+                <SelectItem index={0} value={ALL_PLATFORMS}>
+                  全部平台
+                </SelectItem>
+                <SelectItem index={1} value="amazon">
+                  {PLATFORM_LABELS.amazon}
+                </SelectItem>
+                <SelectItem index={2} value="ebay">
+                  {PLATFORM_LABELS.ebay}
+                </SelectItem>
+              </SelectContent>
+            </Select>
           )}
         </Field>
       </div>
-      <div className="flex flex-wrap gap-4 text-[13px]">
+      <div className="flex flex-wrap gap-4 text-caption">
         <label className="inline-flex items-center gap-1.5">
           <input
             type="checkbox"

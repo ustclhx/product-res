@@ -4,7 +4,7 @@ import { workbenchErrorText } from './errors.ts'
 
 /** 工作台配置表单的小部件：与 Input 同一套边框、圆角和 13px 正文 */
 export const controlClass =
-  'h-8 w-full rounded-md border border-input bg-background px-2.5 text-[13px] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50'
+  'h-8 w-full rounded-md border border-input bg-background px-2.5 text-caption outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50'
 
 export function Field({
   label,
@@ -51,7 +51,7 @@ export function CheckboxGroup<T extends string>({
       ) : (
         <div className="flex flex-wrap gap-x-4 gap-y-1.5">
           {options.map((o) => (
-            <label key={o.value} className="inline-flex items-center gap-1.5 text-[13px]">
+            <label key={o.value} className="inline-flex items-center gap-1.5 text-caption">
               <input
                 type="checkbox"
                 className="size-3.5 accent-primary"
@@ -103,7 +103,7 @@ export function ErrorText({ children }: { children: string }) {
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <div className="grid justify-items-center gap-1 rounded-lg border border-dashed px-4 py-8 text-center">
-      <p className="text-[13px] font-medium">{title}</p>
+      <p className="text-caption font-medium">{title}</p>
       {children ? <div className="text-xs text-muted-foreground">{children}</div> : null}
     </div>
   )

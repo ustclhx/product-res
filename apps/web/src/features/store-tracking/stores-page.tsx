@@ -1,4 +1,16 @@
-import { Button, DataTable, type DataTableColumn } from '@product-res/ui'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  DataTable,
+  type DataTableColumn,
+} from '@product-res/ui'
 import { Link } from '@tanstack/react-router'
 import { type FormEvent, useEffect, useState } from 'react'
 import { m } from '../../paraglide/messages.js'
@@ -166,6 +178,7 @@ function columns(
   slug: string,
   canWrite: boolean,
   act: (id: string, status: StoreRowView['status']) => void,
+  onRemove: (store: StoreRowView) => void,
   busy: boolean,
   selection: TransferSelectionState | undefined,
 ): DataTableColumn<StoreRowView>[] {
@@ -174,13 +187,13 @@ function columns(
     {
       id: 'store',
       header: m.store_tracking_col_store(),
-      className: 'min-w-[200px]',
+      className: 'min-w-50',
       cell: (s) => (
         <div className="grid gap-0.5">
           <Link
             to="/app/$slug/stores/$storeId"
             params={{ slug, storeId: s.id }}
-            className="text-[13px] font-medium hover:text-primary"
+            className="text-caption font-medium hover:text-primary"
           >
             {s.displayName}
           </Link>
@@ -192,7 +205,7 @@ function columns(
       id: 'platform',
       header: m.store_tracking_col_platform(),
       cell: (s) => (
-        <div className="grid gap-0.5 text-[13px]">
+        <div className="grid gap-0.5 text-caption">
           <span>{marketplaceLabel(s.marketplace)}</span>
           {sourceLabel(s.source) ? (
             <span className="text-xs text-warning-strong">{sourceLabel(s.source)}</span>
@@ -205,7 +218,7 @@ function columns(
       id: 'new',
       header: m.store_tracking_col_new(),
       cell: (s) => (
-        <div className="grid gap-0.5 text-[13px] tabular-nums">
+        <div className="grid gap-0.5 text-caption tabular-nums">
           <span>
             {s.new7d} / {s.new30d}
           </span>
@@ -248,9 +261,7 @@ function columns(
               size="sm"
               variant="outline"
               disabled={busy}
-              onClick={() => {
-                if (window.confirm(m.store_tracking_remove_confirm())) act(s.id, 'removed')
-              }}
+              onClick={() => onRemove(s)}
             >
               {m.store_tracking_remove()}
             </Button>
@@ -272,10 +283,25 @@ export function StoresPage({ slug, initial }: { slug: string; initial: StoresDat
   const round = useAction(async () => {})
   const transferable = canTransfer(data.transfer)
   const storeSelection = useTransferSelection(data.stores.map((s) => s.id))
+  // 整个列表只放一个确认框：行内按钮记录目标并打开
+  const [removeOpen, setRemoveOpen] = useState(false)
+  const [removeTarget, setRemoveTarget] = useState<StoreRowView | null>(null)
+  async function confirmRemove() {
+    if (!removeTarget || action.busy) return
+    await action.run(() =>
+      setTrackedStoreStatus({ data: { slug, id: removeTarget.id, status: 'removed' } }),
+    )
+    // 成功失败都关闭，错误由列表下方 ErrorText 展示
+    setRemoveOpen(false)
+  }
   const cols = columns(
     slug,
     data.canWrite,
     (id, status) => void action.run(() => setTrackedStoreStatus({ data: { slug, id, status } })),
+    (store) => {
+      setRemoveTarget(store)
+      setRemoveOpen(true)
+    },
     action.busy,
     transferable ? storeSelection : undefined,
   )
@@ -305,7 +331,7 @@ export function StoresPage({ slug, initial }: { slug: string; initial: StoresDat
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div className="grid max-w-3xl gap-1">
           <h1 className="text-lg font-semibold">{m.store_tracking_title()}</h1>
-          <p className="text-[13px] text-muted-foreground">{m.store_tracking_intro()}</p>
+          <p className="text-caption text-muted-foreground">{m.store_tracking_intro()}</p>
         </div>
         {data.canWrite ? (
           <div className="grid justify-items-end gap-1">
@@ -395,6 +421,34 @@ export function StoresPage({ slug, initial }: { slug: string; initial: StoresDat
           />
         )}
         <ErrorText>{action.error}</ErrorText>
+        <AlertDialog
+          open={removeOpen}
+          onOpenChange={(open) => {
+            if (!action.busy) setRemoveOpen(open)
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{m.store_tracking_remove_title()}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {m.store_tracking_remove_description({ name: removeTarget?.displayName ?? '' })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={action.busy}>{m.common_cancel()}</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                loading={action.busy}
+                onClick={(event) => {
+                  event.preventDefault()
+                  void confirmRemove()
+                }}
+              >
+                {m.store_tracking_remove()}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         {data.removedCount > 0 ? (
           <p className="text-xs text-muted-foreground">
             {m.store_tracking_removed_count({ count: String(data.removedCount) })}
@@ -453,12 +507,12 @@ function TrackedProductsSection({
               href={p.url}
               target="_blank"
               rel="noreferrer noopener"
-              className="text-[13px] font-medium hover:text-primary"
+              className="text-caption font-medium hover:text-primary"
             >
               {productName(p)}
             </a>
           ) : (
-            <span className="text-[13px] font-medium">{productName(p)}</span>
+            <span className="text-caption font-medium">{productName(p)}</span>
           )}
           {p.marketplace ? (
             <span className="text-xs text-muted-foreground">{marketplaceLabel(p.marketplace)}</span>

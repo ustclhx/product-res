@@ -1,4 +1,12 @@
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Button,
   Chart,
   ConfidenceBar,
@@ -6,6 +14,10 @@ import {
   GradeTag,
   RiskCard,
   type RiskLevel,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
   SourceBadge,
   Tag,
 } from '@product-res/ui'
@@ -13,7 +25,7 @@ import { Link, useRouter } from '@tanstack/react-router'
 import { type ReactNode, useEffect, useState } from 'react'
 import { CostingTab } from '../costing/costing-tab.tsx'
 import { formatTime, Section } from '../data-center/shared.tsx'
-import { controlClass, EmptyState, ErrorText, useAction } from '../workbench/fields.tsx'
+import { EmptyState, ErrorText, useAction } from '../workbench/fields.tsx'
 import {
   estimateMemberRefresh,
   mergeCluster,
@@ -86,6 +98,15 @@ function barColor(value: number) {
 }
 
 /**
+ * ECharts 需要具体颜色字符串：构建配置时从 CSS 变量读取设计 token。
+ * 配置只在 Chart 的客户端 effect 中使用，服务端渲染时返回空串即可。
+ */
+function token(name: string) {
+  if (typeof document === 'undefined') return ''
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+}
+
+/**
  * 7 维雷达：按对综合分的贡献绘制（反向维度取 100 − 分数）。ECharts 雷达会把缺失点画到圆心，
  * 等同于 0，所以只用已计算的维度作坐标轴；缺失维度在图下方单独标“无数据”。
  */
@@ -106,18 +127,22 @@ function radarOption(dimensions: readonly Dimension[]) {
       radius: '64%',
       center: ['50%', '54%'],
       splitNumber: 4,
-      indicator: present.map((d) => ({ name: d.label, max: 100, color: '#595959' })),
+      indicator: present.map((d) => ({
+        name: d.label,
+        max: 100,
+        color: token('--subtle-foreground'),
+      })),
       axisName: { fontSize: 11 },
-      splitLine: { lineStyle: { color: '#f0f0f0' } },
+      splitLine: { lineStyle: { color: token('--border') } },
       splitArea: { show: false },
-      axisLine: { lineStyle: { color: '#e8e8e8' } },
+      axisLine: { lineStyle: { color: token('--border') } },
     },
     series: [
       {
         type: 'radar',
         symbolSize: 5,
         lineStyle: { width: 2 },
-        areaStyle: { color: 'rgba(22,119,255,0.15)' },
+        areaStyle: { color: token('--primary'), opacity: 0.15 },
         data: [{ name: '维度贡献', value: present.map((d) => effective(d) as number) }],
       },
     ],
@@ -134,13 +159,18 @@ function lineOption(
     grid: { left: 44, right: 16, top: 32, bottom: 28 },
     xAxis: {
       type: 'time',
-      axisLabel: { fontSize: 11, color: '#8c8c8c', formatter: '{MM}-{dd}', hideOverlap: true },
+      axisLabel: {
+        fontSize: 11,
+        color: token('--muted-foreground'),
+        formatter: '{MM}-{dd}',
+        hideOverlap: true,
+      },
     },
     yAxis: {
       type: 'value',
       scale: true,
-      axisLabel: { fontSize: 11, color: '#8c8c8c' },
-      splitLine: { lineStyle: { color: '#f0f0f0' } },
+      axisLabel: { fontSize: 11, color: token('--muted-foreground') },
+      splitLine: { lineStyle: { color: token('--border') } },
     },
     series: series.map((s) => ({
       name: s.name,
@@ -169,12 +199,12 @@ function seasonOption(season: NonNullable<Detail['season']>) {
       type: 'category',
       data: MONTHS,
       boundaryGap: false,
-      axisLabel: { fontSize: 11, color: '#8c8c8c' },
+      axisLabel: { fontSize: 11, color: token('--muted-foreground') },
     },
     yAxis: {
       type: 'value',
-      axisLabel: { fontSize: 11, color: '#8c8c8c' },
-      splitLine: { lineStyle: { color: '#f0f0f0' } },
+      axisLabel: { fontSize: 11, color: token('--muted-foreground') },
+      splitLine: { lineStyle: { color: token('--border') } },
     },
     series: season.years.map((y, i) => ({
       name: String(y.year),
@@ -189,8 +219,8 @@ function seasonOption(season: NonNullable<Detail['season']>) {
         ? {
             markArea: {
               silent: true,
-              itemStyle: { color: 'rgba(250,173,20,0.12)' },
-              label: { color: '#d48806', fontSize: 11, position: 'insideTop' },
+              itemStyle: { color: token('--warning'), opacity: 0.12 },
+              label: { color: token('--warning-strong'), fontSize: 11, position: 'insideTop' },
               data: areas,
             },
           }
@@ -222,11 +252,11 @@ function MetricStat({
         <span className="text-xl font-bold leading-tight text-muted-foreground">—</span>
       )}
       {view ? (
-        <span className="text-[11px] text-muted-foreground">
+        <span className="text-micro text-muted-foreground">
           {view.values.length > 1 ? `${view.values.length} 个来源` : '未交叉验证'}
         </span>
       ) : (
-        <span className="text-[11px] text-muted-foreground">无数据</span>
+        <span className="text-micro text-muted-foreground">无数据</span>
       )}
     </div>
   )
@@ -263,7 +293,7 @@ export function ClusterPage({
       </nav>
 
       {c.status !== 'active' ? (
-        <p className="rounded-md bg-warning-soft px-3 py-2 text-[13px] text-warning-strong">
+        <p className="rounded-md bg-warning-soft px-3 py-2 text-caption text-warning-strong">
           该商品簇已{c.status === 'merged' ? '合并' : '归档'}，仅供查看历史。
           {c.mergedIntoId ? (
             <Link
@@ -280,7 +310,7 @@ export function ClusterPage({
       {/* 商品头部 */}
       <section className="flex flex-wrap items-center gap-4 rounded-xl border bg-card p-4">
         <ProductThumb src={c.imageUrl} title={c.name} size={64} />
-        <div className="grid min-w-[240px] flex-1 gap-1">
+        <div className="grid min-w-60 flex-1 gap-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-base font-semibold leading-snug">{c.name}</h1>
             {lead ? <GradeTag score={null} readiness={lead.readiness} grade={lead.grade} /> : null}
@@ -340,7 +370,7 @@ export function ClusterPage({
           >
             {label}
             {key === 'costing' && lead ? (
-              <span className="ml-1.5 text-[11px] font-normal text-muted-foreground">
+              <span className="ml-1.5 text-micro font-normal text-muted-foreground">
                 {COSTING_STATUS_TEXT[lead.status] ?? ''}
               </span>
             ) : null}
@@ -355,21 +385,22 @@ export function ClusterPage({
           {lead && lead.gateReasons.length > 0 ? (
             <p
               role="status"
-              className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-[13px] text-destructive"
+              className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-caption text-destructive"
             >
               不推荐：{lead.gateReasons.join('；')}
             </p>
           ) : null}
           {!lead ? (
-            <p className="rounded-md bg-muted px-3 py-2 text-[13px] text-muted-foreground">
+            <p className="rounded-md bg-muted px-3 py-2 text-caption text-muted-foreground">
               每日流水线还没有为该商品簇生成线索，评分与置信度会在下次运行后出现。
             </p>
           ) : null}
 
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
+          <div className="flex flex-col gap-4 lg:flex-row">
             {/* 左：7 维评分卡 */}
             <Card
               title="7 维评分卡"
+              className="lg:w-95"
               testId="score-card"
               extra={
                 lead ? (
@@ -382,7 +413,7 @@ export function ClusterPage({
               <div className="grid justify-items-center gap-0.5 pb-1">
                 <span
                   className={cn(
-                    'font-mono text-[40px] font-bold leading-none',
+                    'font-mono text-display font-bold leading-none',
                     lead?.score == null
                       ? 'text-muted-foreground'
                       : lead.grade === 'reject'
@@ -410,7 +441,7 @@ export function ClusterPage({
                 height={240}
                 aria-label="7 维雷达"
               />
-              <p className="text-center text-[11px] text-muted-foreground">
+              <p className="text-center text-micro text-muted-foreground">
                 雷达按对综合分的贡献绘制：反向维度取 100 − 分数，越靠外越有利
               </p>
               {data.dimensions.some((d) => d.score === null) ? (
@@ -434,7 +465,7 @@ export function ClusterPage({
             </Card>
 
             {/* 右：置信度、风险 */}
-            <div className="grid content-start gap-4">
+            <div className="grid min-w-0 flex-1 content-start gap-4">
               <Card
                 title="置信度明细"
                 testId="confidence-card"
@@ -472,7 +503,7 @@ export function ClusterPage({
                             />
                           )}
                         </div>
-                        <span className="text-[11px] leading-snug text-muted-foreground">
+                        <span className="text-micro leading-snug text-muted-foreground">
                           {item.note}
                         </span>
                       </li>
@@ -584,7 +615,7 @@ export function ClusterPage({
 
       {tab === 'overview' && data.events.length > 0 ? (
         <Section title="修正记录">
-          <ul className="grid gap-1.5 text-[13px]">
+          <ul className="grid gap-1.5 text-caption">
             {data.events.map((e) => (
               <li key={e.id} className="flex items-center gap-2">
                 <Tag
@@ -626,7 +657,7 @@ function DimensionRow({ d, labels }: { d: Dimension; labels: Record<string, stri
   return (
     <li className="grid gap-1" data-dimension={d.dimension}>
       <div className="flex items-center gap-2.5 text-xs">
-        <span className="w-[76px] shrink-0 font-medium text-subtle-foreground">{d.label}</span>
+        <span className="w-19 shrink-0 font-medium text-subtle-foreground">{d.label}</span>
         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
           {value === null ? null : (
             <div
@@ -637,7 +668,7 @@ function DimensionRow({ d, labels }: { d: Dimension; labels: Record<string, stri
         </div>
         <span
           className={cn(
-            'w-14 shrink-0 text-right font-mono text-[13px] font-semibold',
+            'w-14 shrink-0 text-right font-mono text-caption font-semibold',
             d.score === null && 'font-sans text-xs font-normal text-muted-foreground',
           )}
           data-testid={`dimension-score-${d.dimension}`}
@@ -645,7 +676,7 @@ function DimensionRow({ d, labels }: { d: Dimension; labels: Record<string, stri
           {d.score === null ? '无数据' : Math.round(d.score)}
         </span>
       </div>
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pl-[86px] text-[11px] leading-snug text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pl-21.5 text-micro leading-snug text-muted-foreground">
         {d.reversed && value !== null ? (
           <span className="text-warning-strong">反向维度 · 贡献 {value}</span>
         ) : null}
@@ -679,18 +710,16 @@ function SourceCompare({ compare }: { compare: Detail['compare'] }) {
       testId="source-compare"
       extra={
         compare.length > 1 ? (
-          <select
-            aria-label="选择成员"
-            className={cn(controlClass, 'h-7 w-auto max-w-[260px] text-xs')}
-            value={current?.productId}
-            onChange={(e) => setSelected(e.target.value)}
-          >
-            {compare.map((m) => (
-              <option key={m.productId} value={m.productId}>
-                {m.label}
-              </option>
-            ))}
-          </select>
+          <Select size="compact" value={current?.productId ?? ''} onValueChange={setSelected}>
+            <SelectTrigger aria-label="选择成员" className="max-w-65" placeholder="选择成员" />
+            <SelectContent>
+              {compare.map((m, index) => (
+                <SelectItem key={m.productId} index={index} value={m.productId}>
+                  {m.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         ) : null
       }
     >
@@ -698,7 +727,7 @@ function SourceCompare({ compare }: { compare: Detail['compare'] }) {
         <p className="text-xs text-muted-foreground">近 90 天没有该商品的观测值。</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
+          <table className="w-full text-caption">
             <thead>
               <tr className="border-b text-left text-xs text-muted-foreground">
                 <th className="py-2 pr-3 font-medium">指标</th>
@@ -722,7 +751,7 @@ function SourceCompare({ compare }: { compare: Detail['compare'] }) {
                           </span>
                         </SourceHover>
                       ) : null}
-                      <div className="text-[11px] text-muted-foreground">
+                      <div className="text-micro text-muted-foreground">
                         主值来源 {primary?.label}
                       </div>
                     </td>
@@ -734,7 +763,7 @@ function SourceCompare({ compare }: { compare: Detail['compare'] }) {
                             <span className="font-mono">
                               {formatMetric(m.metric, v.value, v.currency)}
                             </span>
-                            <span className="text-[11px] text-muted-foreground">
+                            <span className="text-micro text-muted-foreground">
                               获取于 {formatTime(v.fetchedAt)}
                             </span>
                           </div>
@@ -779,7 +808,18 @@ function Members({
   const { busy, error, run } = useAction(onChanged)
   const [target, setTarget] = useState('')
   const [refreshing, setRefreshing] = useState<string | null>(null)
+  // 整个列表只放一个确认框：行内按钮记录目标并打开
+  const [splitOpen, setSplitOpen] = useState(false)
+  const [splitTarget, setSplitTarget] = useState<Detail['members'][number] | null>(null)
   const writable = data.canWrite && data.cluster.status === 'active'
+  async function confirmSplit() {
+    if (!splitTarget || busy) return
+    await run(() =>
+      splitMember({ data: { slug, clusterId: data.cluster.id, memberId: splitTarget.id } }),
+    )
+    // 成功失败都关闭，错误由下方 ErrorText 展示
+    setSplitOpen(false)
+  }
   return (
     <Card
       title={`簇成员（${data.members.length}）`}
@@ -794,7 +834,7 @@ function Members({
         <EmptyState title="没有成员" />
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
+          <table className="w-full text-caption">
             <thead>
               <tr className="border-b text-left text-xs text-muted-foreground">
                 <th className="py-2 pr-3 font-medium">商品</th>
@@ -816,11 +856,10 @@ function Members({
                   busy={busy}
                   refreshOpen={refreshing === m.id}
                   onToggleRefresh={() => setRefreshing(refreshing === m.id ? null : m.id)}
-                  onSplit={() =>
-                    run(() =>
-                      splitMember({ data: { slug, clusterId: data.cluster.id, memberId: m.id } }),
-                    )
-                  }
+                  onSplit={() => {
+                    setSplitTarget(m)
+                    setSplitOpen(true)
+                  }}
                   onRefreshed={onChanged}
                 />
               ))}
@@ -845,28 +884,59 @@ function Members({
           <label htmlFor="merge-target" className="text-xs font-medium text-muted-foreground">
             把另一个簇合并到本簇
           </label>
-          <select
-            id="merge-target"
-            className={cn(controlClass, 'w-auto min-w-[240px] max-w-[360px]')}
-            value={target}
-            onChange={(e) => setTarget(e.target.value)}
+          <Select
+            value={data.mergeTargets.some((t) => t.id === target) ? target : ''}
+            onValueChange={setTarget}
             disabled={data.mergeTargets.length === 0}
           >
-            <option value="">
-              {data.mergeTargets.length === 0 ? '同方向同站点没有其他商品簇' : '选择商品簇'}
-            </option>
-            {data.mergeTargets.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger
+              id="merge-target"
+              className="min-w-60 max-w-90"
+              placeholder={
+                data.mergeTargets.length === 0 ? '同方向同站点没有其他商品簇' : '选择商品簇'
+              }
+            />
+            <SelectContent>
+              {data.mergeTargets.map((t, index) => (
+                <SelectItem key={t.id} index={index} value={t.id}>
+                  {t.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button type="submit" size="sm" variant="outline" disabled={busy || !target}>
             合并
           </Button>
         </form>
       ) : null}
       <ErrorText>{error}</ErrorText>
+      <AlertDialog
+        open={splitOpen}
+        onOpenChange={(open) => {
+          if (!busy) setSplitOpen(open)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>拆分成员？</AlertDialogTitle>
+            <AlertDialogDescription>
+              把“{splitTarget?.title ?? ''}”拆成单独的商品簇，拆分后该成员会锁定。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              loading={busy}
+              onClick={(event) => {
+                event.preventDefault()
+                void confirmSplit()
+              }}
+            >
+              拆分
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 }
@@ -938,9 +1008,7 @@ function MemberRow({
                 variant="outline"
                 disabled={busy || !canSplit}
                 title={canSplit ? undefined : '簇里只有这一个成员'}
-                onClick={() => {
-                  if (window.confirm(`把“${m.title}”拆成单独的商品簇？`)) onSplit()
-                }}
+                onClick={onSplit}
               >
                 拆分
               </Button>

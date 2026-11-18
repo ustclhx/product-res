@@ -44,18 +44,20 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={titleId}
         className={cn(
-          'relative z-10 grid max-h-[90vh] w-full max-w-lg grid-rows-[auto_1fr_auto] overflow-hidden rounded-t-xl border bg-card shadow-lg sm:rounded-xl',
+          'relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl border bg-card shadow-lg sm:rounded-xl',
           className,
         )}
       >
-        <h2 id={titleId} className="border-b px-4 py-3 text-sm font-semibold">
+        <h2 id={titleId} className="shrink-0 border-b px-4 py-3 text-sm font-semibold">
           {title}
         </h2>
-        <div className="grid min-h-0 min-w-0 grid-cols-1 gap-3 overflow-y-auto px-4 py-3 text-[13px]">
+        <div className="grid min-h-0 min-w-0 grid-cols-1 gap-3 overflow-y-auto px-4 py-3 text-caption">
           {children}
         </div>
         {footer ? (
-          <div className="flex flex-wrap justify-end gap-2 border-t px-4 py-3">{footer}</div>
+          <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t px-4 py-3">
+            {footer}
+          </div>
         ) : null}
       </div>
     </div>

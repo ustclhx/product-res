@@ -47,7 +47,7 @@ function TransfersPage() {
           <Link
             to="/app/$slug/settings/transfers/$transferId"
             params={{ slug, transferId: t.id }}
-            className="text-primary text-[13px] underline-offset-4 hover:underline"
+            className="text-primary text-caption underline-offset-4 hover:underline"
           >
             {m.transfer_view()}
           </Link>

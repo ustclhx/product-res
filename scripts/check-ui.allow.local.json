@@ -1,4 +1,75 @@
 {
-  "exceptions": {},
+  "exceptions": {
+    "apps/web/src/features/category/charts.tsx": [
+      {
+        "rule": "color-literal",
+        "reason": "词云按词频分级着色，最高一级沿用设计稿 Ant red-7；语义色只有一级 destructive，换用会合并两个色阶。",
+        "value": "#cf1322"
+      },
+      {
+        "rule": "color-literal",
+        "reason": "词云词频色阶的橙色一级（Ant orange-6），基线没有对应语义色。",
+        "value": "#fa8c16"
+      }
+    ],
+    "apps/web/src/features/costing/costing-tab.tsx": [
+      {
+        "rule": "arbitrary-class",
+        "reason": "瀑布图与成本明细两张卡片按 1.35:1 分栏且需等高，卡片组件不接受 className，flex 需额外包装并失去等高。",
+        "value": "xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]"
+      },
+      {
+        "rule": "arbitrary-class",
+        "reason": "dt/dd 键值列表：标签列按内容宽度、数值列占满，grid-cols-2 会均分导致数字换行。",
+        "value": "grid-cols-[auto_1fr]"
+      }
+    ],
+    "apps/web/src/features/costing/home-page.tsx": [
+      {
+        "rule": "arbitrary-class",
+        "reason": "核算首页主区与 280px 侧栏两张卡片需等高，卡片组件不接受 className。",
+        "value": "xl:grid-cols-[minmax(0,1fr)_280px]"
+      }
+    ],
+    "apps/web/src/features/transfer/modal.tsx": [
+      {
+        "rule": "arbitrary-class",
+        "reason": "数据转移弹窗限高为视口的 90%，Tailwind 只有 100vh 的 max-h-screen，无等价工具类。",
+        "value": "max-h-[90vh]"
+      }
+    ],
+    "packages/ui/src/project/chart.tsx": [
+      {
+        "rule": "color-literal",
+        "reason": "ECharts 系列分类色板（设计稿 Ant 主色/成功/警告/错误/紫/青），ECharts 在 canvas 中需要具体颜色，紫、青无对应语义色。",
+        "value": "#1677ff"
+      },
+      {
+        "rule": "color-literal",
+        "reason": "ECharts 系列分类色板（设计稿 Ant 主色/成功/警告/错误/紫/青），ECharts 在 canvas 中需要具体颜色，紫、青无对应语义色。",
+        "value": "#52c41a"
+      },
+      {
+        "rule": "color-literal",
+        "reason": "ECharts 系列分类色板（设计稿 Ant 主色/成功/警告/错误/紫/青），ECharts 在 canvas 中需要具体颜色，紫、青无对应语义色。",
+        "value": "#faad14"
+      },
+      {
+        "rule": "color-literal",
+        "reason": "ECharts 系列分类色板（设计稿 Ant 主色/成功/警告/错误/紫/青），ECharts 在 canvas 中需要具体颜色，紫、青无对应语义色。",
+        "value": "#ff4d4f"
+      },
+      {
+        "rule": "color-literal",
+        "reason": "ECharts 系列分类色板（设计稿 Ant 主色/成功/警告/错误/紫/青），ECharts 在 canvas 中需要具体颜色，紫、青无对应语义色。",
+        "value": "#722ed1"
+      },
+      {
+        "rule": "color-literal",
+        "reason": "ECharts 系列分类色板（设计稿 Ant 主色/成功/警告/错误/紫/青），ECharts 在 canvas 中需要具体颜色，紫、青无对应语义色。",
+        "value": "#13c2c2"
+      }
+    ]
+  },
   "pendingReplacement": {}
 }

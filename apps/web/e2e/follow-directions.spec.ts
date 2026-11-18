@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { register, simulateClientIp, waitForHydration } from './fixtures.ts'
+import { chooseOption } from './select.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // add-follow-selection 2.2 / 2.3：从跟卖选品入口进入方向页，新建方向并添加种子店铺；设置页的标签页增删。
@@ -55,7 +56,7 @@ test('选品方向与店铺池、设置页的节点日历与品牌库', async ({
   await page.getByRole('button', { name: '新增条目' }).click()
   const brand = page.getByRole('form', { name: '品牌库条目' })
   await brand.getByLabel('品牌名').fill('Acme')
-  await brand.getByLabel('类型').selectOption('vero')
+  await chooseOption(brand.getByRole('combobox', { name: '类型' }), { value: 'vero' })
   await brand.getByRole('button', { name: '保存' }).click()
   await expect(page.getByRole('cell', { name: 'Acme' })).toBeVisible()
   await expect(page.getByRole('cell', { name: 'VeRO 权利人' })).toBeVisible()

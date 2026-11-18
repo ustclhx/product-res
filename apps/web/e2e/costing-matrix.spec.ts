@@ -3,6 +3,7 @@ import { mkdirSync } from 'node:fs'
 import { expect, type Page, test } from '@playwright/test'
 import { newId } from '@product-res/shared'
 import { fixtureDb, register, simulateClientIp, waitForHydration } from './fixtures.ts'
+import { chooseOption } from './select.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // add-costing-decisions 2.3 / 3.1：商品簇详情“核算”标签——在页面上录入供应商与阶梯报价，矩阵显示不可用原因并高亮最优，
@@ -255,7 +256,7 @@ test('核算标签：报价录入、矩阵最优与选定组合进入待决定',
   // 页面上录入一家完整报价（新建供应商、两档阶梯）
   await tab.getByRole('button', { name: '新增报价' }).click()
   const form = page.getByRole('form', { name: '报价' })
-  await form.getByLabel('供应商', { exact: true }).selectOption({ label: '＋ 新建供应商…' })
+  await chooseOption(form.getByRole('combobox', { name: '供应商', exact: true }), '＋ 新建供应商…')
   await form.getByLabel('供应商名称').fill('义乌佳美日用品厂')
   await form.getByLabel('供应商链接').fill('https://detail.1688.com/offer/6612345.html')
   await form.getByLabel('第 1 档数量').fill('200')
@@ -268,7 +269,9 @@ test('核算标签：报价录入、矩阵最优与选定组合进入待决定',
   await form.getByLabel('长（cm）').fill('24')
   await form.getByLabel('宽（cm）').fill('12')
   await form.getByLabel('高（cm）').fill('6')
-  await form.getByLabel('可信度').selectOption('confirmed')
+  await chooseOption(form.getByRole('combobox', { name: '可信度', exact: true }), {
+    value: 'confirmed',
+  })
   await form.getByLabel('采购天数').fill('10')
   await form.getByRole('button', { name: '保存报价' }).click()
   await expect(tab.getByTestId('quote-row')).toHaveCount(3)

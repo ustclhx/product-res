@@ -9,6 +9,7 @@ import {
   simulateClientIp,
   uiText,
 } from './fixtures.ts'
+import { chooseOption } from './select.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // add-team-invite-links 5.1：owner 生成链接 → 另一账号经链接注册 → 确认加入 → 看到团队空间。
@@ -29,8 +30,14 @@ test('owner shares an invite link, a new account registers through it and joins 
   await page.getByRole('link', { name: uiText('app_workspace_settings') }).click()
 
   const form = page.getByRole('form', { name: uiText('invite_links_form') })
-  await form.getByLabel(uiText('invite_links_role')).selectOption('member')
-  await form.getByLabel(uiText('invite_links_ttl')).selectOption('7')
+  await chooseOption(
+    form.getByRole('combobox', { name: uiText('invite_links_role'), exact: true }),
+    uiText('invite_links_role_member'),
+  )
+  await chooseOption(
+    form.getByRole('combobox', { name: uiText('invite_links_ttl'), exact: true }),
+    uiText('invite_links_ttl_option', { days: 7 }),
+  )
   await form.getByLabel(uiText('invite_links_max_uses')).fill('2')
   await form.getByRole('button', { name: uiText('invite_links_generate') }).click()
   await expect(page.getByText(uiText('invite_links_created'))).toBeVisible()
@@ -80,8 +87,11 @@ test('owner shares an invite link, a new account registers through it and joins 
 
   await page.reload()
   await expect(row).toContainText('1 / 2')
-  page.on('dialog', (dialog) => dialog.accept())
   await row.getByRole('button', { name: uiText('invite_links_revoke') }).click()
+  await page
+    .getByRole('alertdialog')
+    .getByRole('button', { name: uiText('invite_links_revoke') })
+    .click()
   await expect(row).toContainText(uiText('invite_links_status_revoked'))
   const members = page.getByRole('listitem').filter({ hasText: `links-guest-${key}@example.com` })
   await expect(members).toContainText(uiText('workspace_role_member'))

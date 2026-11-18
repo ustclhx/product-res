@@ -1,7 +1,16 @@
-import { Button, cn, Input, Tag } from '@product-res/ui'
+import {
+  Button,
+  cn,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  Tag,
+} from '@product-res/ui'
 import { type FormEvent, useState } from 'react'
 import { SimpleTable } from '../data-center/shared.tsx'
-import { controlClass, EmptyState, ErrorText, Field, useAction } from '../workbench/fields.tsx'
+import { EmptyState, ErrorText, Field, useAction } from '../workbench/fields.tsx'
 import { removeQuote, removeSupplier, saveQuote, saveSupplier } from './costing.functions.ts'
 import { formatMoney, moneyInput, numberInput, parseMoney, parseNumber } from './format.ts'
 import { QUOTE_CONFIDENCES, SUPPLIER_PLATFORMS } from './inputs.ts'
@@ -22,6 +31,63 @@ export interface SupplierRow {
 }
 
 const NEW_SUPPLIER = '__new__'
+
+/** Radix Select 不允许空字符串作为选项值：“全部”等空值选项在组件内部映射为该占位值 */
+const EMPTY_CHOICE = '__empty__'
+
+/**
+ * 工作台表单的下拉选择：@product-res/ui Select 的薄封装，高度、字号与宽度对齐原 controlClass（32px、caption、撑满所在字段）。
+ * 选项文字同时作为 valueLabel 传入，服务端输出即显示选中项。
+ */
+export function ChoiceSelect<T extends string>({
+  id,
+  value,
+  options,
+  onChange,
+  placeholder,
+  disabled,
+  className,
+  'aria-label': ariaLabel,
+}: {
+  id?: string
+  value: T
+  options: readonly { value: T; label: string }[]
+  onChange: (value: T) => void
+  placeholder: string
+  disabled?: boolean
+  className?: string
+  'aria-label'?: string
+}) {
+  const toItem = (v: string) => (v === '' ? EMPTY_CHOICE : v)
+  return (
+    <Select
+      size="compact"
+      value={toItem(value)}
+      disabled={disabled ?? false}
+      onValueChange={(next) => onChange((next === EMPTY_CHOICE ? '' : next) as T)}
+    >
+      <SelectTrigger
+        id={id}
+        aria-label={ariaLabel}
+        placeholder={placeholder}
+        valueLabel={options.find((o) => o.value === value)?.label}
+        className={cn('h-8 w-full min-w-0 text-caption', className)}
+      />
+      <SelectContent>
+        {options.map((o, index) => (
+          <SelectItem key={o.value} index={index} value={toItem(o.value)}>
+            {o.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
+export const CURRENCY_OPTIONS = ['CNY', 'USD', 'EUR', 'GBP', 'JPY'].map((c) => ({
+  value: c,
+  label: c,
+}))
 const today = () => new Date().toISOString().slice(0, 10)
 
 function tiersText(q: Pick<QuoteView, 'tiers' | 'currency'>) {
@@ -107,7 +173,7 @@ export function QuoteSection({
                         (s?.name ?? '—')
                       )}
                     </span>
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-micro text-muted-foreground">
                       {s ? SUPPLIER_PLATFORM_LABELS[s.platform] : ''}
                       {writable && s ? (
                         <button
@@ -217,8 +283,8 @@ function SupplierFields({
   onChange: (next: { name: string; url: string; platform: SupplierRow['platform'] }) => void
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_140px]">
-      <Field label="供应商名称">
+    <div className="grid gap-3 sm:flex">
+      <Field label="供应商名称" className="min-w-0 sm:basis-0 sm:grow-10">
         {(id) => (
           <Input
             id={id}
@@ -228,7 +294,7 @@ function SupplierFields({
           />
         )}
       </Field>
-      <Field label="供应商链接">
+      <Field label="供应商链接" className="min-w-0 sm:basis-0 sm:grow-14">
         {(id) => (
           <Input
             id={id}
@@ -247,22 +313,18 @@ function SupplierFields({
           />
         )}
       </Field>
-      <Field label="供应商平台">
+      <Field label="供应商平台" className="sm:w-35 sm:shrink-0">
         {(id) => (
-          <select
+          <ChoiceSelect
             id={id}
-            className={controlClass}
+            placeholder="供应商平台"
             value={value.platform}
-            onChange={(e) =>
-              onChange({ ...value, platform: e.target.value as SupplierRow['platform'] })
-            }
-          >
-            {SUPPLIER_PLATFORMS.map((p) => (
-              <option key={p} value={p}>
-                {SUPPLIER_PLATFORM_LABELS[p]}
-              </option>
-            ))}
-          </select>
+            options={SUPPLIER_PLATFORMS.map((p) => ({
+              value: p,
+              label: SUPPLIER_PLATFORM_LABELS[p],
+            }))}
+            onChange={(platform) => onChange({ ...value, platform })}
+          />
         )}
       </Field>
     </div>
@@ -455,9 +517,9 @@ function QuoteForm({
       onSubmit={submit}
     >
       <div className="flex items-center justify-between">
-        <h3 className="text-[13px] font-semibold">{initial ? '编辑报价' : '新增报价'}</h3>
+        <h3 className="text-caption font-semibold">{initial ? '编辑报价' : '新增报价'}</h3>
         {initial?.source === 'import' ? (
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-micro text-muted-foreground">
             保存后改记为手工录入，撤销导入时保留
           </span>
         ) : null}
@@ -465,19 +527,19 @@ function QuoteForm({
       <div className="grid gap-3">
         <Field label="供应商" className="max-w-sm">
           {(id) => (
-            <select
+            <ChoiceSelect
               id={id}
-              className={controlClass}
+              placeholder="供应商"
               value={supplierId}
-              onChange={(e) => setSupplierId(e.target.value)}
-            >
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}（{SUPPLIER_PLATFORM_LABELS[s.platform]}）
-                </option>
-              ))}
-              <option value={NEW_SUPPLIER}>＋ 新建供应商…</option>
-            </select>
+              options={[
+                ...suppliers.map((s) => ({
+                  value: s.id,
+                  label: `${s.name}（${SUPPLIER_PLATFORM_LABELS[s.platform]}）`,
+                })),
+                { value: NEW_SUPPLIER, label: '＋ 新建供应商…' },
+              ]}
+              onChange={setSupplierId}
+            />
           )}
         </Field>
         {supplierId === NEW_SUPPLIER ? (
@@ -549,16 +611,13 @@ function QuoteForm({
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="币种">
           {(id) => (
-            <select
+            <ChoiceSelect
               id={id}
-              className={controlClass}
+              placeholder="币种"
               value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-            >
-              {['CNY', 'USD', 'EUR', 'GBP', 'JPY'].map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
+              options={CURRENCY_OPTIONS}
+              onChange={setCurrency}
+            />
           )}
         </Field>
         <Field label="MOQ" hint="留空则以最低一档数量为 MOQ">
@@ -614,18 +673,16 @@ function QuoteForm({
         </fieldset>
         <Field label="可信度">
           {(id) => (
-            <select
+            <ChoiceSelect
               id={id}
-              className={controlClass}
+              placeholder="可信度"
               value={confidence}
-              onChange={(e) => setConfidence(e.target.value as typeof confidence)}
-            >
-              {QUOTE_CONFIDENCES.map((c) => (
-                <option key={c} value={c}>
-                  {QUOTE_CONFIDENCE_LABELS[c]}
-                </option>
-              ))}
-            </select>
+              options={QUOTE_CONFIDENCES.map((c) => ({
+                value: c,
+                label: QUOTE_CONFIDENCE_LABELS[c],
+              }))}
+              onChange={setConfidence}
+            />
           )}
         </Field>
         <Field label="报价日期">

@@ -3,12 +3,13 @@ import { Link } from '@tanstack/react-router'
 import { type FormEvent, Fragment, useState } from 'react'
 import { formatNumber, Section, SimpleTable } from '../data-center/shared.tsx'
 import { marketplaceLabel } from '../follow/marketplaces.ts'
-import { controlClass, EmptyState, ErrorText, Field, useAction } from '../workbench/fields.tsx'
+import { EmptyState, ErrorText, Field, useAction } from '../workbench/fields.tsx'
 import type { DeadlineTone } from './dates.ts'
 import { decideLead, getWorkbenchHome } from './decisions.functions.ts'
 import type { QueueRow } from './decisions.server.ts'
 import { formatMoney, formatRate, moneyInput, parseMoney } from './format.ts'
 import { DROP_REASON_LABELS, DROP_REASONS, type DropReason, FOLLOW_MODE_LABELS } from './labels.ts'
+import { ChoiceSelect } from './quote-editor.tsx'
 
 export type WorkbenchHomeData = Awaited<ReturnType<typeof getWorkbenchHome>>
 
@@ -55,7 +56,7 @@ export function WorkbenchHome({ slug, initial }: { slug: string; initial: Workbe
     <div className="grid gap-4">
       <div className="grid gap-1">
         <h1 className="text-lg font-semibold">工作台</h1>
-        <p className="text-[13px] text-muted-foreground">
+        <p className="text-caption text-muted-foreground">
           核算完成、选定组合的线索进入待决定队列，按最晚决定日处理；7 天内标橙，已过期标红。
         </p>
       </div>
@@ -95,7 +96,7 @@ export function WorkbenchHome({ slug, initial }: { slug: string; initial: Workbe
               中维护节点日历。
             </EmptyState>
           ) : (
-            <ul className="grid gap-2 text-[13px]">
+            <ul className="grid gap-2 text-caption">
               {data.countdown.map((n) => (
                 <li key={n.id} className="flex items-center justify-between gap-2">
                   <div className="grid">
@@ -320,7 +321,7 @@ function DecisionForm({
                 id={id}
                 type="number"
                 min={1}
-                className="h-8 text-[13px]"
+                className="h-8 text-caption"
                 value={qty}
                 onChange={(e) => setQty(e.target.value)}
               />
@@ -331,7 +332,7 @@ function DecisionForm({
               <Input
                 id={id}
                 inputMode="decimal"
-                className="h-8 text-[13px]"
+                className="h-8 text-caption"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
               />
@@ -341,7 +342,7 @@ function DecisionForm({
             {(id) => (
               <Input
                 id={id}
-                className="h-8 text-[13px]"
+                className="h-8 text-caption"
                 value={currency}
                 maxLength={3}
                 onChange={(e) => setCurrency(e.target.value.toUpperCase())}
@@ -353,7 +354,7 @@ function DecisionForm({
               <Input
                 id={id}
                 type="date"
-                className="h-8 text-[13px]"
+                className="h-8 text-caption"
                 value={listingOn}
                 onChange={(e) => setListingOn(e.target.value)}
               />
@@ -361,28 +362,27 @@ function DecisionForm({
           </Field>
         </div>
       ) : (
-        <div className="grid gap-3 md:grid-cols-[200px_minmax(0,1fr)]">
-          <Field label="放弃原因">
+        <div className="grid gap-3 md:flex">
+          <Field label="放弃原因" className="md:w-50 md:shrink-0">
             {(id) => (
-              <select
+              <ChoiceSelect
                 id={id}
-                className={controlClass}
+                placeholder="放弃原因"
                 value={reason}
-                onChange={(e) => setReason(e.target.value as DropReason)}
-              >
-                {DROP_REASONS.map((r) => (
-                  <option key={r} value={r}>
-                    {DROP_REASON_LABELS[r]}
-                  </option>
-                ))}
-              </select>
+                options={DROP_REASONS.map((r) => ({ value: r, label: DROP_REASON_LABELS[r] }))}
+                onChange={setReason}
+              />
             )}
           </Field>
-          <Field label="说明" hint={reason === 'other' ? '必填' : '可选'}>
+          <Field
+            label="说明"
+            hint={reason === 'other' ? '必填' : '可选'}
+            className="min-w-0 md:flex-1"
+          >
             {(id) => (
               <Input
                 id={id}
-                className="h-8 text-[13px]"
+                className="h-8 text-caption"
                 value={note}
                 maxLength={500}
                 onChange={(e) => setNote(e.target.value)}

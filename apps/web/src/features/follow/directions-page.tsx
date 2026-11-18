@@ -1,4 +1,20 @@
-import { Button, Input, Tag } from '@product-res/ui'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  Tag,
+} from '@product-res/ui'
 import { Link } from '@tanstack/react-router'
 import { type FormEvent, type ReactNode, useState } from 'react'
 import { m } from '../../paraglide/messages.js'
@@ -63,7 +79,7 @@ export function DirectionsPage({ slug, initial }: { slug: string; initial: Direc
             <span>选品方向与店铺池</span>
           </nav>
           <h1 className="text-lg font-semibold">选品方向与店铺池</h1>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-caption text-muted-foreground">
             每个方向限定平台站点、类目、关键词与关联节点；对标店铺只有种子和已接受的参与同行扩散计算。停用的方向不再进入每日流水线，历史线索保留。
           </p>
         </div>
@@ -151,7 +167,7 @@ export function CategorySearch({
         <Input
           aria-label="按名称搜索 eBay 类目"
           placeholder="按名称搜索 eBay 类目"
-          className="h-8 text-[13px]"
+          className="h-8 text-caption"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => {
@@ -250,7 +266,7 @@ function DirectionForm({
             {(id) => (
               <Input
                 id={id}
-                className="h-8 text-[13px]"
+                className="h-8 text-caption"
                 value={name}
                 maxLength={64}
                 onChange={(e) => setName(e.target.value)}
@@ -262,7 +278,7 @@ function DirectionForm({
               {(id) => (
                 <Input
                   id={id}
-                  className="h-8 text-[13px]"
+                  className="h-8 text-caption"
                   value={categories}
                   onChange={(e) => setCategories(e.target.value)}
                 />
@@ -306,7 +322,7 @@ function DirectionForm({
           {(id) => (
             <Input
               id={id}
-              className="h-8 text-[13px]"
+              className="h-8 text-caption"
               value={note}
               maxLength={500}
               onChange={(e) => setNote(e.target.value)}
@@ -362,6 +378,13 @@ function DirectionCard({
   onChanged: () => Promise<void>
 }) {
   const { busy, error, run } = useAction(onChanged)
+  const [removeOpen, setRemoveOpen] = useState(false)
+  async function confirmRemove() {
+    if (busy) return
+    await run(() => removeDirection({ data: { slug, id: d.id } }))
+    // 成功后方向从列表移除；失败时错误由卡片内 ErrorText 展示
+    setRemoveOpen(false)
+  }
   const nodeNames = d.nodeIds
     .map((id) => nodes.find((n) => n.id === id)?.name)
     .filter((n): n is string => Boolean(n))
@@ -371,7 +394,7 @@ function DirectionCard({
 
   return (
     <section
-      className="grid gap-3 rounded-lg border bg-card p-4 text-[13px]"
+      className="grid gap-3 rounded-lg border bg-card p-4 text-caption"
       data-testid="direction-card"
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -409,13 +432,38 @@ function DirectionCard({
               variant="ghost"
               className="text-destructive"
               disabled={busy}
-              onClick={() => {
-                if (window.confirm(`删除方向“${d.name}”及其店铺池？`))
-                  void run(() => removeDirection({ data: { slug, id: d.id } }))
-              }}
+              onClick={() => setRemoveOpen(true)}
             >
               删除
             </Button>
+            <AlertDialog
+              open={removeOpen}
+              onOpenChange={(open) => {
+                if (!busy) setRemoveOpen(open)
+              }}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>删除方向？</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    删除方向“{d.name}”及其店铺池，此操作无法撤销。
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={busy}>取消</AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    loading={busy}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      void confirmRemove()
+                    }}
+                  >
+                    删除
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         ) : null}
       </div>
@@ -435,7 +483,7 @@ function DirectionCard({
 
       <div className="grid gap-2 border-t pt-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-[13px] font-medium">对标店铺池（{pool.length}）</h3>
+          <h3 className="text-caption font-medium">对标店铺池（{pool.length}）</h3>
         </div>
         {pool.length === 0 ? (
           <p className="text-xs text-muted-foreground">
@@ -485,7 +533,7 @@ function DirectionCard({
 
       {suggested.length > 0 ? (
         <div className="grid gap-2 border-t pt-3">
-          <h3 className="text-[13px] font-medium">系统推荐（{suggested.length}）</h3>
+          <h3 className="text-caption font-medium">系统推荐（{suggested.length}）</h3>
           <ul className="grid gap-1">
             {suggested.map((s) => (
               <SellerItem key={s.id} seller={s}>
@@ -611,25 +659,26 @@ function SeedForm({
     >
       <Field label="站点" className="w-32">
         {(id) => (
-          <select
-            id={id}
-            className={controlClass}
-            value={marketplace}
-            onChange={(e) => setMarketplace(e.target.value as DirectionMarketplace)}
+          <Select
+            value={options.some((o) => o === marketplace) ? marketplace : ''}
+            onValueChange={(v) => setMarketplace(v as DirectionMarketplace)}
           >
-            {options.map((m) => (
-              <option key={m} value={m}>
-                {MARKETPLACE_LABELS[m]}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id={id} className="w-full min-w-0" placeholder="站点" />
+            <SelectContent>
+              {options.map((m, index) => (
+                <SelectItem key={m} index={index} value={m}>
+                  {MARKETPLACE_LABELS[m]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
       </Field>
       <Field label="卖家 ID" className="w-48">
         {(id) => (
           <Input
             id={id}
-            className="h-8 text-[13px]"
+            className="h-8 text-caption"
             value={sellerId}
             maxLength={128}
             onChange={(e) => setSellerId(e.target.value)}
@@ -640,7 +689,7 @@ function SeedForm({
         {(id) => (
           <Input
             id={id}
-            className="h-8 text-[13px]"
+            className="h-8 text-caption"
             value={sellerName}
             maxLength={128}
             onChange={(e) => setSellerName(e.target.value)}

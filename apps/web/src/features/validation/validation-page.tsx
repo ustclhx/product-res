@@ -1,4 +1,14 @@
-import { Button, Chart, cn, StatCard, Tag } from '@product-res/ui'
+import {
+  Button,
+  Chart,
+  cn,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  StatCard,
+  Tag,
+} from '@product-res/ui'
 import { useEffect, useMemo, useState } from 'react'
 import { formatTime, Section, SimpleTable } from '../data-center/shared.tsx'
 import { marketplaceLabel } from '../follow/marketplaces.ts'
@@ -61,7 +71,7 @@ export function ValidationPage({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="grid gap-1">
           <h1 className="text-lg font-semibold">算法验证</h1>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-caption text-muted-foreground">
             每日冻结影子推荐，T+14 / T+30 / T+60 到期自动打标签；按 平台 × 方向 × 信号类型
             统计命中率 Wilson 下界并与同方向随机新品基线比较，得出算法准备度。
           </p>
@@ -140,22 +150,22 @@ function ColdStartNotice({ data }: { data: ValidationData }) {
   return (
     <section
       data-testid="cold-start"
-      className="grid gap-3 rounded-xl border border-primary/30 bg-primary-soft/60 p-4 md:grid-cols-[1fr_auto] md:items-center"
+      className="grid gap-3 rounded-xl border border-primary/30 bg-primary-soft/60 p-4 md:flex md:items-center"
     >
-      <div className="grid gap-1.5">
+      <div className="grid min-w-0 gap-1.5 md:flex-1">
         <div className="flex items-center gap-2">
           <Tag tone="neutral">冷启动</Tag>
           <h2 className="text-sm font-semibold">所有组合仍在冷启动，算法尚未经过验证</h2>
         </div>
-        <p className="text-[13px] text-foreground/80">{text.need}</p>
-        <p className="text-[13px] text-foreground/80" data-testid="cold-start-eta">
+        <p className="text-caption text-foreground/80">{text.need}</p>
+        <p className="text-caption text-foreground/80" data-testid="cold-start-eta">
           {text.eta}
         </p>
         <p className="text-xs text-muted-foreground">
           冷启动期间候选列表只展示信号，等级显示为“未验证”；命中率曲线在有真实标签后才绘制。
         </p>
       </div>
-      <div className="grid min-w-[220px] gap-1.5 rounded-lg bg-card p-3 shadow-xs">
+      <div className="grid min-w-55 gap-1.5 rounded-lg bg-card p-3 shadow-xs">
         <div className="flex items-baseline justify-between text-xs text-muted-foreground">
           <span>距观察期</span>
           <span className="font-mono text-foreground">
@@ -225,7 +235,7 @@ function ReadinessMatrix({ data }: { data: ValidationData }) {
         </EmptyState>
       ) : (
         <div className="overflow-x-auto" data-testid="readiness-matrix">
-          <table className="w-full min-w-[1080px] border-separate border-spacing-0 text-left text-[13px]">
+          <table className="w-full min-w-270 border-separate border-spacing-0 text-left text-caption">
             <thead className="text-xs text-muted-foreground">
               <tr>
                 <th className="sticky left-0 z-10 bg-muted px-3 py-2 font-medium">站点 · 方向</th>
@@ -274,7 +284,7 @@ function MatrixCell({ cell }: { cell: Cell }) {
   const below =
     cell.wilsonLower !== null && cell.baseline !== null && cell.wilsonLower < cell.baseline
   return (
-    <div className="grid min-w-[128px] gap-1" data-testid="readiness-cell" data-level={cell.level}>
+    <div className="grid min-w-32 gap-1" data-testid="readiness-cell" data-level={cell.level}>
       <Tag tone={LEVEL_TONES[cell.level]} className="w-fit">
         {LEVEL_LABELS[cell.level]}
       </Tag>
@@ -298,7 +308,7 @@ function MatrixCell({ cell }: { cell: Cell }) {
         </div>
       ) : null}
       {cell.samples.replay > 0 || cell.samples.import > 0 ? (
-        <div className="text-[11px] text-muted-foreground">
+        <div className="text-micro text-muted-foreground">
           影子 {cell.samples.shadow} · 回放 {cell.samples.replay}
           {cell.samples.import > 0 ? ` · 导入 ${cell.samples.import}` : ''}
         </div>
@@ -307,11 +317,19 @@ function MatrixCell({ cell }: { cell: Cell }) {
   )
 }
 
-const AXIS = {
-  axisLine: { lineStyle: { color: '#f0f0f0' } },
-  axisTick: { show: false },
-  axisLabel: { color: '#8c8c8c', fontSize: 11 },
-  splitLine: { lineStyle: { color: '#f0f0f0', type: 'dashed' as const } },
+/** ECharts 只接受具体颜色字符串：渲染时从根元素读取设计 token（服务端无 document，返回空串由图表默认色兜底） */
+function token(name: string) {
+  if (typeof document === 'undefined') return ''
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+}
+
+function axisStyle() {
+  return {
+    axisLine: { lineStyle: { color: token('--border') } },
+    axisTick: { show: false },
+    axisLabel: { color: token('--muted-foreground'), fontSize: 11 },
+    splitLine: { lineStyle: { color: token('--border'), type: 'dashed' as const } },
+  }
 }
 
 /** 每月命中率：总体（加权）一条，各样本类型各一条；无样本的月份断开，不补 0 */
@@ -321,6 +339,7 @@ function HitRateChart({ months }: { months: readonly Month[] }) {
   const option = useMemo(() => {
     const rate = (h: { hits: number; labeled: number }) =>
       h.labeled > 0 ? Math.round((h.hits / h.labeled) * 1000) / 10 : null
+    const AXIS = axisStyle()
     return {
       grid: { left: 40, right: 16, top: 36, bottom: 24 },
       legend: {
@@ -329,14 +348,15 @@ function HitRateChart({ months }: { months: readonly Month[] }) {
         icon: 'roundRect',
         itemWidth: 12,
         itemHeight: 4,
-        textStyle: { color: '#595959', fontSize: 12 },
+        textStyle: { color: token('--subtle-foreground'), fontSize: 12 },
       },
       tooltip: {
         trigger: 'axis',
-        backgroundColor: '#fff',
-        borderColor: '#f0f0f0',
-        textStyle: { color: '#262626', fontSize: 12 },
-        extraCssText: 'box-shadow:0 6px 16px rgba(0,0,0,.08);border-radius:8px;',
+        backgroundColor: token('--popover'),
+        borderColor: token('--border'),
+        textStyle: { color: token('--popover-foreground'), fontSize: 12 },
+        // extraCssText 写入提示框 DOM 的内联样式，可直接引用阴影 token
+        extraCssText: 'box-shadow:var(--shadow-4);border-radius:8px;',
         formatter: (items: { dataIndex: number }[]) => {
           const m = months[items[0]?.dataIndex ?? 0]
           if (!m) return ''
@@ -371,7 +391,7 @@ function HitRateChart({ months }: { months: readonly Month[] }) {
         {
           name: '加权总体',
           type: 'line',
-          color: '#262626',
+          color: token('--foreground'),
           lineStyle: { width: 2 },
           symbolSize: 8,
           data: months.map((m) => (m.hitRate === null ? null : Math.round(m.hitRate * 1000) / 10)),
@@ -431,7 +451,7 @@ function Composition({ data }: { data: ValidationData }) {
           const total = c.recommendations[k]
           return (
             <div key={k} className="grid gap-1">
-              <div className="flex items-baseline justify-between gap-2 text-[13px]">
+              <div className="flex items-baseline justify-between gap-2 text-caption">
                 <span className="inline-flex items-center gap-1.5">
                   <span className="size-2 rounded-full" style={{ background: KIND_COLORS[k] }} />
                   {KIND_LABELS[k]}
@@ -460,7 +480,7 @@ function Composition({ data }: { data: ValidationData }) {
             </div>
           )
         })}
-        <div className="flex gap-3 text-[11px] text-muted-foreground">
+        <div className="flex gap-3 text-micro text-muted-foreground">
           <span>彩色 = T+30 已打标签</span>
           <span className="inline-flex items-center gap-1">
             <span className="size-2 rounded-sm bg-warning" />
@@ -475,7 +495,7 @@ function Composition({ data }: { data: ValidationData }) {
           <div className="grid grid-cols-3 gap-2" data-testid="pending-labels">
             {(['14', '30', '60'] as const).map((w) => (
               <div key={w} className="rounded-lg bg-muted/60 px-3 py-2">
-                <div className="text-[11px] text-muted-foreground">T+{w}</div>
+                <div className="text-micro text-muted-foreground">T+{w}</div>
                 <div className="font-mono text-lg font-semibold">{p.byWindow[w]}</div>
               </div>
             ))}
@@ -528,7 +548,7 @@ function SuggestionCard({
         <p
           role="status"
           data-testid="propose-reason"
-          className="rounded-md border border-warning/30 bg-warning-soft px-3 py-2 text-[13px] text-warning-strong"
+          className="rounded-md border border-warning/30 bg-warning-soft px-3 py-2 text-caption text-warning-strong"
         >
           {reason}
         </p>
@@ -576,50 +596,52 @@ function SuggestionBody({
   const resolve = (decision: 'accept' | 'dismiss') =>
     run(() => resolveWeightSuggestion({ data: { slug, id: s.id, decision } }))
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px]" data-testid="suggestion">
-      <SimpleTable
-        head={['维度', '当前权重', '建议权重', '占比对比（灰 = 当前，蓝 = 建议）', '变化']}
-      >
-        {data.dimensions.map((d) => {
-          const cur = s.currentWeights[d.id] ?? 0
-          const sug = s.suggestedWeights[d.id] ?? 0
-          const delta = sug / totalSuggested - cur / totalCurrent
-          return (
-            <tr key={d.id}>
-              <td className="px-3 py-2">{d.label}</td>
-              <td className="px-3 py-2 font-mono">{cur.toFixed(2)}</td>
-              <td className="px-3 py-2 font-mono font-medium">{sug.toFixed(2)}</td>
-              <td className="px-3 py-2">
-                <div className="grid w-44 gap-0.5">
-                  <div
-                    className="h-1.5 rounded-full bg-muted-foreground/30"
-                    style={{ width: `${(cur / totalCurrent / maxShare) * 100}%` }}
-                  />
-                  <div
-                    className="h-1.5 rounded-full bg-primary"
-                    style={{ width: `${(sug / totalSuggested / maxShare) * 100}%` }}
-                  />
-                </div>
-              </td>
-              <td
-                className={cn(
-                  'px-3 py-2 font-mono text-xs',
-                  Math.abs(delta) < 0.005
-                    ? 'text-muted-foreground'
-                    : delta > 0
-                      ? 'text-success-strong'
-                      : 'text-destructive',
-                )}
-              >
-                {Math.abs(delta) < 0.005
-                  ? '—'
-                  : `${delta > 0 ? '+' : ''}${(delta * 100).toFixed(1)} pt`}
-              </td>
-            </tr>
-          )
-        })}
-      </SimpleTable>
-      <div className="grid content-start gap-3">
+    <div className="grid gap-4 lg:flex" data-testid="suggestion">
+      <div className="min-w-0 lg:flex-1">
+        <SimpleTable
+          head={['维度', '当前权重', '建议权重', '占比对比（灰 = 当前，蓝 = 建议）', '变化']}
+        >
+          {data.dimensions.map((d) => {
+            const cur = s.currentWeights[d.id] ?? 0
+            const sug = s.suggestedWeights[d.id] ?? 0
+            const delta = sug / totalSuggested - cur / totalCurrent
+            return (
+              <tr key={d.id}>
+                <td className="px-3 py-2">{d.label}</td>
+                <td className="px-3 py-2 font-mono">{cur.toFixed(2)}</td>
+                <td className="px-3 py-2 font-mono font-medium">{sug.toFixed(2)}</td>
+                <td className="px-3 py-2">
+                  <div className="grid w-44 gap-0.5">
+                    <div
+                      className="h-1.5 rounded-full bg-muted-foreground/30"
+                      style={{ width: `${(cur / totalCurrent / maxShare) * 100}%` }}
+                    />
+                    <div
+                      className="h-1.5 rounded-full bg-primary"
+                      style={{ width: `${(sug / totalSuggested / maxShare) * 100}%` }}
+                    />
+                  </div>
+                </td>
+                <td
+                  className={cn(
+                    'px-3 py-2 font-mono text-xs',
+                    Math.abs(delta) < 0.005
+                      ? 'text-muted-foreground'
+                      : delta > 0
+                        ? 'text-success-strong'
+                        : 'text-destructive',
+                  )}
+                >
+                  {Math.abs(delta) < 0.005
+                    ? '—'
+                    : `${delta > 0 ? '+' : ''}${(delta * 100).toFixed(1)} pt`}
+                </td>
+              </tr>
+            )
+          })}
+        </SimpleTable>
+      </div>
+      <div className="grid content-start gap-3 lg:w-65 lg:shrink-0">
         <div className="grid grid-cols-2 gap-2">
           <Metric
             label="交叉验证 AUC"
@@ -628,7 +650,7 @@ function SuggestionBody({
           />
           <Metric label="提升度" value={pt(s.crossValidation?.lift)} base={pt(s.current?.lift)} />
         </div>
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
+        <p className="text-micro leading-relaxed text-muted-foreground">
           括号内为当前权重在同一批样本上的值。提升度 = 预测概率前 20% 的命中率 − 总体命中率。 拟合于{' '}
           {formatTime(s.fittedAt)}，有效样本 {s.sampleCount}，基于评分设置版本{' '}
           {s.baseVersion ?? '—'}。
@@ -667,9 +689,9 @@ const pt = (v: number | null | undefined) =>
 function Metric({ label, value, base }: { label: string; value: string; base: string }) {
   return (
     <div className="rounded-lg bg-muted/60 px-3 py-2">
-      <div className="text-[11px] text-muted-foreground">{label}</div>
+      <div className="text-micro text-muted-foreground">{label}</div>
       <div className="font-mono text-lg font-semibold leading-tight">{value}</div>
-      <div className="font-mono text-[11px] text-muted-foreground">（{base}）</div>
+      <div className="font-mono text-micro text-muted-foreground">（{base}）</div>
     </div>
   )
 }
@@ -686,6 +708,10 @@ function ReplayPanel({
   onChange: () => Promise<void>
 }) {
   const [directionId, setDirectionId] = useState(data.amazonDirections[0]?.id ?? '')
+  const directionOptions = data.amazonDirections.map((d) => ({
+    value: d.id,
+    label: `${d.name}（${d.marketplaces.map(marketplaceLabel).join('、')}）`,
+  }))
   const [nodeDate, setNodeDate] = useState('')
   const [beforeDays, setBeforeDays] = useState('30')
   const [preview, setPreview] = useState<Preview | null>(null)
@@ -748,29 +774,32 @@ function ReplayPanel({
       ) : data.canWrite ? (
         <form
           aria-label="发起回放"
-          className="grid gap-3 rounded-lg border bg-muted/30 p-3 md:grid-cols-[1.4fr_1fr_0.8fr_auto] md:items-end"
+          className="grid gap-3 rounded-lg border bg-muted/30 p-3 md:flex md:flex-wrap md:items-end"
           onSubmit={(e) => {
             e.preventDefault()
             void submit()
           }}
         >
-          <Field label="Amazon 方向">
+          <Field label="Amazon 方向" className="md:basis-0 md:grow-14">
             {(id) => (
-              <select
-                id={id}
-                className={controlClass}
-                value={directionId}
-                onChange={(e) => setDirectionId(e.target.value)}
-              >
-                {data.amazonDirections.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}（{d.marketplaces.map(marketplaceLabel).join('、')}）
-                  </option>
-                ))}
-              </select>
+              <Select size="compact" value={directionId} onValueChange={setDirectionId}>
+                <SelectTrigger
+                  id={id}
+                  placeholder="Amazon 方向"
+                  valueLabel={directionOptions.find((o) => o.value === directionId)?.label}
+                  className="h-8 w-full min-w-0 text-caption"
+                />
+                <SelectContent>
+                  {directionOptions.map((o, index) => (
+                    <SelectItem key={o.value} index={index} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           </Field>
-          <Field label="历史节点日期">
+          <Field label="历史节点日期" className="md:basis-0 md:grow-10">
             {(id) => (
               <input
                 id={id}
@@ -783,7 +812,7 @@ function ReplayPanel({
               />
             )}
           </Field>
-          <Field label="提前天数 T">
+          <Field label="提前天数 T" className="md:basis-0 md:grow-8">
             {(id) => (
               <input
                 id={id}
@@ -804,7 +833,7 @@ function ReplayPanel({
           >
             发起回放
           </Button>
-          <div className="text-xs md:col-span-4" data-testid="replay-preview">
+          <div className="text-xs md:basis-full" data-testid="replay-preview">
             {previewError ? (
               <span className="text-destructive">{previewError}</span>
             ) : preview ? (

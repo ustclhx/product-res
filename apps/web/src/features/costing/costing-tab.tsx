@@ -1,7 +1,7 @@
 import type { CostingResult, FollowMode } from '@product-res/costing'
 import { Button, cn, Input, Tag } from '@product-res/ui'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
-import { controlClass, EmptyState, ErrorText, Field, useAction } from '../workbench/fields.tsx'
+import { EmptyState, ErrorText, Field, useAction } from '../workbench/fields.tsx'
 import {
   getCostingTab,
   saveImprovement,
@@ -20,7 +20,7 @@ import {
 import type { MatrixOptions } from './inputs.ts'
 import { FOLLOW_MODE_LABELS, LOGISTICS_TYPE_LABELS, WATERFALL_LABELS } from './labels.ts'
 import type { MatrixCellView } from './matrix.server.ts'
-import { QuoteSection } from './quote-editor.tsx'
+import { ChoiceSelect, QuoteSection } from './quote-editor.tsx'
 import { CostWaterfall } from './waterfall.tsx'
 
 /**
@@ -114,7 +114,7 @@ export function CostingTab({
           }}
         />
       ) : (
-        <p className="rounded-md bg-muted px-3 py-2 text-[13px] text-muted-foreground">
+        <p className="rounded-md bg-muted px-3 py-2 text-caption text-muted-foreground">
           该商品簇还没有线索：可以先录入报价，流水线生成线索后即可在这里核算与选定组合。
         </p>
       )}
@@ -205,7 +205,7 @@ function StatusStrip({
                     : 'bg-muted text-muted-foreground',
               )}
             >
-              <span className="font-mono text-[10px] opacity-80">{i + 1}</span>
+              <span className="font-mono text-micro opacity-80">{i + 1}</span>
               {key === 'decided' && view.lead.status === 'dropped'
                 ? '已放弃'
                 : key === 'decided' && view.lead.status === 'followed'
@@ -246,7 +246,7 @@ function StatusStrip({
           })}
         </fieldset>
         {!writable ? null : (
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-micro text-muted-foreground">
             线索默认：{FOLLOW_MODE_LABELS[view.lead.followMode]}
           </span>
         )}
@@ -368,7 +368,7 @@ function Chip({ children, tone }: { children: ReactNode; tone?: 'warning' }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px]',
+        'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-micro',
         tone === 'warning'
           ? 'border-warning/30 bg-warning-soft text-warning-strong'
           : 'bg-muted/50 text-muted-foreground',
@@ -441,7 +441,7 @@ function MatrixCellBox({
       data-best={cell.best || undefined}
       data-available={cell.available}
       className={cn(
-        'group relative grid h-full min-h-[92px] w-full content-start gap-1 rounded-lg border p-2.5 text-left transition-colors',
+        'group relative grid h-full min-h-23 w-full content-start gap-1 rounded-lg border p-2.5 text-left transition-colors',
         cell.best
           ? 'border-success bg-success-soft/60 ring-1 ring-success/40'
           : cell.available
@@ -469,7 +469,7 @@ function MatrixCellBox({
         </span>
       </div>
       {r ? (
-        <dl className="grid grid-cols-[auto_1fr] gap-x-2 text-[11px] leading-4 text-muted-foreground">
+        <dl className="grid grid-cols-[auto_1fr] gap-x-2 text-micro leading-4 text-muted-foreground">
           <dt>落地</dt>
           <dd className="text-right font-mono text-foreground">
             {formatMoney(r.landedCostMinor, null)}
@@ -481,7 +481,7 @@ function MatrixCellBox({
         </dl>
       ) : null}
       {cell.deadline ? (
-        <span className="text-[11px] text-muted-foreground">
+        <span className="text-micro text-muted-foreground">
           最晚决定 <span className="font-mono text-foreground">{cell.deadline.slice(5)}</span>
         </span>
       ) : null}
@@ -491,7 +491,7 @@ function MatrixCellBox({
             <span
               key={i}
               className={cn(
-                'rounded px-1.5 py-0.5 text-[11px] leading-4',
+                'rounded px-1.5 py-0.5 text-micro leading-4',
                 i.startsWith('缺少')
                   ? 'bg-muted text-muted-foreground'
                   : 'bg-destructive-soft text-destructive',
@@ -563,17 +563,17 @@ function Matrix({
         </EmptyState>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] border-separate border-spacing-1.5 text-[13px]">
+          <table className="w-full min-w-160 border-separate border-spacing-1.5 text-caption">
             <thead>
               <tr>
-                <th className="w-[220px] min-w-[180px] px-1 text-left align-bottom text-xs font-medium text-muted-foreground">
+                <th className="w-55 min-w-45 px-1 text-left align-bottom text-xs font-medium text-muted-foreground">
                   报价（计划 {view.plannedQty} 件）
                 </th>
                 {view.profiles.map((p) => (
                   <th key={p.id} colSpan={modes.length} className="px-1 text-left align-bottom">
                     <div className="grid gap-0.5">
-                      <span className="text-[13px] font-medium">{p.name}</span>
-                      <span className="text-[11px] font-normal text-muted-foreground">
+                      <span className="text-caption font-medium">{p.name}</span>
+                      <span className="text-micro font-normal text-muted-foreground">
                         {LOGISTICS_TYPE_LABELS[p.type]} · {p.transitDays} 天
                         {p.bannedAttributes.length ? ` · 禁运 ${p.bannedAttributes.join('/')}` : ''}
                       </span>
@@ -588,7 +588,7 @@ function Matrix({
                     modes.map((m) => (
                       <th
                         key={`${p.id}-${m}`}
-                        className="px-1 text-left text-[11px] font-normal text-muted-foreground"
+                        className="px-1 text-left text-micro font-normal text-muted-foreground"
                       >
                         {FOLLOW_MODE_LABELS[m]}
                       </th>
@@ -603,13 +603,13 @@ function Matrix({
                   <th scope="row" className="px-1 text-left align-top font-normal">
                     <div className="grid gap-0.5 pt-1">
                       <span className="font-medium">{q.supplierName}</span>
-                      <span className="font-mono text-[11px] text-muted-foreground">
+                      <span className="font-mono text-micro text-muted-foreground">
                         {q.tiers
                           .map((t) => `${t.minQty}+ ${formatMoney(t.unitPriceMinor, null)}`)
                           .join(' / ')}{' '}
                         {q.currency}
                       </span>
-                      <span className="text-[11px] text-muted-foreground">
+                      <span className="text-micro text-muted-foreground">
                         MOQ {q.moqEffective} · {q.confidence === 'confirmed' ? '已确认' : '公开价'}
                       </span>
                     </div>
@@ -619,7 +619,7 @@ function Matrix({
                       const key = `${q.id}:${p.id}:${m}`
                       const cell = cellAt.get(key)
                       return (
-                        <td key={key} className="min-w-[150px] align-top">
+                        <td key={key} className="min-w-37.5 align-top">
                           {cell ? (
                             <MatrixCellBox
                               cell={cell}
@@ -723,17 +723,22 @@ function ScenarioPanel({
       </div>
       <ErrorText>{action.error}</ErrorText>
       {result ? (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-          <CostWaterfall
-            salePriceMinor={result.salePriceMinor}
-            steps={result.waterfall}
-            currency={result.currency}
-          />
-          <Breakdown
-            result={result}
-            view={view}
-            certainty={isSelected && snapshot ? null : (cell?.certainty ?? null)}
-          />
+        <div className="grid gap-4 lg:flex">
+          {/* 1.3 : 1 两栏：basis-0 + grow 与 minmax(0,1.3fr) minmax(0,1fr) 等价 */}
+          <div className="min-w-0 lg:basis-0 lg:grow-13">
+            <CostWaterfall
+              salePriceMinor={result.salePriceMinor}
+              steps={result.waterfall}
+              currency={result.currency}
+            />
+          </div>
+          <div className="min-w-0 lg:basis-0 lg:grow-10">
+            <Breakdown
+              result={result}
+              view={view}
+              certainty={isSelected && snapshot ? null : (cell?.certainty ?? null)}
+            />
+          </div>
         </div>
       ) : cell ? (
         <EmptyState title="该组合无法计算">{cell.issues.join('；')}</EmptyState>
@@ -762,7 +767,7 @@ function Breakdown({
   const defaultTag = (k: keyof typeof sources) =>
     sources[k] === 'platform-default' ? <Tag className="ml-1">平台默认</Tag> : null
   return (
-    <div className="grid content-start gap-3 text-[13px]">
+    <div className="grid content-start gap-3 text-caption">
       <dl className="grid grid-cols-3 gap-2">
         {(
           [
@@ -776,12 +781,12 @@ function Breakdown({
           ] as const
         ).map(([label, value, tone]) => (
           <div key={label} className="grid gap-0.5 rounded-lg bg-muted/40 px-2.5 py-2">
-            <dt className="text-[11px] text-muted-foreground">{label}</dt>
+            <dt className="text-micro text-muted-foreground">{label}</dt>
             <dd className={cn('font-mono text-base font-semibold', tone)}>{value}</dd>
           </div>
         ))}
       </dl>
-      <table className="w-full text-[12px]">
+      <table className="w-full text-caption">
         <tbody>
           <tr className="border-b">
             <td className="py-1 text-muted-foreground">售价</td>
@@ -818,7 +823,7 @@ function Breakdown({
           </tr>
         </tbody>
       </table>
-      <div className="flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
+      <div className="flex flex-wrap gap-1.5 text-micro text-muted-foreground">
         <span>阶梯单价 {formatMoney(result.unitPrice.amountMinor, result.unitPrice.currency)}</span>
         {result.chargeableWeightG ? (
           <span>· 计费重量 {(result.chargeableWeightG / 1000).toFixed(2)} kg</span>
@@ -864,7 +869,7 @@ function InputsCard({ view }: { view: View }) {
           按平台 × 类目取值，类目未配置的项回退到平台默认；在“设置 · 成本参数”中修改。
         </p>
       </div>
-      <table className="w-full text-[12px]">
+      <table className="w-full text-caption">
         <tbody>
           {rows.map(([label, value, source]) => (
             <tr key={label} className="border-b border-dashed last:border-0">
@@ -984,17 +989,18 @@ function ImprovementCard({
               value={tooling}
               onChange={(e) => setTooling(e.target.value)}
             />
-            <select
+            <ChoiceSelect
               aria-label="改款费币种"
-              className={cn(controlClass, 'w-20')}
+              placeholder="改款费币种"
+              className="w-20"
               disabled={!writable}
               value={toolingCurrency}
-              onChange={(e) => setToolingCurrency(e.target.value)}
-            >
-              {['CNY', 'USD'].map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
+              options={[
+                { value: 'CNY', label: 'CNY' },
+                { value: 'USD', label: 'USD' },
+              ]}
+              onChange={setToolingCurrency}
+            />
           </div>
         </div>
         <Field label="打样天数">

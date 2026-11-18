@@ -32,7 +32,7 @@ function Metric({ label, value }: { label: string; value: string | null }) {
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className="text-base font-semibold tabular-nums">{value ?? empty()}</span>
       {value === null ? (
-        <span className="text-[11px] text-muted-foreground">
+        <span className="text-micro text-muted-foreground">
           {m.store_tracking_metric_empty_hint()}
         </span>
       ) : null}
@@ -54,12 +54,12 @@ const listingColumns = (platform: 'ebay' | 'amazon'): DataTableColumn<ListingIte
               href={l.url}
               target="_blank"
               rel="noreferrer noopener"
-              className="line-clamp-2 text-[13px] font-medium leading-snug hover:text-primary"
+              className="line-clamp-2 text-caption font-medium leading-snug hover:text-primary"
             >
               {l.title ?? l.platformId}
             </a>
           ) : (
-            <span className="line-clamp-2 text-[13px] font-medium">{l.title ?? l.platformId}</span>
+            <span className="line-clamp-2 text-caption font-medium">{l.title ?? l.platformId}</span>
           )}
           <span className="text-xs text-muted-foreground">
             {platform === 'amazon' ? 'ASIN' : 'Item'}: {l.platformId}
@@ -98,7 +98,7 @@ const listingColumns = (platform: 'ebay' | 'amazon'): DataTableColumn<ListingIte
           <span className="text-xs text-muted-foreground">{tierLabel(null)}</span>
         )}
         {l.tierReason ? (
-          <span className="text-[11px] text-muted-foreground">{tierReasonLabel(l.tierReason)}</span>
+          <span className="text-micro text-muted-foreground">{tierReasonLabel(l.tierReason)}</span>
         ) : null}
       </div>
     ),
@@ -193,7 +193,7 @@ export function StoreDetailPage({ slug, initial }: { slug: string; initial: Stor
       <DisabledSourceNotice slug={slug} sources={data.disabledSources} />
 
       <Section title={m.store_tracking_coverage_title()}>
-        <div className="grid gap-1 text-[13px]" data-testid="store-coverage">
+        <div className="grid gap-1 text-caption" data-testid="store-coverage">
           <p>
             {coverage.method === 'search-offer'
               ? m.store_tracking_coverage_amazon()

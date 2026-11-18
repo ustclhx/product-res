@@ -14,7 +14,7 @@ export function TransferBanner({ page }: { page: Pick<WorkspacePage, 'transfer' 
     <div
       role="status"
       data-testid="transfer-banner"
-      className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-warning/30 bg-warning-soft px-5 py-2 text-[13px] text-warning-strong"
+      className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-warning/30 bg-warning-soft px-5 py-2 text-caption text-warning-strong"
     >
       <span>{m.transfer_banner({ kind: kindLabel(transfer.kind) })}</span>
       {transfer.viewable ? (

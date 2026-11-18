@@ -1,4 +1,12 @@
-import { Button, Tag, type Tone } from '@product-res/ui'
+import {
+  Button,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  Tag,
+  type Tone,
+} from '@product-res/ui'
 import { Link } from '@tanstack/react-router'
 import { type FormEvent, useState } from 'react'
 import { m } from '../../paraglide/messages.js'
@@ -66,7 +74,7 @@ export function DisabledSourceNotice({
   if (sources.length === 0) return null
   return (
     <div
-      className="grid gap-1 rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-[13px] font-medium text-warning-strong"
+      className="grid gap-1 rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-caption font-medium text-warning-strong"
       role="alert"
       data-testid="store-source-disabled"
     >
@@ -155,18 +163,23 @@ export function StoreSettingsFields({
     <div className="grid gap-3 sm:grid-cols-2">
       <Field label={m.store_tracking_kind_label()}>
         {(id) => (
-          <select
-            id={id}
-            className={controlClass}
+          <Select
             value={value.kind}
-            onChange={(e) => onChange({ ...value, kind: e.target.value as StoreKind })}
+            onValueChange={(kind) => onChange({ ...value, kind: kind as StoreKind })}
           >
-            {STORE_KINDS.map((k) => (
-              <option key={k} value={k}>
-                {kindLabel(k)}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger
+              id={id}
+              className="w-full min-w-0"
+              placeholder={m.store_tracking_kind_label()}
+            />
+            <SelectContent>
+              {STORE_KINDS.map((k, index) => (
+                <SelectItem key={k} index={index} value={k}>
+                  {kindLabel(k)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
       </Field>
       <Field label={m.store_tracking_name_label()} hint={m.store_tracking_name_hint()}>

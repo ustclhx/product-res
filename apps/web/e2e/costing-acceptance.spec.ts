@@ -3,6 +3,7 @@ import { mkdirSync } from 'node:fs'
 import { expect, type Page, test } from '@playwright/test'
 import { newId } from '@product-res/shared'
 import { fixtureDb, register, simulateClientIp, waitForHydration } from './fixtures.ts'
+import { chooseOption } from './select.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // add-costing-decisions 5.1 验收：一条线索 发现 → 核算 → 待决定 → 跟卖 → 档案库。
@@ -164,7 +165,7 @@ test('核算决定验收：线索 → 报价 → 设置 → 矩阵 → 待决定
   await expect(tab.getByText('竞品中位价 USD 21.49 · 3 个成员')).toBeVisible()
   await tab.getByRole('button', { name: '新增报价' }).click()
   const quote = page.getByRole('form', { name: '报价' })
-  await quote.getByLabel('供应商', { exact: true }).selectOption({ label: '＋ 新建供应商…' })
+  await chooseOption(quote.getByRole('combobox', { name: '供应商', exact: true }), '＋ 新建供应商…')
   await quote.getByLabel('供应商名称').fill('义乌佳美日用品厂')
   await quote.getByLabel('供应商链接').fill('https://detail.1688.com/offer/6612345.html')
   await quote.getByLabel('第 1 档数量').fill('200')
@@ -177,7 +178,9 @@ test('核算决定验收：线索 → 报价 → 设置 → 矩阵 → 待决定
   await quote.getByLabel('长（cm）').fill('24')
   await quote.getByLabel('宽（cm）').fill('12')
   await quote.getByLabel('高（cm）').fill('6')
-  await quote.getByLabel('可信度').selectOption('confirmed')
+  await chooseOption(quote.getByRole('combobox', { name: '可信度', exact: true }), {
+    value: 'confirmed',
+  })
   await quote.getByLabel('采购天数').fill('10')
   await quote.getByRole('button', { name: '保存报价' }).click()
   await expect(tab.getByTestId('quote-row')).toHaveCount(1)
@@ -203,7 +206,7 @@ test('核算决定验收：线索 → 报价 → 设置 → 矩阵 → 待决定
   await page.getByRole('button', { name: '新增参数' }).click()
   const param = page.getByRole('form', { name: '成本参数' })
   // 表单默认平台为 Amazon，本线索在 eBay
-  await param.getByLabel('平台', { exact: true }).selectOption({ label: 'eBay' })
+  await chooseOption(param.getByRole('combobox', { name: '平台', exact: true }), 'eBay')
   await param.getByLabel('佣金率（%）').fill('13.6')
   await param.getByLabel('固定费').fill('0.30')
   await param.getByLabel('广告率（%）').fill('6')

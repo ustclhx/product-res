@@ -145,7 +145,7 @@ export function ScoringSettings({ slug }: { slug: string }) {
                   <Input
                     type="number"
                     aria-label={`${d.label}权重`}
-                    className="h-8 w-24 text-[13px]"
+                    className="h-8 w-24 text-caption"
                     min={0}
                     max={100}
                     step={0.1}
@@ -177,7 +177,7 @@ export function ScoringSettings({ slug }: { slug: string }) {
               <Input
                 id={id}
                 type="number"
-                className="h-8 text-[13px]"
+                className="h-8 text-caption"
                 min={0}
                 max={100}
                 step={1}
@@ -192,7 +192,7 @@ export function ScoringSettings({ slug }: { slug: string }) {
               <Input
                 id={id}
                 type="number"
-                className="h-8 text-[13px]"
+                className="h-8 text-caption"
                 min={0}
                 max={100}
                 step={0.1}
@@ -207,7 +207,7 @@ export function ScoringSettings({ slug }: { slug: string }) {
               <Input
                 id={id}
                 type="number"
-                className="h-8 text-[13px]"
+                className="h-8 text-caption"
                 min={1}
                 max={data.dimensions.length}
                 step={1}
@@ -220,7 +220,7 @@ export function ScoringSettings({ slug }: { slug: string }) {
         </div>
         <fieldset className="grid gap-1">
           <legend className="mb-1 text-xs font-medium text-muted-foreground">硬门槛</legend>
-          <div className="flex flex-wrap gap-4 text-[13px]">
+          <div className="flex flex-wrap gap-4 text-caption">
             {GATES.map(([key, label]) => (
               <label key={key} className="inline-flex items-center gap-1.5">
                 <input

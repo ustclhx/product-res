@@ -5,6 +5,7 @@ import { runSelectionForWorkspace } from '@product-res/follow'
 import { newId } from '@product-res/shared'
 import { loadEnv } from 'vite'
 import { fixtureDb, register, simulateClientIp, waitForHydration } from './fixtures.ts'
+import { chooseOption } from './select.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // add-follow-selection 5.1 验收：页面上配置方向与品牌库 → 直接写入隔离库的市场数据（不经真实连接器）
@@ -115,7 +116,7 @@ test('M2 验收：配置方向 → 流水线 → 候选列表 → 详情说明�
   await page.getByRole('button', { name: '新增条目' }).click()
   const brand = page.getByRole('form', { name: '品牌库条目' })
   await brand.getByLabel('品牌名').fill('Acmeknife')
-  await brand.getByLabel('类型').selectOption('vero')
+  await chooseOption(brand.getByRole('combobox', { name: '类型' }), { value: 'vero' })
   await brand.getByRole('button', { name: '保存' }).click()
   await expect(page.getByRole('cell', { name: 'Acmeknife' })).toBeVisible()
 

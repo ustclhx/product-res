@@ -19,9 +19,12 @@ import { checkWorkspace } from './check-deps.mjs'
 import { checkUi, findingsOf } from './check-ui.mjs'
 import { componentHashes, componentLockViolations, writeComponentLock } from './ui-lock.mjs'
 
-const generatorSkip = existsSync(new URL('./create-project.mjs', import.meta.url))
-  ? false
-  : '衍生项目已移除 scripts/create-project.mjs，跳过生成器集成用例'
+// 衍生项目（有 .template-base.json）的页面与登记都是项目自己的，生成副本不再等同模板，同样跳过
+const generatorSkip = !existsSync(new URL('./create-project.mjs', import.meta.url))
+  ? '衍生项目已移除 scripts/create-project.mjs，跳过生成器集成用例'
+  : existsSync(new URL('../.template-base.json', import.meta.url))
+    ? '衍生项目（存在 .template-base.json）不运行生成器集成用例'
+    : false
 const { createProject } = generatorSkip ? {} : await import('./create-project.mjs')
 
 function workspace(t, files = {}, allow = {}) {

@@ -1,4 +1,4 @@
-import { cn, SourceBadge } from '@product-res/ui'
+import { cn, Select, SelectContent, SelectItem, SelectTrigger, SourceBadge } from '@product-res/ui'
 import { useEffect, useState } from 'react'
 import { m } from '../../paraglide/messages.js'
 import { getDataPreview } from './data-center.functions.ts'
@@ -49,18 +49,20 @@ export function DataPreview({
     <Section
       title="数据预览"
       actions={
-        <select
-          aria-label="数据源"
-          className="rounded-md border bg-background px-2 py-1 text-sm"
-          value={sourceId}
-          onChange={(e) => setSourceId(e.target.value)}
+        <Select
+          size="compact"
+          value={sources.some((s) => s.id === sourceId) ? sourceId : ''}
+          onValueChange={setSourceId}
         >
-          {sources.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger aria-label="数据源" placeholder="数据源" />
+          <SelectContent>
+            {sources.map((s, index) => (
+              <SelectItem key={s.id} index={index} value={s.id}>
+                {s.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       }
     >
       <div role="tablist" aria-label="预览视图" className="flex gap-1 border-b">
@@ -97,12 +99,12 @@ export function DataPreview({
             {preview.status} · {preview.bytes} 字节
           </p>
           {view === 'json' ? (
-            <pre className="max-h-[480px] overflow-auto rounded-lg bg-muted p-3 font-mono text-xs">
+            <pre className="max-h-120 overflow-auto rounded-lg bg-muted p-3 font-mono text-xs">
               {preview.json ?? '响应不是 JSON'}
             </pre>
           ) : null}
           {view === 'raw' ? (
-            <pre className="max-h-[480px] overflow-auto rounded-lg bg-muted p-3 font-mono text-xs whitespace-pre-wrap break-all">
+            <pre className="max-h-120 overflow-auto rounded-lg bg-muted p-3 font-mono text-xs whitespace-pre-wrap break-all">
               {preview.raw}
             </pre>
           ) : null}

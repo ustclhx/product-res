@@ -4,6 +4,7 @@ import { errorText, formatNumber, SimpleTable } from '../data-center/shared.tsx'
 import { commitQuoteImport, previewQuoteImport } from './costing.functions.ts'
 import { formatMoney } from './format.ts'
 import { QUOTE_CONFIDENCE_LABELS } from './labels.ts'
+import { ChoiceSelect, CURRENCY_OPTIONS } from './quote-editor.tsx'
 import { quoteTemplateCsv } from './quote-template.ts'
 
 type Preview = Awaited<ReturnType<typeof previewQuoteImport>>
@@ -96,19 +97,20 @@ export function QuoteImportPanel({
   return (
     <div className="grid gap-3" data-testid="quote-import">
       <div className="flex flex-wrap items-end gap-3">
-        <label className="grid gap-1 text-xs">
-          <span className="text-muted-foreground">默认币种（币种列为空时）</span>
-          <select
+        <div className="grid gap-1 text-xs">
+          <label htmlFor="quote-import-currency" className="text-muted-foreground">
+            默认币种（币种列为空时）
+          </label>
+          <ChoiceSelect
+            id="quote-import-currency"
             aria-label="默认币种"
-            className="rounded-md border bg-background px-2 py-1.5 text-sm"
+            placeholder="默认币种"
+            className="w-auto min-w-24"
             value={currency}
-            onChange={(e) => setCurrency(e.target.value)}
-          >
-            {['CNY', 'USD', 'EUR', 'GBP', 'JPY'].map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>
-        </label>
+            options={CURRENCY_OPTIONS}
+            onChange={setCurrency}
+          />
+        </div>
         <div className="grid gap-1 text-xs">
           <label htmlFor="quote-import-file" className="text-muted-foreground">
             报价文件
@@ -162,22 +164,20 @@ export function QuoteImportPanel({
               <Tag tone="warning">未识别列：{preview.unknownHeaders.join('、')}</Tag>
             ) : null}
             {preview.sheetNames.length > 1 ? (
-              <select
+              <ChoiceSelect
                 aria-label="工作表"
-                className="rounded-md border bg-background px-2 py-1 text-xs"
+                placeholder="工作表"
+                className="w-auto min-w-32"
                 value={preview.sheetName ?? ''}
                 disabled={busy}
-                onChange={async (e) => {
+                options={preview.sheetNames.map((name) => ({ value: name, label: name }))}
+                onChange={async (sheet) => {
                   if (!file) return
-                  const next = { ...file, sheet: e.target.value }
+                  const next = { ...file, sheet }
                   setFile(next)
                   await runPreview(next)
                 }}
-              >
-                {preview.sheetNames.map((name) => (
-                  <option key={name}>{name}</option>
-                ))}
-              </select>
+              />
             ) : null}
           </div>
           <SimpleTable
@@ -187,7 +187,7 @@ export function QuoteImportPanel({
             {preview.rows.map((r) => (
               <tr key={r.row}>
                 <td className="px-3 py-1.5 font-mono text-muted-foreground">{r.row}</td>
-                <td className="max-w-[220px] truncate px-3 py-1.5">{r.clusterName}</td>
+                <td className="max-w-55 truncate px-3 py-1.5">{r.clusterName}</td>
                 <td className="px-3 py-1.5">{r.supplier}</td>
                 <td className="px-3 py-1.5 whitespace-nowrap font-mono">
                   {r.tiers

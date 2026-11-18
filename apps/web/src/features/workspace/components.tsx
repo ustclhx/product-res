@@ -49,7 +49,7 @@ export function WorkspaceSwitcher({ page }: { page: WorkspacePage }) {
   if (!page.multiTenant) return null
   return (
     <details className="relative" data-testid="workspace-menu">
-      <summary className="flex cursor-pointer list-none items-center gap-1 rounded-md border px-2.5 py-1 text-[13px] hover:bg-accent">
+      <summary className="flex cursor-pointer list-none items-center gap-1 rounded-md border px-2.5 py-1 text-caption hover:bg-accent">
         {m.workspace_menu()}
         <span aria-hidden="true" className="text-muted-foreground text-xs">
           ▾
@@ -256,7 +256,7 @@ export function WorkspaceSettings({
                   : m.workspace_seats_full()}
               </p>
             ) : null}
-            <ul className="divide-y text-[13px]">
+            <ul className="divide-y text-caption">
               {page.members.map((member) => {
                 const selectedRole = roles.find((option) => option.value === member.role)
                 return (
@@ -375,7 +375,10 @@ export function WorkspaceSettings({
                 </Button>
               </form>
               {page.invitations.length ? (
-                <ul className="grid gap-2 text-[13px]" aria-label={m.workspace_invitations_title()}>
+                <ul
+                  className="grid gap-2 text-caption"
+                  aria-label={m.workspace_invitations_title()}
+                >
                   {page.invitations.map((i) => (
                     <li key={i.id} className="flex flex-wrap items-center gap-2">
                       <span>

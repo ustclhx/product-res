@@ -75,7 +75,7 @@ export function SimpleTable({
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[640px] text-left text-[13px]">
+      <table className="w-full min-w-160 text-left text-caption">
         <thead className="bg-muted text-xs text-muted-foreground">
           <tr>
             {head.map((h) => (

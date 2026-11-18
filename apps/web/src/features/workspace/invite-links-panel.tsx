@@ -1,5 +1,23 @@
 import type { InviteLinkStatus, InviteLinkSummary } from '@product-res/auth'
-import { Button, Input, Label, Tag, type Tone } from '@product-res/ui'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  Tag,
+  type Tone,
+} from '@product-res/ui'
 import { useState } from 'react'
 import { m } from '../../paraglide/messages.js'
 import { FormAlert } from '../auth/auth-layout.tsx'
@@ -17,8 +35,6 @@ const STATUS: Record<InviteLinkStatus, { label: () => string; tone: Tone }> = {
   exhausted: { label: () => m.invite_links_status_exhausted(), tone: 'warning' },
   inactive: { label: () => m.invite_links_status_inactive(), tone: 'danger' },
 }
-
-const selectClass = 'h-9 rounded-md border bg-background px-2 text-[13px]'
 
 /** 空间设置的邀请链接区块（add-team-invite-links 4.2）：生成、一次性复制、列表与作废 */
 export function InviteLinksPanel({
@@ -38,6 +54,9 @@ export function InviteLinksPanel({
   const [error, setError] = useState<string | null>(null)
   const [created, setCreated] = useState<string | null>(null)
   const [copied, setCopied] = useState<'ok' | 'failed' | null>(null)
+  // 整个列表只放一个确认框：行内按钮记录目标并打开
+  const [revokeOpen, setRevokeOpen] = useState(false)
+  const [revokeTarget, setRevokeTarget] = useState<string | null>(null)
 
   async function generate() {
     setPending(true)
@@ -61,8 +80,9 @@ export function InviteLinksPanel({
     }
   }
 
-  async function revoke(linkId: string) {
-    if (!window.confirm(m.invite_links_revoke_confirm())) return
+  async function confirmRevoke() {
+    const linkId = revokeTarget
+    if (!linkId || pending) return
     setPending(true)
     setError(null)
     try {
@@ -73,6 +93,8 @@ export function InviteLinksPanel({
       setError(m.invite_links_failed())
     } finally {
       setPending(false)
+      // 成功失败都关闭，错误由区块顶部的 FormAlert 展示
+      setRevokeOpen(false)
     }
   }
 
@@ -98,33 +120,36 @@ export function InviteLinksPanel({
           void generate()
         }}
       >
-        <span className="grid gap-1">
+        <div className="grid gap-1">
           <Label htmlFor="invite-link-role">{m.invite_links_role()}</Label>
-          <select
-            id="invite-link-role"
-            className={selectClass}
-            value={role}
-            onChange={(e) => setRole(e.target.value === 'admin' ? 'admin' : 'member')}
-          >
-            <option value="member">{m.invite_links_role_member()}</option>
-            <option value="admin">{m.invite_links_role_admin()}</option>
-          </select>
-        </span>
-        <span className="grid gap-1">
+          <Select value={role} onValueChange={(v) => setRole(v === 'admin' ? 'admin' : 'member')}>
+            <SelectTrigger id="invite-link-role" placeholder={m.invite_links_role()} />
+            <SelectContent>
+              <SelectItem index={0} value="member">
+                {m.invite_links_role_member()}
+              </SelectItem>
+              <SelectItem index={1} value="admin">
+                {m.invite_links_role_admin()}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-1">
           <Label htmlFor="invite-link-ttl">{m.invite_links_ttl()}</Label>
-          <select
-            id="invite-link-ttl"
-            className={selectClass}
-            value={ttlDays}
-            onChange={(e) => setTtlDays(Number(e.target.value) as 1 | 7 | 30)}
+          <Select
+            value={String(ttlDays)}
+            onValueChange={(v) => setTtlDays(Number(v) as 1 | 7 | 30)}
           >
-            {([1, 7, 30] as const).map((days) => (
-              <option key={days} value={days}>
-                {m.invite_links_ttl_option({ days })}
-              </option>
-            ))}
-          </select>
-        </span>
+            <SelectTrigger id="invite-link-ttl" placeholder={m.invite_links_ttl()} />
+            <SelectContent>
+              {([1, 7, 30] as const).map((days, index) => (
+                <SelectItem key={days} index={index} value={String(days)}>
+                  {m.invite_links_ttl_option({ days })}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <span className="grid gap-1">
           <Label htmlFor="invite-link-max">{m.invite_links_max_uses()}</Label>
           <Input
@@ -147,7 +172,7 @@ export function InviteLinksPanel({
       </p>
       {created ? (
         <div className="grid gap-2 rounded-lg border border-primary/30 bg-primary-soft p-3">
-          <p role="status" className="text-[13px] text-primary">
+          <p role="status" className="text-caption text-primary">
             {m.invite_links_created()}
           </p>
           <div className="flex flex-wrap items-center gap-2">
@@ -196,7 +221,10 @@ export function InviteLinksPanel({
                   variant="outline"
                   size="sm"
                   disabled={pending}
-                  onClick={() => void revoke(link.id)}
+                  onClick={() => {
+                    setRevokeTarget(link.id)
+                    setRevokeOpen(true)
+                  }}
                 >
                   {m.invite_links_revoke()}
                 </Button>
@@ -205,6 +233,32 @@ export function InviteLinksPanel({
           </tr>
         ))}
       </SimpleTable>
+      <AlertDialog
+        open={revokeOpen}
+        onOpenChange={(open) => {
+          if (!pending) setRevokeOpen(open)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{m.invite_links_revoke_title()}</AlertDialogTitle>
+            <AlertDialogDescription>{m.invite_links_revoke_description()}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={pending}>{m.common_cancel()}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              loading={pending}
+              onClick={(event) => {
+                event.preventDefault()
+                void confirmRevoke()
+              }}
+            >
+              {m.invite_links_revoke()}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Section>
   )
 }

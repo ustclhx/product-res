@@ -3,6 +3,7 @@ import { expect, type Page, test } from '@playwright/test'
 import type { SnapshotModules } from '../src/features/category/types.ts'
 import { categoryFixture } from '../test/fixtures/category-insight-data.ts'
 import { fixtureDb, register, simulateClientIp, waitForHydration } from './fixtures.ts'
+import { chooseOption } from './select.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // add-category-insight 3.2 / 3.4：报告页截图对照设计稿；夹具数据直接写入隔离库。
@@ -173,7 +174,7 @@ test('品类洞察：新建研究生成报告、快照切换、来源查看、�
   await page.getByRole('button', { name: '新建研究' }).click()
   const form = page.getByRole('form', { name: '品类研究' })
   await form.getByLabel('研究名称').fill('宠物慢食碗')
-  await form.getByLabel('平台站点').selectOption('amazon-us')
+  await chooseOption(form.getByRole('combobox', { name: '平台站点' }), { value: 'amazon-us' })
   await form.getByLabel('类目 ID').fill(fx.categoryId)
   await form.getByLabel('关键词').fill(fx.keyword)
   await form.getByLabel('头部 N').fill('10')
@@ -214,10 +215,8 @@ test('品类洞察：新建研究生成报告、快照切换、来源查看、�
   await expect(firstRow.getByText('已转线索')).toBeVisible()
 
   // 历史快照仍可选择
-  const select = page.getByLabel('快照')
-  await expect(select.locator('option')).toHaveCount(2)
-  const older = await select.locator('option').nth(1).getAttribute('value')
-  await select.selectOption(older as string)
+  // 夹具有两份快照：除「（最新）」外只剩一项，正则匹配多项时 chooseOption 会因严格模式失败
+  await chooseOption(page.getByRole('combobox', { name: '快照' }), /^(?!.*（最新）).+$/)
   await expect(page.getByText('正在查看历史快照')).toBeVisible()
 
   // 无数据的研究：各模块显示“无数据来源”
