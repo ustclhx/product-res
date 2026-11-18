@@ -66,6 +66,14 @@ node "$TEMPLATE_DIR/scripts/template-sync.mjs" sync --project . --to <目标> \
 - 移植的模板迁移在 `packages/db/migrations` 末尾，文件名带 `tpl_`；核对其在项目自有迁移之后、
   journal `when` 递增，且报告中 `drizzle-kit generate` 无变化。
 - 验证失败时修复并提交后重跑；基准记录只在无冲突且验证全部通过时更新到目标。
+- 工具内的 `pnpm test` 以 CI 模式运行并清除数据库连接串，只覆盖单元测试。在同步分支上手动运行
+  `pnpm test`（复现失败或补跑集成测试）前，必须先为当前目录准备隔离库：库名 `<项目>_wt_<名称>` 或
+  `<项目>_test`，按 `infra/local/initdb/02-db-grants.sql` 授权，连接串写入仓库根已忽略的 `.env.worktree`
+  或在当前 shell 导出 `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE`（app）与
+  `MIGRATION_DATABASE_URL`（migrator），二者指向同一库；只需单元测试时用 `CI=1 pnpm test`。
+  测试会对该库执行全部迁移，绝不指向开发主库、staging 或 production，也不设置 `ALLOW_TEST_ON_DEV_DATABASE`。
+  项目的测试配置尚未包含隔离检查（基准早于该防护，且同步分支未合入）时，旧配置会在没有 `.env.worktree`
+  时回退到开发库，未准备隔离库前不得运行 `pnpm test`。用完删除该库与 `.env.worktree`。
 - 升级说明里的数据库风险（锁表、全表更新、不可逆数据迁移）写入交付说明，供上线时安排窗口与备份。
 
 ## 5. UI 截图对比（同步涉及 `packages/ui` 或基线 token 时）
@@ -105,11 +113,20 @@ test -f docs/design/forks.md && cat docs/design/forks.md
 ## 6. 基准推断（无记录或记录不可信）
 
 ```sh
-node "$TEMPLATE_DIR/scripts/template-sync.mjs" infer-base --project . [--since YYYY-MM-DD --until YYYY-MM-DD] [--param key=value]...
+node "$TEMPLATE_DIR/scripts/template-sync.mjs" infer-base --project . \
+  [--generation-commit <完整 SHA>] [--since YYYY-MM-DD --until YYYY-MM-DD] [--param key=value]...
 ```
 
-展示还原的参数（及来源）、前 5 个候选、最佳候选的差异摘要；超过阈值时不写入。使用者选定后
-`--write <sha>` 写入 `.template-base.json`，审阅并由使用者确认后再提交，然后回到第 1 节。
+默认从最早的根提交还原参数并确定搜索时间窗。若生成结果并入已有仓库，用
+`--generation-commit <完整 SHA>` 指定保存生成结果的提交。该提交必须是 HEAD 或 HEAD 的祖先。
+`--param domain=acme.example` 和 `create-project --domain acme.example` 一样会补上 `https://`，
+也可填写不带末尾斜线的 HTTPS origin，例如 `https://acme.example`。生成器接受末尾斜线并在记录中去掉。
+
+输出还原的参数、来源、前 5 个候选的差异摘要和需人工核对的二进制文件。候选按文本差异行数、
+二进制差异文件数从少到多排序，再按提交日期从新到旧和 SHA 排序。阈值只比较文本差异行数。
+选定后用 `--write <候选完整 SHA>` 写入 `.template-base.json`。候选超过阈值且使用者核对后仍决定采用时，
+同时传入 `--write <候选完整 SHA> --force`，工具会显示分数与警告。审阅记录并由使用者确认后再提交，
+然后回到第 1 节。
 
 ## 7. 交付与授权边界
 

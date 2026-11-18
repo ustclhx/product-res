@@ -273,6 +273,65 @@ test('plan：main push 只改文档时 docs，不查询复用', async () => {
   assert.deepEqual(api.calls, [])
 })
 
+test('plan：项目追加文档目录，按字面目录前缀匹配', async () => {
+  const input = (changed) =>
+    pushInput({ ...fakeGit({ changed }), readDocsPathsConfig: () => '["doc/"]' }, fakeApi(), {
+      ref: 'refs/heads/feat',
+    })
+
+  assert.equal((await plan(input(['doc/handbook/readme.txt', 'docs/readme.md']))).mode, 'docs')
+  for (const path of [
+    'doc',
+    'doc-assets/readme.txt',
+    ' doc/readme.txt',
+    '.github/ci-docs-paths.json',
+  ])
+    assert.equal((await plan(input([path]))).mode, 'full', path)
+})
+
+test('plan：忽略受保护的目录并给出警告，其余目录仍生效', async () => {
+  const protectedDirs = ['apps/web/', 'packages/', 'scripts/ci/', 'deploy/', '.github/']
+  const readDocsPathsConfig = () => JSON.stringify([...protectedDirs, 'doc/'])
+  const input = (path) =>
+    pushInput({ ...fakeGit({ changed: [path] }), readDocsPathsConfig }, fakeApi(), {
+      ref: 'refs/heads/feat',
+    })
+  const warnings = []
+  const docs = await plan({
+    ...input('doc/readme.txt'),
+    onWarning: (warning) => warnings.push(warning),
+  })
+  assert.equal(docs.mode, 'docs')
+  assert.equal(warnings.length, protectedDirs.length)
+  for (const [i, dir] of protectedDirs.entries()) {
+    assert.ok(warnings[i].includes(dir))
+    assert.equal((await plan(input(`${dir}readme.md`))).mode, 'full', dir)
+  }
+})
+
+test('plan：配置无效或无法读取时全量运行，main 不查询复用', async () => {
+  const api = okApi()
+  const readError = () => {
+    throw new Error('无法读取 .github/ci-docs-paths.json（EACCES）')
+  }
+  const invalidConfigs = [
+    '{',
+    '{}',
+    '[1]',
+    ...['/', 'doc', '/doc/', './doc/', 'a/../doc/', 'doc//', 'doc/*/', 'C:\\doc\\'].map((dir) =>
+      JSON.stringify([dir]),
+    ),
+  ]
+  const git = fakeGit({ changed: ['docs/readme.md'] })
+  const readers = [...invalidConfigs.map((contents) => () => contents), readError]
+  for (const readDocsPathsConfig of readers) {
+    const result = await plan(pushInput({ ...git, readDocsPathsConfig }, api))
+    assert.equal(result.mode, 'full', result.reason)
+    assert.match(result.reason, /\.github\/ci-docs-paths\.json/)
+  }
+  assert.deepEqual(api.calls, [])
+})
+
 test('plan：非 main 的 push 不复用', async () => {
   const result = await plan(
     pushInput(fakeGit({ changed: ['apps/web/src/a.ts'] }), okApi(), { ref: 'refs/heads/feat' }),

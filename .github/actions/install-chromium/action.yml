@@ -19,6 +19,31 @@ runs:
     - name: Configure apt timeouts
       shell: bash
       run: printf 'Acquire::Retries "3";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\nDPkg::Lock::Timeout "90";\n' | sudo tee /etc/apt/apt.conf.d/99ci-timeouts >/dev/null
+    # 新 runner 上 apt-daily / unattended-upgrades 曾持有 dpkg 前端锁超过 7 分钟，90 秒锁等待与 3 次重试全部失败
+    # （run 44368773262 的 compose job）。安装前先停止并屏蔽这些后台任务，再有界等待锁释放。
+    - name: Wait for apt locks
+      shell: bash
+      run: |
+        for unit in apt-daily.timer apt-daily-upgrade.timer apt-daily.service apt-daily-upgrade.service unattended-upgrades.service; do
+          # 停止正在升级的 unattended-upgrades 可能阻塞，单个单元限时；单元不存在时忽略
+          sudo timeout -k 5 60 systemctl stop "$unit" 2>/dev/null || true
+          sudo systemctl mask "$unit" >/dev/null 2>&1 || true
+        done
+        if ! command -v fuser >/dev/null 2>&1; then
+          echo "::warning::未找到 fuser，跳过 apt 锁等待（仍依赖 DPkg::Lock::Timeout 与重试）"
+          exit 0
+        fi
+        locks=(/var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock /var/cache/apt/archives/lock)
+        deadline=$((SECONDS + 300))
+        while sudo fuser "${locks[@]}" >/dev/null 2>&1; do
+          if (( SECONDS >= deadline )); then
+            echo "::warning::apt/dpkg 锁 5 分钟后仍被占用，继续安装（仍依赖 DPkg::Lock::Timeout 与重试）"
+            sudo fuser -v "${locks[@]}" || true
+            exit 0
+          fi
+          sleep 5
+        done
+        echo "apt/dpkg 锁已空闲（本步骤用时 ${SECONDS} 秒）"
     - name: Install Chromium
       if: steps.browsers.outputs.cache-hit != 'true'
       shell: bash

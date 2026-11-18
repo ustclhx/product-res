@@ -3,7 +3,7 @@ import { createDb, file, member, organization, scoped, user } from '@product-res
 import { newId } from '@product-res/shared'
 import { eq, inArray } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createCloudflareStorage, type StorageEnv } from '../src/cloudflare/index.ts'
+import { createCloudflareStorage, FILES_BUCKETS, type StorageEnv } from '../src/cloudflare/index.ts'
 import {
   cleanupFiles,
   completeUpload,
@@ -29,7 +29,7 @@ const db = createDb(env.HYPERDRIVE)
 const storageEnv = {
   FILES: env.FILES,
   R2_ACCOUNT_ID: '00000000000000000000000000000000',
-  R2_FILES_BUCKET: 'product-res-files',
+  R2_FILES_BUCKET: FILES_BUCKETS[0],
   R2_ACCESS_KEY_ID: 'test-access-key',
   R2_SECRET_ACCESS_KEY: 'test-secret-key',
 } satisfies StorageEnv

@@ -50,12 +50,13 @@ const semverPattern =
  * @returns {Record<string, string | boolean | string[]>} Reproducible generation parameters.
  */
 export function normalizeParams(options) {
+  const domain = parseDomain(options.url)
   const values = {
     ai: options.ai ?? ['text', 'image', 'video'],
     billing: options.billing ?? ['stripe', 'paypal'],
     'billing-enabled': options.billingEnabled ?? true,
     'credits-enabled': options.creditsEnabled ?? true,
-    domain: options.url,
+    domain: domain.origin,
     features: options.features ?? ['blog'],
     i18n: options.i18n ?? true,
     'image-namespace': options.imageNamespace ?? `ghcr.io/configure-owner/${options.name}`,
@@ -65,7 +66,7 @@ export function normalizeParams(options) {
     'multi-tenant': options.multiTenant ?? false,
     name: options.name,
     oauth: options.oauth ?? ['google', 'github'],
-    'support-email': options.supportEmail ?? `support@${new URL(options.url).hostname}`,
+    'support-email': options.supportEmail ?? `support@${domain.hostname}`,
     target: options.target ?? 'cloudflare',
     theme: options.theme ?? 'neutral',
     turnstile: options.turnstile ?? true,
@@ -98,11 +99,11 @@ function optionalParams(options) {
 
 /**
  * Restore non-interactive generator arguments, without execution controls or paths.
- * @param {Record<string, string | boolean | string[]>} params Complete normalized parameters.
+ * @param {Record<string, string | boolean | string[]>} input Complete generation parameters.
  * @returns {string[]} Alternating CLI flags and values.
  */
-export function paramsToArgs(params) {
-  validateParams(params)
+export function paramsToArgs(input) {
+  const params = validateParams(input)
   return [...paramKeys, ...optionalParamKeys.filter((key) => Object.hasOwn(params, key))].flatMap(
     (key) => [`--${key}`, Array.isArray(params[key]) ? params[key].join(',') : String(params[key])],
   )
@@ -118,6 +119,28 @@ function exactKeys(value, keys, label) {
   ) {
     throw new Error(`Invalid ${label}: expected fields ${keys.join(', ')}`)
   }
+}
+
+function parseDomain(input) {
+  if (typeof input !== 'string') throw new Error('Invalid params.domain')
+  const candidate = input.includes('://') ? input : `https://${input}`
+  let domain
+  try {
+    domain = new URL(candidate)
+  } catch {
+    throw new Error('Invalid params.domain')
+  }
+  if (
+    domain.protocol !== 'https:' ||
+    domain.username ||
+    domain.password ||
+    domain.port ||
+    !domain.hostname.includes('.') ||
+    domain.origin !== candidate
+  ) {
+    throw new Error('Invalid params.domain')
+  }
+  return domain
 }
 
 function validateParams(params) {
@@ -155,21 +178,7 @@ function validateParams(params) {
   ) {
     throw new Error('Invalid params.name')
   }
-  let domain
-  try {
-    domain = new URL(params.domain)
-  } catch {
-    throw new Error('Invalid params.domain')
-  }
-  if (
-    domain.protocol !== 'https:' ||
-    domain.username ||
-    domain.password ||
-    domain.port ||
-    !domain.hostname.includes('.') ||
-    domain.origin !== params.domain
-  )
-    throw new Error('Invalid params.domain')
+  const domain = parseDomain(params.domain).origin
   if (
     typeof params['support-email'] !== 'string' ||
     !/^[\w.+-]+@[a-z0-9.-]+\.[a-z]+$/i.test(params['support-email'])
@@ -192,6 +201,7 @@ function validateParams(params) {
   ) {
     throw new Error('Invalid params: billing and credits must support enabled AI')
   }
+  return { ...params, domain }
 }
 
 /**
@@ -228,7 +238,7 @@ export function validateBaseRecord(record) {
   if (record.commit === null && (record.clean || record.version !== null)) {
     throw new Error('Invalid template baseline: clean/version require a commit')
   }
-  validateParams(record.params)
+  const params = validateParams(record.params)
   if (
     !Array.isArray(record.migrations) ||
     record.migrations.some((tag) => typeof tag !== 'string')
@@ -242,12 +252,9 @@ export function validateBaseRecord(record) {
     version: record.version,
     clean: record.clean,
     params: Object.fromEntries(
-      [...paramKeys, ...optionalParamKeys.filter((key) => Object.hasOwn(record.params, key))]
+      [...paramKeys, ...optionalParamKeys.filter((key) => Object.hasOwn(params, key))]
         .sort()
-        .map((key) => [
-          key,
-          Array.isArray(record.params[key]) ? [...record.params[key]] : record.params[key],
-        ]),
+        .map((key) => [key, Array.isArray(params[key]) ? [...params[key]] : params[key]]),
     ),
     migrations: [...record.migrations],
   }

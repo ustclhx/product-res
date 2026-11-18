@@ -24,7 +24,7 @@ const booleanKeys = [
 ]
 const keys = Object.keys(normalizeParams({ name: 'fixture', url: 'https://fixture.example' }))
 
-// 只解析静态字面量；不执行首提交中的配置代码。
+// 只解析静态字面量；不执行生成提交中的配置代码。
 function literal(text) {
   const tokens =
     text
@@ -65,7 +65,7 @@ function string(token) {
   return token.slice(1, -1).replace(/\\(['\\])/g, '$1')
 }
 
-/** Recover complete generator parameters exclusively from an existing Git root commit. */
+/** Recover complete generator parameters exclusively from the selected Git commit. */
 export function inferParams(project, commit, overrides = []) {
   const files = git(project, ['ls-tree', '-rz', '--name-only', commit]).split('\0').filter(Boolean)
   const read = (path) => (files.includes(path) ? git(project, ['show', `${commit}:${path}`]) : '')
@@ -198,11 +198,11 @@ export function inferParams(project, commit, overrides = []) {
     params['image-namespace'] = `ghcr.io/configure-owner/${params.name}`
     sources['image-namespace'] = '生成器默认（cloudflare）'
   }
-  // theme 为后加参数；旧根提交没有该配置时，不向旧候选生成器传递新 flag。
+  // theme 为后加参数；旧提交没有该配置时，不向旧候选生成器传递新 flag。
   const missing = keys.filter((key) => key !== 'theme' && !Object.hasOwn(params, key))
   if (missing.length)
     throw new Error(
-      `无法从首个提交还原参数，请补齐：${missing.map((key) => `--param ${key}=<值>`).join(' ')}`,
+      `无法从生成提交还原参数，请补齐：${missing.map((key) => `--param ${key}=<值>`).join(' ')}`,
     )
   const normalized = normalizeParams({
     name: params.name,
@@ -237,23 +237,23 @@ async function scoreCopy(copy, original, work, projectFiles) {
   git(compared, ['--work-tree', copy, 'add', '--force', '--all'])
   gitRaw(compared, ['rm', '--cached', '--ignore-unmatch', '.template-base.json'])
   const paths = git(compared, ['ls-files', '-z']).split('\0').filter(Boolean)
-  // 索引仅有生成路径；比较首提交工作树不会把项目独有文件算进去。
+  // 索引仅有生成路径，比较时跳过项目独有文件。
   const output = git(compared, ['--work-tree', original, 'diff', '--numstat', '--no-renames', '-z'])
-  const differences = output
-    .split('\0')
-    .filter(Boolean)
-    .map((entry) => {
-      const first = entry.indexOf('\t')
-      const second = entry.indexOf('\t', first + 1)
-      const removed = entry.slice(0, first)
-      const added = entry.slice(first + 1, second)
-      const path = entry.slice(second + 1)
-      const lines = added === '-' ? Number.POSITIVE_INFINITY : Number(added) + Number(removed)
-      return { path, added, removed, lines }
-    })
+  const differences = []
+  const binaryFiles = []
+  for (const entry of output.split('\0').filter(Boolean)) {
+    const first = entry.indexOf('\t')
+    const second = entry.indexOf('\t', first + 1)
+    const added = entry.slice(0, first)
+    const removed = entry.slice(first + 1, second)
+    const path = entry.slice(second + 1)
+    if (added === '-') binaryFiles.push(path)
+    else differences.push({ path, added, removed, lines: Number(added) + Number(removed) })
+  }
   differences.sort((a, b) => b.lines - a.lines || a.path.localeCompare(b.path))
   return {
     score: differences.reduce((sum, file) => sum + file.lines, 0),
+    binaryFiles,
     differences,
     projectOnly: projectFiles.filter(
       (path) => path !== '.template-base.json' && !paths.includes(path),
@@ -261,8 +261,45 @@ async function scoreCopy(copy, original, work, projectFiles) {
   }
 }
 
+function selectGenerationCommit(project, selected, log) {
+  const withTime = (sha) => ({
+    sha,
+    time: Number(git(project, ['show', '-s', '--format=%ct', sha])),
+  })
+  if (selected === undefined) {
+    const roots = git(project, ['rev-list', '--max-parents=0', 'HEAD']).split('\n')
+    if (roots.length > 1)
+      log('检测到多个根提交，可用 --generation-commit <完整 SHA> 指定生成提交。')
+    return roots.map(withTime).sort((a, b) => a.time - b.time || a.sha.localeCompare(b.sha))[0]
+  }
+  const head = git(project, ['rev-parse', '--verify', 'HEAD'])
+  if (selected.length !== head.length || !/^[a-f0-9]+$/i.test(selected))
+    throw new Error('--generation-commit 必须为完整的提交 SHA')
+  const sha = selected.toLowerCase()
+  const commit = gitRaw(project, ['rev-parse', '--verify', '--quiet', `${sha}^{commit}`])
+  if (commit.status !== 0 || commit.stdout.trim() !== sha)
+    throw new Error('--generation-commit 必须指向存在的提交')
+  const ancestry = gitRaw(project, ['merge-base', '--is-ancestor', sha, head])
+  if (ancestry.status !== 0) throw new Error('--generation-commit 必须为 HEAD 或 HEAD 的祖先')
+  return withTime(sha)
+}
+
+function logCandidate(log, candidate) {
+  log(
+    `${candidate.commit} ${candidate.date} ${candidate.title} 分数=${candidate.score} 二进制差异=${candidate.binaryFiles.length}`,
+  )
+  for (const file of candidate.differences.slice(0, 5))
+    log(`  ${file.path}: +${file.added} -${file.removed}`)
+  if (candidate.binaryFiles.length) {
+    log('  请人工核对以下二进制差异：')
+    for (const path of candidate.binaryFiles) log(`    ${JSON.stringify(path)}`)
+  }
+  log(`  项目独有路径（不计分）：${candidate.projectOnly.join(', ') || '无'}`)
+}
+
 /** Infer a baseline without modifying the project unless an eligible SHA is explicitly selected. */
 export async function runInfer(options) {
+  if (options.force && !options.write) throw new Error('--force 必须与 --write 一起使用')
   const project = await realpath(resolve(options.project))
   const log = options.log ?? console.log
   const template = options.template ?? fileURLToPath(new URL('../../', import.meta.url))
@@ -271,32 +308,29 @@ export async function runInfer(options) {
     throw new Error('--threshold 必须是非负有限行数')
   if (resolve(git(project, ['rev-parse', '--show-toplevel'])) !== project)
     throw new Error('--project 必须是 Git 仓库根目录')
-  const roots = git(project, ['rev-list', '--max-parents=0', 'HEAD']).split('\n')
-  const root = roots
-    .map((sha) => ({ sha, time: Number(git(project, ['show', '-s', '--format=%ct', sha])) }))
-    .sort((a, b) => a.time - b.time || a.sha.localeCompare(b.sha))[0]
-  const { params, sources, files } = inferParams(project, root.sha, options.params)
+  const generation = selectGenerationCommit(project, options.generationCommit, log)
+  const { params, sources, files } = inferParams(project, generation.sha, options.params)
   const since = options.since?.match(/^\d{4}-\d{2}-\d{2}$/)
     ? `${options.since}T00:00:00.000Z`
-    : (options.since ?? new Date((root.time - 3 * 86400) * 1000).toISOString())
+    : (options.since ?? new Date((generation.time - 3 * 86400) * 1000).toISOString())
   const until = options.until?.match(/^\d{4}-\d{2}-\d{2}$/)
     ? `${options.until}T23:59:59.999Z`
-    : (options.until ?? new Date((root.time + 3 * 86400) * 1000).toISOString())
+    : (options.until ?? new Date((generation.time + 3 * 86400) * 1000).toISOString())
   if (
     !Number.isFinite(Date.parse(since)) ||
     !Number.isFinite(Date.parse(until)) ||
     Date.parse(since) > Date.parse(until)
   )
     throw new Error('无效的 --since/--until 时间窗')
-  const clone = await cloneTemplate(template)
+  const clone = await cloneTemplate(template, log)
   const work = await mkdtemp(join(tmpdir(), 'template-infer-'))
   try {
     const original = join(work, 'original')
     await mkdir(original)
     const archive = join(work, 'project.tar')
-    git(project, ['archive', '--format=tar', '-o', archive, root.sha])
+    git(project, ['archive', '--format=tar', '-o', archive, generation.sha])
     const extracted = spawnSync('tar', ['-xf', archive, '-C', original], { encoding: 'utf8' })
-    if (extracted.status !== 0) throw new Error(`首提交解包失败：${extracted.stderr}`)
+    if (extracted.status !== 0) throw new Error(`生成提交解包失败：${extracted.stderr}`)
     const main = resolveCommit(clone, 'origin/main')
     if (!main) throw new Error('模板缺少 main 分支')
     const commits = git(clone.dir, [
@@ -336,29 +370,38 @@ export async function runInfer(options) {
     }
     candidates.sort(
       (a, b) =>
-        a.score - b.score || b.date.localeCompare(a.date) || a.commit.localeCompare(b.commit),
+        a.score - b.score ||
+        a.binaryFiles.length - b.binaryFiles.length ||
+        b.date.localeCompare(a.date) ||
+        a.commit.localeCompare(b.commit),
     )
-    log(`首个提交：${root.sha}\n时间窗：${since} 至 ${until}\n还原参数：`)
+    const commitLabel = options.generationCommit === undefined ? '首个提交' : '生成提交'
+    log(`${commitLabel}：${generation.sha}\n时间窗：${since} 至 ${until}\n还原参数：`)
     for (const key of keys) log(`${key}=${JSON.stringify(params[key])}（${sources[key]}）`)
-    for (const candidate of candidates.slice(0, 5)) {
-      log(`${candidate.commit} ${candidate.date} ${candidate.title} 分数=${candidate.score}`)
-      for (const file of candidate.differences.slice(0, 5))
-        log(`  ${file.path}: +${file.added} -${file.removed}`)
-      log(`  项目独有路径（不计分）：${candidate.projectOnly.join(', ') || '无'}`)
+    const shown = candidates.slice(0, 5)
+    for (const candidate of shown) logCandidate(log, candidate)
+    const result = {
+      status: 'inferred',
+      root: generation.sha,
+      since,
+      until,
+      params,
+      sources,
+      candidates,
     }
-    const result = { status: 'inferred', root: root.sha, since, until, params, sources, candidates }
     if (!candidates.length) throw new Error('时间窗内没有 main 候选提交，请调整 --since/--until')
     if (!options.write) {
       log(
         candidates[0].score > threshold
-          ? `所有候选均超过 ${threshold} 行阈值，不能写入基准。`
+          ? `所有候选均超过 ${threshold} 行阈值。人工核对后可用 --write <完整候选 SHA> --force 写入基准。`
           : '确认候选后使用 --write <完整候选 SHA> 写入基准。',
       )
       return result
     }
     const selected = candidates.find((candidate) => candidate.commit === options.write)
     if (!selected) throw new Error('--write 必须为本时间窗内候选的完整 SHA')
-    if (selected.score > threshold)
+    if (!shown.includes(selected)) logCandidate(log, selected)
+    if (selected.score > threshold && !options.force)
       throw new Error(`候选差异 ${selected.score} 超过 ${threshold} 行阈值，拒绝写入`)
     const repository = sourceState(clone.dir).repository
     // 本地 clone 的 origin 是路径，来源必须取模板自己的远端地址。
@@ -377,6 +420,8 @@ export async function runInfer(options) {
     await writeFile(join(project, '.template-base.json'), serializeBaseRecord(record), {
       flag: 'wx',
     })
+    if (selected.score > threshold)
+      log(`警告：候选差异 ${selected.score} 超过 ${threshold} 行阈值，已使用 --force 写入基准。`)
     log(`已写入 .template-base.json：${selected.commit}；未创建 Git 提交`)
     return { ...result, status: 'written', record }
   } finally {
@@ -394,13 +439,19 @@ export async function inferCommand(args) {
       template: { type: 'string' },
       since: { type: 'string' },
       until: { type: 'string' },
+      'generation-commit': { type: 'string' },
       param: { type: 'string', multiple: true },
       write: { type: 'string' },
+      force: { type: 'boolean' },
       threshold: { type: 'string' },
     },
   })
   if (!values.project)
     throw new Error('infer-base 需要 --project <路径>，可选 --template <URL|路径>')
-  await runInfer({ ...values, params: values.param ?? [] })
+  await runInfer({
+    ...values,
+    generationCommit: values['generation-commit'],
+    params: values.param ?? [],
+  })
   return 0
 }

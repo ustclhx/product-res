@@ -19,7 +19,7 @@
     },
     {
       "binding": "HYPERDRIVE_CACHED",
-      "id": "00000000000000000000000000000000",
+      "id": "00000000000000000000000000000001",
       "localConnectionString": "postgres://app:app@localhost:5432/product_res_dev"
     }
   ],
@@ -56,7 +56,7 @@
       }
     ]
   },
-  "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
+  "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000002" }],
   "triggers": {
     // 心跳：写 setting 表的 jobs.lastCronAt（src/cron/heartbeat.ts）
     "crons": ["*/5 * * * *", "0 3 * * *", "0 * * * *", "*/10 * * * *", "0 4 * * *"]
@@ -83,11 +83,11 @@
         "head_sampling_rate": 1,
         "traces": { "enabled": false }
       },
-      "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
+      "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000003" }],
       "hyperdrive": [
         // Neon product_res_staging，app 非 pooled TLS 直连；分别关闭缓存与缓存 60 秒（docs/07 §2）
-        { "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000" },
-        { "binding": "HYPERDRIVE_CACHED", "id": "00000000000000000000000000000000" }
+        { "binding": "HYPERDRIVE", "id": "00000000000000000000000000000004" },
+        { "binding": "HYPERDRIVE_CACHED", "id": "00000000000000000000000000000005" }
       ],
 
       "queues": {
@@ -139,10 +139,10 @@
       },
 
       "r2_buckets": [{ "binding": "FILES", "bucket_name": "product-res-files-production" }],
-      "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
+      "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000006" }],
       "hyperdrive": [
-        { "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000" },
-        { "binding": "HYPERDRIVE_CACHED", "id": "00000000000000000000000000000000" }
+        { "binding": "HYPERDRIVE", "id": "00000000000000000000000000000007" },
+        { "binding": "HYPERDRIVE_CACHED", "id": "00000000000000000000000000000008" }
       ],
 
       "queues": {

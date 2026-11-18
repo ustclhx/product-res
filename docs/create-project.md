@@ -48,9 +48,10 @@ robots 与 sitemap 不加入路由，营销页不预渲染，也不生成营销 
 `--turnstile false` 关闭 Turnstile，`--multi-tenant true` 启用团队空间，
 `--support-email` 设置支持邮箱。完整参数见帮助命令。
 
-默认生成后运行 frozen-lockfile 安装、typecheck 和 test；自检使用 CI 模式，清除调用者的
-数据库连接环境变量，只验证单元测试，不访问模板数据库。`--skip-check` 仅生成，需自行补做
-自检。失败时脚本返回非零状态并保留副本方便排查，不将部分自检报告为成功。
+生成完成后使用模板锁定版本的 Biome 格式化副本并整理 import；若模板尚未安装依赖，
+只通过 pnpm 获取该版本的 Biome。默认随后运行 frozen-lockfile 安装、typecheck 和 test。
+自检使用 CI 模式，清除调用者的数据库连接环境变量，只验证单元测试，不访问模板数据库。
+`--skip-check` 仍执行格式化，只跳过安装和自检。失败时脚本返回非零状态并保留副本方便排查。
 
 生成内容包含改名的包作用域、Worker / Queue / Workflow 名称、站点品牌、
 `template.config.ts`、根目录及两个 app 的 `.dev.vars.example` 和 `PROJECT_SETUP.md`。
@@ -64,7 +65,7 @@ CLI 参数，键排序、列表去重保序，不包含输出目录）和 `migra
 有未提交改动时也标记 `clean=false`，这种来源不能作为可信同步基准。
 用已生成副本再次生成时，会重新记录当前源状态，不继承旧记录。
 同一源与参数的生成文件列表、内容和权限保持一致；普通文件为 0644、可执行文件和目录为 0755。
-Hyperdrive / KV 的部署 ID 重置为零占位值，AI Gateway / R2 账号标识清空，所有环境都需配置新资源；
+Hyperdrive / KV 的部署 ID 重置为互不相同的占位值，AI Gateway / R2 账号标识清空，所有环境都需配置新资源；
 Rate Limiting 的 RL_AUTH / RL_AI / RL_API / RL_SHARE_CARD 命名空间需独立分配。Queue 名会同步到 jobs 消费者与测试。
 FILES 桶按项目改名，R2_FILES_BUCKET 与绑定保持一致；文本模式也保留文件清理 Cron 所需的 FILES 桶。
 清单按 AI、支付、OAuth 与 Turnstile 开关列出资源与密钥；关闭图片和视频时移除 Workflow 绑定，
@@ -162,11 +163,14 @@ node /tmp/template/scripts/template-sync.mjs sync --project . --to template-v0.3
 
 同步过程：
 
-1. 用基准提交和目标提交各自的生成器，按记录的参数各生成一份副本；两份副本之间的差异就是改名后的模板变更。
-2. 在新分支 `template-sync/<目标短 SHA>` 上逐个文件做三方合并，当前分支不动。迁移目录、`.template-base.json`、`PROJECT_SETUP.md` 和 `pnpm-lock.yaml` 不参与合并。模板删除的文件不会从项目中删除，只在报告中列出。
+1. 用基准提交和目标提交各自的生成器，按记录的参数各生成一份副本。支持格式化的生成器也会格式化同步参照。旧版基准保留当时的生成结果，因此首次同步到支持格式化的版本会带入格式调整，可能与项目同一行的修改重叠。
+2. 在新分支 `template-sync/<目标短 SHA>` 上逐个文件做三方合并，当前分支不动。迁移目录、`.template-base.json`、`PROJECT_SETUP.md` 和 `pnpm-lock.yaml` 不参与合并。项目自有扩展只在首次生成或由模板新增时交付，生成时同步改名，之后由项目自行维护。模板删除的文件不会从项目中删除，只在报告中列出。
 3. 模板新增的迁移追加到项目迁移序列末尾，见 [迁移约定](02-project-structure.md#4-编码约定)。模板改动或删除了已发布的迁移时，同步停止。
-4. 任一 `package.json` 有变化时，先 `pnpm install --no-frozen-lockfile` 重新解析锁文件，再用 `--frozen-lockfile` 确认；随后检查 `drizzle-kit generate` 无变化，再运行 `pnpm typecheck` 和 `pnpm test`。
+4. 任一 `package.json` 有变化时，先 `pnpm install --no-frozen-lockfile` 重新解析锁文件，再用 `--frozen-lockfile` 确认；随后检查 `drizzle-kit generate` 无变化，再运行 `pnpm typecheck` 和 `pnpm test`。工具以 CI 模式、清除数据库连接串运行测试，只验单元测试；同步后要在本地跑集成测试时，先为同步目录建立空的隔离库（库名 `<项目>_wt_<名称>` 或 `<项目>_test`），测试不会回退到开发库，未配置时会失败并给出建库步骤。
 5. 全部通过后，在同步分支上提交基准记录的更新。工具不会推送，也不会合并。
+
+如果旧项目的自有扩展仍引用模板作用域，例如 `fonts.project.ts` 中的字体类型导入，
+同步会保留该文件，需在项目里将引用改为自己的作用域。
 
 报告默认写到 `<项目 git 目录>/template-sync/<目标短 SHA>.md`，不进入仓库，路径会打印在终端。报告包含：
 

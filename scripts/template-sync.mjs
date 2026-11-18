@@ -135,7 +135,7 @@ export async function runSync(options) {
   const work = await mkdtemp(join(tmpdir(), 'template-sync-'))
   let clone
   try {
-    clone = await cloneTemplate(source).catch((error) => {
+    clone = await cloneTemplate(source, log).catch((error) => {
       throw new PreflightError(error.message)
     })
     const base = resolveCommit(clone, record.commit)
@@ -470,7 +470,12 @@ const usage = `用法：node scripts/template-sync.mjs <命令> [参数]
        [--confirm-deployed <已部署版本>]... [--skip-migration <模板迁移 tag>]... [--verify-db <空库 URL>] [--skip-verify]
        [--trailer "<键>: <值>"]...（追加到同步提交，如 Co-Authored-By）
   infer-base --project <路径> [--template <URL|路径>] [--since <YYYY-MM-DD>] [--until <YYYY-MM-DD>]
-             [--param key=value]... [--threshold <行数，默认 50>] [--write <候选完整 SHA>]
+             [--generation-commit <完整 SHA>] [--param key=value]... [--threshold <行数，默认 50>]
+             [--write <候选完整 SHA> [--force]]
+             --generation-commit 从 HEAD 或其祖先还原参数并确定默认时间窗，默认取最早的根提交。
+             --param domain=acme.example 与 create-project --domain 一样会补 https://，完整值填不带末尾斜线的 HTTPS origin。
+             --threshold 只比较文本差异行数，二进制差异需人工核对。
+             --force 允许写入超过阈值的指定候选，并显示警告。
 `
 
 async function syncCommand(args) {

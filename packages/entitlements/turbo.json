@@ -2,9 +2,15 @@
   "$schema": "https://turborepo.com/schema.json",
   "extends": ["//"],
   "tasks": {
-    // 测试直接导入 apps/web/src/server，后者又依赖本包依赖闭包之外的业务包，无法用 inputs 精确覆盖
+    // 测试直接导入 apps/web/src/server，后者又依赖本包依赖闭包之外的业务包，无法用 inputs 精确覆盖；
+    // 席位测试连 Postgres，strict env 模式下须透传连接串，否则静默跳过
     "test": {
-      "cache": false
+      "cache": false,
+      "passThroughEnv": [
+        "CI",
+        "CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE",
+        "MIGRATION_DATABASE_URL"
+      ]
     },
     // 检查器不解析 tsconfig include，按目录把 test/ 的引用也计入 typecheck；多算只会多一次未命中
     "typecheck": {

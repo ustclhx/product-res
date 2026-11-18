@@ -33,7 +33,7 @@
     },
     {
       "binding": "HYPERDRIVE_CACHED",
-      "id": "00000000000000000000000000000000",
+      "id": "00000000000000000000000000000001",
       "localConnectionString": "postgres://app:app@localhost:5432/product_res_dev"
     }
   ],
@@ -47,7 +47,7 @@
     ]
   },
   // Better Auth 会话的 secondaryStorage（packages/auth/src/session.ts）；本地由 Miniflare 模拟，id 为占位值
-  "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
+  "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000002" }],
   // 认证入口按 IP + 邮箱限流（packages/auth/src/protection.ts）：每个 key 每 60 秒 10 次；
   // AI 接口按空间 + 用户限流（features/ai/chat.ts）：每个 key 每 60 秒 20 次，只用于防刷；
   // 分享卡片缓存未命中与分享页按 IP 限流（features/share-cards）：每个 key 每 60 秒 30 次；本地由 Miniflare 模拟
@@ -91,7 +91,7 @@
         "R2_ACCOUNT_ID": "",
         "R2_FILES_BUCKET": "product-res-files-staging"
       },
-      "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
+      "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000003" }],
       "ratelimits": [
         { "name": "RL_AUTH", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } },
         { "name": "RL_AI", "namespace_id": "1004", "simple": { "limit": 20, "period": 60 } },
@@ -100,8 +100,8 @@
       ],
       "hyperdrive": [
         // Neon product_res_staging，app 非 pooled TLS 直连；分别关闭缓存与缓存 60 秒（docs/07 §2）
-        { "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000" },
-        { "binding": "HYPERDRIVE_CACHED", "id": "00000000000000000000000000000000" }
+        { "binding": "HYPERDRIVE", "id": "00000000000000000000000000000004" },
+        { "binding": "HYPERDRIVE_CACHED", "id": "00000000000000000000000000000005" }
       ],
 
       "queues": {
@@ -130,7 +130,7 @@
         "R2_ACCOUNT_ID": "",
         "R2_FILES_BUCKET": "product-res-files-production"
       },
-      "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
+      "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000006" }],
       "ratelimits": [
         { "name": "RL_AUTH", "namespace_id": "1007", "simple": { "limit": 10, "period": 60 } },
         { "name": "RL_AI", "namespace_id": "1008", "simple": { "limit": 20, "period": 60 } },
@@ -139,8 +139,8 @@
       ],
       "hyperdrive": [
         // Neon product_res_production，app 非 pooled TLS 直连；分别关闭缓存与默认缓存
-        { "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000" },
-        { "binding": "HYPERDRIVE_CACHED", "id": "00000000000000000000000000000000" }
+        { "binding": "HYPERDRIVE", "id": "00000000000000000000000000000007" },
+        { "binding": "HYPERDRIVE_CACHED", "id": "00000000000000000000000000000008" }
       ],
 
       "queues": {

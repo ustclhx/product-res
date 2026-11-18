@@ -123,6 +123,88 @@ export function findCacheHazards(repo) {
   return violations
 }
 
+// Turbo 内置透传的系统变量（turborepo-env 的默认列表节选）与 vitest 自己设置的变量
+const BUILTIN_ENV = new Set([
+  'HOME',
+  'PATH',
+  'PWD',
+  'SHELL',
+  'TMPDIR',
+  'TEMP',
+  'TMP',
+  'USER',
+  'LANG',
+  'TERM',
+  'NODE_ENV',
+])
+const VITEST_CONFIG = /^vitest\.config\.[cm]?[jt]s$/
+const ENV_READ =
+  /process\.env\.([A-Z_][A-Z0-9_]*)\b(?!\s*=(?!=))|readLocalEnv\(\s*['"`]([A-Z_][A-Z0-9_]*)['"`]/g
+const ENV_IGNORE = 'turbo-env-ignore'
+// @product-res/db/test-database 的 resolveTestDatabase() 在配置文件之外读取这些变量，调用处按字面读取计入
+const RESOLVE_TEST_DATABASE = /\bresolveTestDatabase\(/
+const RESOLVE_TEST_DATABASE_ENV = [
+  'CI',
+  'CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE',
+  'MIGRATION_DATABASE_URL',
+  'ALLOW_TEST_ON_DEV_DATABASE',
+]
+
+/** 任务配置合并：包内数组替换根配置，含 $TURBO_EXTENDS$ 时追加 */
+function taskEnv(root, pkg, key) {
+  const own = pkg?.[key]
+  if (!own) return root?.[key] ?? []
+  return own.includes('$TURBO_EXTENDS$')
+    ? [...(root?.[key] ?? []), ...own.filter((name) => name !== '$TURBO_EXTENDS$')]
+    : own
+}
+
+/**
+ * strict env 模式下，test 任务只能看到 turbo.json 声明过的环境变量。各包默认的 vitest.config
+ * 按连接串决定是否启用集成项目，变量被过滤时集成测试会静默跳过（本地 readLocalEnv 还会回退到
+ * .env.worktree，掩盖问题）。这里检查默认 vitest.config 字面读取的 process.env.X 与
+ * readLocalEnv('X') 都已在 test 任务的 env/passThroughEnv 或全局配置中声明。
+ * 只看默认配置：test:node 等脚本不经过 turbo，测试文件里的变量多由配置文件先行赋值。
+ * 确实不需经 turbo 传入的变量（如手动探针开关）在同一行或上一行写 turbo-env-ignore 注释。
+ */
+export function findEnvHazards(repo) {
+  const root = repo.rootTurbo
+  const global = [...(root.globalEnv ?? []), ...(root.globalPassThroughEnv ?? [])]
+  const violations = []
+  for (const pkg of repo.packages) {
+    if (!pkg.scripts.includes('test')) continue
+    const rootTask = root.tasks?.test
+    const pkgTask = pkg.turbo?.tasks?.test
+    const declared = [
+      ...global,
+      ...taskEnv(rootTask, pkgTask, 'env'),
+      ...taskEnv(rootTask, pkgTask, 'passThroughEnv'),
+    ].map(globToRegExp)
+    const covered = (name) => BUILTIN_ENV.has(name) || declared.some((re) => re.test(name))
+    for (const file of repo.files) {
+      if (!file.startsWith(`${pkg.dir}/`) || !VITEST_CONFIG.test(file.slice(pkg.dir.length + 1)))
+        continue
+      const lines = repo.read(file).split('\n')
+      const missing = new Set()
+      lines.forEach((line, i) => {
+        if (line.includes(ENV_IGNORE) || lines[i - 1]?.includes(ENV_IGNORE)) return
+        for (const [, viaEnv, viaLocal] of line.matchAll(ENV_READ)) {
+          const name = viaEnv ?? viaLocal
+          if (!covered(name)) missing.add(name)
+        }
+        if (RESOLVE_TEST_DATABASE.test(line))
+          for (const name of RESOLVE_TEST_DATABASE_ENV) if (!covered(name)) missing.add(name)
+      })
+      for (const name of missing)
+        violations.push(
+          `${pkg.name}#test: ${file} 读取 ${name}，但 test 任务未声明。strict env 模式会过滤它，` +
+            '依赖它的测试会静默跳过；在该包 turbo.json 的 test.passThroughEnv（或 env）中声明',
+        )
+    }
+  }
+  return violations
+}
+
 export function readRepo(root = ROOT) {
   const files = execFileSync('git', ['-C', root, 'ls-files', '-z'], { encoding: 'utf8' })
     .split('\0')
@@ -162,8 +244,9 @@ export function readRepo(root = ROOT) {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  const violations = findCacheHazards(readRepo(dirname(import.meta.dirname)))
+  const repo = readRepo(dirname(import.meta.dirname))
+  const violations = [...findCacheHazards(repo), ...findEnvHazards(repo)]
   for (const line of violations) console.error(line)
   if (violations.length) process.exitCode = 1
-  else console.log('turbo 缓存输入检查通过')
+  else console.log('turbo 缓存输入与 test 环境变量检查通过')
 }

@@ -4,24 +4,58 @@
 // - reuse：main 上的 push 提交与其 PR 已成功全量测试过的合并树完全相同，跳过重复测试。
 // 任何不确定（缺数据、API 失败、事件不认识、树不一致）都回退 full；脚本自身从不因此失败。
 import { execFileSync } from 'node:child_process'
-import { appendFileSync } from 'node:fs'
+import { appendFileSync, lstatSync, readFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 
 export const WORKFLOW_FILE = 'ci.yml'
 export const TESTED_JOB_PREFIX = 'tested-tree '
 const FULL_SHA = /^[0-9a-f]{40}$/
+const DOCS_PATHS_CONFIG = '.github/ci-docs-paths.json'
 
-// 只有这些路径算文档。apps/、packages/、scripts/、deploy/ 下的 .md/.mdx 可能是内容集合、
-// 测试夹具或打包输入，一律按代码处理。
+// 默认文档路径；衍生项目只能追加受限的目录前缀。
 const DOCS_PATTERNS = [/^docs\//, /^openspec\//, /^[^/]+\.md$/, /^\.(?:agents|claude|omp)\/.+\.md$/]
+const PROTECTED_DIRS = ['apps/', 'packages/', 'scripts/', 'deploy/', '.github/']
 
 export function isDocsPath(path) {
   return DOCS_PATTERNS.some((re) => re.test(path))
 }
 
 /** 空变更也按 full：说明不了本次提交被测过 */
-export function classify(paths) {
-  return paths.length > 0 && paths.every(isDocsPath) ? 'docs' : 'full'
+export function classify(paths, extraDirs = []) {
+  return paths.length > 0 &&
+    paths.every((path) => isDocsPath(path) || extraDirs.some((dir) => path.startsWith(dir)))
+    ? 'docs'
+    : 'full'
+}
+
+function isDirectoryPrefix(path) {
+  return (
+    typeof path === 'string' &&
+    path.endsWith('/') &&
+    !/[\\:*?[\]{}\p{Cc}]/u.test(path) &&
+    path
+      .slice(0, -1)
+      .split('/')
+      .every((part) => part && part !== '.' && part !== '..')
+  )
+}
+
+function parseDocsPaths(contents, onWarning) {
+  if (contents === undefined) return []
+  let dirs
+  try {
+    dirs = JSON.parse(contents)
+  } catch {
+    throw new Error(`${DOCS_PATHS_CONFIG} 不是有效的 JSON`)
+  }
+  if (!Array.isArray(dirs) || !dirs.every(isDirectoryPrefix))
+    throw new Error(`${DOCS_PATHS_CONFIG} 须为由以 / 结尾的仓库相对目录组成的 JSON 数组`)
+
+  return dirs.filter((dir) => {
+    if (!PROTECTED_DIRS.some((protectedDir) => dir.startsWith(protectedDir))) return true
+    onWarning?.(`${DOCS_PATHS_CONFIG} 中的 ${JSON.stringify(dir)} 涉及代码或 CI 配置，已忽略`)
+    return false
+  })
 }
 
 /**
@@ -96,12 +130,13 @@ export async function findReuse({ repo, sha, tree, api, pr }) {
  *   prHead?: string, before?: string,
  *   git: { parents: (rev: string) => string[], tree: (rev: string) => string,
  *          changed: (from: string, to: string) => string[], isAncestor: (a: string, b: string) => boolean,
- *          exists: (rev: string) => boolean },
+ *          exists: (rev: string) => boolean, readDocsPathsConfig?: () => string | undefined },
  *   api: Parameters<typeof findReuse>[0]['api'],
+ *   onWarning?: (message: string) => void,
  * }} input
  * @returns {Promise<{ mode: 'full' | 'docs' | 'reuse', tree: string, reason: string, run?: string }>}
  */
-export async function plan({ event, ref, sha, repo, prHead, before, git, api }) {
+export async function plan({ event, ref, sha, repo, prHead, before, git, api, onWarning }) {
   let tree = ''
   try {
     tree = git.tree(sha)
@@ -122,7 +157,8 @@ export async function plan({ event, ref, sha, repo, prHead, before, git, api }) 
       return { mode: 'full', tree, reason: `${event} 事件总是全量运行` }
     }
     const paths = git.changed(base, sha)
-    if (classify(paths) === 'docs')
+    const extraDirs = parseDocsPaths(git.readDocsPathsConfig?.(), onWarning)
+    if (classify(paths, extraDirs) === 'docs')
       return { mode: 'docs', tree, reason: `${paths.length} 个变更文件都是文档` }
     if (event !== 'push' || ref !== 'refs/heads/main')
       return { mode: 'full', tree, reason: `${paths.length} 个变更文件包含代码或配置` }
@@ -133,14 +169,30 @@ export async function plan({ event, ref, sha, repo, prHead, before, git, api }) 
   }
 }
 
-const sh = (cmd, args) => execFileSync(cmd, args, { encoding: 'utf8', maxBuffer: 64 << 20 }).trim()
+const exec = (cmd, args) => execFileSync(cmd, args, { encoding: 'utf8', maxBuffer: 64 << 20 })
+const sh = (cmd, args) => exec(cmd, args).trim()
 
 export const localGit = {
   parents: (rev) => sh('git', ['rev-list', '--parents', '-n', '1', rev]).split(/\s+/).slice(1),
   tree: (rev) => sh('git', ['rev-parse', `${rev}^{tree}`]),
-  // 禁用重命名识别：移入 docs/ 的代码文件也会以删除旧路径的形式出现
+  // 保留原样路径；禁用重命名识别，移入 docs/ 的代码文件也会以删除旧路径的形式出现。
   changed: (from, to) =>
-    sh('git', ['diff', '--no-renames', '--name-only', '-z', from, to]).split('\0').filter(Boolean),
+    exec('git', ['diff', '--no-renames', '--name-only', '-z', from, to])
+      .split('\0')
+      .filter(Boolean),
+  readDocsPathsConfig: () => {
+    const path = new URL(`../../${DOCS_PATHS_CONFIG}`, import.meta.url)
+    try {
+      const stat = lstatSync(path, { throwIfNoEntry: false })
+      if (!stat) return undefined
+      if (!stat.isFile()) throw new Error('需要普通文件')
+      return readFileSync(path, 'utf8')
+    } catch (error) {
+      throw new Error(`无法读取 ${DOCS_PATHS_CONFIG}（${error.code ?? error.message}）`, {
+        cause: error,
+      })
+    }
+  },
   isAncestor: (a, b) => {
     try {
       execFileSync('git', ['merge-base', '--is-ancestor', a, b])
@@ -215,6 +267,7 @@ async function main(argv, env) {
     before: env.PUSH_BEFORE,
     git: localGit,
     api,
+    onWarning: (message) => report(env, `警告：${message}`),
   })
   report(env, `CI 计划：${result.mode}。${result.reason}${result.run ? `（${result.run}）` : ''}`)
   if (env.GITHUB_OUTPUT)

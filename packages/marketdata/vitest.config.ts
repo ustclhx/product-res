@@ -1,25 +1,18 @@
-import { readLocalEnv } from '@product-res/db/worktree-env'
+import { resolveTestDatabase } from '@product-res/db/test-database'
 import { defineConfig } from 'vitest/config'
 
-// 与 @product-res/entitlements 一致：只在隔离的 worktree 或 CI 数据库上运行集成测试。
-const migrationUrl = readLocalEnv('MIGRATION_DATABASE_URL')
-const appUrl = readLocalEnv('CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE')
-const fallbackApp = process.env.CI ? undefined : 'postgres://app:app@localhost:5432/product_res_dev'
-const fallbackMigrator = process.env.CI
-  ? undefined
-  : 'postgres://migrator:migrator@localhost:5432/product_res_dev'
-const app = appUrl ?? fallbackApp
-const migrator = migrationUrl ?? fallbackMigrator
-if (app && migrator) {
-  process.env.MIGRATION_DATABASE_URL = migrator
-  process.env.MARKETDATA_TEST_DATABASE_URL = app
-} else console.warn('[@product-res/marketdata] 未配置数据库，跳过集成测试')
+// 未配置数据库时只跑不连库的用例；配置了则必须是同一个隔离库（@product-res/db/test-database），不回落到开发库。
+const database = resolveTestDatabase('@product-res/marketdata')
+if (database) {
+  process.env.MIGRATION_DATABASE_URL = database.migratorUrl
+  process.env.MARKETDATA_TEST_DATABASE_URL = database.appUrl
+} else console.warn('[@product-res/marketdata] 未配置隔离数据库，跳过集成测试')
 
 export default defineConfig({
   test: {
     environment: 'node',
     include: ['test/**/*.test.ts'],
-    ...(app && migrator ? { globalSetup: ['@product-res/db/test/global-setup'] } : {}),
+    ...(database ? { globalSetup: ['@product-res/db/test/global-setup'] } : {}),
     // 额度与观测表是部署级共享表，集成测试串行运行，避免互相干扰
     fileParallelism: false,
   },

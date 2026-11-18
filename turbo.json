@@ -1,5 +1,6 @@
 {
   "$schema": "https://turborepo.com/schema.json",
+  "globalPassThroughEnv": ["ALLOW_TEST_ON_DEV_DATABASE"],
   "globalDependencies": ["tsconfig.base.json", "template.config.ts", "scripts/local-payment-env.*"],
   "tasks": {
     "build": {

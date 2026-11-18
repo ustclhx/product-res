@@ -55,6 +55,8 @@ config/db 不反向依赖 platform。业务包之间允许依赖，检查器没�
 
 在根目录运行，Node >=22 与 package.json 声明的 pnpm 版本为前提。
 数据库命令及集成测试需要已启动的本地 PG；Orca worktree 使用自己的 `.env.worktree`。
+测试只连接隔离库（`<项目>_wt_*`、`<项目>_test`，CI 另接受 `<项目>_ci`），没有 `.env.worktree` 时不回退到开发库而是立即失败，
+规则与创建方法见 `packages/db/test-database.ts` 的报错；`ALLOW_TEST_ON_DEV_DATABASE=1` 才允许在开发库上运行。
 
 | 命令 | 用途 |
 |---|---|

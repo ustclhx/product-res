@@ -9,6 +9,16 @@ export interface StorageEnv {
   readonly R2_SECRET_ACCESS_KEY?: string
 }
 
+/**
+ * 允许签名的 FILES 桶名（开发、staging、生产），须与 wrangler 的 R2_FILES_BUCKET 一致。
+ * 生成器会把它们改名为 <项目>-files*；测试也从这里取桶名，避免改名后与白名单不一致。
+ */
+export const FILES_BUCKETS = [
+  'product-res-files',
+  'product-res-files-staging',
+  'product-res-files-production',
+] as const
+
 export const UPLOAD_URL_TTL_SECONDS = 600
 export const DOWNLOAD_URL_TTL_SECONDS = 300
 
@@ -18,9 +28,7 @@ function objectUrl(env: StorageEnv, key: string): URL {
     !env.FILES ||
     !env.R2_ACCOUNT_ID ||
     !/^[a-f0-9]{32}$/.test(env.R2_ACCOUNT_ID) ||
-    !['product-res-files', 'product-res-files-staging', 'product-res-files-production'].includes(
-      env.R2_FILES_BUCKET ?? '',
-    ) ||
+    !(FILES_BUCKETS as readonly string[]).includes(env.R2_FILES_BUCKET ?? '') ||
     !env.R2_ACCESS_KEY_ID ||
     !env.R2_SECRET_ACCESS_KEY
   ) {

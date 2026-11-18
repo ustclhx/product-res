@@ -19,13 +19,21 @@ import { checkWorkspace } from './check-deps.mjs'
 import { checkUi, findingsOf } from './check-ui.mjs'
 import { componentHashes, componentLockViolations, writeComponentLock } from './ui-lock.mjs'
 
-// 衍生项目（有 .template-base.json）的页面与登记都是项目自己的，生成副本不再等同模板，同样跳过
-const generatorSkip = !existsSync(new URL('./create-project.mjs', import.meta.url))
-  ? '衍生项目已移除 scripts/create-project.mjs，跳过生成器集成用例'
-  : existsSync(new URL('../.template-base.json', import.meta.url))
-    ? '衍生项目（存在 .template-base.json）不运行生成器集成用例'
-    : false
+const generatorSkip = existsSync(new URL('../.template-base.json', import.meta.url))
+  ? '当前仓库存在 .template-base.json，衍生项目跳过生成器集成用例'
+  : existsSync(new URL('./create-project.mjs', import.meta.url))
+    ? false
+    : '衍生项目已移除 scripts/create-project.mjs，跳过生成器集成用例'
 const { createProject } = generatorSkip ? {} : await import('./create-project.mjs')
+
+function addLocalAllowance(root, group, file, entry) {
+  const path = join(root, 'scripts/check-ui.allow.local.json')
+  const config = existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : {}
+  config[group] ??= {}
+  config[group][file] ??= []
+  config[group][file].push(entry)
+  writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`)
+}
 
 function workspace(t, files = {}, allow = {}) {
   const root = mkdtempSync(join(tmpdir(), 'check-ui-'))
@@ -167,22 +175,27 @@ test('all apps src TSX files are checked, excluding tests, generated files and p
 
 test('formal exceptions and optional project exceptions allow only the registered file and rule', (t) => {
   const file = 'apps/web/src/icon.tsx'
-  const { check, write } = workspace(
+  const other = 'apps/web/src/other.tsx'
+  const { root, check, write } = workspace(
     t,
     {
       [file]: '<svg fill="#fff" />',
       'apps/web/src/page.tsx': '<select />',
-      'apps/web/src/other.tsx': '<svg fill="#fff" />',
+      [other]: '<svg fill="#fff"><select /></svg>',
     },
     {
       exceptions: { [file]: [{ rule: 'color-literal', reason: '第三方品牌色' }] },
     },
   )
+  assert.equal(check().violations.length, 3)
+  addLocalAllowance(root, 'exceptions', other, {
+    rule: 'native-select',
+    reason: '项目插画示例控件',
+  })
   assert.equal(check().violations.length, 2)
-  write('scripts/check-ui.allow.local.json', {
-    exceptions: {
-      'apps/web/src/other.tsx': [{ rule: 'color-literal', reason: '项目插画固定色' }],
-    },
+  addLocalAllowance(root, 'exceptions', other, {
+    rule: 'color-literal',
+    reason: '项目插画固定色',
   })
   assert.equal(check().violations.length, 1)
   write(file, '<svg fill="#fff"><select /></svg>')
@@ -216,7 +229,7 @@ test('each violation category can be allowed by an explicit file and reason', (t
 
 test('pending replacement permits only registered values and counts, including from local config', (t) => {
   const file = 'apps/web/src/page.tsx'
-  const { check, write } = workspace(
+  const { root, check, write } = workspace(
     t,
     { [file]: '<select />' },
     {
@@ -228,10 +241,11 @@ test('pending replacement permits only registered values and counts, including f
   assert.equal(check().violations.length, 0)
   write(file, '<><select /><select /><div className="w-[13px]" /></>')
   assert.equal(check().violations.length, 2)
-  write('scripts/check-ui.allow.local.json', {
-    pendingReplacement: {
-      [file]: [{ rule: 'arbitrary-class', value: 'w-[13px]', count: 1, reason: '项目迁移' }],
-    },
+  addLocalAllowance(root, 'pendingReplacement', file, {
+    rule: 'arbitrary-class',
+    value: 'w-[13px]',
+    count: 1,
+    reason: '项目迁移',
   })
   assert.equal(check().violations.length, 1)
   write(file, '<div className="w-[14px]" />')
@@ -355,8 +369,9 @@ test('derived projects reject changed template components with ordered customiza
   write('.template-base.json', {})
   assert.equal(check().violations.length, 0)
   write(file, 'export const Button = () => <button className="rounded" />')
-  write('scripts/check-ui.allow.local.json', {
-    exceptions: { [file]: [{ rule: 'color-literal', reason: '项目例外不能绕过组件指纹' }] },
+  addLocalAllowance(root, 'exceptions', file, {
+    rule: 'color-literal',
+    reason: '项目例外不能绕过组件指纹',
   })
   const [violation] = check().violations
   assert.equal(violation.file, file)
@@ -398,16 +413,10 @@ test('generated projects can export and use project components under UI and depe
   assert.deepEqual(checkWorkspace(target).violations, [])
   writeFileSync(component, `${source}\nexport const Illustration = () => <svg fill="#fff" />\n`)
   assert.equal(checkUi(target).violations[0].file, 'packages/ui/src/project/project-card.tsx')
-  writeFileSync(
-    join(target, 'scripts/check-ui.allow.local.json'),
-    JSON.stringify({
-      exceptions: {
-        'packages/ui/src/project/project-card.tsx': [
-          { rule: 'color-literal', reason: '项目插画固定颜色' },
-        ],
-      },
-    }),
-  )
+  addLocalAllowance(target, 'exceptions', 'packages/ui/src/project/project-card.tsx', {
+    rule: 'color-literal',
+    reason: '项目插画固定颜色',
+  })
   assert.deepEqual(checkUi(target).violations, [])
   writeFileSync(component, `${source}\nimport '${uiPackage.split('/')[0]}/platform/node'\n`)
   assert.ok(
@@ -417,10 +426,10 @@ test('generated projects can export and use project components under UI and depe
   )
 })
 
-test('UI checks still run after a project removes the generator', {
+test('UI checks still run in projects without an available generator', {
   // biome-ignore lint/suspicious/noUndeclaredEnvVars: 仅控制独立测试子进程，不参与 Turbo 任务缓存。
   skip: process.env.CHECK_UI_GENERATOR_REGRESSION_CHILD
-    ? '子进程只验证生成器缺失，避免递归启动回归测试'
+    ? '子进程只验证生成器集成用例的跳过条件，避免递归启动回归测试'
     : false,
 }, (t) => {
   const root = mkdtempSync(join(tmpdir(), 'check-ui-without-generator-'))
@@ -429,11 +438,6 @@ test('UI checks still run after a project removes the generator', {
   for (const file of ['check-ui.test.mjs', 'check-ui.mjs', 'check-deps.mjs', 'ui-lock.mjs']) {
     copyFileSync(new URL(file, import.meta.url), join(root, 'scripts', file))
   }
-  const generator = join(root, 'scripts/create-project.mjs')
-  if (existsSync(new URL('./create-project.mjs', import.meta.url))) {
-    copyFileSync(new URL('./create-project.mjs', import.meta.url), generator)
-  }
-  rmSync(generator, { force: true })
   symlinkSync(
     fileURLToPath(new URL('../node_modules', import.meta.url)),
     join(root, 'node_modules'),
@@ -442,25 +446,32 @@ test('UI checks still run after a project removes the generator', {
   const env = { ...process.env, CHECK_UI_GENERATOR_REGRESSION_CHILD: '1' }
   // 子进程必须启动独立测试运行器，不能继承父进程的测试协议。
   delete env.NODE_TEST_CONTEXT
-  const result = spawnSync(
-    process.execPath,
-    ['--test', '--test-reporter=tap', 'scripts/check-ui.test.mjs'],
-    {
-      cwd: root,
-      encoding: 'utf8',
-      env,
-    },
+  function assertGeneratorSkipped(reason) {
+    const result = spawnSync(
+      process.execPath,
+      ['--test', '--test-reporter=tap', 'scripts/check-ui.test.mjs'],
+      {
+        cwd: root,
+        encoding: 'utf8',
+        env,
+      },
+    )
+    assert.equal(result.status, 0, result.stdout + result.stderr)
+    assert.match(result.stdout, /# pass 15\b/)
+    assert.match(result.stdout, /# fail 0\b/)
+    assert.match(result.stdout, /# skipped 2\b/)
+    assert.ok(
+      result.stdout.includes(
+        `generated projects can export and use project components under UI and dependency checks # SKIP ${reason}`,
+      ),
+      result.stdout,
+    )
+  }
+  assertGeneratorSkipped('衍生项目已移除 scripts/create-project.mjs')
+  writeFileSync(join(root, '.template-base.json'), '{}')
+  writeFileSync(
+    join(root, 'scripts/create-project.mjs'),
+    'throw new Error("衍生项目不应导入生成器")',
   )
-  assert.equal(result.status, 0, result.stdout + result.stderr)
-  assert.match(result.stdout, /# pass 15\b/)
-  assert.match(result.stdout, /# fail 0\b/)
-  assert.match(result.stdout, /# skipped 2\b/)
-  assert.match(
-    result.stdout,
-    /generated projects can export and use project components under UI and dependency checks # SKIP 衍生项目已移除 scripts\/create-project\.mjs/,
-  )
-  assert.match(
-    result.stdout,
-    /UI checks still run after a project removes the generator # SKIP 子进程只验证生成器缺失/,
-  )
+  assertGeneratorSkipped('当前仓库存在 .template-base.json，衍生项目跳过生成器集成用例')
 })

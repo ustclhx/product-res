@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { findCacheHazards, globToRegExp, parseJsonc, readRepo } from './check-turbo-inputs.mjs'
+import {
+  findCacheHazards,
+  findEnvHazards,
+  globToRegExp,
+  parseJsonc,
+  readRepo,
+} from './check-turbo-inputs.mjs'
 
 const rootTurbo = {
   tasks: {
@@ -133,4 +139,63 @@ test('glob 与 jsonc 解析', () => {
 
 test('当前仓库的 Turbo 缓存输入完整', () => {
   assert.deepEqual(findCacheHazards(readRepo()), [])
+})
+
+test('默认 vitest.config 读取未声明的环境变量时报出', () => {
+  const config = [
+    "const app = readLocalEnv('APP_DB_URL')",
+    'const ci = process.env.CI',
+    'process.env.DERIVED_URL = app',
+    'const home = process.env.HOME',
+    'if (process.env.PROBE) {} // turbo-env-ignore 手动探针',
+  ].join('\n')
+  const sources = {
+    'packages/a/vitest.config.ts': config,
+    // 其他 vitest 配置由不经 turbo 的脚本使用，不检查
+    'packages/a/vitest.node.config.ts': 'process.env.NODE_ONLY_URL',
+  }
+  const found = findEnvHazards(repo(sources, { packages: [pkg('packages/a', '@x/a')] }))
+  assert.deepEqual(
+    found.map((v) => v.match(/读取 (\w+)/)[1]),
+    ['APP_DB_URL', 'CI'],
+  )
+})
+
+test('任务 env/passThroughEnv、$TURBO_EXTENDS$、全局与通配声明都算覆盖', () => {
+  const sources = {
+    'packages/a/vitest.config.ts':
+      "readLocalEnv('APP_DB_URL'); process.env.CI; process.env.EVIDENCE_DIR",
+    'packages/b/vitest.config.ts': 'process.env.EVIDENCE_DIR; process.env.STRIPE_KEY',
+    'packages/c/vitest.config.ts': 'process.env.EVIDENCE_DIR',
+  }
+  const root = {
+    globalPassThroughEnv: ['STRIPE_*'],
+    tasks: { test: { env: ['EVIDENCE_DIR'] } },
+  }
+  const packages = [
+    pkg('packages/a', '@x/a', [], { tasks: { test: { passThroughEnv: ['CI', 'APP_DB_URL'] } } }),
+    pkg('packages/b', '@x/b'),
+    pkg('packages/c', '@x/c', [], { tasks: { test: { env: ['$TURBO_EXTENDS$', 'OTHER'] } } }),
+  ]
+  assert.deepEqual(findEnvHazards(repo(sources, { packages, root })), [])
+  // 包内 env 不带 $TURBO_EXTENDS$ 时替换根配置
+  const replaced = [pkg('packages/c', '@x/c', [], { tasks: { test: { env: ['OTHER'] } } })]
+  assert.equal(findEnvHazards(repo(sources, { packages: replaced, root })).length, 1)
+})
+
+test('resolveTestDatabase() 调用视为读取连接串、CI 与开发库开关', () => {
+  const sources = { 'packages/a/vitest.config.ts': "const db = resolveTestDatabase('@x/a')" }
+  const packages = [
+    pkg('packages/a', '@x/a', [], {
+      tasks: { test: { passThroughEnv: ['CI', 'MIGRATION_DATABASE_URL'] } },
+    }),
+  ]
+  assert.deepEqual(
+    findEnvHazards(repo(sources, { packages })).map((v) => v.match(/读取 (\w+)/)[1]),
+    ['CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE', 'ALLOW_TEST_ON_DEV_DATABASE'],
+  )
+})
+
+test('当前仓库 test 任务的环境变量声明完整', () => {
+  assert.deepEqual(findEnvHazards(readRepo()), [])
 })

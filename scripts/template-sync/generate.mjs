@@ -2,7 +2,8 @@ import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { mkdir, mkdtemp, realpath, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { isAbsolute, join, resolve } from 'node:path'
+import { dirname, isAbsolute, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { paramsToArgs } from '../template-base.mjs'
 import { listReleases } from '../template-release.mjs'
 import { git, gitEnv, gitRaw } from './git.mjs'
@@ -16,31 +17,78 @@ import { git, gitEnv, gitRaw } from './git.mjs'
 
 /**
  * Clone the template without a checkout into a fresh directory under os.tmpdir().
- * Local paths use --no-local so the clone never hard-links the source object store.
  * @param {string} source Repository URL or local path.
+ * @param {(message: string) => void} [log]
  * @returns {Promise<TemplateClone>}
  */
-export async function cloneTemplate(source) {
+export async function cloneTemplate(source, log) {
   if (!source) throw new Error('缺少模板来源：基准记录没有 repository，请用 --template 指定')
-  const parent = await mkdtemp(join(tmpdir(), 'template-sync-clone-'))
-  const cleanup = () => rm(parent, { recursive: true, force: true })
   const local = !/^[a-z][a-z0-9+.-]*:\/\//i.test(source) && !/^[^/@:]+@[^:]+:/.test(source)
   const from = local ? resolve(source) : source
+  const path = local ? from : fileRepositoryPath(source)
+  const origin = path ? partialCloneOrigin(path) : null
+  const parent = await mkdtemp(join(tmpdir(), 'template-sync-clone-'))
+  const cleanup = () => rm(parent, { recursive: true, force: true })
   const dir = join(parent, 'template')
-  const result = gitRaw(parent, [
-    'clone',
-    '--quiet',
-    '--filter=blob:none',
-    '--no-checkout',
-    ...(local ? ['--no-local'] : []),
-    from,
-    dir,
-  ])
+  // 本地 upload-pack 禁止按需取对象。复制本地引用和对象，再从原 origin 取缺失对象。
+  const cloneArgs =
+    path && origin
+      ? [
+          '--no-hardlinks',
+          '--config',
+          `remote.template-sync-upstream.url=${origin}`,
+          '--config',
+          'remote.template-sync-upstream.promisor=true',
+          path,
+        ]
+      : ['--filter=blob:none', ...(local ? ['--no-local'] : []), from]
+  const result = gitRaw(parent, ['clone', '--quiet', '--no-checkout', ...cloneArgs, dir])
   if (result.status !== 0) {
     await cleanup()
     throw new Error(`无法克隆模板 ${source}：${result.stderr.trim()}`)
   }
+  if (origin) log?.('本地模板使用部分克隆，保留本地引用并通过其 origin 按需获取缺失对象')
   return { dir, source, cleanup }
+}
+
+/** @param {string} path */
+function partialCloneOrigin(path) {
+  const run = (args) =>
+    gitRaw(process.cwd(), ['-C', path, ...args], {
+      env: { GIT_CEILING_DIRECTORIES: dirname(path) },
+    })
+  const config = run(['config', '--local', '--bool', '--get-regexp', '^remote\\..*\\.promisor$'])
+  const promisors = config.stdout.split('\n').filter((line) => line.endsWith(' true'))
+  if (config.status !== 0 || !promisors.length) return null
+  const origin = run(['remote', 'get-url', '--all', 'origin']).stdout.trim()
+  const gitDir = run(['rev-parse', '--git-common-dir']).stdout.trim()
+  if (
+    promisors.length === 1 &&
+    promisors[0] === 'remote.origin.promisor true' &&
+    !origin.includes('\n') &&
+    (isAbsolute(origin) ||
+      /^(?:https?|ssh|git|file):\/\//i.test(origin) ||
+      /^[^/@:]+@[^:]+:/.test(origin)) &&
+    gitDir &&
+    !existsSync(resolve(path, gitDir, 'objects', 'info', 'alternates')) &&
+    !existsSync(resolve(path, gitDir, 'shallow'))
+  ) {
+    return origin
+  }
+  throw new Error(
+    '无法复用本地模板仓库的部分克隆（partial clone）。请用 --template 指定原远端仓库 URL。若需使用本地分支或提交，请指定包含所需引用的完整本地仓库。',
+  )
+}
+
+/** @param {string} source */
+function fileRepositoryPath(source) {
+  if (!/^file:\/\//i.test(source)) return null
+  try {
+    return fileURLToPath(source)
+  } catch {
+    // 交给 Git 处理 Node 无法转换为本地路径的 URL。
+    return null
+  }
 }
 
 /**

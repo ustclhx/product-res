@@ -12,6 +12,7 @@ export const excludedPaths = [
 ]
 // 新版首次交付占位文件；后续同步不覆盖项目已接管的注册与品牌。
 export const projectOwnedPaths = new Set([
+  'apps/web/src/features/theme/html-attributes.ts',
   'apps/web/src/features/share-cards/share-cards.project.ts',
   'apps/web/src/features/share-cards/share-cards.theme.ts',
   'apps/web/src/features/share-cards/share-cards.fonts.ts',

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process'
-import { constants } from 'node:fs'
+import { constants, existsSync } from 'node:fs'
 import {
   access,
   chmod,
@@ -9,6 +9,7 @@ import {
   readdir,
   readFile,
   realpath,
+  rm,
   writeFile,
 } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path'
@@ -16,23 +17,12 @@ import { createInterface } from 'node:readline/promises'
 import { pathToFileURL } from 'node:url'
 import { parseArgs } from 'node:util'
 import { normalizeParams, serializeBaseRecord, sourceState, themeNames } from './template-base.mjs'
+import { projectOwnedPaths } from './template-sync/merge.mjs'
 
 const root = resolve(import.meta.dirname, '..')
 const featureNames = ['publicApi', 'blog', 'docs', 'waitlist', 'newsletter', 'guides']
 const aiNames = ['text', 'image', 'video']
 const mediaProviderNames = ['fal', 'workers-ai']
-// 项目自有扩展：首次复制后由项目维护，保持原始字节。
-const projectOwnedFiles = new Set([
-  'apps/web/src/features/theme/html-attributes.ts',
-  'apps/web/src/features/share-cards/share-cards.project.ts',
-  'apps/web/src/features/share-cards/share-cards.theme.ts',
-  'apps/web/src/features/share-cards/share-cards.fonts.ts',
-  'apps/web/src/features/share-cards/share-cards.sites.ts',
-  'apps/web/src/features/ai/message-parts.project.tsx',
-  'apps/web/src/features/ai/chat-composer.project.tsx',
-  'apps/web/src/features/theme/fonts.project.ts',
-  'apps/web/scripts/critical-css.project.mjs',
-])
 const excluded = new Set([
   '.git',
   'node_modules',
@@ -398,6 +388,7 @@ function stagingUrl(options) {
 // 仅在配置语义位置改 Worker / Queue 名；资源 ID 清空，避免新项目复用模板的 staging / production。
 function wranglerConfig(source, options, app) {
   const media = options.ai.includes('image') || options.ai.includes('video')
+  let resourceIndex = 0
   let result = source
     .replace(
       /("(?:name|script_name|queue|dead_letter_queue|bucket_name)"\s*:\s*")([^"\n]+)"/g,
@@ -406,7 +397,11 @@ function wranglerConfig(source, options, app) {
           ? `${prefix}${options.name}-${value}"`
           : `${prefix}${value}"`,
     )
-    .replace(/("id"\s*:\s*")[a-f0-9]{32}"/g, '$100000000000000000000000000000000"')
+    // 各环境的占位 ID 也要互异，满足 staging / production 隔离检查。
+    .replace(/("id"\s*:\s*")[a-f0-9]{32}"/g, (_match, prefix) => {
+      const id = (resourceIndex++).toString(16).padStart(32, '0')
+      return `${prefix}${id}"`
+    })
     .replace(/("APP_URL"\s*:\s*")https:[^"]+"/g, `$1${options.url}"`)
     // staging 绝不能沿用生产域名：sitemap / canonical / 埋点都由它决定，部署前改成实际 staging 地址。
     .replace(/("staging"\s*:\s*\{[\s\S]*?"APP_URL"\s*:\s*")[^"]+"/, `$1${stagingUrl(options)}"`)
@@ -614,10 +609,9 @@ export function setupChecklist(options) {
   return { resources, secrets, vars, ciSecrets }
 }
 
-async function replacements(source, options, app) {
-  const manifest = JSON.parse(await readFile(join(source, 'package.json'), 'utf8'))
+async function replacements(source, packageName, options, app) {
   const pairs = [
-    [manifest.name, options.name],
+    [packageName, options.name],
     [app.name, options.name],
     [app.url, options.url],
     [app.supportEmail, options.supportEmail],
@@ -652,6 +646,57 @@ async function replacements(source, options, app) {
   return (value) => value.replace(new RegExp(pattern, 'g'), (match) => map.get(match))
 }
 
+async function formatProject(target, source, version) {
+  const installed = join(source, 'node_modules/@biomejs/biome')
+  const installedManifest = join(installed, 'package.json')
+  const pinnedInstalled =
+    existsSync(installedManifest) &&
+    JSON.parse(await readFile(installedManifest, 'utf8')).version === version
+  const config = ['biome.json', 'biome.jsonc'].find((path) => existsSync(join(target, path)))
+  // 模板组件和锁文件按字节校验，排除格式化和 import 排序。
+  const temporaryConfig = join(target, '.biome-create-project.json')
+  await writeFile(
+    temporaryConfig,
+    JSON.stringify({
+      ...(config ? { extends: [`./${config}`] } : {}),
+      overrides: [
+        {
+          includes: ['packages/ui/src/components/**', 'packages/ui/components.lock.json'],
+          formatter: { enabled: false },
+          assist: { enabled: false },
+        },
+      ],
+    }),
+    { flag: 'wx' },
+  )
+  try {
+    // 同步从 git archive 生成参照副本，此时只下载模板锁定的 Biome。
+    const [command, ...prefix] = pinnedInstalled
+      ? [process.execPath, join(installed, 'bin/biome')]
+      : ['pnpm', `--package=@biomejs/biome@${version}`, 'dlx', 'biome']
+    // scope 的字母顺序也可能改变，使用同一次 Biome 调用整理 import。
+    const result = spawnSync(
+      command,
+      [
+        ...prefix,
+        'check',
+        '--write',
+        '--linter-enabled=false',
+        '--config-path',
+        temporaryConfig,
+        '.',
+      ],
+      { cwd: target, encoding: 'utf8' },
+    )
+    if (result.error) throw result.error
+    if (result.status !== 0) {
+      throw new Error(`副本 Biome 格式化失败（${result.status}）\n${result.stdout}${result.stderr}`)
+    }
+  } finally {
+    await rm(temporaryConfig)
+  }
+}
+
 export async function createProject(input, source = root) {
   const options = projectOptions(input)
   const sourcePath = await realpath(source)
@@ -676,7 +721,8 @@ export async function createProject(input, source = root) {
     if (error.code !== 'ENOENT') throw error
   }
   const config = await readFile(join(sourcePath, 'template.config.ts'), 'utf8')
-  const replace = await replacements(sourcePath, options, appValues(config))
+  const manifest = JSON.parse(await readFile(join(sourcePath, 'package.json'), 'utf8'))
+  const replace = await replacements(sourcePath, manifest.name, options, appValues(config))
   await mkdir(target)
   await chmod(target, 0o755)
   async function copy(folder = '') {
@@ -720,8 +766,10 @@ export async function createProject(input, source = root) {
             `${path} 包含需要项目改名的模板标识；请先移除模板组件或指纹清单中的项目耦合`,
           )
         }
-        // 项目自有扩展逐字节保留，包括 BOM、换行与项目标识，不能经过文本替换。
-        if (decoded !== null && !templateUi && !projectOwnedFiles.has(path)) {
+        if (decoded !== null && projectOwnedPaths.has(path)) {
+          // 项目扩展只改名，跳过下方模板专属的内容处理。
+          content = Buffer.from(replace(decoded))
+        } else if (decoded !== null && !templateUi) {
           // 先替换源标识，再插入新名称，避免新名称含旧 scope 前缀时被二次替换。
           let text = replace(projectText(decoded, path))
           if (path === 'package.json') {
@@ -941,16 +989,20 @@ export async function createProject(input, source = root) {
   const entryChecklist = `## 页面与语言\n\n- ${options.marketing ? '营销页面已启用，/ 为营销首页。' : '营销页面关闭，/ 重定向至 /app，作为应用入口；营销路由不可用。'}\n- ${options.i18n ? `多语言已启用，默认语言 ${options.locale}；其他语言使用语言前缀。` : `仅编译所选默认语言 ${options.locale}；页面路径无语言前缀，其他语言前缀返回 404；不显示语言控件，忽略账号语言、cookie 与 Accept-Language。`}\n`
   report += `\n${entryChecklist}`
   await writeGenerated('PROJECT_SETUP.md', report)
+  const biomeVersion = manifest.devDependencies?.['@biomejs/biome']
+  if (biomeVersion) await formatProject(target, sourcePath, biomeVersion)
   return { target, options, checklist, report }
 }
 
 export function verifyProject(target, { nodeBuild = false } = {}) {
   // 清除调用者的数据库真值，CI 模式关闭本地库 fallback；不对模板数据库执行测试。
   const env = { ...process.env, CI: 'true', TURBO_ENV_MODE: 'loose', TURBO_TELEMETRY_DISABLED: '1' }
+  // 矩阵由 node --test 启动，副本中的各级测试需要自己的运行器。
+  delete env.NODE_TEST_CONTEXT
   for (const key of Object.keys(env)) {
     if (/DATABASE_URL|HYPERDRIVE_LOCAL_CONNECTION_STRING/.test(key)) delete env[key]
   }
-  // 副本不包含 .git，Node 构建需要显式完整 SHA，且不上传 source map 到调用者的 Sentry。
+  // 副本没有 Git 提交，Node 构建需要显式完整 SHA，且不上传 source map 到调用者的 Sentry。
   if (nodeBuild) {
     env.APP_VERSION = '0123456789abcdef0123456789abcdef01234567'
     delete env.SENTRY_AUTH_TOKEN
@@ -961,6 +1013,7 @@ export function verifyProject(target, { nodeBuild = false } = {}) {
   // 完整矩阵逐包执行测试，避免多个 Node 构建探针争抢 CPU；保持用例断言与时限不变。
   const commands = [
     ['install', '--frozen-lockfile'],
+    ...(nodeBuild ? [['check']] : []),
     ['typecheck'],
     nodeBuild ? ['test', '--concurrency=1'] : ['test'],
   ]
@@ -972,7 +1025,7 @@ export function verifyProject(target, { nodeBuild = false } = {}) {
   }
 }
 
-const help = `用法：pnpm create-project [参数]\n无参数时交互输入；非交互必须提供 --name 与 --domain。\n  --name acme --domain acme.example --target cloudflare|selfhost --output /tmp/acme\n  --image-namespace ghcr.io/owner/acme（selfhost，默认 ghcr.io/configure-owner/acme）\n  --locale en|zh --support-email support@acme.example\n  --theme ${themeNames.join('|')}（默认 neutral）\n  --analytics plausible|off（默认 plausible；长期词站可 off）--plausible-domain acme --plausible-host https://plausible.example\n  --ai text,image,video --features blog,docs,waitlist,newsletter,publicApi\n  --media-providers fal,workers-ai\n  --billing stripe,paypal --billing-enabled true|false --credits-enabled true|false\n  --marketing true|false --i18n true|false --oauth google,github\n  --turnstile true|false --multi-tenant true|false\n旧 --target <path> 已迁移至 --output <path>；部署目标默认 cloudflare。\n列表参数传空字符串可关闭全部；默认 ai / billing / oauth 全开，features=blog。\n默认安装依赖并运行 typecheck 与单元测试；--skip-check 仅生成，随后必须自行验证。\n  --help 显示帮助\n`
+const help = `用法：pnpm create-project [参数]\n无参数时交互输入；非交互必须提供 --name 与 --domain。\n  --name acme --domain acme.example --target cloudflare|selfhost --output /tmp/acme\n  --image-namespace ghcr.io/owner/acme（selfhost，默认 ghcr.io/configure-owner/acme）\n  --locale en|zh --support-email support@acme.example\n  --theme ${themeNames.join('|')}（默认 neutral）\n  --analytics plausible|off（默认 plausible；长期词站可 off）--plausible-domain acme --plausible-host https://plausible.example\n  --ai text,image,video --features blog,docs,waitlist,newsletter,publicApi\n  --media-providers fal,workers-ai\n  --billing stripe,paypal --billing-enabled true|false --credits-enabled true|false\n  --marketing true|false --i18n true|false --oauth google,github\n  --turnstile true|false --multi-tenant true|false\n旧 --target <path> 已迁移至 --output <path>；部署目标默认 cloudflare。\n列表参数传空字符串可关闭全部；默认 ai / billing / oauth 全开，features=blog。\n生成后使用 Biome 格式化并整理 import。默认安装依赖并运行 typecheck 与单元测试；--skip-check 只跳过安装与自检。\n  --help 显示帮助\n`
 
 export async function main() {
   const { values } = parseArgs({

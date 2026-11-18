@@ -106,7 +106,7 @@ jobs:
     if: needs.changes.outputs.mode == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    # 集成测试（@product-res/db、@product-res/auth、@product-res/jobs 的 vitest-plugin 项目）使用的本地 Postgres，
+    # 集成测试（db、auth、billing、credits、entitlements、storage、jobs）使用的本地 Postgres，
     # 账号与权限按 infra/local/initdb 的约定初始化。
     services:
       postgres:
@@ -123,7 +123,7 @@ jobs:
           --health-timeout 3s
           --health-retries 30
     env:
-      # 设置后各包的 vitest.config.ts 才会运行集成测试（CI 中缺省时跳过）
+      # 设置后各包的 vitest.config.ts 才会运行集成测试（CI 中缺省时跳过）；各包 test 任务须在 turbo.json 透传
       CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: postgres://app:app@localhost:5432/product_res_ci
       MIGRATION_DATABASE_URL: postgres://migrator:migrator@localhost:5432/product_res_ci
       TURBO_CACHE_DIR: ${{ github.workspace }}/.turbo/cache
