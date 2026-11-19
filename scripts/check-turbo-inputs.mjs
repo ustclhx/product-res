@@ -141,7 +141,7 @@ const VITEST_CONFIG = /^vitest\.config\.[cm]?[jt]s$/
 const ENV_READ =
   /process\.env\.([A-Z_][A-Z0-9_]*)\b(?!\s*=(?!=))|readLocalEnv\(\s*['"`]([A-Z_][A-Z0-9_]*)['"`]/g
 const ENV_IGNORE = 'turbo-env-ignore'
-// @product-res/db/test-database 的 resolveTestDatabase() 在配置文件之外读取这些变量，调用处按字面读取计入
+// 项目测试库回退由 resolveTestDatabase() 处理，配置可直接调用；检查仍将字面调用计为读取这些变量。
 const RESOLVE_TEST_DATABASE = /\bresolveTestDatabase\(/
 const RESOLVE_TEST_DATABASE_ENV = [
   'CI',

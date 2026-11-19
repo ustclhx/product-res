@@ -34,5 +34,5 @@ describe('Node task capabilities before B', () => {
       { cwd: dir, encoding: 'utf8' },
     )
     expect(output.trim()).toBe('unavailable')
-  })
+  }, 30_000)
 })

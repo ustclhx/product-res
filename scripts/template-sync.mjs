@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { parseArgs } from 'node:util'
+import { postprocessProject } from './create-project.mjs'
 import { readBaseRecord, serializeBaseRecord } from './template-base.mjs'
 import { listReleases } from './template-release.mjs'
 import { cloneTemplate, generateAt, resolveCommit } from './template-sync/generate.mjs'
@@ -219,14 +220,14 @@ export async function runSync(options) {
     log(`生成基准 ${shortSha(base)} 与目标 ${shortSha(target)} 的副本`)
     const baseCopy = join(work, 'base')
     const targetCopy = join(work, 'target')
+    let copies
+    let plan
     try {
       await generateAt(clone, base, record.params, baseCopy)
       await generateAt(clone, target, record.params, targetCopy)
-    } catch (error) {
-      throw new PreflightError(error.message)
-    }
-    let plan
-    try {
+      copies = await commitCopies(baseCopy, targetCopy, (dir) =>
+        postprocessProject(dir, { reference: targetCopy }),
+      )
       plan = await planMigrations({
         baseCopy,
         targetCopy,
@@ -234,9 +235,9 @@ export async function runSync(options) {
         skip: options.skipMigrations ?? [],
       })
     } catch (error) {
+      await copies?.cleanup()
       throw new PreflightError(error.message)
     }
-    const copies = await commitCopies(baseCopy, targetCopy)
     try {
       fetchCopies(project, copies.repo)
     } finally {

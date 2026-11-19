@@ -166,7 +166,7 @@ node /tmp/template/scripts/template-sync.mjs sync --project . --to template-v0.3
 1. 用基准提交和目标提交各自的生成器，按记录的参数各生成一份副本。支持格式化的生成器也会格式化同步参照。旧版基准保留当时的生成结果，因此首次同步到支持格式化的版本会带入格式调整，可能与项目同一行的修改重叠。
 2. 在新分支 `template-sync/<目标短 SHA>` 上逐个文件做三方合并，当前分支不动。迁移目录、`.template-base.json`、`PROJECT_SETUP.md` 和 `pnpm-lock.yaml` 不参与合并。项目自有扩展只在首次生成或由模板新增时交付，生成时同步改名，之后由项目自行维护。模板删除的文件不会从项目中删除，只在报告中列出。
 3. 模板新增的迁移追加到项目迁移序列末尾，见 [迁移约定](02-project-structure.md#4-编码约定)。模板改动或删除了已发布的迁移时，同步停止。
-4. 任一 `package.json` 有变化时，先 `pnpm install --no-frozen-lockfile` 重新解析锁文件，再用 `--frozen-lockfile` 确认；随后检查 `drizzle-kit generate` 无变化，再运行 `pnpm typecheck` 和 `pnpm test`。工具以 CI 模式、清除数据库连接串运行测试，只验单元测试；同步后要在本地跑集成测试时，先为同步目录建立空的隔离库（库名 `<项目>_wt_<名称>` 或 `<项目>_test`），测试不会回退到开发库，未配置时会失败并给出建库步骤。
+4. 任一 `package.json` 有变化时，先 `pnpm install --no-frozen-lockfile` 重新解析锁文件，再用 `--frozen-lockfile` 确认；随后检查 `drizzle-kit generate` 无变化，再运行 `pnpm typecheck` 和 `pnpm test`。工具以 CI 模式、清除数据库连接串运行测试，只验单元测试。同步后要在本地跑集成测试时，按[本地集成测试数据库](02-project-structure.md#5-本地集成测试数据库)为同步目录准备空的隔离库。
 5. 全部通过后，在同步分支上提交基准记录的更新。工具不会推送，也不会合并。
 
 如果旧项目的自有扩展仍引用模板作用域，例如 `fonts.project.ts` 中的字体类型导入，

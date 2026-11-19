@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
+import { postprocessProject } from '../create-project.mjs'
 import {
   normalizeParams,
   paramsToArgs,
@@ -23,6 +24,7 @@ const booleanKeys = [
   'turnstile',
 ]
 const keys = Object.keys(normalizeParams({ name: 'fixture', url: 'https://fixture.example' }))
+const toolRoot = fileURLToPath(new URL('../../', import.meta.url))
 
 // 只解析静态字面量；不执行生成提交中的配置代码。
 function literal(text) {
@@ -302,7 +304,7 @@ export async function runInfer(options) {
   if (options.force && !options.write) throw new Error('--force 必须与 --write 一起使用')
   const project = await realpath(resolve(options.project))
   const log = options.log ?? console.log
-  const template = options.template ?? fileURLToPath(new URL('../../', import.meta.url))
+  const template = options.template ?? toolRoot
   const threshold = Number(options.threshold ?? 50)
   if (!Number.isFinite(threshold) || threshold < 0)
     throw new Error('--threshold 必须是非负有限行数')
@@ -343,12 +345,16 @@ export async function runInfer(options) {
     ])
       .split('\n')
       .filter(Boolean)
+    // 用同一套规则比较生成提交与所有候选，保持分数可比较。
+    const postprocess = { reference: toolRoot }
+    if (commits.length) await postprocessProject(original, postprocess)
     const candidates = []
     for (const commit of commits) {
       const directory = join(work, commit)
       await mkdir(directory)
       const copy = join(directory, 'generated')
       await generateAt(clone, commit, params, copy)
+      await postprocessProject(copy, postprocess)
       const scored = await scoreCopy(copy, original, directory, files)
       const [date, title] = git(clone.dir, ['show', '-s', '--format=%cI%n%s', commit]).split('\n')
       const journal = JSON.parse(

@@ -55,8 +55,8 @@ config/db 不反向依赖 platform。业务包之间允许依赖，检查器没�
 
 在根目录运行，Node >=22 与 package.json 声明的 pnpm 版本为前提。
 数据库命令及集成测试需要已启动的本地 PG；Orca worktree 使用自己的 `.env.worktree`。
-测试只连接隔离库（`<项目>_wt_*`、`<项目>_test`，CI 另接受 `<项目>_ci`），没有 `.env.worktree` 时不回退到开发库而是立即失败，
-规则与创建方法见 `packages/db/test-database.ts` 的报错；`ALLOW_TEST_ON_DEV_DATABASE=1` 才允许在开发库上运行。
+运行集成测试前，按[本地集成测试数据库](docs/02-project-structure.md#5-本地集成测试数据库)准备隔离库。
+启用本地回落的测试在未配置连接串时使用 `<项目>_test`。`ALLOW_TEST_ON_DEV_DATABASE=1` 才允许使用开发库。
 
 | 命令 | 用途 |
 |---|---|
@@ -66,7 +66,7 @@ config/db 不反向依赖 platform。业务包之间允许依赖，检查器没�
 | `pnpm typecheck` | 所有包和应用类型检查，生成路由与文案 |
 | `pnpm check:deps` | 内部依赖方向检查 |
 | `pnpm check:singletons` | 关键依赖唯一实例检查 |
-| `pnpm test` | 各包测试；有隔离数据库配置时包含集成测试 |
+| `pnpm test` | 单元测试与已启用的集成测试 |
 | `pnpm build` | web 生产构建与 jobs 部署 dry-run |
 | `pnpm eval:prompts --suite <name>` | 提示词评测，默认离线回放；真实调用须 `--live`/`--record` 与 `--budget-usd` |
 | `pnpm create-project --help` | 查看生成器的交互和非交互参数 |

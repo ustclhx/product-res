@@ -36,8 +36,8 @@
   - 包内源码按字面相对路径引用包外文件时，必须进入该任务的 `inputs` 或根 `globalDependencies`；
     `scripts/check-turbo-inputs.mjs`（`pnpm check` 内，经其测试运行）会检查，动态拼出的路径仍需评审留意；
   - 影响行为的环境变量写进任务级 `env`/`passThroughEnv`（优先于全局）。Turbo 默认 strict env 模式，
-    未声明的变量在任务进程里不存在：各包 `vitest.config` 读不到连接串时会**静默跳过**集成测试，
-    本地 Orca worktree 又因 `readLocalEnv` 回退到 `.env.worktree` 而照常运行，问题只在 CI 暴露。
+    未声明的变量在任务进程里不存在。缺少连接串时，允许离线执行的 `vitest.config` 在 CI 会跳过集成测试。
+    本地可能从 `.env.worktree` 或启用了 `devFallback` 的测试配置取得隔离库连接串，掩盖 CI 的透传遗漏。
     连接串统一经 `@product-res/db/test-database` 的 `resolveTestDatabase()` 解析并做隔离检查（检查脚本把该调用计为读取
     连接串、`CI` 与 `ALLOW_TEST_ON_DEV_DATABASE`）；CI 库名须匹配 `*_ci` / `*_ci_*`，且 `CI` 为真；
     同一检查脚本会核对默认 `vitest.config` 字面读取的 `process.env.X` / `readLocalEnv('X')` 已在 test 任务中声明；

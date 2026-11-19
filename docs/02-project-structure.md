@@ -198,3 +198,27 @@ export default defineTemplateConfig({
   - 已发布的迁移不再修改，修复改用新迁移；迁移不得依赖固定的 idx 或文件名序号。
   - 衍生项目中，自有迁移沿用 drizzle-kit 默认命名；模板同步移植的迁移命名为 `<idx>_tpl_<原名>`，追加在序列末尾，`when` 晚于已有的全部迁移，原 tag 登记在 `.template-base.json` 的 `migrations` 中。
   - 先扩展后收缩：每个版本的 schema 必须让上一版本的代码仍可运行。删除、重命名、改类型、加约束等收缩变更至少晚一个版本发布，语句带 `-- template-contract: <原因>` 注释，升级说明声明 `requiresDeployed`，详见 [升级说明](upgrades/README.md)。
+
+## 5. 本地集成测试数据库
+
+Vitest 通过 `resolveTestDatabase()` 解析测试连接串，每项优先读取进程环境，再读取 `.env.worktree`。
+`CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` 使用 `app` 账号，`MIGRATION_DATABASE_URL`
+使用 `migrator` 账号，两者须指向同一隔离库。库名可用 `<项目>_wt_<名称>` 或 `<项目>_test`（可加后缀），CI 另接受 `<项目>_ci`（可加后缀）。
+
+两处均未配置时，启用了 `devFallback` 的测试配置在本地使用 `<项目>_test`。连接参数优先采用
+`apps/web/.dev.vars` 或根目录 `.env` 中指向 `_dev` 库的配置，其次读取本地 Compose 的 `POSTGRES_DB` 与字面端口映射，最后使用模板默认值。
+需要指定不同的隔离库或运行要求 `required: true` 的测试时，配置上面的一对连接串。
+CI 不推导本地测试连接串，未配置时只运行允许离线执行的测试。
+
+主 checkout 首次运行前，启动本地 PostgreSQL 并创建空的 `<项目>_test` 库。
+使用项目自带的 Compose 时，在仓库根运行以下命令。
+
+```sh
+docker compose -f infra/local/docker-compose.yml up -d --wait
+docker compose -f infra/local/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U postgres -d postgres -c 'CREATE DATABASE "product_res_test"'
+docker compose -f infra/local/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U postgres -d product_res_test < infra/local/initdb/02-db-grants.sql
+```
+
+默认测试库不存在时，`globalSetup` 会给出建库和授权命令。连接成功后，`globalSetup` 执行迁移，测试可写入夹具。
+只有设置 `ALLOW_TEST_ON_DEV_DATABASE=1` 才允许测试连接开发库。此时，启用了 `devFallback` 的本地测试在没有测试连接串时使用上述开发连接配置。
+
