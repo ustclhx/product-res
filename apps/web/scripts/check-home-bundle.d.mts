@@ -29,4 +29,4 @@ export const ZOD_MARKERS: readonly string[]
 export function budgetViolation(gzipBytes: number, budget: number | null | undefined): string | null
 export function readPerformanceOptions(
   distDir: string,
-): { homeScriptGzipBudget?: number | null } | null
+): { prerender?: boolean; homeScriptGzipBudget?: number | null } | null

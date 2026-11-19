@@ -1,7 +1,8 @@
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
   budgetViolation,
@@ -30,6 +31,55 @@ function fixture(files: Record<string, string>) {
 afterEach(() => {
   if (dir) rmSync(dir, { recursive: true, force: true })
   dir = ''
+})
+
+describe('营销预渲染构建后处理', () => {
+  function runWithoutHtml(options?: object) {
+    const root = fixture({})
+    const scripts = join(root, 'scripts')
+    const dist = join(root, 'dist')
+    const client = join(dist, 'client')
+    mkdirSync(scripts)
+    mkdirSync(client, { recursive: true })
+    if (options) {
+      mkdirSync(join(dist, '.build'))
+      writeFileSync(join(dist, '.build/marketing-performance.json'), JSON.stringify(options))
+    }
+
+    // 内联脚本从自身位置查找 dist；复制入口并让依赖仍从仓库加载。
+    const inline = join(scripts, 'inline-critical-css.mjs')
+    copyFileSync(new URL('./inline-critical-css.mjs', import.meta.url), inline)
+    for (const name of ['critical-css.project.mjs', 'marketing-html.mjs']) {
+      symlinkSync(fileURLToPath(new URL(name, import.meta.url)), join(scripts, name))
+    }
+    const check = fileURLToPath(new URL('./check-home-bundle.mjs', import.meta.url))
+    return {
+      inline: spawnSync(process.execPath, [inline], { encoding: 'utf8' }),
+      check: spawnSync(process.execPath, [check, client], { encoding: 'utf8' }),
+    }
+  }
+
+  it('明确关闭预渲染时，两条命令均记录跳过并成功退出', () => {
+    const { inline, check } = runWithoutHtml({ prerender: false })
+    expect(inline.status).toBe(0)
+    expect(inline.stdout).toContain('未启用营销预渲染，跳过')
+    expect(check.status).toBe(0)
+    expect(check.stdout).toContain('未启用营销预渲染，跳过')
+  })
+
+  it.each([
+    { name: '缺少构建元数据' },
+    { name: '旧版构建元数据', options: { homeScriptGzipBudget: null } },
+    { name: '开启预渲染', options: { prerender: true } },
+    { name: '标记为空值', options: { prerender: null } },
+    { name: '标记为字符串', options: { prerender: 'false' } },
+  ])('$name 时，两条命令仍会在缺少 HTML 时失败', ({ options }) => {
+    const { inline, check } = runWithoutHtml(options)
+    expect(inline.status).toBe(1)
+    expect(inline.stderr).toContain('未找到可内联样式表的 HTML')
+    expect(check.status).toBe(1)
+    expect(check.stderr).toMatch(/ENOENT.*index\.html/)
+  })
 })
 
 describe('首页包检查', () => {

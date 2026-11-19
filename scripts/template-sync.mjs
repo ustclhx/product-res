@@ -80,7 +80,7 @@ export class PreflightError extends Error {}
  * @property {string[]} [skipMigrations] Template migration tags to mark handled without porting.
  * @property {string} [verifyDb] Empty, isolated Postgres URL for the migration path check.
  * @property {string[]} [trailers] 追加到同步提交上的 Git 提交尾注（如项目约定的 `Co-Authored-By: …`）
- * @property {boolean} [skipVerify] Tool tests only: skip install/drizzle/typecheck/test; merge and ports still
+ * @property {boolean} [skipVerify] Tool tests only: skip verification commands; merge and ports still
  *   happen, the baseline is never updated and the status is `unverified`.
  * @property {Runner} [runner] Command runner for pnpm steps (tests inject a stub).
  * @property {(message: string) => void} [log]
@@ -301,12 +301,12 @@ export async function runSync(options) {
     }
 
     let failed = false
-    const step = (name, command, args, run = true) => {
+    const step = (name, command, args, { run = true, failureHint } = {}) => {
       const label = [command, ...args].join(' ')
       if (options.skipVerify || failed || !run) {
         const detail = failed ? '前序步骤失败' : !run ? '没有 package.json 变化' : undefined
         report.checks.push({ name, command: label, status: 'skip', detail })
-        return true
+        return
       }
       log(`运行 ${label}`)
       const result = runner(command, args, { cwd: project })
@@ -315,10 +315,12 @@ export async function runSync(options) {
         name,
         command: label,
         status: ok ? 'pass' : 'fail',
-        detail: ok ? undefined : lastLine(result.output),
+        detail: ok ? undefined : [lastLine(result.output), failureHint].filter(Boolean).join('。'),
       })
-      if (!ok) failed = true
-      return ok
+      if (!ok) {
+        failed = true
+        if (failureHint) log(failureHint)
+      }
     }
     const attempt = async (name, command, action) => {
       if (options.skipVerify || failed) {
@@ -346,8 +348,8 @@ export async function runSync(options) {
         basename(change.path) === 'package.json' ||
         (change.from && basename(change.from) === 'package.json'),
     )
-    step('依赖重新解析', 'pnpm', ['install', '--no-frozen-lockfile'], manifests)
-    step('锁文件一致性', 'pnpm', ['install', '--frozen-lockfile'], manifests)
+    step('依赖重新解析', 'pnpm', ['install', '--no-frozen-lockfile'], { run: manifests })
+    step('锁文件一致性', 'pnpm', ['install', '--frozen-lockfile'], { run: manifests })
     const lockAfter = existsSync(lockPath) ? await readFile(lockPath, 'utf8') : ''
     report.lockChanges = diffLockPackages(lockBefore, lockAfter)
 
@@ -424,8 +426,12 @@ export async function runSync(options) {
         detail: '未提供 --verify-db 隔离空库',
       })
     }
+    step('锁文件去重检查', 'pnpm', ['dedupe', '--check'], {
+      failureHint: '请运行 pnpm dedupe，提交 pnpm-lock.yaml 的变更后重跑同步。',
+    })
     step('类型检查', 'pnpm', ['typecheck'])
     step('单元测试', 'pnpm', ['test'])
+    step('生产构建', 'pnpm', ['build'])
 
     if (failed) return finish('failed')
     // 跳过验证不等于验证通过，基准只在验证全部通过后才更新。

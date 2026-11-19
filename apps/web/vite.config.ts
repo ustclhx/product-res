@@ -1,14 +1,20 @@
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { cloudflare } from '@cloudflare/vite-plugin'
 import { defineConfig, loadEnv } from 'vite'
 import { syncLocalPaymentEnv } from '../../scripts/local-payment-env.mjs'
+import templateConfig from '../../template.config.ts'
+import { marketingPerformanceOptions } from './scripts/client-template-config.ts'
 import { ogImages } from './scripts/og-images.ts'
 import { prerenderEnvFallback } from './scripts/prerender-env.ts'
 import { pricingSnapshotPlugin } from './scripts/pricing-snapshot.ts'
 import { sitePlugins } from './scripts/vite-shared.ts'
 
 const repoRoot = new URL('../../', import.meta.url).pathname
+const performanceOptionsFile = fileURLToPath(
+  new URL('./dist/.build/marketing-performance.json', import.meta.url),
+)
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
   version: string
 }
@@ -80,6 +86,10 @@ export default defineConfig(({ command }) => {
       pricingSnapshotPlugin(
         process.env.CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE_CACHED,
       ),
+      marketingPerformanceOptions(performanceOptionsFile, {
+        ...templateConfig.marketing.performance,
+        prerender: templateConfig.marketing.enabled,
+      }),
       ...sitePlugins(),
     ],
   }

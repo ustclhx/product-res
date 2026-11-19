@@ -174,7 +174,8 @@ jobs:
       - uses: ./.github/actions/prepare-local-tests
         with:
           database: product_res_ci_e2e
-      # 生成器会主动清除父进程数据库连接，副本自检只跑类型、单元测试及 Node 构建。
+      # 生成器会主动清除父进程数据库连接，测试阶段只跑单元测试。
+      # 全关副本另外运行 web 生产构建，覆盖没有预渲染 HTML 的构建产物。
       # 衍生项目不包含模板维护矩阵；模板本身始终运行，不能跳过其中的失败用例。
       - name: Verify generated projects
         if: hashFiles('scripts/create-project.verify.test.mjs') != ''

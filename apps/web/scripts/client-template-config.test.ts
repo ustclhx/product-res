@@ -34,31 +34,23 @@ describe('客户端模板配置（构建期 JSON）', () => {
   })
 })
 
-describe('marketing.performance 构建配置文件', () => {
-  it('构建开始时写出，供构建后处理读取', () => {
+describe('营销构建配置文件', () => {
+  it('每次构建写出当前预渲染开关与性能配置', () => {
     const dir = mkdtempSync(join(tmpdir(), 'perf-options-'))
     try {
       const file = join(dir, '.build/marketing-performance.json')
-      const plugin = marketingPerformanceOptions(file, {
+      const performance = {
         hydration: 'after-paint',
         criticalCss: 'used',
         homeScriptGzipBudget: 1000,
-      })
-      expect(plugin.apply).toBe('build')
-      ;(plugin.buildStart as () => void)()
-      expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({
-        hydration: 'after-paint',
-        criticalCss: 'used',
-        homeScriptGzipBudget: 1000,
-        prerender: true,
-      })
-      // 营销页未启用时写出 prerender: false，构建后处理据此跳过
-      const disabled = marketingPerformanceOptions(file, { criticalCss: 'used' }, false)
-      ;(disabled.buildStart as () => void)()
-      expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({
-        criticalCss: 'used',
-        prerender: false,
-      })
+      } as const
+      for (const prerender of [true, false]) {
+        const options = { ...performance, prerender }
+        const plugin = marketingPerformanceOptions(file, options)
+        expect(plugin.apply).toBe('build')
+        ;(plugin.buildStart as () => void)()
+        expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual(options)
+      }
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }

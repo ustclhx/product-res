@@ -44,19 +44,30 @@ runs:
           sleep 5
         done
         echo "apt/dpkg 锁已空闲（本步骤用时 ${SECONDS} 秒）"
+    # 浏览器本身（不含系统依赖）以普通用户安装到 ~/.cache/ms-playwright，缓存命中时跳过。
     - name: Install Chromium
       if: steps.browsers.outputs.cache-hit != 'true'
       shell: bash
-      run: timeout -k 10 600 pnpm --filter @product-res/web exec playwright install --with-deps --only-shell chromium
+      working-directory: apps/web
+      run: timeout -k 10 600 pnpm exec playwright install --only-shell chromium
+    # 系统依赖：直接以 root 运行 playwright CLI，让它不经 sudo 调 apt-get，并由 root 的 timeout 结束整个进程组。
+    # 此前 timeout 以 runner 用户运行，只能杀掉 pnpm，sudo 下的 apt-get（root）存活并一直占着 dpkg 锁，
+    # 后续重试全部失败（PR #418、#421 的 compose job）。重试前等残留进程退出并修复 dpkg。
     - name: Install Chromium system dependencies
-      if: steps.browsers.outputs.cache-hit == 'true'
       shell: bash
+      working-directory: apps/web
       run: |
+        node_bin=$(command -v node)
+        locks=(/var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock /var/cache/apt/archives/lock)
         for attempt in 1 2 3; do
-          if timeout -k 10 220 pnpm --filter @product-res/web exec playwright install-deps chromium; then exit 0; fi
+          if sudo timeout -k 10 300 "$node_bin" node_modules/@playwright/test/cli.js install-deps chromium; then exit 0; fi
           echo "::warning::playwright install-deps 第 ${attempt} 次失败或超时，重试"
+          sudo pkill -TERM -x apt-get 2>/dev/null || true
+          sudo pkill -TERM -x dpkg 2>/dev/null || true
+          if command -v fuser >/dev/null 2>&1; then
+            for _ in $(seq 1 24); do sudo fuser "${locks[@]}" >/dev/null 2>&1 || break; sleep 5; done
+          fi
           # 被中断的 dpkg 会留下半配置状态，下一次安装前先修复。
           sudo dpkg --configure -a || true
-          sleep 5
         done
         exit 1
