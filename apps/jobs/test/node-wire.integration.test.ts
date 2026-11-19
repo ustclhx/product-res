@@ -4,7 +4,15 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { defineTemplateConfig } from '@product-res/config'
 import { nodeEnvSchema } from '@product-res/config/node'
-import { createDb, jobDeadLetter, jobMessage, jobSchedule, jobScheduleRun } from '@product-res/db'
+import {
+  createDb,
+  JOBS_LAST_CRON_AT_KEY,
+  jobDeadLetter,
+  jobMessage,
+  jobSchedule,
+  jobScheduleRun,
+  setting,
+} from '@product-res/db'
 import { RESEND_API_URL } from '@product-res/email'
 import type { EmailQueueMessage } from '@product-res/email/queue'
 import { newId } from '@product-res/shared'
@@ -27,6 +35,9 @@ it('wires real consumers, retry/DLQ, disabled modules, heartbeat readiness and g
   if (!databaseUrl || !valkeyUrl) throw new Error('Isolated PG and Valkey required')
   const directory = await mkdtemp(join(tmpdir(), 'selfhost-wire-'))
   const db = createDb(databaseUrl, { max: 3 })
+  // 本文件断言启动后首次 ready 为 503 且 lastCronAt 为 null。同库串行的 node-production 用例会运行真实 jobs，
+  // 若其间跨过 */5 心跳整点就会留下 jobs.lastCronAt，使这里偶发拿到 200；启动前清掉这条保留键。
+  await db.delete(setting).where(eq(setting.key, JOBS_LAST_CRON_AT_KEY))
   const config = nodeEnvSchema.parse({
     DATABASE_URL: databaseUrl,
     VALKEY_URL: valkeyUrl,

@@ -243,7 +243,7 @@ export function budgetViolation(gzipBytes, budget) {
     : null
 }
 
-/** 构建时写出的 marketing.performance（dist/.build/marketing-performance.json），缺失时为 null */
+/** 构建时写出的预渲染开关与 marketing.performance，文件缺失时为 null */
 export function readPerformanceOptions(distDir) {
   const file = join(distDir, '.build/marketing-performance.json')
   return existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null
@@ -266,9 +266,9 @@ export function checkServerHomeBundle(serverDir) {
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const clientDir = resolve(process.argv[2] ?? join(dirname(process.argv[1]), '../dist/client'))
   const serverDir = resolve(process.argv[3] ?? join(clientDir, '../server'))
-  // 营销页未启用时没有预渲染首页，首页包检查不适用
-  if (readPerformanceOptions(join(clientDir, '..'))?.prerender === false) {
-    console.log('首页包检查跳过：营销页未启用，无预渲染首页')
+  const options = readPerformanceOptions(join(clientDir, '..'))
+  if (options?.prerender === false) {
+    console.log('首页包检查：本次构建未启用营销预渲染，跳过检查')
     process.exit(0)
   }
   const {
@@ -281,7 +281,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   } = checkHomeBundle(clientDir)
   // 唯一调用方是 `pnpm build`（Cloudflare 构建，必有 dist/server）；缺少服务端产物时失败，避免静默跳过
   const server = existsSync(join(serverDir, 'index.js')) ? checkServerHomeBundle(serverDir) : null
-  const budget = readPerformanceOptions(join(clientDir, '..'))?.homeScriptGzipBudget ?? null
+  const budget = options?.homeScriptGzipBudget ?? null
   const overBudget = budgetViolation(gzipBytes, budget)
   // zod 标记只在项目设置了首页包预算（选择接受首页包约束）时判失败，否则只警告：
   // 衍生项目的首页可能在浏览器端用 zod 校验表单，升级模板不应因此构建失败

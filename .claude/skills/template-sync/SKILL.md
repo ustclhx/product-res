@@ -65,6 +65,9 @@ node "$TEMPLATE_DIR/scripts/template-sync.mjs" sync --project . --to <目标> \
 
 - 移植的模板迁移在 `packages/db/migrations` 末尾，文件名带 `tpl_`；核对其在项目自有迁移之后、
   journal `when` 递增，且报告中 `drizzle-kit generate` 无变化。
+- 依赖安装和迁移核对结束后，工具运行 `pnpm dedupe --check`。检查失败时在同步分支运行
+  `pnpm dedupe`，提交 `pnpm-lock.yaml` 的变更后重跑同步。类型检查和单元测试通过后，工具运行
+  `pnpm build` 验证生产构建。
 - 验证失败时修复并提交后重跑；基准记录只在无冲突且验证全部通过时更新到目标。
 - 工具内的 `pnpm test` 以 CI 模式运行并清除数据库连接串，只覆盖单元测试。在同步分支上手动运行
   `pnpm test`（复现失败或补跑集成测试）前，必须先为当前目录准备隔离库：库名 `<项目>_wt_<名称>` 或
