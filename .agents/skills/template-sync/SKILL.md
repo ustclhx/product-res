@@ -50,6 +50,10 @@ node "$TEMPLATE_DIR/scripts/template-sync.mjs" sync --project . --to <目标> \
 - `--confirm-deployed` 只在使用者核实线上健康接口返回的版本后才加；不得凭推测越过边界。
 - 退出码：0 为已是最新或同步完成；1 为冲突或验证失败；2 为预检失败（未改动项目）。
 
+基准和目标先由各自版本的生成器生成。合并前，两份临时副本共用目标副本锁定的 Biome 版本和配置，
+并执行相同的格式化、import 整理和 Wrangler 占位 ID 编号。后处理可重复执行。
+项目文件仍与旧生成结果逐字节一致时，以原始基准应用该文件的模板变更。
+
 ## 3. 读报告与处理冲突
 
 报告路径打印在终端（`<git 目录>/template-sync/<短 SHA>.md`）。逐项核对：已应用变更、冲突文件、模板已删除的保留文件、
@@ -125,6 +129,7 @@ node "$TEMPLATE_DIR/scripts/template-sync.mjs" infer-base --project . \
 `--param domain=acme.example` 和 `create-project --domain acme.example` 一样会补上 `https://`，
 也可填写不带末尾斜线的 HTTPS origin，例如 `https://acme.example`。生成器接受末尾斜线并在记录中去掉。
 
+推断在临时目录解包生成提交，并用同步工具同一套后处理规则归一化该快照与所有候选副本，再计算差异。
 输出还原的参数、来源、前 5 个候选的差异摘要和需人工核对的二进制文件。候选按文本差异行数、
 二进制差异文件数从少到多排序，再按提交日期从新到旧和 SHA 排序。阈值只比较文本差异行数。
 选定后用 `--write <候选完整 SHA>` 写入 `.template-base.json`。候选超过阈值且使用者核对后仍决定采用时，

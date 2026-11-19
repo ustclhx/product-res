@@ -24,6 +24,7 @@ export const projectOwnedPaths = new Set([
 ])
 export const baseRef = 'refs/template-sync/base'
 export const targetRef = 'refs/template-sync/target'
+const rawBaseRef = 'refs/template-sync/raw-base'
 
 // 固定身份与时间，使同一对副本得到相同的临时提交，便于复现报告。
 const identity = {
@@ -49,21 +50,24 @@ export function shortSha(sha) {
 }
 
 /**
- * Commit two generated copies into a throwaway repository as `base` then `target`.
+ * Save the raw baseline, then commit the normalized copies as `base` and `target`.
  * @param {string} baseDir Generated copy for the baseline commit.
  * @param {string} targetDir Generated copy for the target commit.
+ * @param {(dir: string) => Promise<void>} postprocess Normalize a generated copy.
  * @returns {Promise<{repo: string, cleanup: () => Promise<void>}>}
  */
-export async function commitCopies(baseDir, targetDir) {
+export async function commitCopies(baseDir, targetDir, postprocess) {
   const repo = await mkdtemp(join(tmpdir(), 'template-sync-copies-'))
   const cleanup = () => rm(repo, { recursive: true, force: true })
   try {
     git(repo, ['init', '--quiet', '--bare'])
     let parent = null
     for (const [name, dir] of [
+      ['raw-base', baseDir],
       ['base', baseDir],
       ['target', targetDir],
     ]) {
+      if (name !== 'raw-base') await postprocess(dir)
       const env = identity
       const run = (args) => git(dir, ['--git-dir', repo, '--work-tree', dir, ...args], { env })
       run(['add', '--all', '.'])
@@ -80,7 +84,7 @@ export async function commitCopies(baseDir, targetDir) {
 }
 
 /**
- * Fetch the copy commits into the project as refs/template-sync/{base,target}.
+ * Fetch the copy commits into the project as refs/template-sync/{raw-base,base,target}.
  * @param {string} project Project root.
  * @param {string} repo Repository returned by commitCopies().
  */
@@ -90,6 +94,7 @@ export function fetchCopies(project, repo) {
     '--quiet',
     '--no-tags',
     repo,
+    `+refs/heads/raw-base:${rawBaseRef}`,
     `+refs/heads/base:${baseRef}`,
     `+refs/heads/target:${targetRef}`,
   ])
@@ -166,7 +171,9 @@ export function retainedDeletions(project, changes) {
     .filter((item) => item.current !== null)
     .map((item) => ({
       path: item.path,
-      modified: item.current !== blob(project, baseRef, item.path),
+      modified:
+        item.current !== blob(project, baseRef, item.path) &&
+        item.current !== blob(project, rawBaseRef, item.path),
     }))
 }
 
@@ -185,15 +192,19 @@ export function applyTemplateChanges(project, changes) {
     // 删除不自动执行：模板不再交付的文件可能仍被项目使用，只在报告中提示。
     if (change.status === 'D') continue
     const source = change.from ?? change.path
-    if (change.status !== 'A' && blob(project, 'HEAD', source) === null) {
+    const current = change.status === 'A' ? null : blob(project, 'HEAD', source)
+    if (change.status !== 'A' && current === null) {
       // 项目已删除该文件而模板修改了它：git apply 只会报「不在索引中」，这里明确交给使用者决定。
       conflicts.push({ path: change.path, reason: '项目已删除该文件，模板修改了它' })
       continue
     }
+    // 项目仍保留旧生成器的字节时，从原始基准制作补丁，避免把首次格式化误判为项目改动。
+    const base =
+      current !== null && current === blob(project, rawBaseRef, source) ? rawBaseRef : baseRef
     const paths = change.from ? [change.from, change.path] : [change.path]
     const patch = git(
       project,
-      ['diff', '-M', '--binary', '--full-index', baseRef, targetRef, '--', ...paths],
+      ['diff', '-M', '--binary', '--full-index', base, targetRef, '--', ...paths],
       { trim: false },
     )
     const result = gitRaw(project, ['apply', '--3way', '--index', '--whitespace=nowarn', '-'], {

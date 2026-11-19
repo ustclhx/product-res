@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { build } from 'esbuild'
 import { expect, it } from 'vitest'
 
+// 真实 esbuild 构建并启动 Node 子进程，CI 并发负载下会超过默认 5 秒。
 it('loads jobs business handlers and media runner in real Node without Workers or Sentry CF', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'jobs-node-load-'))
   try {
@@ -40,4 +41,4 @@ it('loads jobs business handlers and media runner in real Node without Workers o
   } finally {
     await rm(dir, { recursive: true, force: true })
   }
-})
+}, 60_000)

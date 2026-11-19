@@ -14,7 +14,7 @@ it('loads the neutral export in Node without Workers modules or globals', () => 
     { cwd: fileURLToPath(new URL('..', import.meta.url)), encoding: 'utf8' },
   )
   expect(output.trim()).toBe('function function undefined')
-})
+}, 30_000)
 
 it('loads the explicit Node adapter without Workers globals', () => {
   const output = execFileSync(
@@ -28,4 +28,4 @@ it('loads the explicit Node adapter without Workers globals', () => {
     { cwd: fileURLToPath(new URL('..', import.meta.url)), encoding: 'utf8' },
   )
   expect(output.trim()).toBe('function function undefined')
-})
+}, 30_000)

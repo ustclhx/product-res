@@ -16,10 +16,12 @@ import { basename, dirname, isAbsolute, join, posix, relative, resolve, sep } fr
 import { createInterface } from 'node:readline/promises'
 import { pathToFileURL } from 'node:url'
 import { parseArgs } from 'node:util'
+import { parseJsonc } from './production/check-wrangler-envs.mjs'
 import { normalizeParams, serializeBaseRecord, sourceState, themeNames } from './template-base.mjs'
 import { projectOwnedPaths } from './template-sync/merge.mjs'
 
 const root = resolve(import.meta.dirname, '..')
+const wranglerResourceId = /("id"\s*:\s*")([a-f0-9]{32})"/g
 const featureNames = ['publicApi', 'blog', 'docs', 'waitlist', 'newsletter', 'guides']
 const aiNames = ['text', 'image', 'video']
 const mediaProviderNames = ['fal', 'workers-ai']
@@ -388,7 +390,6 @@ function stagingUrl(options) {
 // 仅在配置语义位置改 Worker / Queue 名；资源 ID 清空，避免新项目复用模板的 staging / production。
 function wranglerConfig(source, options, app) {
   const media = options.ai.includes('image') || options.ai.includes('video')
-  let resourceIndex = 0
   let result = source
     .replace(
       /("(?:name|script_name|queue|dead_letter_queue|bucket_name)"\s*:\s*")([^"\n]+)"/g,
@@ -397,11 +398,7 @@ function wranglerConfig(source, options, app) {
           ? `${prefix}${options.name}-${value}"`
           : `${prefix}${value}"`,
     )
-    // 各环境的占位 ID 也要互异，满足 staging / production 隔离检查。
-    .replace(/("id"\s*:\s*")[a-f0-9]{32}"/g, (_match, prefix) => {
-      const id = (resourceIndex++).toString(16).padStart(32, '0')
-      return `${prefix}${id}"`
-    })
+    .replace(wranglerResourceId, `$1${'0'.repeat(32)}"`)
     .replace(/("APP_URL"\s*:\s*")https:[^"]+"/g, `$1${options.url}"`)
     // staging 绝不能沿用生产域名：sitemap / canonical / 埋点都由它决定，部署前改成实际 staging 地址。
     .replace(/("staging"\s*:\s*\{[\s\S]*?"APP_URL"\s*:\s*")[^"]+"/, `$1${stagingUrl(options)}"`)
@@ -646,20 +643,34 @@ async function replacements(source, packageName, options, app) {
   return (value) => value.replace(new RegExp(pattern, 'g'), (match) => map.get(match))
 }
 
-async function formatProject(target, source, version) {
+async function formatProject(target, source, reference, version) {
   const installed = join(source, 'node_modules/@biomejs/biome')
   const installedManifest = join(installed, 'package.json')
   const pinnedInstalled =
     existsSync(installedManifest) &&
     JSON.parse(await readFile(installedManifest, 'utf8')).version === version
-  const config = ['biome.json', 'biome.jsonc'].find((path) => existsSync(join(target, path)))
+  const config = ['biome.json', 'biome.jsonc'].find((path) => existsSync(join(reference, path)))
+  const settings = config ? parseJsonc(await readFile(join(reference, config), 'utf8')) : {}
+  // Biome 即使关闭 lint 也会加载插件，历史副本可能没有目标版本的插件文件。
+  delete settings.plugins
+  if (settings.vcs?.useIgnoreFile) {
+    const vcsRoot = resolve(target, settings.vcs.root ?? '.')
+    // 没有 ignore 文件的历史快照仍能使用目标的格式规则。
+    settings.vcs.useIgnoreFile = existsSync(join(vcsRoot, '.gitignore'))
+  }
+  if (Array.isArray(settings.extends) && reference !== target) {
+    settings.extends = settings.extends.map((path) =>
+      path.startsWith('.') ? `./${relative(target, resolve(reference, path))}` : path,
+    )
+  }
   // 模板组件和锁文件按字节校验，排除格式化和 import 排序。
   const temporaryConfig = join(target, '.biome-create-project.json')
   await writeFile(
     temporaryConfig,
     JSON.stringify({
-      ...(config ? { extends: [`./${config}`] } : {}),
+      ...settings,
       overrides: [
+        ...(settings.overrides ?? []),
         {
           includes: ['packages/ui/src/components/**', 'packages/ui/components.lock.json'],
           formatter: { enabled: false },
@@ -695,6 +706,29 @@ async function formatProject(target, source, version) {
   } finally {
     await rm(temporaryConfig)
   }
+}
+
+/** 对已经生成的副本整理占位 ID、格式与 import，可以用同一参照重复执行。 */
+export async function postprocessProject(target, { source = root, reference = target } = {}) {
+  // Biome 的 Git ignore 匹配要求配置和工作目录使用同一种真实路径。
+  target = await realpath(target)
+  reference = await realpath(reference)
+  for (const app of ['web', 'jobs']) {
+    const path = join(target, 'apps', app, 'wrangler.jsonc')
+    if (!existsSync(path) || (await realpath(path)) !== path || !(await lstat(path)).isFile())
+      continue
+    const text = await readFile(path, 'utf8')
+    let resourceIndex = 0
+    const numbered = text.replace(wranglerResourceId, (match, prefix, id) => {
+      const placeholder = (resourceIndex++).toString(16).padStart(32, '0')
+      // 兼容旧副本的全零 ID 与顺序编号。推断时要保留已配置的真实资源。
+      return /^0{24}/.test(id) ? `${prefix}${placeholder}"` : match
+    })
+    if (numbered !== text) await writeFile(path, numbered)
+  }
+  const manifest = JSON.parse(await readFile(join(reference, 'package.json'), 'utf8'))
+  const version = manifest.devDependencies?.['@biomejs/biome']
+  if (version) await formatProject(target, source, reference, version)
 }
 
 export async function createProject(input, source = root) {
@@ -989,8 +1023,7 @@ export async function createProject(input, source = root) {
   const entryChecklist = `## 页面与语言\n\n- ${options.marketing ? '营销页面已启用，/ 为营销首页。' : '营销页面关闭，/ 重定向至 /app，作为应用入口；营销路由不可用。'}\n- ${options.i18n ? `多语言已启用，默认语言 ${options.locale}；其他语言使用语言前缀。` : `仅编译所选默认语言 ${options.locale}；页面路径无语言前缀，其他语言前缀返回 404；不显示语言控件，忽略账号语言、cookie 与 Accept-Language。`}\n`
   report += `\n${entryChecklist}`
   await writeGenerated('PROJECT_SETUP.md', report)
-  const biomeVersion = manifest.devDependencies?.['@biomejs/biome']
-  if (biomeVersion) await formatProject(target, sourcePath, biomeVersion)
+  await postprocessProject(target, { source: sourcePath })
   return { target, options, checklist, report }
 }
 

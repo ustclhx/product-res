@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { expect, it } from 'vitest'
 
+// 真实 esbuild 构建并启动 Node 子进程，CI 并发负载下会超过默认 5 秒。
 it('builds portable Node ESM with declared externals and rejects invalid configuration before listen', async () => {
   const root = fileURLToPath(new URL('../', import.meta.url))
   await mkdir(join(root, '.output'), { recursive: true })
@@ -42,4 +43,4 @@ it('builds portable Node ESM with declared externals and rejects invalid configu
   } finally {
     await rm(directory, { recursive: true, force: true })
   }
-})
+}, 60_000)

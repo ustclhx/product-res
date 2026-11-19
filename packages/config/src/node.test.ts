@@ -568,7 +568,7 @@ describe('Node runtime config', () => {
     expect(result.stderr).toContain('DATABASE_URL')
     expect(result.stderr).not.toContain('private-invalid-input')
     expect(result.stdout).not.toContain('LISTENED')
-  })
+  }, 30_000)
 })
 
 describe('createDataSourceSecrets', () => {
