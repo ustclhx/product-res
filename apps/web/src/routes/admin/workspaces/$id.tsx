@@ -1,11 +1,10 @@
-import { Button, DetailList } from '@product-res/ui'
+import { Button, Checkbox, DetailList, Label } from '@product-res/ui'
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { ADMIN_COPY } from '../../../features/admin/copy.ts'
 import {
   AdminPage,
   AdminSection,
-  CheckboxField,
   EmptyState,
   formatDateTime,
   panelClass,
@@ -132,12 +131,15 @@ function WorkspaceDetail() {
       {data.workspace.deletedAt && (
         <div className={panelClass('danger', 'max-w-xl')}>
           <p className="text-sm">{m.admin_restore_within_the_30_day_retention_period_only()} </p>
-          <CheckboxField
-            label={m.admin_i_confirm_restoring_this_workspace()}
-            disabled={!ready}
-            checked={confirmed}
-            onChange={(event) => setConfirmed(event.target.checked)}
-          />
+          <Label htmlFor="confirm-workspace-restore" className="font-normal text-sm leading-normal">
+            <Checkbox
+              id="confirm-workspace-restore"
+              disabled={!ready}
+              checked={confirmed}
+              onCheckedChange={setConfirmed}
+            />
+            {m.admin_i_confirm_restoring_this_workspace()}
+          </Label>
           <Button
             className="w-fit"
             disabled={!ready || busy || !confirmed}

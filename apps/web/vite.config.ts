@@ -45,7 +45,12 @@ export default defineConfig(({ command }) => {
   // 本地 dev 时把根目录 .env.local 的五项测试支付配置同步到 .dev.vars 管理区块（#26）
   if (command === 'serve') syncLocalPaymentEnv(new URL('./', import.meta.url))
   return {
-    build: { sourcemap: 'hidden' },
+    build: {
+      sourcemap: 'hidden',
+      // 关闭模块预加载：首屏 HTML 会带上全部路由 chunk 的 modulepreload，与阻塞首绘的样式表争抢带宽，
+      // 首绘与 LCP 被推迟；水合所需的模块仍由入口的 import 链加载。
+      modulePreload: false,
+    },
     server: { port, strictPort: true },
     preview: { port, strictPort: true },
     define: {
@@ -61,7 +66,13 @@ export default defineConfig(({ command }) => {
         inspectorPort,
         // 本地开发时 Better Auth 的 baseURL 跟随实际端口（worktree 各不相同）；构建产物沿用 wrangler.jsonc
         ...((command === 'serve' || process.env.APP_URL) && {
-          config: { vars: { APP_URL: process.env.APP_URL ?? `http://localhost:${port}` } },
+          config: {
+            vars: {
+              APP_URL: process.env.APP_URL ?? `http://localhost:${port}`,
+              // 组件预览页开关可由环境变量覆盖（smoke e2e 设为 false，断言未开启时 /dev/ui 返回 404）
+              ...(process.env.UI_PREVIEW !== undefined && { UI_PREVIEW: process.env.UI_PREVIEW }),
+            },
+          },
         }),
       }),
       // 没有 .dev.vars 时（CI）预渲染用的 preview 改用 .dev.vars.example 的假值通过启动校验

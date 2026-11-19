@@ -1,6 +1,0 @@
-{
-  "requestedAt": "2026-10-16T17:48:12.880198+00:00",
-  "target": "product-res-ecs",
-  "method": "systemctl reboot",
-  "prerequisitesVerified": true
-}

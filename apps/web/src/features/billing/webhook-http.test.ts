@@ -157,3 +157,26 @@ it('keeps the billing delivery and callback result when only the operations enqu
   ).toBe(200)
   expect(send.mock.calls[0]?.[0]).toMatchObject({ v: 1, deliveryId: 'delivery-3' })
 })
+
+it('acknowledges non-retryable failures after alerting so the provider stops redelivering', async () => {
+  const send = vi.fn()
+  const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+  process.mockResolvedValueOnce({
+    status: 'failed',
+    retryable: false,
+    error: 'BILLING_CURRENCY_MISMATCH: expected USD, received EUR',
+    delivery: { id: 'eur-delivery', attempts: 1 },
+  })
+  const response = await handleBillingWebhook(request(), 'stripe', { ...options, queue: { send } })
+  expect(response.status).toBe(200)
+  expect(await response.json()).toEqual({ received: true })
+  expect(send.mock.calls[0]?.[0]).toMatchObject({
+    v: 1,
+    operations: [{ event: 'webhook.failed', sourceId: 'eur-delivery:1' }],
+  })
+  expect(JSON.parse(String(error.mock.calls[0]?.[0]))).toMatchObject({
+    event: 'billing.webhook_failed',
+    retryable: false,
+  })
+  error.mockRestore()
+})

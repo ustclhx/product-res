@@ -2,7 +2,7 @@ import type { RateLimiter } from '@product-res/platform'
 import { AppError, toErrorResponse } from '@product-res/shared'
 import { currentRequestId, log } from '@product-res/shared/log'
 import { z } from 'zod'
-import { chatAppError, startWorkspaceChat, type WorkspaceChatDeps } from '../ai/chat.ts'
+import { startWorkspaceChat, type WorkspaceChatDeps } from '../ai/chat.ts'
 import { type ApiKeyDeps, authenticateApiKey } from './service.ts'
 
 const requestSchema = z
@@ -27,9 +27,8 @@ const requestSchema = z
   .strict()
 
 export function apiError(error: unknown): Response {
-  const mapped = chatAppError(error)
-  if (!(mapped instanceof AppError)) log.error('api.failed', { error })
-  const { status, body } = toErrorResponse(mapped)
+  if (!(error instanceof AppError) || error.status >= 500) log.error('api.failed', { error })
+  const { status, body } = toErrorResponse(error)
   return Response.json(
     {
       error: {

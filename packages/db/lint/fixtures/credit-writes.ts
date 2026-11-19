@@ -7,6 +7,7 @@ import { sql as query } from 'drizzle-orm'
 await db.insert(grants).values({}) // expect-credit-write
 await tx.update(creditHold).set({}) // expect-credit-write
 await db.delete(schema.creditLedger) // expect-credit-write
+await db.insert(schema.creditDailyClaim).values({}) // expect-credit-write
 await scoped.insert(creditDebt, {}) // expect-credit-write
 await scoped.update(grants, {}, condition) // expect-credit-write
 await scoped.delete(creditHoldAllocation, condition) // expect-credit-write

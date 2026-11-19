@@ -1,9 +1,21 @@
 import type { CostParams, LogisticsType, Platform, ShippingFormula } from '@product-res/costing'
-import { Button, Input, Tag } from '@product-res/ui'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  Input,
+  Tag,
+} from '@product-res/ui'
 import { type FormEvent, useState } from 'react'
+import { m } from '../../paraglide/messages.js'
 import { Section, SimpleTable } from '../data-center/shared.tsx'
 import { splitList } from '../follow/marketplaces.ts'
-import { controlClass, EmptyState, ErrorText, Field, useAction } from '../workbench/fields.tsx'
+import { EmptyState, ErrorText, Field, useAction } from '../workbench/fields.tsx'
 import {
   formatMoney,
   formatRate,
@@ -21,6 +33,7 @@ import {
   LOGISTICS_TYPES,
   PLATFORM_LABELS,
 } from './labels.ts'
+import { ChoiceSelect } from './quote-editor.tsx'
 import {
   getCostingSettings,
   removeCostParam,
@@ -36,6 +49,48 @@ interface TabProps {
   slug: string
   data: CostingSettingsData
   onChanged: () => Promise<void>
+}
+
+interface DeleteTarget {
+  title: string
+  remove: () => Promise<unknown>
+}
+
+/** 行内删除的确认框（替代 window.confirm）：确认后关闭对话框再执行删除，错误仍显示在所在区块 */
+function ConfirmDelete({
+  target,
+  onClose,
+  run,
+}: {
+  target: DeleteTarget | null
+  onClose: () => void
+  run: (action: () => Promise<unknown>) => Promise<boolean>
+}) {
+  return (
+    <AlertDialog
+      open={target !== null}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+    >
+      <AlertDialogContent aria-describedby={undefined}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{target?.title}</AlertDialogTitle>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{m.common_cancel()}</AlertDialogCancel>
+          <AlertDialogAction
+            variant="destructive"
+            onClick={() => {
+              if (target) void run(target.remove)
+            }}
+          >
+            删除
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
 }
 
 function RowActions({
@@ -81,7 +136,7 @@ function FormActions({ busy, onCancel }: { busy: boolean; onCancel: () => void }
   )
 }
 
-const small = 'h-8 text-[13px]'
+const small = 'h-8 text-caption'
 
 // ---- 计费公式 ----
 
@@ -209,18 +264,16 @@ function FormulaFields({
       <div className="grid gap-3 md:grid-cols-4">
         <Field label="计费方式">
           {(id) => (
-            <select
+            <ChoiceSelect
               id={id}
-              className={controlClass}
+              placeholder="计费方式"
               value={draft.mode}
-              onChange={(e) => set({ mode: e.target.value as FormulaMode })}
-            >
-              {(Object.keys(FORMULA_LABELS) as FormulaMode[]).map((m) => (
-                <option key={m} value={m}>
-                  {FORMULA_LABELS[m]}
-                </option>
-              ))}
-            </select>
+              options={(Object.keys(FORMULA_LABELS) as FormulaMode[]).map((m) => ({
+                value: m,
+                label: FORMULA_LABELS[m],
+              }))}
+              onChange={(mode) => set({ mode })}
+            />
           )}
         </Field>
         {input('币种', 'currency')}
@@ -249,6 +302,7 @@ function FormulaFields({
 
 export function LogisticsTab({ slug, data, onChanged }: TabProps) {
   const [editing, setEditing] = useState<LogisticsProfileView | 'new' | null>(null)
+  const [deleting, setDeleting] = useState<DeleteTarget | null>(null)
   const { busy, error, run } = useAction(onChanged)
   return (
     <Section
@@ -298,16 +352,19 @@ export function LogisticsTab({ slug, data, onChanged }: TabProps) {
                   canWrite={data.canWrite}
                   busy={busy}
                   onEdit={() => setEditing(p)}
-                  onDelete={() => {
-                    if (window.confirm(`删除物流方案“${p.name}”？`))
-                      void run(() => removeLogisticsProfile({ data: { slug, id: p.id } }))
-                  }}
+                  onDelete={() =>
+                    setDeleting({
+                      title: `删除物流方案“${p.name}”？`,
+                      remove: () => removeLogisticsProfile({ data: { slug, id: p.id } }),
+                    })
+                  }
                 />
               </td>
             </tr>
           ))}
         </SimpleTable>
       )}
+      <ConfirmDelete target={deleting} onClose={() => setDeleting(null)} run={run} />
     </Section>
   )
 }
@@ -380,18 +437,13 @@ function ProfileForm({
         </Field>
         <Field label="平台 · 类型">
           {(id) => (
-            <select
+            <ChoiceSelect
               id={id}
-              className={controlClass}
+              placeholder="类型"
               value={type}
-              onChange={(e) => setType(e.target.value as LogisticsType)}
-            >
-              {LOGISTICS_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {LOGISTICS_TYPE_LABELS[t]}
-                </option>
-              ))}
-            </select>
+              options={LOGISTICS_TYPES.map((t) => ({ value: t, label: LOGISTICS_TYPE_LABELS[t] }))}
+              onChange={setType}
+            />
           )}
         </Field>
         <Field label="时效（天）">
@@ -463,6 +515,7 @@ function formatParam(kind: 'rate' | 'money' | 'number', value: number | null | u
 
 export function CostParamsTab({ slug, data, onChanged }: TabProps) {
   const [editing, setEditing] = useState<CostParamView | 'new' | null>(null)
+  const [deleting, setDeleting] = useState<DeleteTarget | null>(null)
   const { busy, error, run } = useAction(onChanged)
   return (
     <Section
@@ -512,7 +565,7 @@ export function CostParamsTab({ slug, data, onChanged }: TabProps) {
                 <td key={f.key} className="px-3 py-2 whitespace-nowrap">
                   {formatParam(f.kind, p.effective[f.key])}
                   {p.categoryId && p.sources[f.key] === 'platform-default' ? (
-                    <div className="text-[11px] text-muted-foreground">平台默认</div>
+                    <div className="text-micro text-muted-foreground">平台默认</div>
                   ) : null}
                 </td>
               ))}
@@ -521,16 +574,19 @@ export function CostParamsTab({ slug, data, onChanged }: TabProps) {
                   canWrite={data.canWrite}
                   busy={busy}
                   onEdit={() => setEditing(p)}
-                  onDelete={() => {
-                    if (window.confirm('删除这组成本参数？'))
-                      void run(() => removeCostParam({ data: { slug, id: p.id } }))
-                  }}
+                  onDelete={() =>
+                    setDeleting({
+                      title: '删除这组成本参数？',
+                      remove: () => removeCostParam({ data: { slug, id: p.id } }),
+                    })
+                  }
                 />
               </td>
             </tr>
           ))}
         </SimpleTable>
       )}
+      <ConfirmDelete target={deleting} onClose={() => setDeleting(null)} run={run} />
     </Section>
   )
 }
@@ -597,18 +653,13 @@ function ParamForm({
       <div className="grid gap-3 md:grid-cols-4">
         <Field label="平台">
           {(id) => (
-            <select
+            <ChoiceSelect
               id={id}
-              className={controlClass}
+              placeholder="平台"
               value={platform}
-              onChange={(e) => setPlatform(e.target.value as Platform)}
-            >
-              {COSTING_PLATFORMS.map((p) => (
-                <option key={p} value={p}>
-                  {PLATFORM_LABELS[p]}
-                </option>
-              ))}
-            </select>
+              options={COSTING_PLATFORMS.map((p) => ({ value: p, label: PLATFORM_LABELS[p] }))}
+              onChange={setPlatform}
+            />
           )}
         </Field>
         <Field label="类目 ID" hint="留空 = 平台默认">

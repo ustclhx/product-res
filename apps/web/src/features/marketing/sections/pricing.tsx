@@ -15,19 +15,27 @@ import { getLocale } from '../../../paraglide/runtime.js'
 import { getMarketingPricing } from '../pricing.functions.ts'
 import {
   type BillingInterval,
+  groupPricingPlans,
   marketingPlans,
   PRICING_TTL_MS,
   type PricingPlan,
+  pricingForInterval,
 } from '../pricing-data.ts'
 import { Section } from './section.tsx'
 
 export type { BillingInterval, PricingPlan } from '../pricing-data.ts'
 
-export function formatPrice(amount: number, currency: string, locale: string): string {
+/** 营销页整数金额省略小数；`exact` 用于账单等需要与渠道账单逐位一致的场景 */
+export function formatPrice(
+  amount: number,
+  currency: string,
+  locale: string,
+  { exact = false }: { exact?: boolean } = {},
+): string {
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: currency.toUpperCase(),
-    maximumFractionDigits: amount % 100 === 0 ? 0 : 2,
+    ...(exact ? {} : { maximumFractionDigits: amount % 100 === 0 ? 0 : 2 }),
   }).format(amount / 100)
 }
 
@@ -51,7 +59,10 @@ export function Pricing({ plans: initialPlans }: { plans: readonly PricingPlan[]
       window.clearInterval(timer)
     }
   }, [])
-  const hasYearly = plans.some((plan) => plan.prices.some((price) => price.interval === 'year'))
+  const groups = groupPricingPlans(plans)
+  const hasYearly = groups.subscriptions.some((plan) =>
+    plan.prices.some((price) => price.interval === 'year'),
+  )
   return (
     <Section
       id="pricing"
@@ -76,10 +87,11 @@ export function Pricing({ plans: initialPlans }: { plans: readonly PricingPlan[]
         </fieldset>
       )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {plans.map((plan) => (
+        {[...groups.subscriptions, ...groups.creditPacks].map((plan) => (
           <PlanCard key={plan.key} plan={plan} interval={interval} />
         ))}
       </div>
+      <p className="text-center text-sm text-muted-foreground">{m.billing_coexist_order()}</p>
       <p className="text-center">
         <Link to="/pricing" className="text-sm underline underline-offset-4">
           {m.marketing_pricing_details()}
@@ -91,10 +103,7 @@ export function Pricing({ plans: initialPlans }: { plans: readonly PricingPlan[]
 
 function PlanCard({ plan, interval }: { plan: PricingPlan; interval: BillingInterval }) {
   const locale = getLocale()
-  const price =
-    plan.type === 'credit_pack'
-      ? plan.prices.find((p) => p.interval === null)
-      : plan.prices.find((p) => p.interval === interval)
+  const price = pricingForInterval(plan, interval)[0]
   const suffix =
     plan.type === 'credit_pack'
       ? m.marketing_pricing_one_time()

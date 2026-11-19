@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { useEffect } from 'react'
+import { NotificationsProvider } from '../../../features/notifications/store.tsx'
 import { WorkbenchShell } from '../../../features/workbench/shell.tsx'
 import {
   AccountPendingPage,
@@ -40,9 +41,14 @@ function WorkspaceLayout() {
   const { slug } = Route.useParams()
   // 水合时 beforeLoad 不在客户端运行，用 SSR 数据填充缓存（已有条目时不覆盖）
   useEffect(() => primeWorkspacePage(slug, page), [slug, page])
+  // 选品工作台固定使用项目自己的 WorkbenchShell（固定侧栏 + 顶栏 + 转移横幅），不按
+  // ui.appLayout 选择模板的 SidebarLayout / TopbarLayout。顶栏铃铛与首页通知区共用
+  // NotificationsProvider 的通知数据与 30 秒轮询，按空间重建。
   return (
-    <WorkbenchShell page={page}>
-      <Outlet />
-    </WorkbenchShell>
+    <NotificationsProvider key={page.workspace.slug} slug={page.workspace.slug}>
+      <WorkbenchShell page={page}>
+        <Outlet />
+      </WorkbenchShell>
+    </NotificationsProvider>
   )
 }

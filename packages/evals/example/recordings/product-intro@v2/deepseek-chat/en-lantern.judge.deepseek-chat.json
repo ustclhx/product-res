@@ -1,0 +1,19 @@
+{
+  "kind": "judge",
+  "promptVersion": "product-intro@v2",
+  "rubricVersion": "r1",
+  "outputHash": "sha256:5c642c3306fe3e290d0420072f113c044045468e34259e1b2cca227650e51390",
+  "model": {
+    "key": "deepseek-chat",
+    "provider": "deepseek",
+    "providerModelId": "deepseek-chat"
+  },
+  "output": "{\"criteria\":{\"accuracy\":{\"score\":5,\"reason\":\"All claims are directly supported by the listed features; no invented facts.\"},\"clarity\":{\"score\":5,\"reason\":\"Concise, well-structured with clear sections and scannable bullets.\"},\"audience-fit\":{\"score\":5,\"reason\":\"Directly addresses weekend campers' needs for packability and sunlight charging.\"}},\"summary\":\"The output accurately reflects only the given features, is clearly organized into the required sections, and speaks directly to weekend campers' needs. No unsupported claims were found.\"}",
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 567,
+    "outputTokens": 117
+  },
+  "recordedAt": "2026-11-14T07:12:30.326Z",
+  "source": "recorded"
+}

@@ -1,5 +1,6 @@
 import { subscription } from '@product-res/db'
 import { and, eq } from 'drizzle-orm'
+import { nextPastDueSince } from '../past-due.ts'
 import type { WebhookTransaction } from '../pipeline.ts'
 import { checkWinner } from './shared.ts'
 import type { BillingTarget, BillingTargetEvent } from './target.ts'
@@ -29,16 +30,17 @@ export async function applySubscriptionChange(
       event.provider === 'paypal' &&
       sub.cancelAtPeriodEnd &&
       ['paused', 'active', 'trialing'].includes(s.status)
+    const status = scheduledPause ? 'canceled' : s.status
     changes = {
       ...changes,
       planId: a.plan.id,
       planPriceId: a.price.id,
-      status: scheduledPause ? 'canceled' : s.status,
+      status,
       cancelAtPeriodEnd:
         event.provider === 'paypal' && sub.cancelAtPeriodEnd ? true : s.cancelAtPeriodEnd,
       canceledAt: scheduledPause ? (sub.canceledAt ?? event.occurredAt) : s.canceledAt,
       trialEnd: s.trialEnd,
-      pastDueSince: s.pastDueSince,
+      pastDueSince: nextPastDueSince(sub.pastDueSince, status, s.pastDueSince ?? event.occurredAt),
       raw: s.raw,
     }
     if (
@@ -49,11 +51,12 @@ export async function applySubscriptionChange(
       changes.currentPeriodEnd = s.currentPeriodEnd
     }
   } else if (event.type === 'subscription.past_due') {
-    changes.status =
+    const status =
       event.provider === 'paypal' && sub.cancelAtPeriodEnd && event.status === 'paused'
         ? 'canceled'
         : event.status
-    changes.pastDueSince = event.pastDueSince
+    changes.status = status
+    changes.pastDueSince = nextPastDueSince(sub.pastDueSince, status, event.pastDueSince)
   } else if (event.type === 'subscription.canceled') {
     changes.status = event.status
     changes.canceledAt = event.canceledAt

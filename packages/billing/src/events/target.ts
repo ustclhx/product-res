@@ -7,6 +7,7 @@ import {
   subscription,
 } from '@product-res/db'
 import { and, eq, sql } from 'drizzle-orm'
+import { nextPastDueSince } from '../past-due.ts'
 import type { WebhookTransaction } from '../pipeline.ts'
 import type { NormalizedEvent } from '../provider.ts'
 import {
@@ -97,7 +98,11 @@ async function ensureSubscription(
         cancelAtPeriodEnd: snapshot.cancelAtPeriodEnd,
         canceledAt: snapshot.canceledAt,
         trialEnd: snapshot.trialEnd,
-        pastDueSince: snapshot.pastDueSince,
+        pastDueSince: nextPastDueSince(
+          null,
+          compensated || deleted ? 'canceled' : snapshot.status,
+          snapshot.pastDueSince ?? event.occurredAt,
+        ),
         lastEventAt: event.occurredAt,
         raw: snapshot.raw,
       })

@@ -9,12 +9,19 @@ import {
   user,
 } from '@product-res/db'
 import * as schema from '@product-res/db/schema'
-import { newId } from '@product-res/shared'
+import { AppError, newId, toErrorResponse } from '@product-res/shared'
 import { eq, inArray, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { type CreditsTransaction, capture, grant, hold, release } from '../src/index.ts'
+import {
+  CreditsError,
+  type CreditsTransaction,
+  capture,
+  grant,
+  hold,
+  release,
+} from '../src/index.ts'
 import { getCreditBalance } from '../src/queries.ts'
 
 const url = process.env.CREDITS_TEST_DATABASE_URL
@@ -169,9 +176,21 @@ describe('grant and hold on PostgreSQL', () => {
     expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1)
     expect(results.filter((r) => r.status === 'rejected')).toEqual([
       expect.objectContaining({
-        reason: expect.objectContaining({ code: 'INSUFFICIENT_CREDITS' }),
+        reason: expect.objectContaining({
+          code: 'INSUFFICIENT_CREDITS',
+          status: 402,
+          details: { estimatedCredits: 8, availableCredits: 2 },
+        }),
       }),
     ])
+    const rejected = results.find((result) => result.status === 'rejected')
+    if (rejected?.status !== 'rejected') throw new Error('Expected rejected hold')
+    expect(rejected.reason).toBeInstanceOf(AppError)
+    expect(rejected.reason).toBeInstanceOf(CreditsError)
+    expect(toErrorResponse(rejected.reason).body.error.details).toEqual({
+      estimatedCredits: 8,
+      availableCredits: 2,
+    })
     expect(
       (await db.select().from(creditGrant).where(eq(creditGrant.id, batch.id)))[0]?.remaining,
     ).toBe(2)

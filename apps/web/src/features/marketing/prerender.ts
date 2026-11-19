@@ -5,7 +5,7 @@
  *
  * vite.config.ts 据此配置 TanStack Start 的 prerender.filter，因此这里不引用任何运行时模块。
  */
-export const PRERENDERED_PREFIXES = ['/blog', '/legal', '/docs'] as const
+export const PRERENDERED_PREFIXES = ['/blog', '/legal', '/docs', '/guides'] as const
 
 /** 去掉语言前缀后判断是否预渲染；`locales` 为模板配置中的全部语言 */
 export function isPrerenderedPath(path: string, locales: readonly string[]): boolean {

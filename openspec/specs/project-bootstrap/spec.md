@@ -59,3 +59,90 @@ create-project SHALL 接受 `--target cloudflare|selfhost`，省略时默认 Clo
 #### Scenario: 已初始化源项目
 - **WHEN** 源项目有 `secrets/auth_secret`、数据库密码文件、证书、owner 记录与备份文件
 - **THEN** 这些文件及真值均不出现在新项目，`.env.example`、`secrets.example` 与交付脚本仍存在
+
+### Requirement: 记录模板基准
+生成的项目 SHALL 在根目录包含 `.template-base.json`，记录：
+- 模板仓库地址与生成所用的完整提交 SHA；
+- 该提交恰好是模板发布版本时的版本号，否则为空；
+- 规范化后的全部生成参数（含默认值）；
+- 已包含的模板迁移清单。
+
+模板工作区有未提交改动时，记录 MUST 标明来源不干净。记录 MUST NOT 包含密钥、本地路径、主机名或个人邮箱。
+
+#### Scenario: 从干净提交生成
+- **WHEN** 在没有未提交改动的模板上生成 `acme`
+- **THEN** 副本的 `.template-base.json` 含该提交 SHA、全部参数和当前模板迁移清单，不含输出目录的绝对路径
+
+#### Scenario: 从有改动的工作区生成
+- **WHEN** 模板工作区存在未提交改动时生成项目
+- **THEN** 基准记录标明来源不干净，同步工具不把它当作可信基准
+
+### Requirement: 生成结果确定
+对同一模板源和同一组参数，生成器 SHALL 产出逐字节相同的文件集合，包括文件内容、路径和权限位。生成结果 MUST NOT 依赖生成时间、随机值、输出目录、执行机器或环境变量。
+
+#### Scenario: 两次生成对比
+- **WHEN** 用同一提交和同一参数分别生成到两个不同目录
+- **THEN** 两份副本的文件列表、内容和权限完全一致
+
+### Requirement: 分析站点注入
+生成器 SHALL 接受 `--analytics plausible|off`（默认 `plausible`）、`--plausible-domain`（默认项目名）与 `--plausible-host`。生产 site MUST 为该值，staging MUST 加 `-staging` 后缀。清单 MUST 写明 site、目标、自定义属性的开通步骤和开关方式。
+
+#### Scenario: 新词站默认
+- **WHEN** 以 `--name acme --plausible-host https://p.example` 生成
+- **THEN** 生产 site 为 `acme`，staging 为 `acme-staging`
+
+#### Scenario: 长期词站关闭
+- **WHEN** 以 `--analytics off` 生成
+- **THEN** `features.analytics` 为 `false`，环境变量为空，清单不含 Plausible 步骤
+
+### Requirement: staging 地址不沿用生产域名
+生成器 MUST NOT 把生产域名写入 staging 的 APP_URL，默认 SHALL 写入 `https://staging.<域名>` 并由清单提示替换。
+
+#### Scenario: 生成后的 staging 地址
+- **WHEN** 以 `--domain acme.example` 生成
+- **THEN** staging 的 APP_URL 为 `https://staging.acme.example`，生产为 `https://acme.example`
+
+### Requirement: 搜索站长验证清单
+`PROJECT_SETUP.md` SHALL 写明 Google Search Console 与 Bing Webmaster 的站点验证和提交 sitemap 步骤，以及发布前替换法律页模板声明与支持邮箱的提示。
+
+#### Scenario: 读取清单
+- **WHEN** 打开生成的 `PROJECT_SETUP.md`
+- **THEN** 其中包含这两个平台的步骤和本站 sitemap 地址
+
+### Requirement: 可选答案页
+生成器 SHALL 接受 `--features guides` 开启答案页，默认关闭；开启时副本 MUST 包含可修改的示例页。
+
+#### Scenario: 开启答案页
+- **WHEN** 以 `--features blog,guides` 生成
+- **THEN** `features.guides` 为 `true`，副本含示例内容
+
+### Requirement: 主题预设选择
+生成器 SHALL 接受 `--theme <预设名>`，省略时使用中性基线；非法预设名 MUST 被拒绝并列出可用预设。所选预设 SHALL 写入生成项目的模板配置与基准记录参数，生成项目 SHALL 包含项目自有的品牌 token 文件，供后续调整品牌而不修改基线 token。
+
+#### Scenario: 指定主题预设
+- **WHEN** 使用者以 `--theme blue` 生成项目
+- **THEN** 生成项目的模板配置选择 blue 预设，`.template-base.json` 记录该参数，项目包含品牌 token 文件且能通过类型检查与单元测试
+
+#### Scenario: 非法预设
+- **WHEN** 使用者传入不存在的预设名
+- **THEN** 生成器退出并列出可用预设，不写入输出目录
+
+### Requirement: 衍生项目的端到端检查按项目配置运行
+模板提供的端到端用例与 Nightly 任务 SHALL 按项目的模板配置、运行时绑定与页面声明决定运行或跳过，MUST NOT 只在模板默认配置下成立；跳过时 SHALL 给出原因。
+用例结果 MUST NOT 依赖执行顺序：共享状态（价格目录缓存、夹具套餐）SHALL 在全局准备阶段写入或在用例结束时还原。
+
+#### Scenario: 项目关闭了某项功能
+- **WHEN** 衍生项目关闭注册赠送积分、答案页或 Workers AI 媒体服务商
+- **THEN** 对应用例跳过并在报告中写明原因，其余用例照常运行
+
+#### Scenario: 项目没有浮动控件
+- **WHEN** 页面未声明浮动语言与主题控件
+- **THEN** 浮动控件用例跳过
+
+#### Scenario: 用例顺序变化
+- **WHEN** 首个访问定价页的用例先于其他用例运行
+- **THEN** 定价页读到完整的价格目录，后续用例不受影响
+
+#### Scenario: 多租户关闭的衍生项目跑 Nightly
+- **WHEN** 衍生项目未开启 `multiTenant`
+- **THEN** Nightly 的多空间任务跳过并说明原因；模板仓库中照常运行

@@ -1,10 +1,10 @@
 import type { TransferPreview } from '@product-res/follow/transfer'
-import { Button, cn } from '@product-res/ui'
+import { Button, cn, Select, SelectContent, SelectItem, SelectTrigger } from '@product-res/ui'
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useId, useMemo, useState } from 'react'
 import { m } from '../../paraglide/messages.js'
 import { workbenchErrorText } from '../workbench/errors.ts'
-import { controlClass, ErrorText, Field } from '../workbench/fields.tsx'
+import { ErrorText, Field } from '../workbench/fields.tsx'
 import type { TransferAvailability } from './availability.ts'
 import { tableLabel, transferActionError } from './labels.ts'
 import { Modal } from './modal.tsx'
@@ -114,7 +114,7 @@ export function TransferBar({
   return (
     <>
       <div
-        className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-[13px]"
+        className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-caption"
         data-testid="transfer-bar"
       >
         <span className="font-medium" role="status">
@@ -324,20 +324,24 @@ export function TransferDialog({
         ) : (
           <Field label={m.transfer_actions_target_label()} hint={m.transfer_actions_target_hint()}>
             {(id) => (
-              <select
-                id={id}
-                className={controlClass}
-                value={targetId}
-                data-testid="transfer-target"
-                onChange={(e) => setTargetId(e.target.value)}
+              <Select
+                value={targets.some((t) => t.id === targetId) ? targetId : ''}
+                onValueChange={setTargetId}
               >
-                <option value="">{m.transfer_actions_target_placeholder()}</option>
-                {targets.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {targetLabel(t)}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger
+                  id={id}
+                  className="w-full"
+                  data-testid="transfer-target"
+                  placeholder={m.transfer_actions_target_placeholder()}
+                />
+                <SelectContent>
+                  {targets.map((t, index) => (
+                    <SelectItem key={t.id} index={index} value={t.id}>
+                      {targetLabel(t)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           </Field>
         )}
@@ -399,7 +403,7 @@ export function PreviewPanel({ preview }: { preview: TransferPreview }) {
       data-testid="transfer-preview"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-[13px] font-semibold">
+        <h3 className="text-caption font-semibold">
           {m.transfer_actions_preview_title({
             source: preview.sourceName,
             target: preview.targetName,
@@ -452,7 +456,7 @@ export function PreviewPanel({ preview }: { preview: TransferPreview }) {
             ))}
           </ul>
         )}
-        <p className="text-[11px] text-muted-foreground">{m.transfer_actions_conflict_rules()}</p>
+        <p className="text-micro text-muted-foreground">{m.transfer_actions_conflict_rules()}</p>
       </div>
       <ul className="grid list-disc gap-1 pl-4 text-xs text-muted-foreground">
         {preview.scoringVersions.length ? (

@@ -1,9 +1,15 @@
 // biome-ignore-all lint/plugin: 运营通知在后台跨空间消费，只访问系统审计标记与设置。
 import { auditLog, type Database, dbSettingStore, getSetting } from '@product-res/db'
+import { AppError } from '@product-res/shared'
 import { and, eq } from 'drizzle-orm'
 
 export interface OperationsEvent {
-  event: 'payment.succeeded' | 'refund.requested' | 'webhook.failed' | 'reconciliation.failed'
+  event:
+    | 'payment.succeeded'
+    | 'refund.requested'
+    | 'webhook.failed'
+    | 'reconciliation.failed'
+    | 'queue.dead_letter'
   sourceId: string
   workspaceId?: string
   amount?: number
@@ -20,6 +26,7 @@ const events = new Set([
   'refund.requested',
   'webhook.failed',
   'reconciliation.failed',
+  'queue.dead_letter',
 ])
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -86,6 +93,7 @@ const labels = {
   'refund.requested': 'New refund request',
   'webhook.failed': 'Webhook processing failed',
   'reconciliation.failed': 'Reconciliation failed',
+  'queue.dead_letter': 'Events queue dead letter',
 }
 
 /** 网络异常只暴露渠道和状态；异常文本可能带含 token 的请求 URL，不能透传。 */
@@ -126,13 +134,17 @@ export async function sendOperationsChannel(
     if (channel === 'telegram' && !((await response.json()) as { ok?: boolean }).ok)
       throw new Error('API failure')
   } catch {
-    throw new Error(`Operations ${channel} delivery failed`)
+    throw new AppError(
+      `OPERATIONS_${channel.toUpperCase()}_DELIVERY_FAILED`,
+      `Operations ${channel} delivery failed`,
+      { status: 503 },
+    )
   } finally {
     clearTimeout(timer)
   }
 }
 
-/** 各渠道分别记录成功，重试只重发尚未成功的渠道；最终失败由现有 max_retries 策略丢弃，最后一次失败仍有结构化日志。 */
+/** 各渠道分别记录成功，重试只重发尚未成功的渠道；终态失败进入持久死信；告警本身的失败由死信消费者独立重试。 */
 export async function deliverOperations(db: Database, event: OperationsEvent) {
   const channels = await readOperationsChannels(db)
   for (const channel of ['telegram', 'discord'] as const) {

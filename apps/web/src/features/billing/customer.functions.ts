@@ -61,7 +61,8 @@ async function safe<T>(readOnly: boolean, action: () => Promise<T>) {
   } catch (error) {
     if (error instanceof AppError && error.status === 503) setResponseStatus(503)
     // 非业务错误（服务商拒绝、网络等）对用户只显示 BILLING_UNAVAILABLE，原因需留在日志中排查
-    if (!(error instanceof AppError)) log.error('billing.action_failed', { error })
+    if (!(error instanceof AppError) || error.status >= 500)
+      log.error('billing.action_failed', { error })
     return {
       ok: false as const,
       error: error instanceof AppError ? error.code : 'BILLING_UNAVAILABLE',

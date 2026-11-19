@@ -8,9 +8,12 @@ import {
   useId,
   useRef,
 } from 'react'
+import { fontWeights } from '../lib/font-weight.ts'
+import { useIcons } from '../lib/icon-context.tsx'
+import { useSize } from '../lib/size-context.tsx'
 import { cn } from '../lib/utils.ts'
 import { Button, type ButtonProps } from './button.tsx'
-import { Input } from './input.tsx'
+import { Input, type InputProps } from './input.tsx'
 import { Label } from './label.tsx'
 
 /**
@@ -47,13 +50,31 @@ export function errorMessages(errors: readonly unknown[]): string[] {
   return [...new Set(messages)]
 }
 
+/**
+ * 字段错误。外观取 Fluid field 的 FieldError：说明字号（caption）、危险色与行首提示图标（aria-hidden），
+ * 与输入框经 `aria-describedby` 关联；不加 role="alert"（提交后由表单统一校验，避免多个字段同时播报）。
+ */
 export function FieldErrors({ id, errors }: { id: string; errors: readonly string[] }) {
+  const size = useSize()
+  const AlertIcon = useIcons()['circle-alert']
+  const compact = size.variant === 'compact'
   if (errors.length === 0) return null
   return (
-    <div id={id} data-slot="field-error" className="text-destructive text-sm">
-      {errors.map((message) => (
-        <p key={message}>{message}</p>
-      ))}
+    <div
+      id={id}
+      data-slot="field-error"
+      className={cn('flex items-start gap-1.5 text-destructive', size.type.caption)}
+      style={{ fontVariationSettings: fontWeights.normal }}
+    >
+      {/* 14px 图标落在 16px 行高上（compact 12 / 14），下移 1px 与首行文字居中 */}
+      <span aria-hidden className="mt-px flex shrink-0">
+        <AlertIcon size={compact ? 12 : 14} strokeWidth={1.75} />
+      </span>
+      <div className="min-w-0">
+        {errors.map((message) => (
+          <p key={message}>{message}</p>
+        ))}
+      </div>
     </div>
   )
 }
@@ -65,7 +86,7 @@ export function FieldErrors({ id, errors }: { id: string; errors: readonly strin
 const SubmitPressContext = createContext<{ current: boolean } | null>(null)
 
 export interface TextFieldProps
-  extends Omit<ComponentProps<'input'>, 'id' | 'name' | 'value' | 'onChange' | 'onBlur'> {
+  extends Omit<InputProps, 'id' | 'name' | 'value' | 'onChange' | 'onBlur'> {
   label: ReactNode
   /** 字段说明，显示在输入框下方 */
   description?: ReactNode
@@ -77,6 +98,7 @@ export function TextField({ label, description, className, ...inputProps }: Text
   const submitPress = useContext(SubmitPressContext)
   const submitted = useStore(field.form.store, (state) => state.submissionAttempts > 0)
   const id = useId()
+  const size = useSize()
   // 表单级失焦校验会同时写入其他字段的错误；只看 isTouched 会让正在输入、尚未失焦的字段提前报错
   const errors =
     field.state.meta.isBlurred || submitted ? errorMessages(field.state.meta.errors) : []
@@ -110,7 +132,12 @@ export function TextField({ label, description, className, ...inputProps }: Text
         {...inputProps}
       />
       {description ? (
-        <p id={descriptionId} className="text-muted-foreground text-sm">
+        <p
+          id={descriptionId}
+          data-slot="field-description"
+          className={cn('text-pretty text-muted-foreground', size.type.caption)}
+          style={{ fontVariationSettings: fontWeights.normal }}
+        >
           {description}
         </p>
       ) : null}

@@ -22,6 +22,7 @@ const taskSchema = z.object({
   finishedAt: z.iso.datetime().nullable(),
   deadlineAt: z.iso.datetime(),
   creditsCharged: z.number().int().nonnegative().nullable(),
+  cancelBilling: z.enum(['free_unstarted', 'free_started', 'charged']).nullable().default(null),
   errorCode: z.string().nullable(),
   errorMessage: z.string().nullable(),
   params: z.record(z.string(), z.unknown()),
@@ -57,12 +58,32 @@ export async function getMediaTask(workspaceId: string, taskId: string, signal: 
     .task
 }
 
+const cancelPreviewSchema = z.object({
+  taskId: z.uuid(),
+  cancelable: z.boolean(),
+  started: z.boolean(),
+  charged: z.boolean(),
+  credits: z.number().int().nonnegative(),
+  freeStartedRemaining: z.number().int().nonnegative(),
+})
+export type MediaCancelPreview = z.infer<typeof cancelPreviewSchema>
+
+/** 只读预览本次取消是否计费；执行取消时服务端会重新判断。 */
+export async function previewMediaCancel(workspaceId: string, taskId: string) {
+  const query = new URLSearchParams({ workspaceId })
+  return cancelPreviewSchema.parse(
+    await requestJson(`/api/ai/tasks/${encodeURIComponent(taskId)}/cancel?${query}`),
+  )
+}
+
 export async function cancelMediaTask(workspaceId: string, taskId: string) {
   return z
     .object({
       taskId: z.uuid(),
       status: taskSchema.shape.status,
       cancellationPending: z.boolean(),
+      cancelBilling: taskSchema.shape.cancelBilling,
+      creditsCharged: z.number().int().nonnegative(),
     })
     .parse(
       await requestJson(`/api/ai/tasks/${encodeURIComponent(taskId)}/cancel`, {

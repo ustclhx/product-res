@@ -39,7 +39,8 @@
   "admin_never": "Never",
   "admin_status": "Status",
   "admin_revoke_remaining": "Revoke remaining",
-  "admin_revoke_remaining_credits_in_batch": "Revoke remaining credits in batch {batchId}?",
+  "admin_revoke_batch_confirm_title": "Revoke the remaining credits?",
+  "admin_revoke_batch_confirm_description": "Remaining credits in batch {batchId} are revoked with the reason above. This cannot be undone.",
   "admin_revoke_batch": "Revoke batch",
   "admin_business_metrics": "Business metrics",
   "admin_apply": "Apply",
@@ -335,5 +336,9 @@
   "admin_filters": "Filters",
   "admin_pagination": "Pagination",
   "admin_payment_amount": "Amount",
-  "admin_text_schema_defaults": "Text · x-text defaults"
+  "admin_text_schema_defaults": "Text · x-text defaults",
+  "admin_ai_free_failure_count": "Free failed AI replies per workspace",
+  "admin_ai_free_failure_count_description": "Chat replies that fail without visible text are refunded in full up to this many times per window. Later failures are charged for the last upstream attempt (never more than the hold). 0 charges every such failure.",
+  "admin_ai_free_failure_window_minutes": "Free failure window (minutes)",
+  "admin_ai_free_failure_window_description": "Rolling window for counting free failures. Default 60 minutes."
 }

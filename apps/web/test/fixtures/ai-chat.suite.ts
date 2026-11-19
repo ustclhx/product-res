@@ -2,6 +2,7 @@ import {
   chatHoldSweeper,
   type LanguageModelFactory,
   settleInterruptedChatMessage,
+  uuidv7Floor,
 } from '@product-res/ai'
 import { createAuth } from '@product-res/auth'
 import { defineTemplateConfig, type TemplateConfig } from '@product-res/config'
@@ -26,8 +27,10 @@ import { eq } from 'drizzle-orm'
 import { afterAll, describe, expect, it } from 'vitest'
 import {
   type ChatDeps,
+  type ChatRequestStopDeps,
   type ChatStopDeps,
   handleChatRequest,
+  handleChatRequestStopRequest,
   handleChatStopRequest,
   startWorkspaceChat,
 } from '../../src/features/ai/chat.ts'
@@ -177,7 +180,13 @@ export function registerAiChatSuite(
   /** 发起请求但不读取响应，用于在流式过程中观察检查点或调用停止接口 */
   async function begin(
     who: { slug: string; cookie: string },
-    body: { modelId: string; text: string; conversationId?: string; thinking?: boolean },
+    body: {
+      modelId: string
+      text: string
+      conversationId?: string
+      thinking?: boolean
+      requestId?: string
+    },
     options: {
       factory?: LanguageModelFactory
       mock?: MockLanguageModelV4
@@ -196,6 +205,7 @@ export function registerAiChatSuite(
           modelId: body.modelId,
           ...(body.thinking !== undefined ? { thinking: body.thinking } : {}),
           ...(body.conversationId ? { conversationId: body.conversationId } : {}),
+          ...(body.requestId ? { requestId: body.requestId } : {}),
           message: { role: 'user', parts: [{ type: 'text', text: body.text }] },
         }),
       }),
@@ -223,7 +233,13 @@ export function registerAiChatSuite(
 
   async function send(
     who: { slug: string; cookie: string },
-    body: { modelId: string; text: string; conversationId?: string; thinking?: boolean },
+    body: {
+      modelId: string
+      text: string
+      conversationId?: string
+      thinking?: boolean
+      requestId?: string
+    },
     options: {
       factory?: LanguageModelFactory
       mock?: MockLanguageModelV4
@@ -316,6 +332,11 @@ export function registerAiChatSuite(
       expect(mock.doStreamCalls[0]?.maxOutputTokens).toBe(500)
 
       const { message, hold } = await assistantMessage(conversationId)
+      const [question] = await sql<{ id: string }[]>`
+        select id from ai_message where conversation_id=${conversationId} and role='user'`
+      // UUIDv7 分配顺序必须与同轮问答一致，避免新消息继续产生历史反序数据。
+      expect(question?.id).toBeDefined()
+      expect((question?.id as string) < message.id).toBe(true)
       expect(message).toMatchObject({
         status: 'completed',
         parts: [{ type: 'text', text: 'Hello from the mock model!' }],
@@ -601,7 +622,11 @@ export function registerAiChatSuite(
       const { response, stream } = await send(me, { modelId, text: 'hi' }, { mock })
       expect(response.status).toBe(402)
       expect(JSON.parse(stream)).toEqual({
-        error: { code: 'INSUFFICIENT_CREDITS', message: 'Insufficient credits' },
+        error: {
+          code: 'INSUFFICIENT_CREDITS',
+          message: 'Insufficient credits',
+          details: { estimatedCredits: 266, availableCredits: 1 },
+        },
       })
       expect(mock.doStreamCalls).toHaveLength(0)
     })
@@ -735,6 +760,35 @@ export function registerAiChatSuite(
       { db, auth, overage: OVERAGE, ...deps },
     )
     return { status: response.status, body: (await response.json()) as Record<string, unknown> }
+  }
+
+  /** `POST /api/ai/chat/stop`：按请求 ID 停止（收到 start 事件之前） */
+  async function stopByRequest(
+    who: { slug: string; cookie: string },
+    body: { conversationId: string; requestId: string },
+    deps: Partial<ChatRequestStopDeps> = {},
+  ) {
+    const response = await handleChatRequestStopRequest(
+      new Request(`${APP_URL}/api/ai/chat/stop`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', cookie: who.cookie },
+        body: JSON.stringify({ slug: who.slug, ...body }),
+      }),
+      { db, auth, overage: OVERAGE, waitDelays: [0], ...deps },
+    )
+    return { status: response.status, body: (await response.json()) as Record<string, unknown> }
+  }
+
+  /** 已有的空对话：站内客户端发送前总是已有对话 ID */
+  async function emptyConversation(who: { workspaceId: string; userId: string }) {
+    const id = newId()
+    await scoped(db, who.workspaceId).insert(aiConversation, {
+      id,
+      userId: who.userId,
+      title: 'stop before start',
+      modelKey: 'test',
+    })
+    return id
   }
 
   async function consumeLedger(workspaceId: string) {
@@ -1151,6 +1205,150 @@ export function registerAiChatSuite(
       },
     )
 
+    describe('免费失败次数（harden-audit-findings 3.3）', () => {
+      /** 指定时刻的 UUIDv7：免费失败按 id 的时间前缀计数 */
+      const idAt = (ms: number) => `${uuidv7Floor(ms).slice(0, 14)}7000-8000-${newId().slice(-12)}`
+
+      /** 直接写入已结算的免费失败（failed、credits=0），模拟窗口内或窗口外的历史失败 */
+      async function pastFailures(
+        who: { workspaceId: string; userId: string },
+        n: number,
+        ageMs: number,
+      ) {
+        const s = scoped(db, who.workspaceId)
+        const conversationId = newId()
+        await s.insert(aiConversation, {
+          id: conversationId,
+          userId: who.userId,
+          title: 'past failures',
+          modelKey: 'past',
+        })
+        for (let i = 0; i < n; i++)
+          await s.insert(aiMessage, {
+            id: idAt(Date.now() - ageMs - i),
+            conversationId,
+            role: 'assistant',
+            status: 'failed',
+            parts: [],
+            credits: 0,
+          })
+      }
+
+      const fail = async (me: { slug: string; cookie: string }, modelId: string) => {
+        const mock = attempts(Array.from({ length: 3 }, () => ({ reasoning: 'hidden thought' })))
+        const { response } = await send(me, { modelId, text: 'hi' }, { factory: () => mock })
+        return assistantMessage(response.headers.get('x-conversation-id') as string)
+      }
+
+      it('按次：前 3 次无正文失败全退，第 4 次收固定积分', async () => {
+        const me = await member('free-failures', 100)
+        const modelId = await resilientModel(callPricing)
+        for (let i = 0; i < 3; i++)
+          expect(await fail(me, modelId)).toMatchObject({
+            message: { status: 'failed', credits: 0 },
+            hold: { status: 'released' },
+          })
+        expect(await fail(me, modelId)).toMatchObject({
+          message: { status: 'failed', credits: 3, parts: [] },
+          hold: { status: 'captured', captured_amount: 3 },
+        })
+        // 收费的失败不占用免费次数，之后仍按次收费。
+        expect((await fail(me, modelId)).message.credits).toBe(3)
+        expect(await consumeLedger(me.workspaceId)).toEqual([{ delta: -3 }, { delta: -3 }])
+        await assertInvariant(me.workspaceId)
+      })
+
+      it('按 token：超出后按最后一次尝试的用量结算', async () => {
+        const me = await member('free-failures-token', 100)
+        const modelId = await resilientModel(tokenPricing)
+        await pastFailures(me, 3, 0)
+        const { message, hold: reservation } = await fail(me, modelId)
+        // 只按最后一次尝试（100 输入 + 200 输出，10/1k）计 3 积分，前两次尝试不计入。
+        expect(reservation).toMatchObject({ status: 'captured', captured_amount: 3 })
+        expect(message.credits).toBe(3)
+        expect(message).toMatchObject({ input_tokens: 100, output_tokens: 200 })
+        expect(reservation).toMatchObject({ overage_absorbed: 0, overage_debited: 0 })
+        await assertInvariant(me.workspaceId)
+      })
+
+      it('窗口滚动后恢复免费；失败全退开关开启时超出次数也全退', async () => {
+        const me = await member('free-failures-window', 100)
+        const modelId = await resilientModel(callPricing)
+        await pastFailures(me, 3, 3_601_000)
+        expect(await fail(me, modelId)).toMatchObject({
+          message: { status: 'failed', credits: 0 },
+          hold: { status: 'released' },
+        })
+        await pastFailures(me, 3, 0)
+        const mock = attempts(Array.from({ length: 3 }, () => ({ reasoning: 'hidden thought' })))
+        const { response } = await send(
+          me,
+          { modelId, text: 'hi' },
+          { factory: () => mock, textConfig: policy({ failedReplyRefund: 'all' }) },
+        )
+        expect(
+          await assistantMessage(response.headers.get('x-conversation-id') as string),
+        ).toMatchObject({ message: { credits: 0 }, hold: { status: 'released' } })
+        expect(await consumeLedger(me.workspaceId)).toEqual([])
+      })
+
+      it.each([
+        ['lastAttempt', 20],
+        ['minimum', 5],
+      ] as const)('兜底处理器同样计数：超出后按 %s 结算', async (path, expected) => {
+        const me = await member(`free-failures-sweep-${path}`, 100)
+        await pastFailures(me, 3, 0)
+        const conversationId = newId()
+        const messageId = newId()
+        const pricing = { mode: 'token' as const, inputPer1k: 1, outputPer1k: 10, minCharge: 5 }
+        const reservation = await hold(db, {
+          workspaceId: me.workspaceId,
+          userId: me.userId,
+          amount: 20,
+          refType: 'ai_message',
+          refId: messageId,
+          expiresAt: new Date(Date.now() - 1),
+        })
+        const s = scoped(db, me.workspaceId)
+        await s.insert(aiConversation, {
+          id: conversationId,
+          userId: me.userId,
+          title: 'sweep',
+          modelKey: 'mock-sweep',
+        })
+        await s.insert(aiMessage, {
+          id: messageId,
+          conversationId,
+          role: 'assistant',
+          status: 'streaming',
+          pricing,
+          inputTokens: 10,
+          holdId: reservation.id,
+          parts: [{ type: 'reasoning', text: 'thinking' }],
+          usageCheckpoint: {
+            inputTokens: 10,
+            outputTokens: 0,
+            at: new Date().toISOString(),
+            // (100 × 1 + 3000 × 10) / 1000 = 30.1 → 31，以预扣 20 封顶
+            ...(path === 'lastAttempt'
+              ? { lastAttempt: { inputTokens: 100, outputTokens: 3000, reasoningTokens: 3000 } }
+              : {}),
+          },
+        })
+        await db.transaction(async (tx) => {
+          const [expired] = await scoped(tx, me.workspaceId)
+            .select(creditHold, { where: eq(creditHold.id, reservation.id) })
+            .limit(1)
+          if (!expired) throw new Error('hold missing')
+          await chatHoldSweeper({ overage: OVERAGE })({ db, tx, hold: expired })
+        })
+        const { message, hold: result } = await assistantMessage(conversationId)
+        expect(message).toMatchObject({ status: 'failed', credits: expected })
+        expect(result).toMatchObject({ status: 'captured', captured_amount: expected })
+        await assertInvariant(me.workspaceId)
+      })
+    })
+
     it('DeepSeek 空 schema 接受用户逐条开启 thinking', async () => {
       const me = await member('thinking-adapter-policy', 100)
       const modelId = await resilientModel(callPricing)
@@ -1185,7 +1383,7 @@ export function registerAiChatSuite(
       expect(plain.doStreamCalls[0]?.reasoning).toBeUndefined()
     })
 
-    it('thinking 按模板与单条请求映射；禁止切换时拒绝，不支持的模型忽略', async () => {
+    it('thinking 按模板与单条请求映射；禁止切换时拒绝，显式禁用的模型下发关闭', async () => {
       const me = await member('thinking-policy', 100)
       const modelId = await resilientModel(callPricing)
       const denied = attempts([{ text: 'unused' }])
@@ -1221,7 +1419,11 @@ export function registerAiChatSuite(
           textConfig: policy({ thinking: { default: 'on', userToggle: true } }),
         },
       )
-      expect(unsupported.doStreamCalls[0]?.providerOptions?.deepseek).toBeUndefined()
+      // 模型显式 thinking=false：忽略请求开关，但向可控 Provider 显式下发关闭形式
+      expect(unsupported.doStreamCalls[0]?.providerOptions).toMatchObject({
+        deepseek: { thinking: { type: 'disabled' } },
+      })
+      expect(unsupported.doStreamCalls[0]?.reasoning).toBe('none')
       expect(stream).not.toContain('hidden')
       expect(
         (await assistantMessage(response.headers.get('x-conversation-id') as string)).message.parts,
@@ -1428,6 +1630,214 @@ export function registerAiChatSuite(
       expect(peek).toMatchObject({ status: 404, body: { error: { code: 'NOT_FOUND' } } })
       expect((await stop(owner, newId())).status).toBe(404)
       expect((await stop(owner, 'not-a-uuid')).status).toBe(404)
+
+      // 同 isolate 的提前中止只认发起者：他人请求不触发 abort，发起者鉴权后即中止
+      const aborted: string[] = []
+      const pendingId = newId()
+      const activeChats = new Map([
+        [
+          pendingId,
+          { userId: owner.userId, abort: () => aborted.push('abort'), done: Promise.resolve() },
+        ],
+      ])
+      await stop({ slug: owner.slug, cookie: other.cookie }, pendingId, { activeChats })
+      expect(aborted).toEqual([])
+      await stop(owner, pendingId, { activeChats })
+      expect(aborted).toEqual(['abort'])
+    })
+  })
+
+  describe('POST /api/ai/chat/stop：收到 start 之前按请求 ID 停止（issue #362）', () => {
+    const perCall = {
+      mode: 'per_call' as const,
+      credits: 3,
+      limits: { maxInputTokens: 4000, maxOutputTokens: 2000 },
+    }
+
+    it('同 isolate、停止先于回复入库：不调用上游，回复以 aborted 结算并释放按次预扣；再次停止幂等', async () => {
+      const me = await member('req-stop-early', 100)
+      const modelId = await textModel(perCall)
+      const conversationId = await emptyConversation(me)
+      const requestId = newId()
+      // 回复尚未入库：登记标记后在等待期内找不到回复
+      expect(await stopByRequest(me, { conversationId, requestId })).toEqual({
+        status: 200,
+        body: { status: 'aborted', messageId: null },
+      })
+      const gated = gatedModel({ chunks: 10, gates: [] })
+      const { response, settled } = await begin(
+        me,
+        { modelId, text: 'hi', conversationId, requestId },
+        { mock: gated.model },
+      )
+      expect(response.status).toBe(200)
+      expect(streamedText(await bodyText(response))).toBe('')
+      await settled()
+      expect(gated.model.doStreamCalls).toHaveLength(0)
+      const { message, hold } = await assistantMessage(conversationId)
+      expect(message).toMatchObject({ status: 'aborted', parts: [], credits: 0 })
+      expect(message.usage_checkpoint?.clientRequestId).toBe(requestId)
+      expect(hold).toMatchObject({ status: 'released' })
+      expect(await getCreditBalance(db, me.workspaceId)).toMatchObject({ available: 100, held: 0 })
+
+      expect(await stopByRequest(me, { conversationId, requestId })).toEqual({
+        status: 200,
+        body: { status: 'aborted', messageId: message.id },
+      })
+      await assertInvariant(me.workspaceId)
+    })
+
+    it('按 token、停止与入库并发：沿用停止规则只收 minCharge', async () => {
+      const me = await member('req-stop-min', 100)
+      const modelId = await textModel(
+        { mode: 'token', inputPer1k: 10, outputPer1k: 100, minCharge: 2 },
+        1000,
+      )
+      const conversationId = await emptyConversation(me)
+      const requestId = newId()
+      // 停止在等待回复入库的同时，原请求建好消息
+      const stopping = stopByRequest(
+        me,
+        { conversationId, requestId },
+        { waitDelays: [0, 50, 100, 200, 400, 800, 1600] },
+      )
+      // 闸门：先后顺序不定，即使上游已被调用也停在首块之前，由停止中止
+      const gated = gatedModel({ chunks: 10, gates: [0] })
+      const { response, settled } = await begin(
+        me,
+        { modelId, text: 'hi', conversationId, requestId },
+        { mock: gated.model },
+      )
+      expect(await stopping).toMatchObject({ status: 200, body: { status: 'aborted' } })
+      await bodyText(response)
+      await settled()
+      const { message, hold } = await assistantMessage(conversationId)
+      expect(message).toMatchObject({ status: 'aborted', parts: [], credits: 2 })
+      expect(hold).toMatchObject({ status: 'captured', captured_amount: 2 })
+      expect(await consumeLedger(me.workspaceId)).toEqual([{ delta: -2 }])
+      await assertInvariant(me.workspaceId)
+    })
+
+    it('跨 isolate、停止先于入库：等待回复入库后按检查点结算，原流在下个检查点中止且不重复结算', async () => {
+      const me = await member('req-stop-remote-early', 100)
+      const modelId = await textModel(perCall)
+      const conversationId = await emptyConversation(me)
+      const requestId = newId()
+      const gated = gatedModel({ chunks: 120, gates: [0] })
+      // 停止落在没有该请求、也不共享标记的 isolate
+      const stopping = stopByRequest(
+        me,
+        { conversationId, requestId },
+        {
+          activeRequests: new Map(),
+          pendingStops: new Map(),
+          waitDelays: [0, 50, 100, 200, 400, 800, 1600],
+        },
+      )
+      const { response, settled } = await begin(
+        me,
+        { modelId, text: 'hi', conversationId, requestId },
+        { mock: gated.model },
+      )
+      await gated.reached(0)
+      const { message } = await assistantMessage(conversationId)
+      expect(await stopping).toEqual({
+        status: 200,
+        body: { status: 'aborted', messageId: message.id },
+      })
+      // 停止时只有 0 输出的初始检查点：按次计费无输出，释放预扣
+      expect(await assistantMessage(conversationId)).toMatchObject({
+        message: { status: 'aborted', parts: [], credits: 0 },
+        hold: { status: 'released' },
+      })
+      gated.open(0)
+      const streamed = streamedText(await bodyText(response))
+      await settled()
+      expect(streamed.length).toBeLessThan(120 * 8)
+      expect(await assistantMessage(conversationId)).toMatchObject({
+        message: { status: 'aborted', parts: [], credits: 0 },
+        hold: { status: 'released' },
+      })
+      expect(await consumeLedger(me.workspaceId)).toEqual([])
+      expect(await getCreditBalance(db, me.workspaceId)).toMatchObject({ available: 100, held: 0 })
+    })
+
+    it.each(['local', 'remote'] as const)(
+      '%s：回复已入库但客户端还没收到 start，与按回复 ID 停止结果一致',
+      async (path) => {
+        const me = await member(`req-stop-${path}`, 100)
+        const modelId = await textModel(perCall)
+        const conversationId = await emptyConversation(me)
+        const requestId = newId()
+        const gated = gatedModel({ chunks: 120, gates: [30] })
+        const { response, settled } = await begin(
+          me,
+          { modelId, text: 'hi', conversationId, requestId },
+          { mock: gated.model },
+        )
+        await gated.reached(30)
+        const message = await until(
+          async () => (await assistantMessage(conversationId)).message,
+          (m) => m.usage_checkpoint?.outputTokens === 200,
+        )
+        expect(
+          await stopByRequest(
+            me,
+            { conversationId, requestId },
+            path === 'remote' ? { activeRequests: new Map(), pendingStops: new Map() } : {},
+          ),
+        ).toEqual({ status: 200, body: { status: 'aborted', messageId: message.id } })
+        gated.open(30)
+        const streamed = streamedText(await bodyText(response))
+        await settled()
+        expect(streamed.length).toBeLessThan(120 * 8)
+        expect((await assistantMessage(conversationId)).message).toMatchObject({
+          status: 'aborted',
+          credits: 3,
+        })
+        expect(await consumeLedger(me.workspaceId)).toEqual([{ delta: -3 }])
+        await assertInvariant(me.workspaceId)
+      },
+    )
+
+    it('只能停止本人对话：他人返回 404 且不影响原请求；请求体不合法返回 400', async () => {
+      const owner = await member('req-stop-owner', 100)
+      const other = await member('req-stop-other')
+      await db.insert(memberTable).values({
+        id: newId(),
+        organizationId: owner.workspaceId,
+        userId: other.userId,
+        role: 'admin',
+      })
+      const modelId = await textModel(perCall)
+      const conversationId = await emptyConversation(owner)
+      const requestId = newId()
+      // 他人先以同一请求 ID 发起停止：标记键含用户 ID，不影响发起者
+      const peek = await stopByRequest(
+        { slug: owner.slug, cookie: other.cookie },
+        { conversationId, requestId },
+      )
+      expect(peek).toMatchObject({ status: 404, body: { error: { code: 'NOT_FOUND' } } })
+      await send(
+        owner,
+        { modelId, text: 'hi', conversationId, requestId },
+        { mock: mockModel('done', { input: 5, output: 1 }) },
+      )
+      const { message } = await assistantMessage(conversationId)
+      expect(message).toMatchObject({ status: 'completed', credits: 3 })
+      const otherStop = await stopByRequest(
+        { slug: owner.slug, cookie: other.cookie },
+        { conversationId, requestId },
+      )
+      expect(otherStop.status).toBe(404)
+      expect(await stopByRequest(owner, { conversationId, requestId })).toEqual({
+        status: 200,
+        body: { status: 'completed', messageId: message.id },
+      })
+      const missing = await stopByRequest(owner, { conversationId: newId(), requestId: newId() })
+      expect(missing.status).toBe(404)
+      const invalid = await stopByRequest(owner, { conversationId, requestId: 'not-a-uuid' })
+      expect(invalid.status).toBe(400)
     })
   })
 

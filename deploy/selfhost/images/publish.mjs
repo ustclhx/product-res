@@ -22,7 +22,7 @@ assertCompleteCatalog(catalog)
 const loadJson = (file) => JSON.parse(readFileSync(file, 'utf8'))
 const artifacts = resolve(artifactDirectory)
 const reports = new Map()
-// 两架构与完整集合先验收，再允许任何写入。消费相同 run 的只读构建 artifact。
+// 发布架构（amd64）与完整集合先验收，再允许任何写入。消费相同 run 的只读构建 artifact。
 for (const arch of architectures) {
   const directory = join(artifacts, `selfhost-images-${sha}-${arch}`)
   const build = loadJson(join(directory, 'build.json'))

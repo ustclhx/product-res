@@ -1,0 +1,18 @@
+{
+  "kind": "generation",
+  "promptVersion": "product-intro@v2",
+  "renderedHash": "sha256:9744ac92366281cde24c1a77346c46dabbee85a0a4d61f46c14df7e1afab35ae",
+  "model": {
+    "key": "deepseek-chat",
+    "provider": "deepseek",
+    "providerModelId": "deepseek-chat"
+  },
+  "output": "## 概述\n\n这是一款面向学生的手账本，内含月计划与周计划页，便于安排学习与日常事务。纸张为一百二十克，书写时不易洇墨。\n\n## 亮点\n\n- 一百二十克纸，不洇墨\n- 设有月计划页与周计划页\n- 线装装订，可平摊书写\n\n## 适合人群\n\n适合喜欢做计划的学生，可用于记录课程安排、作业进度与日常事项。",
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 140,
+    "outputTokens": 101
+  },
+  "recordedAt": "2026-11-14T07:12:25.478Z",
+  "source": "recorded"
+}

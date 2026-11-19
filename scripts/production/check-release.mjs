@@ -2,15 +2,19 @@ import { execFile } from 'node:child_process'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
+import { checkCi, ciRunsViaGh, isOnMainViaGit, policyEnv } from './release-policy.mjs'
 
 const execFileAsync = promisify(execFile)
 
 /**
  * 生产发布前置校验（production-deployment spec）：被发布的提交必须在 main 历史上，
- * 且该完整 SHA 有一次成功的 `Deploy staging` 运行。任一不满足即在迁移前失败。
+ * 且该完整 SHA 有成功的 staging 与 main push CI 运行。CI 仅允许共享策略声明的绕过。
  * 只输出结论，不输出 API 响应正文。
  */
-export async function checkRelease(sha, { isOnMain, stagingRuns, write = console.error }) {
+export async function checkRelease(
+  sha,
+  { isOnMain, stagingRuns, write = console.error, ...policy },
+) {
   if (!/^[0-9a-f]{40}$/.test(sha ?? '')) {
     write('release check: expected a full 40-character commit SHA')
     return 1
@@ -26,16 +30,7 @@ export async function checkRelease(sha, { isOnMain, stagingRuns, write = console
     return 1
   }
   write(`release check: ${sha} is on main and was deployed to staging`)
-  return 0
-}
-
-async function isOnMainViaGit(sha) {
-  try {
-    await execFileAsync('git', ['merge-base', '--is-ancestor', sha, 'origin/main'])
-    return true
-  } catch {
-    return false
-  }
+  return checkCi(sha, { ...policy, write })
 }
 
 async function stagingRunsViaGh(sha) {
@@ -54,5 +49,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   process.exitCode = await checkRelease(process.argv[2], {
     isOnMain: isOnMainViaGit,
     stagingRuns: stagingRunsViaGh,
+    ciRuns: ciRunsViaGh,
+    ...policyEnv(),
   })
 }

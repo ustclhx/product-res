@@ -19,7 +19,7 @@
     },
     {
       "binding": "HYPERDRIVE_CACHED",
-      "id": "00000000000000000000000000000000",
+      "id": "00000000000000000000000000000001",
       "localConnectionString": "postgres://app:app@localhost:5432/product_res_dev"
     }
   ],
@@ -27,11 +27,12 @@
 
   // web 投递业务事件，jobs 消费并从 Cron 投递对账告警。
   // max_retries 与 src/queues/email.ts 的 EMAIL_MAX_ATTEMPTS（首次 + 5 次重试）一致；
-  // 不配置死信队列：最后一次投递仍失败时由消费者确认并记录 email.dropped（原因见该文件注释）。
+  // 邮件不配置死信队列：最后一次投递仍失败时由消费者确认并记录 email.dropped（原因见该文件注释）。
   "queues": {
     "producers": [
       { "queue": "product-res-email", "binding": "EMAIL_QUEUE" },
-      { "queue": "product-res-events", "binding": "EVENTS_QUEUE" }
+      { "queue": "product-res-events", "binding": "EVENTS_QUEUE" },
+      { "queue": "product-res-events-dlq", "binding": "EVENTS_DLQ" }
     ],
     "consumers": [
       {
@@ -44,11 +45,18 @@
         "queue": "product-res-events",
         "max_batch_size": 10,
         "max_batch_timeout": 5,
-        "max_retries": 5
+        "max_retries": 5,
+        "dead_letter_queue": "product-res-events-dlq"
+      },
+      {
+        "queue": "product-res-events-dlq",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 100
       }
     ]
   },
-  "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
+  "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000002" }],
   "triggers": {
     // 心跳：写 setting 表的 jobs.lastCronAt（src/cron/heartbeat.ts）
     "crons": ["*/5 * * * *", "0 3 * * *", "0 * * * *", "*/10 * * * *", "0 4 * * *"]
@@ -60,29 +68,33 @@
       "name": "product-res-jobs-staging",
       "vars": {
         "SENTRY_ENVIRONMENT": "staging",
+        "APP_URL": "https://staging.product.ezarouter.cc",
+        "PLAUSIBLE_DOMAIN": "product-res-staging",
+        "PLAUSIBLE_HOST": "",
         "AI_FAULT_INJECTION": "enabled",
         "PAYMENT_MODE": "test",
         "CRON_PROFILE": "reduced"
       },
 
       "r2_buckets": [{ "binding": "FILES", "bucket_name": "product-res-files-staging" }],
-      // 计费 Cron 验收需要查询一小时内的完整日志，仅 staging 开启日志采集。
+      // 计费 Cron 验收需要查询一小时内的完整日志，staging 开启日志采集。
       "observability": {
         "enabled": true,
         "head_sampling_rate": 1,
         "traces": { "enabled": false }
       },
-      "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
+      "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000003" }],
       "hyperdrive": [
         // Neon product_res_staging，app 非 pooled TLS 直连；分别关闭缓存与缓存 60 秒（docs/07 §2）
-        { "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000" },
-        { "binding": "HYPERDRIVE_CACHED", "id": "00000000000000000000000000000000" }
+        { "binding": "HYPERDRIVE", "id": "00000000000000000000000000000004" },
+        { "binding": "HYPERDRIVE_CACHED", "id": "00000000000000000000000000000005" }
       ],
 
       "queues": {
         "producers": [
           { "queue": "product-res-email-staging", "binding": "EMAIL_QUEUE" },
-          { "queue": "product-res-events-staging", "binding": "EVENTS_QUEUE" }
+          { "queue": "product-res-events-staging", "binding": "EVENTS_QUEUE" },
+          { "queue": "product-res-events-dlq-staging", "binding": "EVENTS_DLQ" }
         ],
         "consumers": [
           {
@@ -95,7 +107,14 @@
             "queue": "product-res-events-staging",
             "max_batch_size": 10,
             "max_batch_timeout": 5,
-            "max_retries": 5
+            "max_retries": 5,
+            "dead_letter_queue": "product-res-events-dlq-staging"
+          },
+          {
+            "queue": "product-res-events-dlq-staging",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 100
           }
         ]
       },
@@ -105,27 +124,32 @@
       }
     },
     // add-cloud-production-neon 2.1：生产资源与 staging 一一对应（production runbook §8.B）。
-    // 测试期沿用 reduced Cron，对外开放注册前改回默认调度（design D7）；不设 PAYMENT_MODE / AI_FAULT_INJECTION。
+    // 无真实用户期间用 reduced Cron，开放支付前显式改回 default（成本基线见 production-neon §4）；不设 PAYMENT_MODE / AI_FAULT_INJECTION。
     "production": {
       "name": "product-res-jobs-production",
+      "observability": { "enabled": true, "head_sampling_rate": 1, "traces": { "enabled": false } },
       "workers_dev": false,
       "preview_urls": false,
       "vars": {
         "SENTRY_ENVIRONMENT": "production",
+        "APP_URL": "https://product.ezarouter.cc",
+        "PLAUSIBLE_DOMAIN": "product-res",
+        "PLAUSIBLE_HOST": "",
         "CRON_PROFILE": "reduced"
       },
 
       "r2_buckets": [{ "binding": "FILES", "bucket_name": "product-res-files-production" }],
-      "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
+      "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000006" }],
       "hyperdrive": [
-        { "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000" },
-        { "binding": "HYPERDRIVE_CACHED", "id": "00000000000000000000000000000000" }
+        { "binding": "HYPERDRIVE", "id": "00000000000000000000000000000007" },
+        { "binding": "HYPERDRIVE_CACHED", "id": "00000000000000000000000000000008" }
       ],
 
       "queues": {
         "producers": [
           { "queue": "product-res-email-production", "binding": "EMAIL_QUEUE" },
-          { "queue": "product-res-events-production", "binding": "EVENTS_QUEUE" }
+          { "queue": "product-res-events-production", "binding": "EVENTS_QUEUE" },
+          { "queue": "product-res-events-dlq-production", "binding": "EVENTS_DLQ" }
         ],
         "consumers": [
           {
@@ -138,7 +162,14 @@
             "queue": "product-res-events-production",
             "max_batch_size": 10,
             "max_batch_timeout": 5,
-            "max_retries": 5
+            "max_retries": 5,
+            "dead_letter_queue": "product-res-events-dlq-production"
+          },
+          {
+            "queue": "product-res-events-dlq-production",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 100
           }
         ]
       },

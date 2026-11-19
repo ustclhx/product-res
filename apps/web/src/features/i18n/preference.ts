@@ -1,9 +1,10 @@
-import { baseLocale, cookieName, isLocale, type Locale } from '../../paraglide/runtime.js'
+import { cookieName, type Locale } from '../../paraglide/runtime.js'
 import { isAppAreaPath } from './app-area.ts'
 
 // 与 Paraglide 自动同步的 Cookie 分开，只有手动选择 / 关闭建议才记为已选择。
 export const PREFERENCE_COOKIE = 'locale-preference'
-const MAX_AGE = 365 * 86400
+/** 语言 Cookie 的有效期（秒）；首帧前脚本（suggestion.ts）写同样的 Cookie */
+export const LOCALE_COOKIE_MAX_AGE = 365 * 86400
 
 export function readCookie(cookie: string, name: string): string | undefined {
   return cookie
@@ -14,7 +15,7 @@ export function readCookie(cookie: string, name: string): string | undefined {
 }
 
 export function localeCookie(locale: Locale, secure = false, name = cookieName): string {
-  return `${name}=${locale}; Path=/; Max-Age=${MAX_AGE}; SameSite=Lax${secure ? '; Secure' : ''}`
+  return `${name}=${locale}; Path=/; Max-Age=${LOCALE_COOKIE_MAX_AGE}; SameSite=Lax${secure ? '; Secure' : ''}`
 }
 
 export function rememberLocale(locale: Locale): void {
@@ -23,27 +24,6 @@ export function rememberLocale(locale: Locale): void {
   document.cookie = localeCookie(locale, secure)
   // biome-ignore lint/suspicious/noDocumentCookie: 同步保存已选择标记，避免刷新后重复建议。
   document.cookie = localeCookie(locale, secure, PREFERENCE_COOKIE)
-}
-
-/** Accept-Language 按权重匹配配置语言；不跳转，q=0 的语言不参与建议。 */
-export function preferredLocale(header: string | null): Locale {
-  const preferences = (header ?? '')
-    .split(',')
-    .map((part) => {
-      const [tag = '', ...params] = part.trim().split(';')
-      const weight = params.find((param) => param.trim().startsWith('q='))
-      const q = weight ? Number(weight.trim().slice(2)) : 1
-      return { tag: tag.toLowerCase(), q }
-    })
-    .filter(({ q }) => Number.isFinite(q) && q > 0 && q <= 1)
-    .sort((a, b) => b.q - a.q)
-  for (const { tag } of preferences) {
-    if (isLocale(tag)) return tag
-    const language = tag.split('-')[0]
-    if (isLocale(language)) return language
-    if (tag === '*') return baseLocale
-  }
-  return baseLocale
 }
 
 /** Server Functions 复用同源来源页的语言；不接受跨站来源影响本次语言。 */

@@ -3,36 +3,7 @@ import type { ComponentProps, ReactNode } from 'react'
 import { m } from '../../paraglide/messages.js'
 import { ADMIN_COPY } from './copy.ts'
 
-/**
- * 后台页面共用的布局与表单小件。@product-res/ui 没有 textarea / select / checkbox，
- * 这里按 Input 的样式补齐，避免 Tailwind preflight 后原生控件失去边框而“看不见”。
- */
-
-// 与 @product-res/ui Input 保持一致的边框、圆角、焦点与禁用样式
-const controlClass =
-  'w-full min-w-0 rounded-md border border-input bg-transparent px-3 text-base shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30'
-
-export function Textarea({ className, ...props }: ComponentProps<'textarea'>) {
-  return <textarea className={cn(controlClass, 'min-h-20 py-2', className)} {...props} />
-}
-
-export function NativeSelect({ className, ...props }: ComponentProps<'select'>) {
-  return <select className={cn(controlClass, 'h-9 bg-background py-1', className)} {...props} />
-}
-
-/** 复选框 + 文字：整行是 label，可访问名称即文字本身 */
-export function CheckboxField({
-  label,
-  className,
-  ...props
-}: Omit<ComponentProps<'input'>, 'type'> & { label: ReactNode }) {
-  return (
-    <label className={cn('flex items-center gap-2 text-sm', className)}>
-      <input type="checkbox" className="size-4 shrink-0 accent-primary" {...props} />
-      {label}
-    </label>
-  )
-}
+/** 后台页面共用的布局、字段与展示小件；交互控件统一使用 @product-res/ui。 */
 
 /** 标签 + 控件 + 说明的纵向字段；控件需自带与 htmlFor 一致的 id */
 export function Field({

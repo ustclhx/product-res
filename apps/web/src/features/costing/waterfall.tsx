@@ -9,18 +9,27 @@ import { WATERFALL_LABELS } from './labels.ts'
  * 亏损时剩余越过 0 的部分截在 0，净利润画成负向红条。
  */
 
-const COLORS = {
-  price: '#1677ff',
-  cost: '#ff7875',
-  ads: '#ffc53d',
-  profit: '#52c41a',
-  loss: '#ff4d4f',
+type Tone = 'price' | 'cost' | 'ads' | 'profit' | 'loss'
+
+/** 各段语义色：售价=主色，成本=错误色淡化，广告/退货预留=警告色，盈利=成功色，亏损=错误色 */
+const TONES: Record<Tone, { token: string; opacity: number }> = {
+  price: { token: '--primary', opacity: 0.85 },
+  cost: { token: '--destructive', opacity: 0.75 },
+  ads: { token: '--warning', opacity: 0.85 },
+  profit: { token: '--success', opacity: 1 },
+  loss: { token: '--destructive', opacity: 1 },
+}
+
+/** ECharts 只接受具体颜色字符串：渲染时从根元素读取设计 token（服务端无 document，返回空串） */
+function token(name: string) {
+  if (typeof document === 'undefined') return ''
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
 }
 
 export function waterfallRows(salePriceMinor: number, steps: readonly WaterfallStep[]) {
   let remaining = salePriceMinor
-  const rows: { label: string; base: number; value: number; amount: number; color: string }[] = [
-    { label: '售价', base: 0, value: salePriceMinor, amount: salePriceMinor, color: COLORS.price },
+  const rows: { label: string; base: number; value: number; amount: number; tone: Tone }[] = [
+    { label: '售价', base: 0, value: salePriceMinor, amount: salePriceMinor, tone: 'price' },
   ]
   for (const step of steps) {
     if (step.key === 'netProfit') {
@@ -29,7 +38,7 @@ export function waterfallRows(salePriceMinor: number, steps: readonly WaterfallS
         base: 0,
         value: step.amountMinor,
         amount: step.amountMinor,
-        color: step.amountMinor >= 0 ? COLORS.profit : COLORS.loss,
+        tone: step.amountMinor >= 0 ? 'profit' : 'loss',
       })
       continue
     }
@@ -42,7 +51,7 @@ export function waterfallRows(salePriceMinor: number, steps: readonly WaterfallS
       base: lo,
       value: hi - lo,
       amount: -step.amountMinor,
-      color: step.key === 'ads' || step.key === 'returns' ? COLORS.ads : COLORS.cost,
+      tone: step.key === 'ads' || step.key === 'returns' ? 'ads' : 'cost',
     })
   }
   return rows
@@ -76,7 +85,7 @@ function option(salePriceMinor: number, steps: readonly WaterfallStep[], currenc
       axisLine: { show: false },
       axisLabel: {
         fontSize: 12,
-        color: '#595959',
+        color: token('--subtle-foreground'),
         fontWeight: (v: string) => (v === '净利润' ? 600 : 400),
       },
     },
@@ -94,7 +103,11 @@ function option(salePriceMinor: number, steps: readonly WaterfallStep[], currenc
         barWidth: 14,
         data: rows.map((r) => ({
           value: major(r.value),
-          itemStyle: { color: r.color, borderRadius: 3, opacity: r.label === '售价' ? 0.85 : 1 },
+          itemStyle: {
+            color: token(TONES[r.tone].token),
+            borderRadius: 3,
+            opacity: TONES[r.tone].opacity,
+          },
         })),
         label: {
           show: true,
@@ -107,7 +120,7 @@ function option(salePriceMinor: number, steps: readonly WaterfallStep[], currenc
             const text = formatMoney(Math.abs(row.amount), null)
             return row.label === '售价' || row.amount >= 0 ? text : `-${text}`
           },
-          color: '#262626',
+          color: token('--foreground'),
         },
       },
     ],

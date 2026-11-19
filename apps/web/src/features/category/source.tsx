@@ -21,7 +21,7 @@ export function SourcePopover({
   return (
     <details className={cn('group relative inline-block', className)} data-slot="source">
       <summary
-        className="inline-flex cursor-pointer list-none items-center gap-0.5 rounded px-1 text-[11px] text-subtle-foreground hover:bg-muted hover:text-primary [&::-webkit-details-marker]:hidden"
+        className="inline-flex cursor-pointer list-none items-center gap-0.5 rounded px-1 text-micro text-subtle-foreground hover:bg-muted hover:text-primary-text [&::-webkit-details-marker]:hidden"
         aria-label={`查看${label}`}
       >
         <svg viewBox="0 0 16 16" className="size-3" aria-hidden="true">

@@ -14,10 +14,13 @@ test('Stripe 测试卡订阅：从定价页结账、回跳与回调入账只发�
   const slug = new URL(page.url()).pathname.split('/')[2] as string
 
   await page.goto('/pricing')
-  await page.getByLabel('Payment method').selectOption('stripe')
-  const pro = page.locator('section').filter({ has: page.getByRole('heading', { name: /^Pro\b/ }) })
-  await expect(pro.getByText('$19.00 / month')).toBeVisible()
-  await pro.getByRole('link', { name: 'View in my workspace' }).click()
+  // 定价页按套餐类型分组（add-ui-design-system 8.7），订阅卡默认展示月付价格
+  const pro = page
+    .getByRole('listitem')
+    .filter({ has: page.getByRole('heading', { name: /^Pro\b/ }) })
+  await expect(pro.getByText('$19', { exact: true })).toBeVisible()
+  await expect(pro.getByText('/ month', { exact: true })).toBeVisible()
+  await pro.getByRole('link', { name: /^Subscribe to Pro\b/ }).click()
   await expect(page).toHaveURL(new RegExp(`/app/${slug}`))
 
   await startStripeCheckout(page, slug, PRO_MONTHLY)

@@ -1,7 +1,9 @@
 import { Button } from '@product-res/ui'
 import { createFileRoute, notFound as featureNotFound } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import { useAppShellBarAvailable } from '../../../features/app-shell/bar.tsx'
 import { getCustomerUsage } from '../../../features/billing/customer.functions.ts'
+import { m } from '../../../paraglide/messages.js'
 import { templateConfig } from '../../../server/template-config.ts'
 
 export const Route = createFileRoute('/app/$slug/usage')({
@@ -13,6 +15,7 @@ export const Route = createFileRoute('/app/$slug/usage')({
   component: UsagePage,
 })
 function UsagePage() {
+  const inShell = useAppShellBarAvailable()
   const initial = Route.useLoaderData()
   const { slug } = Route.useParams()
   const [page, setPage] = useState(initial)
@@ -41,7 +44,8 @@ function UsagePage() {
   }
   return (
     <div className="grid gap-6">
-      <h2 className="text-2xl font-semibold">Credit usage</h2>
+      {/* 工作台顶部条已显示页面标题（h1），不再重复 */}
+      {inShell ? null : <h2 className="text-2xl font-semibold">Credit usage</h2>}
       {page.balance ? (
         <p>
           Available: {page.balance.available} · Held: {page.balance.held} · Debt:{' '}
@@ -66,7 +70,7 @@ function UsagePage() {
             <tbody>
               {page.batches.items.map((batch) => (
                 <tr key={batch.id}>
-                  <td>{batch.source}</td>
+                  <td>{batch.source === 'daily' ? m.daily_credits_source() : batch.source}</td>
                   <td>{batch.amount}</td>
                   <td>{batch.remaining}</td>
                   <td>{batch.status}</td>
@@ -110,8 +114,8 @@ function UsagePage() {
                   {item.delta}
                 </td>
                 <td>
-                  {item.refType}
-                  {item.refId ? ` · ${item.refId}` : ''}
+                  {item.refType === 'daily' ? m.daily_credits_source() : item.refType}
+                  {item.refType !== 'daily' && item.refId ? ` · ${item.refId}` : ''}
                 </td>
                 <td>{item.grantId ?? '—'}</td>
               </tr>

@@ -3,6 +3,19 @@
   "name": "product-res-web",
   // 自定义入口：先校验环境变量，再交给 TanStack Start（src/server.ts）
   "main": "./src/server.ts",
+  // HTML / 动态路由走安全头入口；构建静态资源、OG 图片与分享卡片字体直接由 Asset Worker 返回。
+  "assets": {
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/*",
+      "!/assets/*",
+      "!/og/*",
+      "!/fonts/share-card/*",
+      // 本地 dev：嵌入式对话 e2e 的测试模块（e2e/subject-chat，playwright.subject-chat.config.ts）由 Vite 提供，
+      // 不经 Worker（项目的站点守卫会拦下）；生产没有 /e2e 下的资源，由 Asset Worker 返回 404（#373）
+      "!/e2e/*"
+    ]
+  },
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
 
@@ -20,7 +33,7 @@
     },
     {
       "binding": "HYPERDRIVE_CACHED",
-      "id": "00000000000000000000000000000000",
+      "id": "00000000000000000000000000000001",
       "localConnectionString": "postgres://app:app@localhost:5432/product_res_dev"
     }
   ],
@@ -34,19 +47,23 @@
     ]
   },
   // Better Auth 会话的 secondaryStorage（packages/auth/src/session.ts）；本地由 Miniflare 模拟，id 为占位值
-  "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
+  "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000002" }],
   // 认证入口按 IP + 邮箱限流（packages/auth/src/protection.ts）：每个 key 每 60 秒 10 次；
-  // AI 接口按空间 + 用户限流（features/ai/chat.ts）：每个 key 每 60 秒 20 次，只用于防刷；本地由 Miniflare 模拟
+  // AI 接口按空间 + 用户限流（features/ai/chat.ts）：每个 key 每 60 秒 20 次，只用于防刷；
+  // 分享卡片缓存未命中与分享页按 IP 限流（features/share-cards）：每个 key 每 60 秒 30 次；本地由 Miniflare 模拟
   "ratelimits": [
     { "name": "RL_AUTH", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
     { "name": "RL_AI", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } },
-    { "name": "RL_API", "namespace_id": "1005", "simple": { "limit": 60, "period": 60 } }
+    { "name": "RL_API", "namespace_id": "1005", "simple": { "limit": 60, "period": 60 } },
+    { "name": "RL_SHARE_CARD", "namespace_id": "1010", "simple": { "limit": 30, "period": 60 } }
   ],
   // 本地开发的站点地址；`vite dev` 时由 vite.config.ts 按 .env.worktree 的端口覆盖。
   // TURNSTILE_SITE_KEY 为 Cloudflare 官方测试 site key（始终通过），与 .dev.vars 中的测试 secret 配对
   "vars": {
     "SENTRY_ENVIRONMENT": "development",
     "PAYMENT_MODE": "test",
+    // 组件预览页 /dev/ui（openspec add-ui-design-system D6）：开发与 staging 开启，production 不设（发布门禁拦截）
+    "UI_PREVIEW": "true",
     "APP_URL": "http://localhost:3000",
     "R2_FILES_BUCKET": "product-res-files"
   },
@@ -61,9 +78,12 @@
       "r2_buckets": [{ "binding": "FILES", "bucket_name": "product-res-files-staging" }],
       "vars": {
         "SENTRY_ENVIRONMENT": "staging",
+        "PLAUSIBLE_DOMAIN": "product-res-staging",
+        "PLAUSIBLE_HOST": "",
         "AI_FAULT_INJECTION": "enabled",
         "PAYMENT_MODE": "test",
-        "APP_URL": "https://product.ezarouter.cc",
+        "UI_PREVIEW": "true",
+        "APP_URL": "https://staging.product.ezarouter.cc",
         "AI_GATEWAY_ACCOUNT_ID": "",
         "AI_GATEWAY_ID": "",
         // Gateway 整段缓冲 DeepSeek SSE（#152）；有 DEEPSEEK_API_KEY secret 时直连，缺失时仍走 Gateway。
@@ -71,16 +91,17 @@
         "R2_ACCOUNT_ID": "",
         "R2_FILES_BUCKET": "product-res-files-staging"
       },
-      "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
+      "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000003" }],
       "ratelimits": [
         { "name": "RL_AUTH", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } },
         { "name": "RL_AI", "namespace_id": "1004", "simple": { "limit": 20, "period": 60 } },
-        { "name": "RL_API", "namespace_id": "1006", "simple": { "limit": 60, "period": 60 } }
+        { "name": "RL_API", "namespace_id": "1006", "simple": { "limit": 60, "period": 60 } },
+        { "name": "RL_SHARE_CARD", "namespace_id": "1011", "simple": { "limit": 30, "period": 60 } }
       ],
       "hyperdrive": [
         // Neon product_res_staging，app 非 pooled TLS 直连；分别关闭缓存与缓存 60 秒（docs/07 §2）
-        { "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000" },
-        { "binding": "HYPERDRIVE_CACHED", "id": "00000000000000000000000000000000" }
+        { "binding": "HYPERDRIVE", "id": "00000000000000000000000000000004" },
+        { "binding": "HYPERDRIVE_CACHED", "id": "00000000000000000000000000000005" }
       ],
 
       "queues": {
@@ -91,9 +112,10 @@
       }
     },
     // add-cloud-production-neon 2.1：生产资源与 staging 一一对应，不复用任何 staging ID（production runbook §8.B）。
-    // 不设 PAYMENT_MODE（Q9 前支付关闭）与 AI_FAULT_INJECTION（生产禁止）；Turnstile 站点 product-res-production 仅允许 app.ezarouter.cc。
+    // 不设 PAYMENT_MODE（Q9 前支付关闭）、AI_FAULT_INJECTION（生产禁止）与 UI_PREVIEW（组件预览页生产 404）；Turnstile 站点 product-res-production 仅允许本项目的生产域名。
     "production": {
       "name": "product-res-web-production",
+      "observability": { "enabled": true, "head_sampling_rate": 1, "traces": { "enabled": false } },
       "workers_dev": false,
       "preview_urls": false,
       "routes": [{ "pattern": "configure-production-domain.invalid", "custom_domain": true }],
@@ -101,21 +123,24 @@
       "r2_buckets": [{ "binding": "FILES", "bucket_name": "product-res-files-production" }],
       "vars": {
         "SENTRY_ENVIRONMENT": "production",
+        "PLAUSIBLE_DOMAIN": "product-res",
+        "PLAUSIBLE_HOST": "",
         "APP_URL": "https://product.ezarouter.cc",
         "AI_TEXT_EGRESS": "direct",
         "R2_ACCOUNT_ID": "",
         "R2_FILES_BUCKET": "product-res-files-production"
       },
-      "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
+      "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000006" }],
       "ratelimits": [
         { "name": "RL_AUTH", "namespace_id": "1007", "simple": { "limit": 10, "period": 60 } },
         { "name": "RL_AI", "namespace_id": "1008", "simple": { "limit": 20, "period": 60 } },
-        { "name": "RL_API", "namespace_id": "1009", "simple": { "limit": 60, "period": 60 } }
+        { "name": "RL_API", "namespace_id": "1009", "simple": { "limit": 60, "period": 60 } },
+        { "name": "RL_SHARE_CARD", "namespace_id": "1012", "simple": { "limit": 30, "period": 60 } }
       ],
       "hyperdrive": [
         // Neon product_res_production，app 非 pooled TLS 直连；分别关闭缓存与默认缓存
-        { "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000" },
-        { "binding": "HYPERDRIVE_CACHED", "id": "00000000000000000000000000000000" }
+        { "binding": "HYPERDRIVE", "id": "00000000000000000000000000000007" },
+        { "binding": "HYPERDRIVE_CACHED", "id": "00000000000000000000000000000008" }
       ],
 
       "queues": {

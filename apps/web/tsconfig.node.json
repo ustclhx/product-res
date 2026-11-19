@@ -1,7 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["node"]
+    "types": ["node"],
+    // 构建期分享图（scripts/og-images.ts）复用 src 中的 JSX 版式
+    "jsx": "react-jsx"
   },
   "include": [
     "vite.config.ts",

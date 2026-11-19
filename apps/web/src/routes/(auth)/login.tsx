@@ -20,6 +20,7 @@ import { getAuthUiOptions } from '../../features/auth/options.functions.ts'
 import type { AuthUiOptions } from '../../features/auth/options.ts'
 import { useTurnstile } from '../../features/auth/turnstile.tsx'
 import { useAuthRequest } from '../../features/auth/use-auth-request.ts'
+import { compactSearch, optionalString } from '../../features/routing/search.ts'
 import { m } from '../../paraglide/messages.js'
 
 /** 按当前请求或页面语言读取文案，避免在模块初始化时固定语言。 */
@@ -114,7 +115,11 @@ type Mode = keyof typeof COPY.modes
 
 export const Route = createFileRoute('/(auth)/login')({
   // OAuth / 魔法链接失败时 Better Auth 把错误码放在 ?error= 中带回登录页
-  validateSearch: z.object({ error: z.string().optional(), redirect: z.string().optional() }),
+  validateSearch: (search: Record<string, unknown>) =>
+    compactSearch({
+      error: optionalString(search.error),
+      redirect: optionalString(search.redirect),
+    }),
   loader: () => getAuthUiOptions(),
   head: () => ({ meta: [{ title: COPY.metaTitle }] }),
   component: LoginPage,

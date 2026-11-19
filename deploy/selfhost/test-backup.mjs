@@ -39,7 +39,12 @@ const harnessRevision = execFileSync('git', ['rev-parse', 'HEAD'], {
 }).trim()
 const bundleDirectory = resolve(option('--bundle-dir', join(root, 'deploy/selfhost')))
 let bundleRelease
-const output = resolve(option('--output', join(tmpdir(), `selfhost-d-backup-evidence-${sha}`)))
+const output = resolve(
+  option(
+    '--output',
+    join(process.env.EVIDENCE_DIR || 'test-results/evidence', 'selfhost', `backup-${sha}`),
+  ),
+)
 const temporary = realpathSync(mkdtempSync(join(tmpdir(), 'selfhost-d-backup-')))
 chmodSync(temporary, 0o700)
 const project = `selfhost-d-drill-${randomBytes(6).toString('hex')}`

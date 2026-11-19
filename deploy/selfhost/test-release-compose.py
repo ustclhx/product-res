@@ -526,7 +526,10 @@ class Acceptance:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--bundle', required=True, type=Path)
-    parser.add_argument('--evidence', required=True, type=Path)
+    parser.add_argument(
+        '--evidence', type=Path,
+        default=Path(os.environ.get('EVIDENCE_DIR') or 'test-results/evidence') / 'selfhost/release-compose.json',
+    )
     args = parser.parse_args()
     os.umask(0o077)
     acceptance = None

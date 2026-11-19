@@ -2,14 +2,26 @@ name: Selfhost images
 
 on:
   pull_request:
-    # 纯文档/规格/证据改动不影响镜像内容，跳过约 15 分钟的双架构构建；发布经 workflow_call 不受影响。
-    paths-ignore:
-      - 'docs/**'
-      - 'openspec/**'
-      - '**/*.md'
+    # PR 只在可能让镜像构建/运行与普通 CI 结果不同的改动上构建：selfhost 材料与 Dockerfile、
+    # 本 workflow、依赖清单（决定 pnpm deploy --prod 闭包与原生 sharp）、PG 镜像复制的
+    # initdb SQL、镜像构建上下文中的 Node 构建入口。应用源码本身由 CI 的 build:node 覆盖，
+    # 合并后 main push 仍全量构建。末尾排除纯文档改动。
+    paths:
+      - 'deploy/selfhost/**'
+      - '.github/workflows/selfhost-images.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'apps/*/package.json'
+      - 'packages/*/package.json'
+      - 'infra/local/initdb/**'
+      - 'scripts/sentry-node-maps.mjs'
+      - 'apps/*/scripts/build-node*.mjs'
+      - 'apps/web/vite.node.config.ts'
+      - '!**/*.md'
   push:
     branches: [main]
-    # 纯文档/规格/证据改动不影响镜像内容，跳过约 15 分钟的双架构构建；发布经 workflow_call 不受影响。
+    # 纯文档/规格/证据改动不影响镜像内容，跳过镜像构建；发布经 workflow_call 不受影响。
     paths-ignore:
       - 'docs/**'
       - 'openspec/**'
@@ -24,16 +36,21 @@ on:
 permissions:
   contents: read
 
+# 同一 PR 的新推送取消旧构建；main push 与发布调用（workflow_call 中 run_id 为调用方的）
+# 各用独立 group，不排队、不被取消，发布依赖的验证不会被后续 main push 挤掉。
+concurrency:
+  group: selfhost-images-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   images:
+    # 2026-11 起只构建与发布 linux/amd64；无异构部署需求。arm64 仅保留本机开发构建能力。
     strategy:
       fail-fast: false
       matrix:
         include:
           - arch: amd64
             runner: ubuntu-24.04
-          - arch: arm64
-            runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     permissions:
@@ -46,7 +63,11 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-      - uses: docker/setup-buildx-action@v4
+      # 不使用 setup-buildx 的 docker-container builder：直接用 runner 自带 dockerd 的默认
+      # docker driver 构建，镜像直接进入本机镜像库，省去每个镜像导出 tarball 再 load 的耗时
+      # 与 post 清理。2026-11-18 PR 实测：docker driver 构建 197–213s；docker-container 加
+      # type=gha 层缓存（mode=max）冷 553s、热 675s，应用层每次随源码失效，缓存写入反而更慢。
+      # 本机构建沿用当前 builder；--provenance=false、revision 标签与 image ID 核对不变。
       - name: Resolve actual checked-out revision
         id: source
         run: |
@@ -55,16 +76,28 @@ jobs:
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
       - name: Test publication policy boundaries
         run: node --test deploy/selfhost/images/policy.test.mjs
-      - name: Verify pinned multiarch bases
+      - name: Verify pinned bases include the published platform
         run: node deploy/selfhost/images/check-bases.mjs
       - name: Build and export native images
         run: node deploy/selfhost/images/build.mjs '${{ steps.source.outputs.sha }}' '${{ matrix.arch }}' image-artifacts
       - name: Smoke images and real runtime readiness
         run: node deploy/selfhost/images/smoke.mjs '${{ steps.source.outputs.sha }}' '${{ matrix.arch }}' image-artifacts
       # 只有整组 smoke 通过才供发布 workflow 使用，不上传临时运行文件或容器日志。
+      # 镜像 tar 只在发布调用（workflow_call 带 sha 输入）时上传，供同 run 的 publish 作业加载；
+      # PR/main 只保留 build/smoke 证据 JSON，省去数 GB 的压缩上传。
       - uses: actions/upload-artifact@v6
+        if: inputs.sha
         with:
           name: selfhost-images-${{ steps.source.outputs.sha }}-${{ matrix.arch }}
           path: image-artifacts/
+          if-no-files-found: error
+          retention-days: 3
+          # docker save 的 tar 未压缩；最低压缩级别仍能缩小体积，避免默认级别的 CPU 耗时。
+          compression-level: 1
+      - uses: actions/upload-artifact@v6
+        if: '!inputs.sha'
+        with:
+          name: selfhost-image-evidence-${{ steps.source.outputs.sha }}-${{ matrix.arch }}
+          path: image-artifacts/*.json
           if-no-files-found: error
           retention-days: 3

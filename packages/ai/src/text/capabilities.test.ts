@@ -2,7 +2,11 @@ import type { ModelMessage } from 'ai'
 import { generateText, streamText } from 'ai'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AvailableModel } from '../models.ts'
-import { getTextProviderCapabilities, supportsTextThinking } from './capabilities.ts'
+import {
+  getTextProviderCapabilities,
+  resolveTextThinking,
+  supportsTextThinking,
+} from './capabilities.ts'
 import { defaultLanguageModelFactory } from './model.ts'
 
 const model: AvailableModel = {
@@ -41,6 +45,31 @@ describe('文本 Provider 能力', () => {
       expect(supportsTextThinking(provider, true)).toBe(false)
       expect(supportsTextThinking(provider, false)).toBe(false)
     }
+  })
+
+  it('resolveTextThinking：不可控 Provider 不下发，显式 false 下发关闭，其余按请求', () => {
+    for (const provider of ['openai', 'anthropic', 'google', 'unknown']) {
+      for (const override of [undefined, true, false])
+        for (const requested of [true, false])
+          expect(resolveTextThinking(provider, override, requested)).toBeUndefined()
+    }
+    for (const provider of ['deepseek', 'deepseek.chat']) {
+      expect(resolveTextThinking(provider, false, true)).toBe(false)
+      expect(resolveTextThinking(provider, false, false)).toBe(false)
+      for (const override of [undefined, true]) {
+        expect(resolveTextThinking(provider, override, true)).toBe(true)
+        expect(resolveTextThinking(provider, override, false)).toBe(false)
+      }
+    }
+  })
+
+  it('applyThinking(false) 按 Provider 映射：DeepSeek 下发关闭，其他 Provider 不改参数', () => {
+    expect(getTextProviderCapabilities('deepseek').applyThinking({}, false)).toEqual({
+      reasoning: 'none',
+      providerOptions: { deepseek: { thinking: { type: 'disabled' } } },
+    })
+    for (const provider of ['openai', 'anthropic', 'google', 'workers-ai', 'unknown'])
+      expect(getTextProviderCapabilities(provider).applyThinking({}, false)).toEqual({})
   })
 
   it('DeepSeek 映射保留其他参数，并以新末条 assistant 保存纯正文前缀', () => {

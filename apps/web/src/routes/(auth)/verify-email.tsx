@@ -1,9 +1,9 @@
 import { Button } from '@product-res/ui'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { z } from 'zod'
 import { AFTER_SIGN_IN_PATH } from '../../features/auth/auth-client.ts'
 import { AuthLayout, FormAlert, StatusAlert } from '../../features/auth/auth-layout.tsx'
 import { authErrorMessage } from '../../features/auth/errors.ts'
+import { compactSearch, optionalString } from '../../features/routing/search.ts'
 import { m } from '../../paraglide/messages.js'
 
 /** 按当前请求或页面语言读取文案，避免在模块初始化时固定语言。 */
@@ -36,7 +36,10 @@ const COPY = {
  * （发起验证时 callbackURL=/verify-email）。成功时不带参数且已自动登录；失败时带 ?error=<错误码>。
  */
 export const Route = createFileRoute('/(auth)/verify-email')({
-  validateSearch: z.object({ error: z.string().optional() }),
+  validateSearch: (search: Record<string, unknown>) =>
+    compactSearch({
+      error: optionalString(search.error),
+    }),
   head: () => ({ meta: [{ title: COPY.metaTitle }] }),
   component: VerifyEmailPage,
 })

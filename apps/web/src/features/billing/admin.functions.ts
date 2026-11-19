@@ -23,6 +23,7 @@ import { getWebRuntime } from '../../server/runtime.ts'
 import { templateConfig } from '../../server/template-config.ts'
 import { withAdminAction, withDelegatedAdminAction } from '../admin/action.server.ts'
 import { adminMiddleware } from '../admin/admin.functions.ts'
+import { enqueueServerAnalytics } from '../analytics/server.ts'
 
 import {
   listAdminPayments,
@@ -181,8 +182,16 @@ export const replayAdminWebhook = createServerFn({ method: 'POST' })
           subscriptionCreditGraceHours: templateConfig.billing.subscriptionCreditGraceHours,
         }),
         onFailure: createCompensationFailureHandler(context.db),
-        notify: async ({ delivery }) => {
+        notify: async ({ delivery, events }) => {
           await queue.send(withRequestId({ v: 1, deliveryId: delivery.id }))
+          // 首次处理失败的付款经重放才真正入账，此时才产生 payment_success。
+          for (const event of events)
+            if (event.type === 'payment.succeeded' && event.payment.status === 'succeeded')
+              await enqueueServerAnalytics(queue, {
+                event: 'payment_success',
+                provider: event.provider,
+                providerPaymentId: event.payment.providerPaymentId,
+              })
         },
       })
       return result.status === 'failed'

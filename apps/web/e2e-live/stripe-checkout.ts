@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test'
+import { chooseOption } from '../e2e/select.ts'
 
 // Stripe 托管结账页的操作，供 10.1 与 staging 的 11.1 场景复用。
 // 只用于测试模式：卡号为 Stripe 官方测试卡，服务端运行时也只接受 sk_test_ 密钥。
@@ -13,11 +14,10 @@ export const STRIPE_TEST_CARDS = {
  */
 export async function startStripeCheckout(page: Page, slug: string, price: RegExp) {
   await page.goto(`/app/${slug}/billing`)
-  await page.getByLabel('Payment method').selectOption('stripe')
-  const plan = page.getByLabel('Plan')
-  const option = plan.locator('option', { hasText: price })
-  await expect(option).toHaveCount(1)
-  await plan.selectOption((await option.getAttribute('value')) ?? '')
+  await chooseOption(page.getByRole('combobox', { name: 'Payment method', exact: true }), {
+    value: 'stripe',
+  })
+  await chooseOption(page.getByRole('combobox', { name: 'Plan', exact: true }), price)
   await page.getByRole('button', { name: 'Continue to checkout' }).click()
   await page.waitForURL(/checkout\.stripe\.com/, { timeout: 60_000 })
 }
@@ -47,8 +47,39 @@ export async function payOnStripeCheckout(
   await page.getByTestId('hosted-payment-submit-button').click()
 }
 
+/**
+ * 在账单页「购买积分包」分区用 Stripe 购买积分包（add-ui-design-system 8.7 起积分包不在 Plan 下拉中）。
+ * `pack` 匹配按钮的无障碍名称「Buy {套餐名}」。
+ */
+export async function buyPackOnStripe(page: Page, slug: string, pack: RegExp) {
+  await page.goto(`/app/${slug}/billing`)
+  await chooseOption(page.getByRole('combobox', { name: 'Payment method', exact: true }), {
+    value: 'stripe',
+  })
+  const packs = page.getByRole('region', { name: 'Buy credit packs' })
+  await packs.getByRole('button', { name: pack }).click()
+  await page.waitForURL(/checkout\.stripe\.com/, { timeout: 60_000 })
+}
+
 /** 付款后回到应用的结账回跳页 */
 export async function expectBillingReturn(page: Page, slug: string) {
   await page.waitForURL(new RegExp(`/app/${slug}/billing-return`), { timeout: 90_000 })
   await expect(page).toHaveURL(new RegExp(`/app/${slug}/billing-return`))
+}
+
+/** 已有 Stripe 订阅时在账单页选择目标报价并点击 Change plan，返回所选 plan_price id */
+export async function chooseChange(page: Page, price: RegExp, notice?: RegExp) {
+  await chooseOption(page.getByRole('combobox', { name: 'Payment method', exact: true }), {
+    value: 'stripe',
+  })
+  const planPriceId = await chooseOption(
+    page.getByRole('combobox', { name: 'Plan', exact: true }),
+    price,
+  )
+  if (!planPriceId) throw new Error('Plan-change acceptance target price is missing')
+  // 周期变更须在确认前展示生效时间说明
+  if (notice) await expect(page.getByText(notice)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Change plan', exact: true })).toBeEnabled()
+  await page.getByRole('button', { name: 'Change plan', exact: true }).click()
+  return planPriceId
 }

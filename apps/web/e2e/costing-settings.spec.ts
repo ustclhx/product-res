@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { register, simulateClientIp, waitForHydration } from './fixtures.ts'
+import { chooseOption } from './select.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // add-costing-decisions 2.2 / 3.2 / 4.1：设置页物流方案与成本参数（类目回退），工作台首页与档案库的空状态。
@@ -24,7 +25,9 @@ test('物流方案与成本参数、工作台首页与选品档案库', async ({
   await profile.getByLabel('方案名称').fill('云途专线')
   await profile.getByLabel('首重价格').fill('30')
   await profile.getByLabel('续重价格').fill('15')
-  await profile.getByLabel('计费方式').selectOption('volumetric')
+  await chooseOption(profile.getByRole('combobox', { name: '计费方式', exact: true }), {
+    value: 'volumetric',
+  })
   await profile.getByLabel('禁运属性').fill('battery')
   await profile.getByRole('button', { name: '保存' }).click()
   await expect(page.getByRole('cell', { name: '云途专线' })).toBeVisible()

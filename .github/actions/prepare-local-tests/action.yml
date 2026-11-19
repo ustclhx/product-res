@@ -1,0 +1,36 @@
+name: Prepare local tests
+description: Initialize temporary Postgres, install dependencies and Chromium, and prepare local authentication
+inputs:
+  database:
+    description: Temporary Postgres database name
+    required: true
+runs:
+  using: composite
+  # 从 ci.yml 的 e2e-smoke 提取；冒烟和夜间验收共用安装、认证与迁移步骤。
+  steps:
+    - name: Initialize database roles
+      env:
+        PGURL: postgres://postgres:postgres@localhost:5432/${{ inputs.database }}
+      shell: bash
+      run: |
+        psql "$PGURL" -v ON_ERROR_STOP=1 -f infra/local/initdb/01-roles.sql
+        psql "$PGURL" -v ON_ERROR_STOP=1 -f infra/local/initdb/02-db-grants.sql
+    - uses: pnpm/action-setup@v6
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 22
+        cache: pnpm
+    - shell: bash
+      run: pnpm install --frozen-lockfile
+    - uses: ./.github/actions/install-chromium
+    - name: Prepare local authentication and migrate
+      shell: bash
+      run: |
+        node --input-type=module <<'NODE'
+        import { readFileSync, writeFileSync } from 'node:fs'
+        import { randomBytes } from 'node:crypto'
+        const vars = readFileSync('apps/web/.dev.vars.example', 'utf8')
+          .replace(/^BETTER_AUTH_SECRET=.*$/m, `BETTER_AUTH_SECRET=${randomBytes(32).toString('base64')}`)
+        writeFileSync('apps/web/.dev.vars', vars, { mode: 0o600 })
+        NODE
+        pnpm --filter @product-res/db db:migrate

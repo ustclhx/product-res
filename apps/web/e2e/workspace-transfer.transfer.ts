@@ -9,6 +9,7 @@ import {
   uiText,
   waitForHydration,
 } from './fixtures.ts'
+import { chooseOption } from './select.ts'
 
 // 独立配置启动真实 jobs Workflow；不拦截流转 API，也不直接写流转状态。
 test.beforeEach(async ({ page }) => {
@@ -183,7 +184,7 @@ test('多选复制：同名方向预览重命名，真实复制后源保持不�
   await expect(page.getByTestId('transfer-bar')).toContainText('已选 2 项')
   await page.getByRole('button', { name: '复制到空间…', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: '复制到其他空间' })
-  await dialog.getByTestId('transfer-target').selectOption(targetId)
+  await chooseOption(dialog.getByTestId('transfer-target'), { value: targetId })
   await dialog.getByRole('button', { name: '预览', exact: true }).click()
   const renamed = `万圣节装饰（来自 ${ws.name}）`
   await expect(dialog.getByTestId('transfer-conflicts')).toContainText(renamed)

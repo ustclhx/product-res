@@ -1,8 +1,12 @@
 import { env } from 'cloudflare:workers'
 import { isUuidV7, newId } from '@product-res/shared'
 import { eq, inArray } from 'drizzle-orm'
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
+  AI_FEEDBACK_REASONS,
+  aiConversation,
+  aiMessage,
+  aiMessageFeedback,
   auditLog,
   createDb,
   type Database,
@@ -24,7 +28,9 @@ async function pgError(
   try {
     await promise
   } catch (error) {
-    const cause = (error as { cause?: { code?: string; constraint_name?: string } }).cause
+    // drizzle 把驱动错误放在 cause 中；直接经驱动执行的 SQL 抛出的就是驱动错误
+    const failure = error as { code?: string; constraint_name?: string; cause?: typeof failure }
+    const cause = failure.cause ?? failure
     return { code: cause?.code, constraint: cause?.constraint_name }
   }
   throw new Error('expected the statement to fail')
@@ -175,5 +181,186 @@ describe('认证与租户表（Hyperdrive → 本地 Postgres）', () => {
     } finally {
       await cleanup(db, [a.userId], [a.orgId, otherOrg])
     }
+  })
+})
+
+// ai_message_feedback.reason 的 check 约束（add-subject-chat tasks.md 9.1，迁移 0023）：
+// 原因只允许约定取值，且只能与点踩同时出现。
+describe('ai_message_feedback.reason 约束（Hyperdrive → 本地 Postgres）', () => {
+  const userId = newId()
+  const orgId = newId()
+  const conversationId = newId()
+  const messageIds = [newId(), newId(), newId(), newId()]
+  let db: Database
+
+  beforeAll(async () => {
+    db = open()
+    await db.insert(user).values({ id: userId, name: 'Rater', email: `${userId}@example.test` })
+    await db.insert(organization).values({
+      id: orgId,
+      name: 'Personal',
+      slug: `u-${orgId.slice(-12)}`,
+      isPersonal: true,
+    })
+    await db.insert(member).values({ id: newId(), organizationId: orgId, userId, role: 'owner' })
+    await db
+      .insert(aiConversation)
+      .values({ id: conversationId, workspaceId: orgId, userId, modelKey: 'test' })
+    await db.insert(aiMessage).values(
+      messageIds.map((id) => ({
+        id,
+        conversationId,
+        workspaceId: orgId,
+        role: 'assistant' as const,
+      })),
+    )
+  })
+
+  afterAll(async () => {
+    await db.delete(aiMessageFeedback).where(inArray(aiMessageFeedback.messageId, messageIds))
+    await db.delete(aiMessage).where(eq(aiMessage.conversationId, conversationId))
+    await db.delete(aiConversation).where(eq(aiConversation.id, conversationId))
+    await db.delete(member).where(eq(member.organizationId, orgId))
+    await db.delete(organization).where(eq(organization.id, orgId))
+    await db.delete(user).where(eq(user.id, userId))
+  })
+
+  const feedback = (
+    messageId: string,
+    rating: 'up' | 'down',
+    reason: string | null,
+  ): typeof aiMessageFeedback.$inferInsert => ({
+    workspaceId: orgId,
+    messageId,
+    userId,
+    rating,
+    reason: reason as (typeof AI_FEEDBACK_REASONS)[number] | null,
+  })
+
+  it('点踩可带任一约定原因或不带原因，点赞不带原因', async () => {
+    const [first, second] = messageIds
+    await db.insert(aiMessageFeedback).values(feedback(first as string, 'down', null))
+    for (const reason of AI_FEEDBACK_REASONS)
+      await db
+        .update(aiMessageFeedback)
+        .set({ reason })
+        .where(eq(aiMessageFeedback.messageId, first as string))
+    await db.insert(aiMessageFeedback).values(feedback(second as string, 'up', null))
+    const rows = await db
+      .select({ rating: aiMessageFeedback.rating, reason: aiMessageFeedback.reason })
+      .from(aiMessageFeedback)
+      .where(inArray(aiMessageFeedback.messageId, [first as string, second as string]))
+      .orderBy(aiMessageFeedback.messageId)
+    expect(rows).toEqual([
+      { rating: 'down', reason: 'too_long' },
+      { rating: 'up', reason: null },
+    ])
+  })
+
+  it('拒绝未约定的原因与点赞带原因，已有点踩改为点赞时必须清空原因', async () => {
+    const [, , third, fourth] = messageIds as [string, string, string, string]
+    const violation = { code: '23514', constraint: 'ai_message_feedback_reason_valid' }
+    expect(
+      await pgError(db.insert(aiMessageFeedback).values(feedback(third, 'down', 'rude'))),
+    ).toEqual(violation)
+    expect(
+      await pgError(db.insert(aiMessageFeedback).values(feedback(third, 'up', 'inaccurate'))),
+    ).toEqual(violation)
+    await db.insert(aiMessageFeedback).values(feedback(fourth, 'down', 'incomplete'))
+    expect(
+      await pgError(
+        db
+          .update(aiMessageFeedback)
+          .set({ rating: 'up' })
+          .where(eq(aiMessageFeedback.messageId, fourth)),
+      ),
+    ).toEqual(violation)
+  })
+})
+
+// ai_message_feedback.share_conversation 默认值与 shared_at 一致性约束（add-subject-chat tasks.md 10.1，迁移 0024）：
+// 不传时为不同意；同意时必须带同意时间，撤回时一并清空。
+describe('ai_message_feedback.share_conversation（Hyperdrive → 本地 Postgres）', () => {
+  const userId = newId()
+  const orgId = newId()
+  const conversationId = newId()
+  const messageIds = [newId(), newId()]
+  let db: Database
+
+  beforeAll(async () => {
+    db = open()
+    await db.insert(user).values({ id: userId, name: 'Sharer', email: `${userId}@example.test` })
+    await db.insert(organization).values({
+      id: orgId,
+      name: 'Personal',
+      slug: `u-${orgId.slice(-12)}`,
+      isPersonal: true,
+    })
+    await db.insert(member).values({ id: newId(), organizationId: orgId, userId, role: 'owner' })
+    await db
+      .insert(aiConversation)
+      .values({ id: conversationId, workspaceId: orgId, userId, modelKey: 'test' })
+    await db.insert(aiMessage).values(
+      messageIds.map((id) => ({
+        id,
+        conversationId,
+        workspaceId: orgId,
+        role: 'assistant' as const,
+      })),
+    )
+  })
+
+  afterAll(async () => {
+    await db.delete(aiMessageFeedback).where(inArray(aiMessageFeedback.messageId, messageIds))
+    await db.delete(aiMessage).where(eq(aiMessage.conversationId, conversationId))
+    await db.delete(aiConversation).where(eq(aiConversation.id, conversationId))
+    await db.delete(member).where(eq(member.organizationId, orgId))
+    await db.delete(organization).where(eq(organization.id, orgId))
+    await db.delete(user).where(eq(user.id, userId))
+  })
+
+  it('默认不同意；同意与同意时间同时写入、同时清空', async () => {
+    const [first] = messageIds as [string, string]
+    // 直接用 SQL 插入，验证数据库默认值而不是 ORM 默认值
+    await db.$client`insert into ai_message_feedback (id, workspace_id, message_id, user_id, rating)
+      values (${newId()}, ${orgId}, ${first}, ${userId}, 'down')`
+    const read = () =>
+      db
+        .select({
+          share: aiMessageFeedback.shareConversation,
+          sharedAt: aiMessageFeedback.sharedAt,
+        })
+        .from(aiMessageFeedback)
+        .where(eq(aiMessageFeedback.messageId, first))
+    expect(await read()).toEqual([{ share: false, sharedAt: null }])
+    const at = new Date()
+    await db
+      .update(aiMessageFeedback)
+      .set({ shareConversation: true, sharedAt: at })
+      .where(eq(aiMessageFeedback.messageId, first))
+    expect(await read()).toEqual([{ share: true, sharedAt: at }])
+    await db
+      .update(aiMessageFeedback)
+      .set({ shareConversation: false, sharedAt: null })
+      .where(eq(aiMessageFeedback.messageId, first))
+    expect(await read()).toEqual([{ share: false, sharedAt: null }])
+  })
+
+  it('拒绝无同意时间的同意、不同意却带同意时间，以及 null', async () => {
+    const [, second] = messageIds as [string, string]
+    const violation = { code: '23514', constraint: 'ai_message_feedback_shared_at_consistent' }
+    const base = { workspaceId: orgId, messageId: second, userId, rating: 'up' as const }
+    expect(
+      await pgError(db.insert(aiMessageFeedback).values({ ...base, shareConversation: true })),
+    ).toEqual(violation)
+    expect(
+      await pgError(db.insert(aiMessageFeedback).values({ ...base, sharedAt: new Date() })),
+    ).toEqual(violation)
+    expect(
+      await pgError(
+        db.$client`insert into ai_message_feedback (id, workspace_id, message_id, user_id, rating, share_conversation)
+          values (${newId()}, ${orgId}, ${second}, ${userId}, 'up', null)`,
+      ),
+    ).toMatchObject({ code: '23502' })
   })
 })

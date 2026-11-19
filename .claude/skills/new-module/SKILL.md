@@ -9,13 +9,15 @@ description: 为本模板增加后端业务能力或领域模块，复用现有�
 
 ## 1. 确定最小业务切片
 
-先完整读 `AGENTS.md`、`docs/01-architecture.md`、`docs/02-project-structure.md` 和对应领域文档；并行开发读 `docs/09-parallel-plan.md` §3/§6。明确一个可观察的业务行为、输入、角色、租户、写入/返回结果和幂等需求，再查现有实现：
+先完整读 `AGENTS.md`、`docs/01-architecture.md`、`docs/02-project-structure.md` 和对应领域文档；并行开发先明确文件所有权与数据库隔离。明确一个可观察的业务行为、输入、角色、租户、写入/返回结果和幂等需求，再查现有实现：
 
 ```sh
 rg --files apps/web/src/features packages
 cat package.json apps/web/package.json
 cat apps/web/src/features/notifications/notifications.functions.ts apps/web/src/features/notifications/service.ts
 ```
+
+涉及新页面或较大布局改动时，页面部分转 `new-page` 技能（先过设计稿关卡），本技能只做服务与入口。
 
 页面专属编排放 `apps/web/src/features/<领域>`，共享领域能力优先扩展现有 `packages/<领域>`。只有确有独立职责和多个调用方时才建新 package，并按相邻 manifest 的 exports、workspace 依赖、tsconfig 与测试配置接入。优先复用现有表；完成标准是业务入口可调用且有真实行为，不是只有空目录、类型或转发函数。
 
@@ -37,6 +39,27 @@ cat apps/web/src/features/notifications/notifications.functions.ts apps/web/src/
 - HTTP 入口先阅读同类 `apps/web/src/routes/api` 与相关鉴权实现，使用已有会话/API key/权限流程，不直接把 Server Function 中间件当 HTTP 函数调用。Webhook 按验签→去重→事务→异步副作用顺序处理。
 
 配置按用途归属：产品开关 `template.config.ts`；不发版的设置 `packages/db/src/settings.ts`，缺失时用代码默认值；凭据使用已有 secret/本地示例入口。服务遵守已关闭的功能开关。
+
+**分享卡片（结果需要分享到社交平台时）**：完整阅读 `docs/share-cards.md`，按其接入步骤实现：
+
+1. 在项目领域 schema 建分享表：令牌由 `createShareToken()` 生成且不含资源 / 用户 / 空间 ID，`token` 唯一，
+   对「资源 + 未撤销」建部分唯一索引；创建与撤销是空间内写入，照上文的 scoped、角色与只读检查处理。
+2. 在项目自有的 `apps/web/src/features/share-cards/share-cards.project.ts` 中 `registerShareCard`（从 `./registry.ts` 导入）：
+   `resolve` 按令牌查未撤销记录，资源已删除或空间已软删除时返回 `null`；`digest` 只覆盖卡片展示字段；
+   有效期用 `expiresAt` / `ttlDays`（默认取 `template.config.ts` 的 `shareCards.defaultTtlDays`）。
+3. 撤销分享、删除被分享资源时调用 `invalidateShareCard({ type, token, workspaceId })`；删空间 / 删号清理步骤中删除项目自己的分享记录（卡片图片由模板清理）。
+4. 通用分享页 `/s/<type>/<token>` 与自建页面二选一：自建时设 `sharePage: false`，页面服务端用 `shareCardMeta` 输出元数据。
+   新卡片版式或自建分享页先转 `ui-design` 取得设计稿，页面部分按 `new-page` 实现。
+5. 测试覆盖：`resolve` 对撤销、到期、跨空间与已删除资源返回 `null`，撤销与删除流程调用失效函数。
+
+**AI 生成功能（用固定提示词生成并保存报告、文案等）**：完整阅读 `docs/06-ai.md` §3「提示词版本与评测」，按其步骤实现：
+
+1. 用 `@product-res/ai` 的 `definePrompt` 在 `apps/web/src/features/<领域>/prompt.ts` 定义提示词（id、版本、system、`user(input)`、期望章节、`maxOutputTokens`），
+   模块保持纯函数、只用可类型剥离的 TS 语法；调用时用 `renderPrompt` 得到 system 与用户消息。已用过的版本内容不再修改，改动即新建版本。
+2. 生成记录保存版本：领域 schema 的生成表加 `prompt_version text not null`，写入 `promptVersion`（如 `report@v2`），结构化日志同时记录该字段。
+3. 在根目录 `evals/<suite>/` 建套件（`suite.ts` 用 `@product-res/evals` 的 `defineSuite` 与 `checks`，导入同一个提示词定义；`samples.json` 只放合成或脱敏数据；模型声明美元单价）。
+4. 先 `pnpm eval:prompts --suite <suite> --record --budget-usd <美元>` 录制一次（需要真实模型凭据，不在 CI 中运行），提交录制与 `prompts.lock.json`；
+   之后改提示词时新建版本，用 `--baseline <旧版本>` 离线回放对比，报告写入证据目录、不进仓库。
 
 涉及积分时调用 `packages/credits` 已导出的 grant/hold/capture/release 等领域 API，遵守整数与事务/幂等要求；不直接修改余额/账本表。平台依赖方向、Cloudflare 例外和积分写入由现有检查器验证，不为新增业务扩大豁免。
 

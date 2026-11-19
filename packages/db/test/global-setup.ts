@@ -1,6 +1,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
+import { assertIsolatedTestDatabase } from '../test-database.ts'
 
 // 集成测试前以 migrator 账号把迁移应用到本 worktree 的数据库（已应用的迁移会跳过）。
 // 也被 apps/web、apps/jobs 的集成测试复用（导出为 @product-res/db/test/global-setup）。
@@ -10,6 +11,8 @@ const MIGRATION_LOCK_ID = 7_200_501
 export default async function setup() {
   const url = process.env.MIGRATION_DATABASE_URL
   if (!url) throw new Error('MIGRATION_DATABASE_URL 未设置')
+  // 最后一道防线：任何配置路径都不能把迁移应用到开发主库等非隔离库
+  assertIsolatedTestDatabase({ migrator: url }, '@product-res/db/test/global-setup')
   // max: 1 保证加锁、迁移、解锁走同一个连接
   const sql = postgres(url, { max: 1, onnotice: () => {} })
   try {

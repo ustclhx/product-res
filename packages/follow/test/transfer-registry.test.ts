@@ -68,9 +68,9 @@ describe('流转注册表覆盖', () => {
 
   it('分类与 design D3 的计数一致', () => {
     expect(new Set(TRANSFER_TABLES.map((entry) => entry.name)).size).toBe(TRANSFER_TABLES.length)
-    expect(TRANSFER_TABLES).toHaveLength(52)
+    expect(TRANSFER_TABLES).toHaveLength(53)
     expect(FLOWING_TRANSFER_TABLES).toHaveLength(29)
-    expect(STATIC_TRANSFER_TABLES.filter((entry) => entry.link === 'workspace')).toHaveLength(20)
+    expect(STATIC_TRANSFER_TABLES.filter((entry) => entry.link === 'workspace')).toHaveLength(21)
     expect(
       STATIC_TRANSFER_TABLES.filter((entry) => entry.link === 'indirect').map((e) => e.name),
     ).toEqual(['credit_hold_allocation', 'apikey', 'session'])

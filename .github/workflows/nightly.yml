@@ -1,0 +1,218 @@
+name: Nightly
+
+on:
+  schedule:
+    # UTC 19:00 = 北京时间次日 03:00。
+    - cron: '0 19 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  e2e-full:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # 服务与连接配置沿用 ci.yml/e2e-smoke；全量夹具要求独立库使用 product_res_wt_ 前缀。
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: product_res_wt_nightly
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d product_res_wt_nightly"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: postgres://app:app@localhost:5432/product_res_wt_nightly
+      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE_CACHED: postgres://app:app@localhost:5432/product_res_wt_nightly
+      MIGRATION_DATABASE_URL: postgres://migrator:migrator@localhost:5432/product_res_wt_nightly
+      WRANGLER_SEND_METRICS: 'false'
+      PLAYWRIGHT_HTML_OPEN: never
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/prepare-local-tests
+        with:
+          database: product_res_wt_nightly
+      # loadEnv('worktree') 和 readLocalEnv 均需读到夹具连接；只写 runner 内的临时数据库。
+      - name: Prepare isolated e2e fixtures
+        run: |
+          cat > .env.worktree <<'VARS'
+          DATABASE_URL=postgres://app:app@localhost:5432/product_res_wt_nightly
+          MIGRATION_DATABASE_URL=postgres://migrator:migrator@localhost:5432/product_res_wt_nightly
+          CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=postgres://app:app@localhost:5432/product_res_wt_nightly
+          CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE_CACHED=postgres://app:app@localhost:5432/product_res_wt_nightly
+          VARS
+      - run: pnpm build
+      # 沿用默认配置的全部离线用例，不选用 Stripe/AI 联通配置，也不增加测试 retry。
+      - name: Run full local e2e
+        run: pnpm --filter @product-res/web test:e2e --reporter=github,html
+      # 嵌入式 SubjectChat（add-ai-chat-components 5.2）：独立 dev 配置登记测试对象类型，默认配置忽略该用例。
+      # 前一步失败时仍运行，两份报告都保留。
+      - name: Run embedded subject chat e2e
+        if: success() || failure()
+        run: pnpm --filter @product-res/web exec playwright test -c playwright.subject-chat.config.ts --reporter=github,html --output test-results/subject-chat
+        env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/subject-chat
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: playwright-full-report-and-traces
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  e2e-multi-tenant:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # 默认模板 multiTenant=false，团队空间、邀请与侧边栏工作区菜单只在多空间配置下覆盖；
+    # 独立 runner/PG，夹具要求 product_res_wt_ 前缀，服务配置同 e2e-full。
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: product_res_wt_multi_tenant
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d product_res_wt_multi_tenant"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: postgres://app:app@localhost:5432/product_res_wt_multi_tenant
+      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE_CACHED: postgres://app:app@localhost:5432/product_res_wt_multi_tenant
+      MIGRATION_DATABASE_URL: postgres://migrator:migrator@localhost:5432/product_res_wt_multi_tenant
+      WRANGLER_SEND_METRICS: 'false'
+      PLAYWRIGHT_HTML_OPEN: never
+    steps:
+      - uses: actions/checkout@v7
+      # 衍生项目（有 .template-base.json）未开启 multiTenant 时不需要多空间覆盖：工作区菜单等可能已被项目裁掉，
+      # 强行开启必然失败。模板仓库没有基准记录，照常开启后运行。
+      - name: Decide multi-tenant coverage
+        id: scope
+        run: |
+          if [ -f .template-base.json ] && ! grep -Eq 'multiTenant:[[:space:]]*true' template.config.ts; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "衍生项目未开启 multiTenant，跳过多空间 e2e" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: ./.github/actions/prepare-local-tests
+        if: steps.scope.outputs.skip != 'true'
+        with:
+          database: product_res_wt_multi_tenant
+      - name: Prepare isolated e2e fixtures
+        if: steps.scope.outputs.skip != 'true'
+        run: |
+          cat > .env.worktree <<'VARS'
+          DATABASE_URL=postgres://app:app@localhost:5432/product_res_wt_multi_tenant
+          MIGRATION_DATABASE_URL=postgres://migrator:migrator@localhost:5432/product_res_wt_multi_tenant
+          CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=postgres://app:app@localhost:5432/product_res_wt_multi_tenant
+          CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE_CACHED=postgres://app:app@localhost:5432/product_res_wt_multi_tenant
+          VARS
+      # 只改 runner 内的检出副本；替换失败（模板字段改名）时直接报错，避免静默跑成单空间
+      - name: Enable multi-tenant template config
+        if: steps.scope.outputs.skip != 'true'
+        run: |
+          sed -i 's/multiTenant: false,/multiTenant: true,/' template.config.ts
+          grep -q 'multiTenant: true,' template.config.ts
+      - name: Run multi-tenant e2e
+        if: steps.scope.outputs.skip != 'true'
+        run: pnpm --filter @product-res/web exec playwright test e2e/workspace.spec.ts e2e/app-shell.spec.ts --reporter=github,html
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: playwright-multi-tenant-report-and-traces
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  create-project-verify:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # 独立 runner/PG，不与 e2e-full 共享状态；服务配置来源同 ci.yml/e2e-smoke。
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: product_res_ci_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d product_res_ci_e2e"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: postgres://app:app@localhost:5432/product_res_ci_e2e
+      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE_CACHED: postgres://app:app@localhost:5432/product_res_ci_e2e
+      MIGRATION_DATABASE_URL: postgres://migrator:migrator@localhost:5432/product_res_ci_e2e
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/prepare-local-tests
+        with:
+          database: product_res_ci_e2e
+      # 生成器会主动清除父进程数据库连接，副本自检只跑类型、单元测试及 Node 构建。
+      # 衍生项目不包含模板维护矩阵；模板本身始终运行，不能跳过其中的失败用例。
+      - name: Verify generated projects
+        if: hashFiles('scripts/create-project.verify.test.mjs') != ''
+        # /tmp 与 pnpm store 可能不在同一文件系统，复制三份依赖会耗尽 /tmp 配额。
+        # runner 工作盘允许副本复用 store 的硬链接，保留完整生成矩阵。
+        env:
+          TMPDIR: ${{ runner.temp }}
+        run: pnpm test:create-project:verify
+
+  notify-failure:
+    needs: [e2e-full, e2e-multi-tenant, create-project-verify]
+    if: >-
+      always() && github.ref == 'refs/heads/main' &&
+      (needs.e2e-full.result == 'failure' || needs.e2e-multi-tenant.result == 'failure' ||
+       needs.create-project-verify.result == 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Create or update nightly failure issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          JOB_RESULTS: ${{ toJSON(needs) }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          failed_jobs=$(jq -r 'to_entries | map(select(.value.result == "failure") | .key) | join(", ")' <<< "$JOB_RESULTS")
+          run_date=$(date -u +%F)
+          title="[Nightly] ${run_date}: ${failed_jobs}"
+          body_file="$RUNNER_TEMP/nightly-failure.md"
+          printf '日期（UTC）：%s\n\n失败 job：%s\n\n运行：%s\n\n请检查日志与 Playwright artifact，区分过时断言与真实缺陷；不得跳过、删除用例或增加 retry 掩盖失败。\n' "$run_date" "$failed_jobs" "$RUN_URL" > "$body_file"
+          if [ "$(gh label list --limit 1000 --json name --jq 'any(.name == "nightly-failure")')" != true ]; then
+            gh label create nightly-failure --color B60205 --description 'Nightly e2e or generator verification failure'
+          fi
+          issue_number=$(gh issue list --state open --label nightly-failure --limit 1 --json number --jq '.[0].number // empty')
+          if [ -n "$issue_number" ]; then
+            gh issue comment "$issue_number" --body-file "$body_file"
+          else
+            gh issue create --title "$title" --label nightly-failure --body-file "$body_file"
+          fi

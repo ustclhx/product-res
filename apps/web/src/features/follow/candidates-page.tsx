@@ -51,7 +51,7 @@ function columnsFor(slug: string, platform: Platform): DataTableColumn<Candidate
             <Link
               to="/app/$slug/follow/$clusterId"
               params={{ slug, clusterId: item.clusterId }}
-              className="line-clamp-2 text-[13px] font-medium leading-snug text-foreground hover:text-primary"
+              className="line-clamp-2 text-caption font-medium leading-snug text-foreground hover:text-primary-text"
               title={item.name}
             >
               {item.name}
@@ -117,7 +117,7 @@ function columnsFor(slug: string, platform: Platform): DataTableColumn<Candidate
         item.signals.length === 0 ? (
           <span className="text-xs text-muted-foreground">—</span>
         ) : (
-          <div className="flex max-w-[220px] flex-wrap gap-1">
+          <div className="flex max-w-55 flex-wrap gap-1">
             {item.signals.map((s) => (
               <Tag key={s.dimension} tone="info">
                 {s.label}
@@ -134,7 +134,7 @@ function columnsFor(slug: string, platform: Platform): DataTableColumn<Candidate
         item.risks.length === 0 ? (
           <span className="text-xs text-muted-foreground">未发现</span>
         ) : (
-          <div className="flex max-w-[180px] flex-wrap gap-1">
+          <div className="flex max-w-45 flex-wrap gap-1">
             {item.risks.slice(0, 3).map((r) => (
               <Tag key={r.kind} tone={riskTone(r)}>
                 {r.veto ? `否决 · ${r.label}` : r.label}
@@ -180,7 +180,7 @@ function columnsFor(slug: string, platform: Platform): DataTableColumn<Candidate
         const days = daysUntil(item.latestDecisionOn)
         return (
           <div className="grid gap-0.5">
-            <span className="font-mono text-[13px]">{item.latestDecisionOn.slice(5)}</span>
+            <span className="font-mono text-caption">{item.latestDecisionOn.slice(5)}</span>
             <span
               className={cn(
                 'text-xs',
@@ -246,7 +246,7 @@ export function CandidatesPage({ slug, data }: { slug: string; data: CandidatesD
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="grid gap-1">
           <h1 className="text-lg font-semibold">跟卖候选</h1>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-caption text-muted-foreground">
             每日流水线按方向归并同款商品并打分；按 综合分 × 置信度
             排序。冷启动阶段等级显示“未验证”，硬门槛不通过仍为“不推荐”。
           </p>
@@ -254,7 +254,7 @@ export function CandidatesPage({ slug, data }: { slug: string; data: CandidatesD
         <Link
           to="/app/$slug/follow/directions"
           params={{ slug }}
-          className="inline-flex items-center gap-1.5 rounded-md border bg-card px-3 py-1.5 text-[13px] hover:border-primary hover:text-primary"
+          className="inline-flex items-center gap-1.5 rounded-md border bg-card px-3 py-1.5 text-caption hover:border-primary hover:text-primary-text"
           data-testid="follow-directions-link"
         >
           选品方向与店铺池 <span aria-hidden>→</span>
@@ -271,9 +271,9 @@ export function CandidatesPage({ slug, data }: { slug: string; data: CandidatesD
                 role="tab"
                 aria-selected={platform === p}
                 className={cn(
-                  '-mb-px border-b-2 px-4 py-2 text-[13px]',
+                  '-mb-px border-b-2 px-4 py-2 text-caption',
                   platform === p
-                    ? 'border-primary font-medium text-primary'
+                    ? 'border-primary font-medium text-primary-text'
                     : 'border-transparent text-muted-foreground hover:text-foreground',
                 )}
                 onClick={() => go({ platform: p, direction: '' })}
@@ -359,7 +359,7 @@ function SetupEmpty({
         <Link
           to="/app/$slug/follow/directions"
           params={{ slug }}
-          className="text-primary hover:underline"
+          className="text-primary-text hover:underline"
         >
           去配置方向
         </Link>
@@ -373,7 +373,7 @@ function SetupEmpty({
           ? `已启用 ${setup.enabledSources} 个数据源`
           : '在数据中心配置凭据并启用至少一个数据源',
       link: (
-        <Link to="/app/$slug/data" params={{ slug }} className="text-primary hover:underline">
+        <Link to="/app/$slug/data" params={{ slug }} className="text-primary-text hover:underline">
           去数据中心
         </Link>
       ),
@@ -393,14 +393,14 @@ function SetupEmpty({
             <li key={step.title} className="flex items-start gap-2.5">
               <span
                 className={cn(
-                  'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold',
+                  'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-micro font-semibold',
                   step.done ? 'bg-success text-white' : 'bg-muted text-muted-foreground',
                 )}
               >
                 {step.done ? '✓' : i + 1}
               </span>
               <span className="grid gap-0.5">
-                <span className="text-[13px] font-medium text-foreground">{step.title}</span>
+                <span className="text-caption font-medium text-foreground">{step.title}</span>
                 <span>
                   {step.detail}
                   {step.link ? <> · {step.link}</> : null}

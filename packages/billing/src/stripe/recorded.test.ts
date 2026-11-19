@@ -154,6 +154,26 @@ describe('Stripe adapter with recorded test-platform fixtures', () => {
       periodStart: '2027-10-09T07:59:55.000Z',
       periodEnd: '2028-10-09T07:59:55.000Z',
     },
+    {
+      // 月付→年付以 phase_start 锚点在周期末开出的年付首期：billing_reason 为 subscription_update
+      kind: 'renewal',
+      recording: 'interval-change-renewal',
+      eventId: 'evt_1UTyXiL3UTpBAoXo1pBIGuCK',
+      paymentId: 'pi_3UTyXeL3UTpBAoXo1gtdzpHr',
+      subscriptionId: 'sub_1UTyXSL3UTpBAoXorCIAsPuM',
+      customerId: 'cus_VUyUkDOWbb0zN6',
+      priceId: 'price_1UTy20L3UTpBAoXoXiBP2VbY',
+      amount: 19000,
+      metadata: {
+        workspaceId: '4e5db582-31b4-4e71-87af-cc14264b86bb',
+        userId: '3b76ee93-c68a-4201-a8fe-b6e2c667fd19',
+        planPriceId: '9efd50ac-afe3-431e-8cbd-77f14311baf0',
+      },
+      occurredAt: '2026-10-24T06:35:01.000Z',
+      paidAt: '2026-11-24T07:34:35.000Z',
+      periodStart: '2026-11-24T06:34:35.000Z',
+      periodEnd: '2027-11-24T06:34:35.000Z',
+    },
   ] as const)(
     'replays recorded $recording with its historical service period and PaymentIntent identity',
     async (recorded) => {

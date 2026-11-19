@@ -24,12 +24,24 @@ export default async function globalSetup() {
     'stripe',
     [
       'listen',
+      // 账号默认 API 版本（2026-08-26.dahlia）与代码锁定的 2026-09-30.endive 不同，默认格式的事件会被拒收；
+      // CLI 1.53 的 --latest 即 endive。升级 CLI 后若最新版本前移，需同步核对。
+      '--latest',
       '--events',
       STRIPE_EVENTS.join(','),
       '--forward-to',
       `http://localhost:${port}/api/billing/webhooks/stripe`,
     ],
-    { stdio: ['ignore', 'pipe', 'pipe'] },
+    {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      // 未 stripe login 时以应用同一测试账号的密钥监听（经环境变量传入，不出现在进程参数中）
+      env: {
+        ...process.env,
+        ...(!process.env.STRIPE_API_KEY && process.env.STRIPE_SECRET_KEY
+          ? { STRIPE_API_KEY: process.env.STRIPE_SECRET_KEY }
+          : {}),
+      },
+    },
   )
   await new Promise<void>((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('stripe listen did not become ready')), 60_000)

@@ -2,6 +2,7 @@ import {
   CreditsError,
   type CreditsTransaction,
   capture,
+  lockWorkspaceCredits,
   type OveragePolicy,
   release,
 } from '@product-res/credits'
@@ -12,9 +13,12 @@ import {
   type CreditHold,
   creditHold,
   type Database,
+  getSetting,
+  type SettingValues,
   scoped,
+  setting,
 } from '@product-res/db'
-import { and, eq, type SQL, sql } from 'drizzle-orm'
+import { and, eq, gte, type SQL, sql } from 'drizzle-orm'
 import { actualCredits, type Pricing } from '../pricing.ts'
 
 /**
@@ -67,6 +71,7 @@ function usageCheckpoint(input: TextUsageInput, at = new Date()): AiUsageCheckpo
     ...(input.reasoningTokens === undefined ? {} : { reasoningTokens: input.reasoningTokens }),
     ...(input.absorbed === undefined ? {} : { absorbed: input.absorbed }),
     ...(input.total === undefined ? {} : { total: input.total }),
+    ...(input.lastAttempt === undefined ? {} : { lastAttempt: input.lastAttempt }),
     ...(input.failedReplyRefund === undefined
       ? {}
       : { failedReplyRefund: input.failedReplyRefund }),
@@ -219,6 +224,56 @@ export function settleChatMessage(
   })
 }
 
+/** 免费失败次数（运行时设置 `ai.freeFailures`） */
+export type FreeFailurePolicy = SettingValues['ai.freeFailures']
+
+/** UUIDv7 的前 48 位是毫秒时间戳：该时刻的最小 UUID 作为时间下界，可复用 `(workspace_id, id desc)` 索引。 */
+export function uuidv7Floor(ms: number): string {
+  const hex = Math.max(0, Math.floor(ms)).toString(16).padStart(12, '0').slice(-12)
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-0000-0000-000000000000`
+}
+
+/**
+ * 工作区在窗口内是否已用完免费失败次数（design D1）。必须在积分锁内调用：
+ * 并发失败在锁内串行计数，后结算者能看到先结算者已提交的 failed 行。
+ * 免费失败即 `status='failed' and credits=0` 的 assistant 回复；超出后收费的失败 credits > 0，不再占用次数。
+ */
+async function freeFailuresExhausted(
+  tx: CreditsTransaction,
+  workspaceId: string,
+  policy?: FreeFailurePolicy,
+  now = Date.now(),
+): Promise<boolean> {
+  // 结算在事务内直接读表，不经 KV 缓存；缺失时回退到代码默认值。
+  const { count, windowSeconds } =
+    policy ??
+    (await getSetting(
+      {
+        store: {
+          async find(key) {
+            const [row] = await tx
+              .select({ value: setting.value })
+              .from(setting)
+              .where(eq(setting.key, key))
+              .limit(1)
+            return row?.value
+          },
+        },
+      },
+      'ai.freeFailures',
+    ))
+  const used = await scoped(tx, workspaceId).count(
+    aiMessage,
+    and(
+      gte(aiMessage.id, uuidv7Floor(now - windowSeconds * 1000)),
+      eq(aiMessage.role, 'assistant'),
+      eq(aiMessage.status, 'failed'),
+      eq(aiMessage.credits, 0),
+    ) as SQL,
+  )
+  return used >= count
+}
+
 export interface SettleInterruptedInput extends SettleBase, TextUsageInput {
   /** 停止 → aborted；出错 / 结算丢失 → failed */
   readonly status: 'aborted' | 'failed'
@@ -229,13 +284,17 @@ export interface SettleInterruptedInput extends SettleBase, TextUsageInput {
   readonly text?: string
   /** 是否已有输出（按次计费 `any_output` 据此决定扣费或释放） */
   readonly hasOutput: boolean
+  /** 省略时在结算事务内读取运行时设置；测试可直接传入 */
+  readonly freeFailures?: FreeFailurePolicy
 }
 
 /**
- * 未正常完成时的结算额（specs/ai-chat「主动停止」「出错与结算丢失」）：
- * - failed 无可见正文或开启失败全退时释放；用户主动停止维持原计费口径。
- * - 按 token：按已产生用量，不低于 `minCharge`。
- * - 按次：`chargeOn` 为 `any_output`（文本默认）且已有输出时全额，否则释放（undefined）。
+ * 未正常完成时的结算额（specs/ai-chat「主动停止」「出错与结算丢失」，specs/ai-text-reasoning）：
+ * - failed 且开启失败全退时释放。
+ * - failed 无可见正文：免费次数内释放；用完后按最后一次尝试的用量结算（按 token 不低于 `minCharge`，
+ *   拿不到用量时即 `minCharge`；按次收固定积分）。封顶预扣由调用方负责。
+ * - 其余（有正文的失败、用户主动停止）维持原口径：按 token 按已产生用量，不低于 `minCharge`；
+ *   按次在 `chargeOn` 为 `any_output`（文本默认）且已有输出时全额，否则释放（undefined）。
  */
 export function interruptedCredits(
   pricing: Pricing,
@@ -245,10 +304,22 @@ export function interruptedCredits(
     hasOutput: boolean
     status?: 'aborted' | 'failed'
     failedReplyRefund?: FailedReplyRefund
+    lastAttempt?: { inputTokens: number; outputTokens: number } | undefined
+    freeFailuresExhausted?: boolean
   },
 ): number | undefined {
-  if (usage.status === 'failed' && (!usage.hasOutput || usage.failedReplyRefund === 'all'))
-    return undefined
+  if (usage.status === 'failed' && usage.failedReplyRefund === 'all') return undefined
+  if (usage.status === 'failed' && !usage.hasOutput) {
+    if (!usage.freeFailuresExhausted) return undefined
+    switch (pricing.mode) {
+      case 'token':
+        return actualCredits(pricing, usage.lastAttempt ?? { inputTokens: 0, outputTokens: 0 })
+      case 'per_call':
+        return actualCredits(pricing, {})
+      case 'per_unit':
+        return undefined
+    }
+  }
   switch (pricing.mode) {
     case 'token':
       return actualCredits(pricing, usage)
@@ -271,8 +342,22 @@ export function settleInterruptedChatMessage(
   input: SettleInterruptedInput,
   tx?: CreditsTransaction,
 ): Promise<ChatSettlement | null> {
-  const amount = interruptedCredits(input.pricing, input)
   return once(db, tx, async (tx) => {
+    // 只有可能收费的无正文失败才需要计数；计数与结算在同一把积分锁内（可重入）。
+    const counted =
+      input.status === 'failed' &&
+      !input.hasOutput &&
+      input.failedReplyRefund !== 'all' &&
+      input.pricing.mode !== 'per_unit'
+    if (counted) await lockWorkspaceCredits(tx, input.workspaceId)
+    const exhausted =
+      counted && (await freeFailuresExhausted(tx, input.workspaceId, input.freeFailures))
+    const amount = interruptedCredits(input.pricing, {
+      ...input,
+      freeFailuresExhausted: exhausted,
+    })
+    // 超出免费次数时按最后一次尝试收费，消息上的用量与之对应。
+    const charged = exhausted && amount !== undefined ? input.lastAttempt : undefined
     const reservation = { workspaceId: input.workspaceId, holdId: input.holdId }
     let settlement: ChatSettlement = { captured: 0, absorbed: 0, debited: 0, debt: 0 }
     if (amount === undefined) await release(tx, reservation, tx)
@@ -290,8 +375,12 @@ export function settleInterruptedChatMessage(
       status: input.status,
       ...(input.text === undefined ? {} : { parts: messageParts(input.text, input.reasoning) }),
       usageCheckpoint: mergedCheckpoint(usageCheckpoint(input)),
-      inputTokens: amount !== undefined || input.status === 'failed' ? input.inputTokens : null,
-      outputTokens: amount !== undefined || input.status === 'failed' ? input.outputTokens : null,
+      inputTokens:
+        charged?.inputTokens ??
+        (amount !== undefined || input.status === 'failed' ? input.inputTokens : null),
+      outputTokens:
+        charged?.outputTokens ??
+        (amount !== undefined || input.status === 'failed' ? input.outputTokens : null),
       credits: settlement.captured + settlement.debited,
     })
     return settlement
@@ -330,6 +419,8 @@ export function settleFromCheckpoint(
         : { reasoningTokens: checkpoint.reasoningTokens }),
       ...(checkpoint?.absorbed === undefined ? {} : { absorbed: checkpoint.absorbed }),
       ...(checkpoint?.total === undefined ? {} : { total: checkpoint.total }),
+      // 兜底拿不到最后一次尝试的用量时，超出免费次数按 `minCharge` / 固定价结算。
+      ...(checkpoint?.lastAttempt === undefined ? {} : { lastAttempt: checkpoint.lastAttempt }),
       ...(checkpoint?.failedReplyRefund === undefined
         ? {}
         : { failedReplyRefund: checkpoint.failedReplyRefund }),

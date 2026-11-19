@@ -315,6 +315,32 @@ describe('Node runtime config', () => {
       ).toBe(host)
   })
 
+  it('Compose 传入空 PLAUSIBLE_SITES 时按未设置处理（单站），非空原样保留', () => {
+    const load = (env: Record<string, string>) =>
+      loadNodeEnv({ dotenvPath: false, env: { ...valid, ...env } })
+    expect(load({ PLAUSIBLE_SITES: '' }).PLAUSIBLE_SITES).toBeUndefined()
+    expect(load({ PLAUSIBLE_SITES: '  ' }).PLAUSIBLE_SITES).toBeUndefined()
+    expect(load({ PLAUSIBLE_SITES: 'a.example=a' }).PLAUSIBLE_SITES).toBe('a.example=a')
+  })
+
+  it('Compose 传入空 PAYMENT_MODE 时按未设置处理，线上报缺失且不默认 test', () => {
+    const load = (env: Record<string, string>) =>
+      loadNodeEnv({ dotenvPath: false, env: { ...valid, ...env } })
+    const blank = load({ PAYMENT_MODE: '' })
+    expect(blank.PAYMENT_MODE).toBeUndefined()
+    try {
+      resolvePaymentMode({ PAYMENT_MODE: blank.PAYMENT_MODE, SENTRY_ENVIRONMENT: 'production' })
+      expect.unreachable()
+    } catch (error) {
+      expect(error).toBeInstanceOf(EnvValidationError)
+      expect((error as EnvValidationError).missing).toEqual(['PAYMENT_MODE'])
+      expect((error as EnvValidationError).invalid).toEqual([])
+    }
+    expect(resolvePaymentMode({ PAYMENT_MODE: load({ PAYMENT_MODE: 'test' }).PAYMENT_MODE })).toBe(
+      'test',
+    )
+  })
+
   it('Sentry 环境可选无默认，空 DSN关闭，非法 DSN/环境和生产HTTP拒绝且不泄漏值', () => {
     const load = (env: Record<string, string>) =>
       loadNodeEnv({ dotenvPath: false, env: { ...valid, ...env } })

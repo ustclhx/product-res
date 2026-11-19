@@ -70,3 +70,13 @@ test('register, see the workbench navigation, sign out and back in', async ({
   await expect(page.getByTestId('current-user')).toContainText(email)
   expect(externalRequests).toEqual([])
 })
+
+test('component preview is not served when UI_PREVIEW is off (production parity)', async ({
+  request,
+}) => {
+  // playwright.smoke.config.ts 以 UI_PREVIEW=false 启动，与 production 不设该变量等价
+  for (const path of ['/dev/ui', '/zh/dev/ui']) {
+    const response = await request.get(path)
+    expect(response.status(), path).toBe(404)
+  }
+})

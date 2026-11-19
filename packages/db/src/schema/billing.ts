@@ -40,6 +40,7 @@ export interface PlanFeatures {
   publicApi: boolean
   priorityQueue: boolean
   watermark: boolean
+  capabilities?: Record<string, boolean>
 }
 
 const timestamps = {

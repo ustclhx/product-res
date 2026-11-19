@@ -530,8 +530,8 @@ test('跟卖候选列表与商品簇详情', async ({ page }) => {
   await page.getByTestId('members').screenshot({ path: `${receipts}06-members-refresh.png` })
 
   // 拆分最后一个成员
-  page.once('dialog', (dialog) => dialog.accept())
   await page.getByTestId('member-row').last().getByRole('button', { name: '拆分' }).click()
+  await page.getByRole('alertdialog').getByRole('button', { name: '拆分' }).click()
   await expect(page.getByTestId('members').getByTestId('member-row')).toHaveCount(2)
   await expect(page.getByText('拆出 1 个成员为新簇')).toBeVisible()
 })

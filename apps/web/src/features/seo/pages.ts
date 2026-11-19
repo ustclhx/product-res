@@ -19,10 +19,22 @@ interface Page {
   title: string
   description: string
 }
+interface Guide {
+  slug: string
+  locale: string
+  title: string
+  answer_summary: string
+  draft: boolean
+}
 
 /** 地图与 OG 共用公开页面清单，始终排除草稿、未来文章和关闭的功能。 */
 export function publicPages(
-  content: { posts: readonly Post[]; legal: readonly Page[]; docs: readonly Page[] },
+  content: {
+    posts: readonly Post[]
+    legal: readonly Page[]
+    docs: readonly Page[]
+    guides?: readonly Guide[]
+  },
   now = new Date(),
   config = templateConfig,
 ): SeoPage[] {
@@ -67,6 +79,21 @@ export function publicPages(
         path: `/legal/${encodeURIComponent(page.slug)}`,
       })),
     )
+    if (config.features.guides) {
+      pages.push(staticPage('/guides', locale))
+      pages.push(
+        ...localizedEntries(
+          (content.guides ?? []).filter((guide) => !guide.draft),
+          locale,
+          defaultLocale,
+        ).map((guide) => ({
+          locale,
+          path: `/guides/${encodeURIComponent(guide.slug)}`,
+          title: guide.title,
+          description: guide.answer_summary,
+        })),
+      )
+    }
     if (config.features.docs) {
       pages.push(staticPage('/docs', locale))
       pages.push(

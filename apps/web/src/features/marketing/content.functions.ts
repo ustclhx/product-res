@@ -1,9 +1,16 @@
 import { notFound } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
-import { allDocs, allLegalPages, allPosts } from 'content-collections'
+import { allDocs, allGuides, allLegalPages, allPosts } from 'content-collections'
 import { z } from 'zod'
 import { templateConfig } from '../../server/template-config.ts'
-import { findLocalized, findPost, listPosts, listTags, loadDocsPage } from './content.ts'
+import {
+  findLocalized,
+  findPost,
+  listPosts,
+  listTags,
+  loadDocsPage,
+  localizedEntries,
+} from './content.ts'
 
 /**
  * 博客、法律页与文档的数据（tasks.md 3.3、3.4）。内容在构建期生成，不访问数据库；
@@ -63,4 +70,26 @@ export const getDocsPage = createServerFn({ method: 'GET' })
     })
     if (!result) throw notFound()
     return result
+  })
+
+function requireGuides() {
+  if (!templateConfig.features.guides) throw notFound()
+}
+
+export const getGuideIndex = createServerFn({ method: 'GET' })
+  .inputValidator(z.object({ locale }))
+  .handler(({ data }) => {
+    requireGuides()
+    return localizedEntries(allGuides, data.locale, defaultLocale).map(
+      ({ html, faq, ...summary }) => summary,
+    )
+  })
+
+export const getGuide = createServerFn({ method: 'GET' })
+  .inputValidator(z.object({ locale, slug }))
+  .handler(({ data }) => {
+    requireGuides()
+    const guide = findLocalized(allGuides, data.slug, data.locale, defaultLocale)
+    if (!guide) throw notFound()
+    return guide
   })

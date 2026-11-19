@@ -1,4 +1,5 @@
 import type { QueueBatch, QueueMessage } from '@product-res/platform'
+import { AppError } from '@product-res/shared'
 import { afterEach, expect, it, vi } from 'vitest'
 import type { BillingEnv } from '../src/billing.ts'
 import { parseOperationsMessage, sendOperationsChannel } from '../src/notifications/operations.ts'
@@ -71,7 +72,11 @@ it('retries ordinary operations errors then records exhaustion while billing is 
   const batch = { messages: [entry] } as unknown as QueueBatch<unknown>
   const db = {}
   const env = { db: { business: () => db } } as unknown as BillingEnv
-  deliver.mockRejectedValue(new Error('Operations telegram delivery failed'))
+  deliver.mockRejectedValue(
+    new AppError('OPERATIONS_TELEGRAM_DELIVERY_FAILED', 'Operations telegram delivery failed', {
+      status: 503,
+    }),
+  )
   const failed = vi.fn().mockResolvedValue(undefined)
   const options = { billingEnabled: false, deadLetters: { failed } }
   await handleBillingBatch(batch, env, logJobObserver, options)
@@ -85,7 +90,7 @@ it('retries ordinary operations errors then records exhaustion while billing is 
     options,
   )
   expect(failed).toHaveBeenCalledWith(exhausted, {
-    code: 'OPERATIONS_ATTEMPTS_EXHAUSTED',
+    code: 'OPERATIONS_TELEGRAM_DELIVERY_FAILED',
     retryable: true,
   })
   expect(exhausted.retry).not.toHaveBeenCalled()

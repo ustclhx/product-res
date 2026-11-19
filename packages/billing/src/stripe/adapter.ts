@@ -15,9 +15,11 @@ import {
   createStripeSnapshots,
   mapStripeSubscription,
   stripeDate,
+  stripeInvoiceLines,
   stripeInvoiceSubscription,
   stripeObjectId,
   stripeRaw,
+  stripeSubscriptionLines,
 } from './snapshots.ts'
 
 export interface StripeProviderOptions {
@@ -85,8 +87,15 @@ async function normalizeStripeEvent(
     case 'invoice.paid': {
       const invoice = event.data.object
       const subscriptionId = stripeInvoiceSubscription(invoice)
-      const kind = classifyStripeBillingReason(invoice.billing_reason)
-      if (!subscriptionId || kind === 'unsupported') break
+      if (!subscriptionId) break
+      // 只有 subscription_update 需要看发票行区分周期变更首期与升级差价
+      const kind = classifyStripeBillingReason(
+        invoice.billing_reason,
+        invoice.billing_reason === 'subscription_update'
+          ? stripeSubscriptionLines(invoice, await stripeInvoiceLines(stripe, invoice))
+          : undefined,
+      )
+      if (kind === 'unsupported') break
       const payments = await stripe.invoicePayments.list({
         invoice: invoice.id,
         status: 'paid',

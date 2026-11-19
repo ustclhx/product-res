@@ -1,0 +1,11 @@
+{
+  "admin_daily_credits_settings": "Daily credits",
+  "admin_daily_credits_template_switch_note": "Daily grants require the credits.dailyEnabled template switch. Days and monthly limits use UTC.",
+  "admin_daily_credits_amount": "Credits per day",
+  "admin_daily_credits_max_days": "Maximum days per month",
+  "admin_daily_credits_expiry_days": "Valid for (days)",
+  "admin_daily_credits_require_verified_email": "Require a verified email",
+  "admin_daily_credits_unverified_email_warning": "If disabled, unverified accounts may claim daily credits using someone else's email address and consume that email's daily and monthly limits.",
+  "admin_daily_grant_count": "Daily grants",
+  "admin_daily_grant_credits": "Daily credits granted"
+}

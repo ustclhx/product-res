@@ -1,0 +1,19 @@
+{
+  "kind": "judge",
+  "promptVersion": "product-intro@v2",
+  "rubricVersion": "r1",
+  "outputHash": "sha256:b0abd9f04f08156b2fe3683be1714f07a645dd939782f809a400279561676a5e",
+  "model": {
+    "key": "deepseek-chat",
+    "provider": "deepseek",
+    "providerModelId": "deepseek-chat"
+  },
+  "output": "{\"criteria\":{\"accuracy\":{\"score\":5,\"reason\":\"All claims (120g paper, no bleed-through, monthly/weekly pages, lay-flat thread binding) are directly supported by the listed features; no invented facts.\"},\"clarity\":{\"score\":5,\"reason\":\"Well-structured with clear sections and concise bullet points, easy to scan.\"},\"audience-fit\":{\"score\":5,\"reason\":\"Explicitly addresses students who like planning, with relevant use cases like course schedules and homework progress.\"}},\"summary\":\"Accurate, clear, and well-targeted output that faithfully reflects the given features and speaks directly to the student planning audience.\"}",
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 603,
+    "outputTokens": 133
+  },
+  "recordedAt": "2026-11-14T07:12:27.310Z",
+  "source": "recorded"
+}

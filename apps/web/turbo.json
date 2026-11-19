@@ -2,8 +2,28 @@
   "$schema": "https://turborepo.com/schema.json",
   "extends": ["//"],
   "tasks": {
+    // 测试与 e2e 导入 apps/jobs 源码和根 scripts 下的工具，它们不在 web 的依赖闭包内
+    "typecheck": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/jobs/**",
+        // 显式 glob 不读 .gitignore：排除依赖与构建产物
+        "!$TURBO_ROOT$/apps/jobs/node_modules",
+        "!$TURBO_ROOT$/apps/jobs/dist",
+        "!$TURBO_ROOT$/apps/jobs/.output",
+        "!$TURBO_ROOT$/apps/jobs/.wrangler",
+        "!$TURBO_ROOT$/apps/jobs/.turbo",
+        "!$TURBO_ROOT$/apps/jobs/.dev.vars",
+        "$TURBO_ROOT$/scripts/production/check-wrangler-envs.*",
+        "$TURBO_ROOT$/scripts/sentry-node-maps.mjs"
+      ],
+      // typecheck 脚本先生成路由树、文案与内容集合，后续步骤（build、衍生项目的检查）会读取；
+      // 声明为 outputs 才能在缓存命中时恢复，否则命中后这些文件缺失
+      "outputs": [".content-collections/generated/**", "src/routeTree.gen.ts", "src/paraglide/**"]
+    },
     "build": {
-      "outputs": ["$TURBO_EXTENDS$", "!dist/**/.dev.vars"]
+      // vite 的 content-collections 插件在构建时生成内容集合，同样需要随缓存恢复
+      "outputs": ["$TURBO_EXTENDS$", "!dist/**/.dev.vars", ".content-collections/generated/**"]
     },
     "test": {
       // web 与 jobs 的集成测试读写同一个 jobs.lastCronAt 键，串行运行避免互相覆盖

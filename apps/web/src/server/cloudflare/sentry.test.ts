@@ -66,3 +66,9 @@ it('框架捕获的异常附当前请求身份，预期业务错误与本地错�
     tags: { requestId: 'request-1', userId: 'user-1', workspaceId: undefined },
   })
 })
+
+it('>=500 AppError 仍向 Cloudflare Sentry 上报', () => {
+  const error = new AppError('CREDIT_STORAGE_FAILED', 'Internal credit failure', { status: 500 })
+  captureServerError(error)
+  expect(mocks.capture).toHaveBeenCalledWith(error, expect.any(Object))
+})

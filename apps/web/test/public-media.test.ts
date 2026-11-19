@@ -16,6 +16,7 @@ import { getFileDownload, persistMediaOutputs } from '@product-res/storage'
 import {
   createCloudflareMediaCopier,
   createCloudflareStorage,
+  FILES_BUCKETS,
   type StorageEnv,
 } from '@product-res/storage/cloudflare'
 import { afterAll, describe, expect, it, vi } from 'vitest'
@@ -60,7 +61,7 @@ const objectKeys: string[] = []
 const storageEnv: StorageEnv = {
   FILES: env.FILES,
   R2_ACCOUNT_ID: '00000000000000000000000000000000',
-  R2_FILES_BUCKET: 'files',
+  R2_FILES_BUCKET: FILES_BUCKETS[0],
   R2_ACCESS_KEY_ID: 'test-access-key',
   R2_SECRET_ACCESS_KEY: 'test-secret-key',
 }

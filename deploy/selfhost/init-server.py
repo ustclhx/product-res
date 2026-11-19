@@ -71,12 +71,15 @@ def safe_path(path):
                     'managed path has non-root owner or writable ancestor')
 
 
-def supported(os_release, arch):
+def supported(os_release, arch, local_arm64_fixture=False):
     values = dict(re.findall(r'^([A-Z_]+)="?([^"\n]*)"?$', os_release, re.M))
     pair = (values.get('ID'), values.get('VERSION_ID'), values.get('VERSION_CODENAME'))
     require(pair in [('ubuntu', '24.04', 'noble'), ('debian', '12', 'bookworm')],
             'supported OS: Ubuntu 24.04 noble or Debian 12 bookworm')
-    require(arch in ['amd64', 'arm64'], 'supported architecture: amd64 or arm64')
+    # 正式镜像只发布 linux/amd64；arm64 主机只允许显式声明的本机 VM 夹具（本地构建镜像或旧双架构发布）。
+    require(arch == 'amd64' or (arch == 'arm64' and local_arm64_fixture),
+            'supported architecture: amd64 (published images are linux/amd64 only; '
+            'arm64 is limited to explicit --local-arm64-fixture VMs)')
     return pair[0], pair[1], pair[2]
 
 
@@ -237,6 +240,8 @@ def main():
     parser = argparse.ArgumentParser(description='Initialize only a blank Ubuntu24.04/Debian12 host')
     parser.add_argument('--dir', default='/opt/product-res-selfhost', help='empty root-owned deployment directory')
     parser.add_argument('--check', action='store_true', help='read-only preflight/verify, no installation')
+    parser.add_argument('--local-arm64-fixture', action='store_true',
+                        help='local VM fixture only: allow arm64; published images do not run there')
     args = parser.parse_args()
     require(os.geteuid() == 0, 'run as root on the explicitly selected empty VM')
     require(sys.platform == 'linux' and Path('/run/systemd/system').is_dir(), 'Linux systemd host required')
@@ -245,7 +250,8 @@ def main():
             and len(directory.parts) >= 3, 'deployment directory must be below /opt or /srv')
     safe_path(directory)
     require(HERE.joinpath('.env.example').is_file(), 'same-release .env.example is required')
-    distro, release, suite = supported(Path('/etc/os-release').read_text(), run('dpkg', '--print-architecture'))
+    distro, release, suite = supported(Path('/etc/os-release').read_text(), run('dpkg', '--print-architecture'),
+                                       args.local_arm64_fixture)
     versions = package_versions(distro, release, suite)
     require(os.cpu_count() >= 2, 'at least 2 CPUs required')
     memory = int(re.search(r'^MemTotal:\s+(\d+)', Path('/proc/meminfo').read_text(), re.M)[1])

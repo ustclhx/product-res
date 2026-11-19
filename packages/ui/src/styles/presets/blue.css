@@ -1,0 +1,22 @@
+/*
+ * 主题预设 blue：只换颜色，见 neutral.css 的说明。
+ * 焦点环与实心主按钮同为蓝色时对比不足 3:1，因此浅色焦点环用近黑、深色用浅蓝。
+ */
+:root[data-preset="blue"] {
+  --ui-preset: blue;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --fluid-accent: #3b82f6;
+  --focus-ring: #171717;
+}
+
+:root[data-preset="blue"].dark {
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  /* 强调色作文字（link 变体）：实心主按钮色在深色页面上不足 4.5:1，改用 blue 400 号色 */
+  --primary-text: #60a5fa;
+  --fluid-accent: #60a5fa;
+  --focus-ring: #bfdbfe;
+  /* 浅色强调色上白色滑块不足 3:1，开启态滑块改用深色 */
+  --switch-thumb-on: #171717;
+}

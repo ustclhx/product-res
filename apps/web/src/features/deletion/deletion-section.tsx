@@ -1,3 +1,4 @@
+import { Button } from '@product-res/ui'
 import { useEffect, useState } from 'react'
 import { authClient } from '../auth/auth-client.ts'
 import { removeAccount, removeWorkspace } from './deletion.functions.ts'
@@ -120,14 +121,14 @@ export function DeletionSection({
           ))}
         </ul>
       )}
-      <button
+      <Button
         type="button"
-        className="rounded bg-destructive p-2 text-destructive-foreground disabled:opacity-50"
+        variant="destructive"
         disabled={!hydrated || busy || completed || confirmation !== label}
         onClick={() => void submit()}
       >
         {busy ? 'Deleting…' : workspace ? 'Delete workspace' : 'Delete account'}
-      </button>
+      </Button>
     </section>
   )
 }

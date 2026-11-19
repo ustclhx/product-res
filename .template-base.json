@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "repository": "https://github.com/ustclhx/saas-template",
+  "commit": "c1de6d2b0a9a5813ce989896a27d78c66130828c",
+  "version": "0.7.0",
+  "clean": true,
+  "params": {
+    "ai": [
+      "text"
+    ],
+    "billing": [],
+    "billing-enabled": true,
+    "credits-enabled": true,
+    "domain": "https://product.ezarouter.cc",
+    "features": [],
+    "i18n": false,
+    "image-namespace": "ghcr.io/ustclhx/product-res",
+    "locale": "zh",
+    "marketing": false,
+    "media-providers": [
+      "fal",
+      "workers-ai"
+    ],
+    "multi-tenant": false,
+    "name": "product-res",
+    "oauth": [],
+    "support-email": "hxl15380@gmail.com",
+    "target": "selfhost",
+    "turnstile": false
+  },
+  "migrations": [
+    "0000_init",
+    "0001_auth_and_tenancy",
+    "0002_graceful_stryfe",
+    "0003_blue_mentor",
+    "0004_demonic_praxagora",
+    "0005_flippant_garia",
+    "0006_sour_rictor",
+    "0007_rare_moonstone",
+    "0008_public_sister_grimm",
+    "0009_audit_log_append_only",
+    "0010_fantastic_weapon_omega",
+    "0011_smiling_rocket_racer",
+    "0012_thick_maginty",
+    "0013_node_job_engine",
+    "0014_node_job_engine_events",
+    "0015_node_job_scheduling",
+    "0016_job_engine_app_dead_letter",
+    "0017_audit_meta_remove_personal_data",
+    "0018_ai_task_cancel_billing",
+    "0019_user_attribution",
+    "0020_user_attribution_signup_host",
+    "0021_daily_credits",
+    "0022_subject_chat",
+    "0023_feedback_reason",
+    "0024_feedback_share"
+  ]
+}

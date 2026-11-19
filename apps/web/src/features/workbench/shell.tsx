@@ -4,7 +4,7 @@ import { type ReactNode, useEffect, useState } from 'react'
 import { m } from '../../paraglide/messages.js'
 import { templateConfig } from '../../server/template-config.ts'
 import { authClient } from '../auth/auth-client.ts'
-import { NotificationCenter } from '../notifications/center.tsx'
+import { NotificationBell } from '../notifications/bell.tsx'
 import { ThemeToggle } from '../theme/theme-toggle.tsx'
 import { TransferBanner } from '../transfer/banner.tsx'
 import { type WorkspacePage, WorkspaceSwitcher } from '../workspace/components.tsx'
@@ -18,8 +18,8 @@ export function WorkbenchShell({ page, children }: { page: WorkspacePage; childr
   const current = WORKBENCH_NAV.find((item) => item.key === active)
   return (
     <div className="flex min-h-screen bg-page">
-      <aside className="w-[200px] shrink-0 bg-sidebar text-sidebar-foreground">
-        <div className="flex items-center gap-2 border-b border-white/10 p-4 text-[15px] font-semibold">
+      <aside className="w-50 shrink-0 bg-sidebar text-sidebar-foreground">
+        <div className="flex items-center gap-2 border-b border-white/10 p-4 text-title font-semibold">
           <span className="flex size-7 items-center justify-center rounded-md bg-primary text-sm text-primary-foreground">
             选
           </span>
@@ -34,7 +34,7 @@ export function WorkbenchShell({ page, children }: { page: WorkspacePage; childr
                   params={{ slug }}
                   aria-current={active === item.key ? 'page' : undefined}
                   className={cn(
-                    'flex items-center px-5 py-2.5 text-[13px] text-sidebar-muted transition-colors hover:bg-white/5 hover:text-white',
+                    'flex items-center px-5 py-2.5 text-caption text-sidebar-muted transition-colors hover:bg-white/5 hover:text-white',
                     active === item.key && 'bg-primary font-medium text-white hover:bg-primary',
                   )}
                 >
@@ -47,7 +47,7 @@ export function WorkbenchShell({ page, children }: { page: WorkspacePage; childr
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between gap-4 border-b bg-card px-5 py-3">
-          <div className="text-[13px] text-muted-foreground">
+          <div className="text-caption text-muted-foreground">
             <span data-testid="workspace-name">{page.workspace.name}</span>
             {current ? (
               <>
@@ -69,7 +69,7 @@ export function WorkbenchShell({ page, children }: { page: WorkspacePage; childr
             <Link
               to="/app/$slug/settings"
               params={{ slug }}
-              className="text-[13px] text-muted-foreground hover:text-foreground"
+              className="text-caption text-muted-foreground hover:text-foreground"
             >
               {m.app_workspace_settings()}
             </Link>
@@ -78,7 +78,7 @@ export function WorkbenchShell({ page, children }: { page: WorkspacePage; childr
                 只读
               </span>
             ) : null}
-            <NotificationCenter key={slug} slug={slug} />
+            <NotificationBell />
             <AccountMenu page={page} />
           </div>
         </header>
@@ -93,8 +93,8 @@ function AccountMenu({ page }: { page: WorkspacePage }) {
   const slug = page.workspace.slug
   return (
     <details className="relative">
-      <summary className="flex cursor-pointer list-none items-center gap-2 text-[13px]">
-        <span className="flex size-7 items-center justify-center rounded-full bg-primary-soft text-xs font-semibold text-primary">
+      <summary className="flex cursor-pointer list-none items-center gap-2 text-caption">
+        <span className="flex size-7 items-center justify-center rounded-full bg-primary-soft text-xs font-semibold text-primary-text">
           {(page.user.name || page.user.email).slice(0, 1).toUpperCase()}
         </span>
         <span data-testid="current-user">

@@ -1,4 +1,5 @@
 import { estimateCredits, type Pricing } from '@product-res/ai/client'
+import { m } from '../../paraglide/messages.js'
 
 /**
  * 预计消耗（docs/06-ai.md §2「展示」）：按次显示确定值，按 token 显示「约 X–Y」区间。
@@ -60,13 +61,23 @@ export function creditEstimate(pricing: Pricing, options: EstimateOptions): Cred
   }
 }
 
+/** 模型选择与预计消耗的文案（按当前语言读取） */
 export const MODEL_PICKER_COPY = {
-  label: 'Model',
-  empty: 'No models are available on your current plan.',
-  estimate: 'Estimated cost',
+  get label() {
+    return m.chat_ui_model()
+  },
+  get empty() {
+    return m.chat_ui_model_empty()
+  },
+  get estimate() {
+    return m.chat_ui_estimate()
+  },
 }
 
-const credits = (n: number) => `${n} ${n === 1 ? 'credit' : 'credits'}`
+const credits = (n: number) =>
+  n === 1 ? m.chat_ui_credit_one({ count: n }) : m.chat_ui_credit_other({ count: n })
+const unitLabel = (unit: 'image' | 'second') =>
+  unit === 'image' ? m.chat_ui_unit_image() : m.chat_ui_unit_second()
 
 /** 按次：「5 credits」；按 token：「~3–120 credits」（相等时只显示一个值）；按用量：「2 credits / image」 */
 export function formatEstimate(estimate: CreditEstimate): string {
@@ -78,6 +89,6 @@ export function formatEstimate(estimate: CreditEstimate): string {
         ? `~${credits(estimate.max)}`
         : `~${estimate.min}–${credits(estimate.max)}`
     case 'per_unit':
-      return `${credits(estimate.credits)} / ${estimate.unit}`
+      return `${credits(estimate.credits)} / ${unitLabel(estimate.unit)}`
   }
 }

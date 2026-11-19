@@ -1,0 +1,18 @@
+{
+  "kind": "generation",
+  "promptVersion": "product-intro@v1",
+  "renderedHash": "sha256:cc4bc4ece1f4008f9a8f30904dd60bb0d52c0dd406881b8bfad98bc64de462d7",
+  "model": {
+    "key": "deepseek-chat",
+    "provider": "deepseek",
+    "providerModelId": "deepseek-chat"
+  },
+  "output": "## 概述  \n这款折叠自行车专为“地铁+骑行”通勤场景设计，兼顾便携性与骑行性能。十秒快速折叠，轻松带入地铁车厢或办公室；整车仅重十一公斤，搬运不费力；配备七速变速系统，应对城市坡道与不同路况更从容。\n\n## 亮点  \n- 十秒折叠：快速收折，通勤换乘更高效  \n- 整车十一公斤：轻量车身，手提肩扛更轻松  \n- 七速变速：灵活适应城市道路与坡度变化",
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 87,
+    "outputTokens": 114
+  },
+  "recordedAt": "2026-11-14T07:11:50.704Z",
+  "source": "recorded"
+}

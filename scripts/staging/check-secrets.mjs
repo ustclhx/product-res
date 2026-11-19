@@ -13,6 +13,7 @@ const paymentSecrets = [
   'PAYPAL_WEBHOOK_ID',
 ]
 const optionalSecrets = ['RESEND_API_KEY', 'AI_GATEWAY_TOKEN', 'SENTRY_DSN']
+const webOnlyOptionalSecrets = ['INDEXNOW_KEY']
 // 缺少时仅文件签名入口返回 503，不阻断认证、营销页和不需要 S3 的清理 Cron。
 const storageSecrets = ['R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY']
 
@@ -27,7 +28,7 @@ export const secretRequirements = {
       'GITHUB_CLIENT_SECRET',
       ...paymentSecrets,
     ],
-    optional: [...optionalSecrets, ...storageSecrets],
+    optional: [...optionalSecrets, ...storageSecrets, ...webOnlyOptionalSecrets],
   },
   jobs: { required: paymentSecrets, optional: optionalSecrets },
 }

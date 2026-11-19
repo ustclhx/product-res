@@ -1,12 +1,14 @@
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { localArchitectures } from './policy.mjs'
 
 const root = resolve(import.meta.dirname, '../../..')
 const [version, architecture, directory] = process.argv.slice(2)
 if (
   !/^[a-f0-9]{40}$/.test(version ?? '') ||
-  !['amd64', 'arm64'].includes(architecture) ||
+  // 发布只用 amd64；arm64 保留给 Apple Silicon 本机构建，发布侧由 policy.architectures 拦截。
+  !localArchitectures.includes(architecture) ||
   !directory
 )
   throw new Error('Usage: build.mjs <fullSha> <amd64|arm64> <output-dir>')

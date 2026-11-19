@@ -1,0 +1,19 @@
+{
+  "kind": "judge",
+  "promptVersion": "product-intro@v1",
+  "rubricVersion": "r1",
+  "outputHash": "sha256:e30084dc4ad8e50a527a834c78efb99e113b83164ad2fb8d75e2149b5dc63ea6",
+  "model": {
+    "key": "deepseek-chat",
+    "provider": "deepseek",
+    "providerModelId": "deepseek-chat"
+  },
+  "output": "{\"criteria\":{\"accuracy\":{\"score\":5,\"reason\":\"All claims (ten-second fold, 11 kg weight, seven-speed gearing) map directly to the listed features; no invented specs.\"},\"clarity\":{\"score\":5,\"reason\":\"Concise, well-structured with overview and bulleted highlights, easy to scan.\"},\"audience-fit\":{\"score\":5,\"reason\":\"Explicitly addresses metro-plus-cycling commuters' needs like carrying onto trains, portability, and varied urban terrain.\"}},\"summary\":\"Accurate, clear, and well-targeted to the commuting audience, using only the provided features without fabrication.\"}",
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 585,
+    "outputTokens": 131
+  },
+  "recordedAt": "2026-11-14T07:11:52.745Z",
+  "source": "recorded"
+}

@@ -1,5 +1,13 @@
 import { METRICS } from '@product-res/datasources'
-import { Button, Input, Tag } from '@product-res/ui'
+import {
+  Button,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  Tag,
+} from '@product-res/ui'
 import { useEffect, useState } from 'react'
 import { QuoteImportPanel } from '../costing/quote-import-panel.tsx'
 import { QUOTE_IMPORT_SOURCE } from '../costing/quote-template.ts'
@@ -44,6 +52,9 @@ const FIELD_OPTIONS: [string, string][] = [
     `指标：${def.label}`,
   ]),
 ]
+
+/** 映射模板「自动识别」的占位值：Select 的选项值不能为空串，读写时换回 '' */
+const AUTO_TEMPLATE = '__auto__'
 
 const targetValue = (t: Target | undefined) =>
   !t ? 'ignore' : t.kind === 'metric' ? `metric:${t.metric}` : t.kind
@@ -171,50 +182,75 @@ export function FileImport({
           XLSX（多工作表可在预览中切换，默认第一个），最大 5 MB；空单元格保持为空，不补零。
         </p>
         <div className="grid gap-3 md:grid-cols-3">
-          <label className="grid gap-1 text-xs">
-            <span className="text-muted-foreground">数据源</span>
-            <select
-              className="rounded-md border bg-background px-2 py-1.5 text-sm"
-              value={sourceId}
-              onChange={(e) => {
-                setSourceId(e.target.value)
+          <div className="grid gap-1 text-xs">
+            <label htmlFor="import-source" className="text-muted-foreground">
+              数据源
+            </label>
+            <Select
+              value={data?.sources.some((s) => s.id === sourceId) ? sourceId : ''}
+              onValueChange={(v) => {
+                setSourceId(v)
                 setPreview(null)
                 setFile(null)
               }}
             >
-              {data?.sources.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="grid gap-1 text-xs">
-            <span className="text-muted-foreground">站点</span>
-            <select
-              className="rounded-md border bg-background px-2 py-1.5 text-sm"
-              value={marketplace}
-              onChange={(e) => setMarketplace(e.target.value as Marketplace)}
-            >
-              {MARKETPLACES.map((m) => (
-                <option key={m}>{m}</option>
-              ))}
-            </select>
-          </label>
+              <SelectTrigger id="import-source" className="w-full min-w-0" placeholder="数据源" />
+              <SelectContent>
+                {data?.sources.map((s, index) => (
+                  <SelectItem key={s.id} index={index} value={s.id}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1 text-xs">
+            <label htmlFor="import-marketplace" className="text-muted-foreground">
+              站点
+            </label>
+            <Select value={marketplace} onValueChange={(v) => setMarketplace(v as Marketplace)}>
+              <SelectTrigger
+                id="import-marketplace"
+                className="w-full min-w-0"
+                placeholder="站点"
+              />
+              <SelectContent>
+                {MARKETPLACES.map((m, index) => (
+                  <SelectItem key={m} index={index} value={m}>
+                    {m}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           {quoteMode ? null : (
             <>
-              <label className="grid gap-1 text-xs">
-                <span className="text-muted-foreground">每行是</span>
-                <select
-                  className="rounded-md border bg-background px-2 py-1.5 text-sm"
+              <div className="grid gap-1 text-xs">
+                <label htmlFor="import-entity" className="text-muted-foreground">
+                  每行是
+                </label>
+                <Select
                   value={entityType}
-                  onChange={(e) => setEntityType(e.target.value as typeof entityType)}
+                  onValueChange={(v) => setEntityType(v as typeof entityType)}
                 >
-                  <option value="product">商品</option>
-                  <option value="keyword">关键词</option>
-                  <option value="seller">卖家</option>
-                </select>
-              </label>
+                  <SelectTrigger
+                    id="import-entity"
+                    className="w-full min-w-0"
+                    placeholder="每行是"
+                  />
+                  <SelectContent>
+                    <SelectItem index={0} value="product">
+                      商品
+                    </SelectItem>
+                    <SelectItem index={1} value="keyword">
+                      关键词
+                    </SelectItem>
+                    <SelectItem index={2} value="seller">
+                      卖家
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid gap-1 text-xs">
                 <label htmlFor="import-observed-on" className="text-muted-foreground">
                   观测日期（文件没有日期列时使用）
@@ -226,21 +262,31 @@ export function FileImport({
                   onChange={(e) => setObservedOn(e.target.value)}
                 />
               </div>
-              <label className="grid gap-1 text-xs">
-                <span className="text-muted-foreground">映射模板</span>
-                <select
-                  className="rounded-md border bg-background px-2 py-1.5 text-sm"
-                  value={templateId}
-                  onChange={(e) => setTemplateId(e.target.value)}
+              <div className="grid gap-1 text-xs">
+                <label htmlFor="import-template" className="text-muted-foreground">
+                  映射模板
+                </label>
+                <Select
+                  value={templates.some((t) => t.id === templateId) ? templateId : AUTO_TEMPLATE}
+                  onValueChange={(v) => setTemplateId(v === AUTO_TEMPLATE ? '' : v)}
                 >
-                  <option value="">自动识别</option>
-                  {templates.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  <SelectTrigger
+                    id="import-template"
+                    className="w-full min-w-0"
+                    placeholder="自动识别"
+                  />
+                  <SelectContent>
+                    <SelectItem index={0} value={AUTO_TEMPLATE}>
+                      自动识别
+                    </SelectItem>
+                    {templates.map((t, index) => (
+                      <SelectItem key={t.id} index={index + 1} value={t.id}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid gap-1 text-xs">
                 <label htmlFor="import-file" className="text-muted-foreground">
                   文件
@@ -286,30 +332,36 @@ export function FileImport({
           }
         >
           {preview.sheetNames.length > 1 ? (
-            <label className="flex items-center gap-2 text-xs">
-              <span className="text-muted-foreground">工作表</span>
-              <select
-                aria-label="工作表"
-                className="rounded-md border bg-background px-2 py-1"
+            <div className="flex items-center gap-2 text-xs">
+              <span aria-hidden className="text-muted-foreground">
+                工作表
+              </span>
+              <Select
+                size="compact"
                 value={preview.sheetName ?? ''}
                 disabled={busy}
-                onChange={async (e) => {
+                onValueChange={async (v) => {
                   if (!file) return
                   // 换工作表后列不同，重新自动识别映射
-                  const next = { ...file, sheet: e.target.value }
+                  const next = { ...file, sheet: v }
                   setFile(next)
                   await runPreview(undefined, next)
                 }}
               >
-                {preview.sheetNames.map((name) => (
-                  <option key={name}>{name}</option>
-                ))}
-              </select>
-            </label>
+                <SelectTrigger aria-label="工作表" placeholder="工作表" />
+                <SelectContent>
+                  {preview.sheetNames.map((name, index) => (
+                    <SelectItem key={name} index={index} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           ) : null}
           <div className="grid gap-2 md:grid-cols-2">
             {preview.headers.map((header) => (
-              <label key={header} className="flex items-center justify-between gap-2 text-xs">
+              <div key={header} className="flex items-center justify-between gap-2 text-xs">
                 <span className="truncate font-mono">
                   {header}
                   {preview.unmatched.includes(header) ? (
@@ -318,21 +370,25 @@ export function FileImport({
                     </Tag>
                   ) : null}
                 </span>
-                <select
-                  aria-label={`列 ${header} 对应`}
-                  className="w-56 rounded-md border bg-background px-2 py-1"
+                <Select
+                  size="compact"
                   value={targetValue(mapping[header])}
-                  onChange={(e) =>
-                    setMapping({ ...mapping, [header]: parseTarget(e.target.value) })
-                  }
+                  onValueChange={(v) => setMapping({ ...mapping, [header]: parseTarget(v) })}
                 >
-                  {FIELD_OPTIONS.map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  <SelectTrigger
+                    aria-label={`列 ${header} 对应`}
+                    className="w-56"
+                    placeholder="不导入"
+                  />
+                  <SelectContent>
+                    {FIELD_OPTIONS.map(([value, label], index) => (
+                      <SelectItem key={value} index={index} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             ))}
           </div>
           <SimpleTable

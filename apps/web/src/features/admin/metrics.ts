@@ -26,12 +26,16 @@ export async function readAdminMetrics(
   const overageByModel: Record<string, number> = {}
   let registrations = 0,
     creditsConsumed = 0,
+    dailyGrantCount = 0,
+    dailyGrantCredits = 0,
     overageAbsorbed = 0,
     completed = 0,
     attempts = 0
   for (const row of rows) {
     registrations += row.registrations
     creditsConsumed += row.creditsConsumed
+    dailyGrantCount += row.dailyGrantCount
+    dailyGrantCredits += row.dailyGrantCredits
     overageAbsorbed += row.overageAbsorbed
     completed += row.textCompleted
     attempts += row.textCompleted + row.textFailed + row.textAborted
@@ -46,6 +50,8 @@ export async function readAdminMetrics(
     latest,
     registrations,
     creditsConsumed,
+    dailyGrantCount,
+    dailyGrantCredits,
     overageAbsorbed,
     overageByModel,
     successRate: attempts ? completed / attempts : null,

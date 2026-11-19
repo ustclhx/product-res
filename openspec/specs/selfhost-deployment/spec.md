@@ -70,15 +70,15 @@ Cloudflare SHALL 保持主目标，既有测试、构建和 staging 自动发布
 - **WHEN** B 的真实队列已经装配，在空卷本地 Compose 上启用验证邮件与多租户
 - **THEN** 注册、通过真实队列收到验证邮件、验证、真实退出再登录及切换空间全部通过；未完成前对应任务保持待办
 
-### Requirement: 多架构不可变镜像交付
-CI SHALL 为 web、jobs、migrate 及官方 Compose 所需配套服务发布 linux/amd64 和 linux/arm64 镜像，默认 GHCR 且允许配置其他 OCI 仓库。镜像 SHALL 使用源码完整 git SHA 标签，版本内镜像与部署材料 SHALL 一致，正式 SHA 标签 MUST NOT 覆写。服务器 MUST 只拉取镜像，不构建源码。（P1）
+### Requirement: 不可变镜像交付
+CI SHALL 为 web、jobs、migrate 及官方 Compose 所需配套服务发布 linux/amd64 镜像（2026-11 起不再发布 linux/arm64，无异构部署需求；arm64 仅保留本机开发构建），默认 GHCR 且允许配置其他 OCI 仓库。镜像 SHALL 使用源码完整 git SHA 标签，版本内镜像与部署材料 SHALL 一致，正式 SHA 标签 MUST NOT 覆写。服务器 MUST 只拉取镜像，不构建源码。（P1）
 
-#### Scenario: 两种架构发布同一版本
+#### Scenario: 发布同一版本
 - **WHEN** 受信提交通过发布验证
-- **THEN** 两架构均可拉取并运行同 SHA 的完整镜像集合，web/jobs 的版本与该提交一致，部署材料可追溯到同一 SHA
+- **THEN** linux/amd64 主机可拉取并运行同 SHA 的完整镜像集合，web/jobs 的版本与该提交一致，部署材料可追溯到同一 SHA
 
 #### Scenario: 部分镜像构建失败
-- **WHEN** 任一必需服务或架构构建/验证失败
+- **WHEN** 任一必需服务构建/验证失败
 - **THEN** 发布流程失败，不将不完整的版本声明为可部署 release，不改变上一成功版本
 
 ### Requirement: 迁移受控的 Compose 发布

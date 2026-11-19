@@ -146,6 +146,12 @@ function localWorkflow(deps: MediaHttpDeps): Workflow<{ taskId: string }> {
   return {
     get: async (id) => instance(id),
     async create({ params }) {
+      // 仅 harden-ai 本地入口设置：模拟 Workflow 调度延迟，任务在此期间保持 queued，供「排队中取消」复现；
+      // 默认 0，其他本地入口行为不变。
+      const delay =
+        Number((env as { LOCAL_WORKFLOW_START_DELAY_MS?: string }).LOCAL_WORKFLOW_START_DELAY_MS) ||
+        0
+      if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay))
       const step: WorkflowStep = {
         do: async <T extends JsonValue>(
           _name: string,

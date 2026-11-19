@@ -5,6 +5,7 @@ import base64
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import sys
 import time
@@ -25,7 +26,10 @@ def main():
     mode.add_argument('--official-flock', action='store_true', help='accept the official flock image with private PID namespaces and no source patches')
     parser.add_argument('--expected-sha', help='required full release SHA for --official-flock')
     parser.add_argument('--patch-directory', type=Path, default=Path('/opt/d-vm-input/patch'))
-    parser.add_argument('--runtime-evidence', type=Path, default=Path('/opt/d-vm-results/runtime.json'))
+    parser.add_argument(
+        '--runtime-evidence', type=Path,
+        default=Path(os.environ.get('EVIDENCE_DIR') or 'test-results/evidence') / 'selfhost/runtime.json',
+    )
     args = parser.parse_args()
     if args.official_flock and (not args.expected_sha or len(args.expected_sha) != 40 or
                               any(c not in '0123456789abcdef' for c in args.expected_sha)):

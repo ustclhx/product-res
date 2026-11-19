@@ -1,4 +1,12 @@
-import { Button, Input, Tag } from '@product-res/ui'
+import {
+  Button,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  Tag,
+} from '@product-res/ui'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { type FormEvent, useState } from 'react'
 import { m } from '../../paraglide/messages.js'
@@ -52,7 +60,7 @@ export function CategoryListPage({ slug, initial }: { slug: string; initial: Stu
             <span>品类洞察</span>
           </nav>
           <h1 className="text-lg font-semibold">品类洞察</h1>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-caption text-muted-foreground">
             按平台站点 +
             类目或关键词建立研究，汇总搜索趋势、新品、价格带、头部集中度、竞品矩阵与差评痛点。
             每次刷新保存一份快照，历史快照可切换查看。
@@ -110,7 +118,7 @@ function Chips({ items }: { items: readonly string[] }) {
   return (
     <span className="flex flex-wrap gap-1">
       {items.map((i) => (
-        <span key={i} className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+        <span key={i} className="rounded bg-muted px-1.5 py-0.5 text-micro text-muted-foreground">
           {i}
         </span>
       ))}
@@ -163,7 +171,7 @@ function StudyLink({ slug, study, indent }: { slug: string; study: StudyRow; ind
         <span>
           {study.snapshotCount} 份快照 · 最近 {fmtDateTime(study.latestSnapshotAt)}
         </span>
-        <span className="text-primary">查看报告 →</span>
+        <span className="text-primary-text">查看报告 →</span>
       </div>
     </Link>
   )
@@ -184,7 +192,7 @@ function ArchivedRow({
 }) {
   const { busy, error, run } = useAction(onChanged)
   return (
-    <li className="flex flex-wrap items-center justify-between gap-2 text-[13px]">
+    <li className="flex flex-wrap items-center justify-between gap-2 text-caption">
       <span className="flex items-center gap-2">
         {selection ? (
           <SelectBox
@@ -197,7 +205,7 @@ function ArchivedRow({
           to="/app/$slug/category/$studyId"
           params={{ slug, studyId: study.id }}
           search={{}}
-          className="hover:text-primary"
+          className="hover:text-primary-text"
         >
           {study.name}
           <span className="ml-2 text-xs text-muted-foreground">
@@ -270,7 +278,7 @@ function StudyForm({ slug, onClose }: { slug: string; onClose: () => void }) {
             {(id) => (
               <Input
                 id={id}
-                className="h-8 text-[13px]"
+                className="h-8 text-caption"
                 value={name}
                 maxLength={64}
                 onChange={(e) => setName(e.target.value)}
@@ -279,18 +287,19 @@ function StudyForm({ slug, onClose }: { slug: string; onClose: () => void }) {
           </Field>
           <Field label="平台站点">
             {(id) => (
-              <select
-                id={id}
-                className={controlClass}
+              <Select
                 value={marketplace}
-                onChange={(e) => setMarketplace(e.target.value as DirectionMarketplace)}
+                onValueChange={(v) => setMarketplace(v as DirectionMarketplace)}
               >
-                {DIRECTION_MARKETPLACES.map((m) => (
-                  <option key={m} value={m}>
-                    {MARKETPLACE_LABELS[m]}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id={id} className="h-8 w-full text-caption" placeholder="平台站点" />
+                <SelectContent>
+                  {DIRECTION_MARKETPLACES.map((mp, index) => (
+                    <SelectItem key={mp} index={index} value={mp}>
+                      {MARKETPLACE_LABELS[mp]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           </Field>
           <Field label="头部 N" hint="竞品矩阵展示的商品数">
@@ -300,7 +309,7 @@ function StudyForm({ slug, onClose }: { slug: string; onClose: () => void }) {
                 type="number"
                 min={1}
                 max={100}
-                className="h-8 text-[13px]"
+                className="h-8 text-caption"
                 value={topN}
                 onChange={(e) => setTopN(e.target.value)}
               />
@@ -312,7 +321,7 @@ function StudyForm({ slug, onClose }: { slug: string; onClose: () => void }) {
             {(id) => (
               <Input
                 id={id}
-                className="h-8 text-[13px]"
+                className="h-8 text-caption"
                 value={categories}
                 onChange={(e) => setCategories(e.target.value)}
               />

@@ -53,7 +53,8 @@ test('首页渲染', async ({ page }) => {
 test('定价页渲染', async ({ page }) => {
   const response = await page.goto('/pricing')
   expect(response?.status()).toBe(200)
-  await expect(page.getByRole('heading', { name: 'Pricing', exact: true })).toBeVisible()
+  // 首屏标题随套餐分组变化（订阅与积分包 / 只有订阅 / 只有积分包），只断言 h1 存在
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 })
 
 test('随机邮箱注册后进入个人空间', async ({ page }) => {

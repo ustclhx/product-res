@@ -19,8 +19,8 @@ beforeAll(async () => {
   for (const day of ['2002-03-01T23:59:59Z', '2002-03-03T00:00:00Z'])
     await sql`insert into audit_log (id,actor_user_id,workspace_id,action,created_at) values (${newId()},${uid},${workspaceId},${action},${day})`
   for (const [i, day] of days.entries())
-    await sql`insert into metrics_daily (day,registrations,total_users,total_workspaces,paid_workspaces,mrr_by_currency,credits_consumed,overage_absorbed,overage_by_model,text_completed,text_failed,text_aborted,data_through)
-    values (${day},${i + 1},20,10,${i + 1},${JSON.stringify({ USD: 1200 * (i + 1) })}::jsonb,${100 * (i + 1)},${10 * (i + 1)},${JSON.stringify({ model: 10 * (i + 1) })}::jsonb,${i === 1 ? 1 : 9},1,0,${new Date(Date.parse(`${day}T00:00:00Z`) + 86400000).toISOString()})`
+    await sql`insert into metrics_daily (day,registrations,total_users,total_workspaces,paid_workspaces,mrr_by_currency,credits_consumed,daily_grant_count,daily_grant_credits,overage_absorbed,overage_by_model,text_completed,text_failed,text_aborted,data_through)
+    values (${day},${i + 1},20,10,${i + 1},${JSON.stringify({ USD: 1200 * (i + 1) })}::jsonb,${100 * (i + 1)},${i + 1},${10 * (i + 1)},${10 * (i + 1)},${JSON.stringify({ model: 10 * (i + 1) })}::jsonb,${i === 1 ? 1 : 9},1,0,${new Date(Date.parse(`${day}T00:00:00Z`) + 86400000).toISOString()})`
 })
 afterAll(async () => {
   const sql = createAdminTestDb('migrator').$client
@@ -55,6 +55,8 @@ it('看板按区间累计增量、按样本加权成功率、取最后一日存�
   expect(data).toMatchObject({
     registrations: 3,
     creditsConsumed: 300,
+    dailyGrantCount: 3,
+    dailyGrantCredits: 30,
     overageAbsorbed: 30,
     overageByModel: { model: 30 },
     successRate: 10 / 12,

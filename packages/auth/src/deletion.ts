@@ -1,9 +1,14 @@
 import type { Database } from '@product-res/db'
 import type { KeyValueStore } from '@product-res/platform'
-import { AppError, newId } from '@product-res/shared'
+import { AppError, newId, normalizeSignupEmail } from '@product-res/shared'
+import { log } from '@product-res/shared/log'
 import type { BetterAuthPlugin } from 'better-auth'
 import { APIError, createAuthEndpoint } from 'better-auth/api'
 import { z } from 'zod'
+import {
+  type CleanupWorkspaceShareCards,
+  purgeDeletedPersonalWorkspaceShareCards,
+} from './ai-content-cleanup.ts'
 import { type AuthContextSource, requireFreshSession } from './fresh-session.ts'
 import {
   type AdmissionSql,
@@ -35,6 +40,7 @@ export function registerDeletionStep(kind: DeletionKind, step: DeletionStep): ()
   }
 }
 interface Options {
+  readonly cleanupShareCards?: CleanupWorkspaceShareCards | undefined
   readonly additionalSteps?: readonly DeletionStep[]
   readonly auth: AuthContextSource
   readonly db: Database
@@ -81,7 +87,11 @@ async function runCleanup(
   keys: readonly string[],
 ) {
   const results = await Promise.allSettled(keys.map((key) => kv.delete(`auth:${key}`)))
-  if (results.some((result) => result.status === 'rejected')) return false
+  const failed = results.filter((result) => result.status === 'rejected').length
+  if (failed) {
+    log.warn('deletion.credential-cache.cleanup.failed', { reason: 'cache-delete-failed', failed })
+    return false
+  }
   await db.$client`delete from verification where id=${id} and identifier=${DELETION_CLEANUP_PREFIX + id}`
   return true
 }
@@ -189,6 +199,15 @@ function belongsToUser(row: { identifier: string; value: string }, id: string, e
   }
   return false
 }
+function growthEmails(email: string) {
+  const emails = new Set([email.trim().toLowerCase()])
+  try {
+    emails.add(normalizeSignupEmail(email))
+  } catch {
+    // 无法规范化的历史邮箱只按小写原值匹配。
+  }
+  return [...emails]
+}
 export async function deleteAccount(options: Options) {
   const fresh = await requireFreshSession(options)
   if (fresh.session.impersonatedBy || Date.now() - fresh.session.createdAt.getTime() > 600000)
@@ -256,11 +275,43 @@ export async function deleteAccount(options: Options) {
       values (${newId()},${current.id},${membership.organization_id},'workspace.member_removed','member',${membership.id},
       ${options.clientIp ?? null},${JSON.stringify({ targetUserId: current.id, oldRole: membership.role, newRole: null, reason: 'account_deleted' })}::jsonb)`
     await sql`update invitation set status='canceled',updated_at=now() where status='pending' and (inviter_id=${current.id} or lower(email)=lower(${current.email}))`
+    // 原邮箱被替换前删除增长名单记录；两张表按 normalizeSignupEmail 规范化存储。
+    const emails = growthEmails(current.email)
+    await sql`delete from newsletter_subscriber where email in ${sql(emails)}`
+    await sql`delete from waitlist where email in ${sql(emails)}`
+    await sql`delete from notification where user_id=${current.id}`
+    await sql`delete from user_attribution where user_id=${current.id}`
+    await sql`delete from analytics_delivery where event_key=${`sign_up:${current.id}`}`
     await sql`update "user" set email=${`deleted+${current.id}@invalid`},name='',image=null,locale=null,timezone=null,email_verified=false,two_factor_enabled=false,banned=true,ban_reason='Account deleted',ban_expires=null,updated_at=now() where id=${current.id}`
     await sql`insert into audit_log (id,actor_user_id,action,target_type,target_id,ip,meta) values (${newId()},${current.id},'account.deleted','user',${current.id},${options.clientIp ?? null},${JSON.stringify({ anonymized: true, deletedPersonalWorkspaceIds: personal.map((workspace) => workspace.id) })}::jsonb)`
     return saveCleanup(sql, cacheKeys, options.kv)
   })
-  await finishCleanup(options.db, options.kv, keys)
+  const cleanup = await Promise.allSettled([
+    finishCleanup(options.db, options.kv, keys),
+    ...(options.cleanupShareCards
+      ? [
+          purgeDeletedPersonalWorkspaceShareCards(
+            options.db,
+            options.cleanupShareCards,
+            fresh.user.id,
+            { maxIndexes: 20 },
+          ).then((result) => {
+            if (result.failed)
+              throw new AppError('DELETION_CLEANUP_FAILED', 'Share card cleanup failed')
+          }),
+        ]
+      : []),
+  ])
+  for (const [index, result] of cleanup.entries()) {
+    if (result.status === 'rejected')
+      log.warn('deletion.external-cleanup.failed', {
+        reason: index === 0 ? 'credential-cleanup-failed' : 'share-card-cleanup-failed',
+      })
+  }
+  if (cleanup.some((result) => result.status === 'rejected'))
+    fail('DELETION_CLEANUP_FAILED', 'Deletion completed; external cleanup needs retry', 503, {
+      deletionCompleted: true,
+    })
   return { deleted: true }
 }
 /** Mount before the native organization plugin. The HTTP endpoints validate signed cookies in DB. */
@@ -270,6 +321,7 @@ export function deletionPlugin(
   multiTenant = true,
   additionalSteps?: readonly DeletionStep[],
   clientIp?: string | null,
+  cleanupShareCards?: CleanupWorkspaceShareCards,
 ) {
   const endpoint = (kind: DeletionKind) =>
     createAuthEndpoint(
@@ -285,6 +337,7 @@ export function deletionPlugin(
             db,
             kv,
             clientIp,
+            cleanupShareCards,
             ...(additionalSteps ? { additionalSteps } : {}),
             headers: ctx.headers,
             auth: { $context: Promise.resolve(ctx.context) },

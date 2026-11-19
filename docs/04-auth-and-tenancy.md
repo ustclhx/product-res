@@ -67,6 +67,8 @@
   1. 平台 `rateLimiter.limit('auth', key)` 按可信入口注入的客户端 IP 限流（CF 入口取 `cf-connecting-ip`，Node 入口按 TCP peer / trusted CIDR 解析，不读取客户端伪造的 CF/XFF 头）；
   2. Turnstile（`auth.turnstile=true` 时）：请求头 `x-turnstile-token`，服务端调用 siteverify（带 `remoteip`），缺失、无效或 siteverify 不可达都返回 403 `TURNSTILE_FAILED`；已登录用户调用 `/send-verification-email` 时免检；
   3. `RL_AUTH` 按邮箱（规范化后 SHA-256）限流。
+  验证码消费（`/email-otp/verify-email`、`/email-otp/reset-password`）与令牌重置密码（`/reset-password`）只检查 IP 与邮箱额度，不要求 Turnstile；`/sign-in/email-otp` 已属于登录入口，保留原 Turnstile 行为。所有入口共用 `auth:ip:<可信 IP>` 与 `auth:email:<规范化邮箱 SHA-256>`，切换端点不会获得新额度。令牌重置请求不含邮箱时仍检查 IP，验证码消费请求的邮箱由端点 schema 强制要求。
+  未使用的 `/email-otp/check-verification-otp` 已加入 `disabledPaths`，HTTP 请求直接返回 404，不读取或修改验证码。Better Auth 1.7.7 的三个 OTP 消费入口通过数据库原子消费并重建递增计数，默认每个验证码最多三次有效猜测；独立实例并发错误猜测的 Postgres 集成测试验证累计尝试预算不会被竞争重置，耗尽后正确验证码也失效。该原子预算与平台限流分别负责单个验证码与入口流量。
   超限返回 429 `RATE_LIMITED`；Node Valkey 不可达返回脱敏 503 `CACHE_UNAVAILABLE`，不放行或退回内存。关闭 Turnstile 时无需 secret/site key、不校验令牌，但保留 IP/邮箱限流。不通过时接口本身不执行，不会创建用户或发送邮件；服务端直接调用 `auth.api.*` 不经过这些检查。CF 限额在 `wrangler.jsonc` 的 `ratelimits` 中配置（当前每个 key 每 60 秒 10 次）。
 - 本地开发与测试：Turnstile 使用 Cloudflare 官方测试 secret（`1x0000000000000000000000000000000AA` 始终通过、`2x0000000000000000000000000000000AA` 始终失败，见 `apps/web/.dev.vars.example`）；集成测试按官方文档的行为模拟 siteverify，不访问外部服务。`CACHE` 与 `RL_AUTH` 由 Miniflare 模拟。
 - 注意 Rate Limiting 绑定的计数是**按 Cloudflare 数据中心分别统计、最终一致**的，不是全局精确计数，只用来防刷和削峰。

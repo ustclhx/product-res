@@ -1,8 +1,9 @@
 # 自托管 Compose 与部署交付
 
-> **当前实例状态（2026-10-18）**：模板自托管测试实例已按用户确认拆除；部署能力、配置、runbook 与 GHCR 镜像保留供派生项目使用。R2 次日删桶与 DNS / token 手动收尾见[拆除记录](../../docs/runbooks/evidence/teardown-2026-10-18.md)。下文各次验收与待办说明按其记录时间阅读，不表示测试主机仍运行模板实例。
 
-本目录提供 image-only Compose、显式 SSH/本机部署与兼容回滚、health/SHA 门、空白主机初始化、代理接入和同 SHA bundle 打包。首次真实 GHCR 发布已完成；恢复/副本脚本已交付，B/D ownership 签收与服务器恢复验收仍未完成。Node 已装配真实 B 队列与 Cron。关闭 Turnstile、开启验证邮件与多租户的本地生产验收见 [A 8/9 runbook](../../docs/runbooks/selfhost-a-final.md)；正式邮件凭据由部署方提供。默认 Cloudflare 构建与 staging 流程保持原样。
+本目录提供 image-only Compose、显式 SSH/本机部署与兼容回滚、health/SHA 门、空白主机初始化、代理接入和同 SHA bundle 打包。正式邮件、存储、域名与镜像凭据由部署方提供。上线前按本项目配置执行部署与恢复验收。
+
+
 
 ## 正式部署
 
@@ -14,9 +15,9 @@
 详细步骤见 [部署与回滚](../../docs/runbooks/selfhost-deploy.md)、
 [空白初始化](../../docs/runbooks/selfhost-init.md)、[外部代理](../../docs/runbooks/selfhost-proxy.md)
 与 [release bundle](../../docs/runbooks/selfhost-release.md)。Dokploy 是可选入口，不能跳过
-迁移/排空门；不会自动安装或连接任何既有服务器。第二次正式发布
-`081305013b022f457c561eecf5828b1959e13908` 的 bundle 包含全部 24 项运行材料，
-包括恢复/drill/副本入口和附加示例；旧 SHA 的材料保持原样。1.5/6.3/7 的恢复验收保持待办。
+迁移/排空门；不会自动安装或连接任何既有服务器。
+
+
 
 ## 内测开关（add-beta-access-gate）
 
@@ -102,7 +103,7 @@ pnpm CLI 与其平台原生 binary 在镜像构建阶段预装到非 root 可读
 
 jobs 的 `JOB_EXECUTOR_ID` 默认 `jobs-1`，Compose 将 hostname 固定为同值，并把持久 `job_owners` 卷挂载到 `/app/.data/job-owners`。每个 executor 的 hostname/ID 必须跨重启稳定；不能通过更换随机 ID 或清除 owner 文件绕过启动拒绝。Linux owner 记录包含 PID、host、PID namespace inode、boot ID 和进程启动时间，容器重建后即使重用 PID 1 也使用这些身份核对旧 incarnation 是否退出；证明规则与 guard 处置见 [任务引擎 runbook](../../docs/runbooks/node-job-engine.md#连接轮询与-ownership)。
 
-双 jobs 副本需分别声明不同且稳定的 hostname/ID，挂载同一 `job_owners` 卷，并使用同一版本的完整 handler 集与队列策略。当前 service 使用固定身份，不能盲目用 `docker compose up --scale jobs=2` 扩容；不同 hostname 的副本也不能为另一 executor 证明退出。本地真实发信、双副本停启与保留卷重建证据见 [A 8/9 runbook](../../docs/runbooks/selfhost-a-final.md)。
+双 jobs 副本需分别声明不同且稳定的 hostname/ID，挂载同一 `job_owners` 卷，并使用同一版本的完整 handler 集与队列策略。当前 service 使用固定身份，不能盲目用 `docker compose up --scale jobs=2` 扩容；不同 hostname 的副本也不能为另一 executor 证明退出。本地真实发信、双副本停启与保留卷重建证据见 A 8/9 runbook（模板维护资料；请为本项目建立相应记录）。
 
 ## 文件与权限
 
@@ -150,7 +151,7 @@ Caddy 配置依据官方 [global options](https://caddyserver.com/docs/caddyfile
 
 Docker `json-file` 的 `LOG_MAX_SIZE=10m`、`LOG_MAX_FILE=3` 可调。应用与迁移输出脱敏 JSON；PG/Valkey 保留官方 stderr 格式，由 Docker 包装和轮转。只有 Caddy profile 有公开入口。内部 `/internal/live` 仅用于容器进程探活，依赖暂未就绪不触发重启循环；外部 `/api/health` 实时检查 DB/cache/queue/scheduler，返回完整 SHA 与 `lastCronAt`。所有依赖正常且有有效成功心跳时返回 200；启动尚无心跳、依赖故障或消费者/调度器停摆时返回 503。容器 healthy 只说明进程存活，不能代替该 readiness。
 
-初轮镜像与尚未通过的 ACME 项见 [A7 验收记录](../../docs/runbooks/selfhost-a7.md)，完整健康与认证尾部验收见 [A 8/9 runbook](../../docs/runbooks/selfhost-a-final.md)。停止保留数据用 `docker compose down`；仅删除隔离验收数据时才使用 `down -v`。
+初轮镜像与尚未通过的 ACME 项见 A7 验收记录（模板维护资料；请为本项目建立相应记录），完整健康与认证尾部验收见 A 8/9 runbook（模板维护资料；请为本项目建立相应记录）。停止保留数据用 `docker compose down`；仅删除隔离验收数据时才使用 `down -v`。
 
 ## 外部 S3 / R2（C 1.7）
 
@@ -161,7 +162,7 @@ UID1000 可读的 `s3_access_key_id` / `s3_secret_access_key`，通过
 配置或凭据前提。外部 S3 与自带 object-storage 二选一；此路径不启动 SeaweedFS 或
 bucket 初始化器，不将应用存储凭据分给 PG、迁移器、代理或 backup。
 R2 的 S3 API endpoint、region=auto、私有桶、最小权限与浏览器 CORS 设置步骤见
-[外部存储 runbook](../../docs/runbooks/selfhost-c-storage.md#正式-bundle-的外部-s3--r2-配置)。
+外部存储 runbook（模板维护资料；请为本项目建立相应记录）。
 新增装配须随新 SHA 发布；旧 bundle 不含该文件，不能现场修改旧版本绕过校验。
 
 ## 可选 object-storage（C 1.5/1.6）
@@ -191,7 +192,7 @@ docker compose --env-file .env --env-file .env.object-storage \
 
 S3站点不启用 access log，并用固定503错误响应处理代理故障，防止 Caddy默认5xx错误日志包含预签名 request URI。不要启用 debug或添加包含query的access/error日志。Docker仍按10m×3轮转进程日志。
 
-profile资源起点与最终验收记录见 [C profile runbook](../../docs/runbooks/selfhost-c-profile.md)。仅此 override 将 web/jobs 上限收敛为768/512MiB；PG1024、Valkey384、代理128、存储512MiB，常驻合计3328MiB/2CPU。migrate和bucket init在应用前运行。SeaweedFS设置384MiB Go内存目标、单Go执行核、LevelDB索引、128MiB volume、storage/filer并发参数2与32MiB上传预算；Go内存目标不是硬上限，Docker512MiB才是边界。实测安全并发只适用于记录中的负载，不承诺任意对象数量或吞吐。
+profile资源起点与最终验收记录见 C profile runbook（模板维护资料；请为本项目建立相应记录）。仅此 override 将 web/jobs 上限收敛为768/512MiB；PG1024、Valkey384、代理128、存储512MiB，常驻合计3328MiB/2CPU。migrate和bucket init在应用前运行。SeaweedFS设置384MiB Go内存目标、单Go执行核、LevelDB索引、128MiB volume、storage/filer并发参数2与32MiB上传预算；Go内存目标不是硬上限，Docker512MiB才是边界。实测安全并发只适用于记录中的负载，不承诺任意对象数量或吞吐。
 
 停止并保留全部对象/元数据/数据库：
 

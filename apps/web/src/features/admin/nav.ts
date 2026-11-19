@@ -87,6 +87,12 @@ function groups() {
       label: nav.groups.ai,
       items: linkOptions([
         { to: '/admin/models', search: { offset: 0 }, label: nav.models, activeOptions: list },
+        {
+          to: '/admin/feedback',
+          search: { offset: 0 },
+          label: nav.feedback,
+          activeOptions: list,
+        },
       ]),
     },
     {
@@ -103,7 +109,7 @@ function groups() {
 
 function enabled(to: string) {
   if (to.startsWith('/admin/billing')) return templateConfig.billing.enabled
-  if (to === '/admin/models') return templateConfig.billing.enabled
+  if (to === '/admin/models' || to === '/admin/feedback') return templateConfig.billing.enabled
   if (to === '/admin/credits') return templateConfig.credits.enabled
   return true
 }

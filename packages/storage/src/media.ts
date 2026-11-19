@@ -83,7 +83,7 @@ async function persistMediaOutputsImpl({
   readonly task: Pick<AiTask, 'id' | 'workspaceId' | 'userId'>
   readonly result: MediaCopyResult | MediaBinaryCopyResult
   readonly limits: MediaCopyLimits
-}): Promise<PersistedMediaFile[]> {
+}): Promise<PersistedMediaResult> {
   // Workflow 同一实例的转存步骤串行重放；pending 记录作为中断后的清理线索。
   for (const output of result.outputs) {
     if ('url' in output) allowedUrl(output.url, limits.allowedHosts)
@@ -180,13 +180,10 @@ async function persistMediaOutputsImpl({
         if (!stored) throw new Error('Missing copied media output')
         addedBytes += stored.size
       }
-      if (
-        addedBytes &&
+      // 配额已在提交前检查；生成后才超额时照常保存并按成功结算，之后的上传与提交按配额已满拒绝。
+      const overQuota =
+        addedBytes > 0 &&
         (await getStorageUsage(tx, task.workspaceId)) + addedBytes > limits.storageBytes
-      )
-        throw new AppError('UPGRADE_REQUIRED', 'Workspace storage quota exceeded', {
-          status: 403,
-        })
       const files: PersistedMediaFile[] = []
       for (const row of rows) {
         const stored = copied.get(row.id)
@@ -202,7 +199,7 @@ async function persistMediaOutputsImpl({
           ),
         )
       }
-      return files
+      return { files, overQuota }
     })
   } catch (error) {
     try {
@@ -245,9 +242,16 @@ async function persistMediaOutputsImpl({
   }
 }
 
-export async function persistMediaOutputs(
+export interface PersistedMediaResult {
+  files: PersistedMediaFile[]
+  /** 本次转存后空间用量超过配额；产出照常保存，由调用方记录。 */
+  overQuota: boolean
+}
+
+/** 转存并返回超额标记；`persistMediaOutputs` 是只返回文件描述的兼容入口。 */
+export async function persistMediaOutputsWithQuota(
   input: Parameters<typeof persistMediaOutputsImpl>[0],
-): Promise<PersistedMediaFile[]> {
+): Promise<PersistedMediaResult> {
   try {
     return await persistMediaOutputsImpl(input)
   } finally {
@@ -261,4 +265,16 @@ export async function persistMediaOutputs(
     if (cleanup.some((entry) => entry.status === 'rejected'))
       log.warn('storage.media.stream_cancel_failed', { taskId: input.task.id })
   }
+}
+
+export async function persistMediaOutputs(
+  input: Parameters<typeof persistMediaOutputsImpl>[0],
+): Promise<PersistedMediaFile[]> {
+  const persisted = await persistMediaOutputsWithQuota(input)
+  if (persisted.overQuota)
+    log.warn('storage.media.over_quota', {
+      workspaceId: input.task.workspaceId,
+      taskId: input.task.id,
+    })
+  return persisted.files
 }

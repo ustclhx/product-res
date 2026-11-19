@@ -35,7 +35,7 @@ function WorkspaceSettingsPage() {
           <Link
             to="/app/$slug/settings/transfers"
             params={{ slug: page.workspace.slug }}
-            className="w-fit text-primary text-sm underline-offset-4 hover:underline"
+            className="w-fit text-primary-text text-sm underline-offset-4 hover:underline"
           >
             {m.transfer_records_link()}
           </Link>

@@ -7,9 +7,20 @@ description: 为本模板新增需要登录的 app 空间页面或 admin 后台�
 
 在含 `package.json` 与 `template.config.ts` 的项目根执行。下文路径均相对项目根；生成器副本已改包 scope，先读 `apps/web/package.json` 的 name/dependencies，示例 `@product-res/*` 替换为实际名称。
 
-## 1. 确定边界与参考
+## 1. 检查设计稿，确定边界与参考
 
-先读 `AGENTS.md`、`docs/01-architecture.md`、`docs/02-project-structure.md`；并行修改导航或文案时读 `docs/09-parallel-plan.md` §3/§6。记录路由、角色、读写行为、数据来源、启用语言和开关，寻找同类页面后再创建文件：
+先过设计稿关卡：
+
+1. 判断是否需要设计稿：新增页面与较大布局改动需要，文案、小样式与缺陷修复免；唯一标准见 `docs/design-system.md` §8.1，拿不准时向使用者确认。
+2. 需要时查原型索引（衍生项目 `docs/design/prototypes/README.md`，模板 `docs/design-system/prototypes/README.md`）：本页面有一行且该行的副本文件存在才算通过。
+   ```sh
+   INDEX=$(test -f .template-base.json && echo docs/design/prototypes/README.md || echo docs/design-system/prototypes/README.md)
+   grep -n '<页面或路由>' "$INDEX"
+   ```
+3. 不通过时转入 `ui-design` 技能；在此之前不创建路由或组件文件。不能与使用者直接对话的 agent 停止并报告。
+4. 实现以副本为准，只用 `@product-res/ui` 与 `@product-res/ui/project` 的组件，缺组件先补组件。
+
+再读 `AGENTS.md`、`docs/01-architecture.md`、`docs/02-project-structure.md`；并行开发先明确文件所有权与数据库隔离。记录路由、角色、读写行为、数据来源、启用语言和开关，寻找同类页面后再创建文件：
 
 ```sh
 rg --files apps/web/src/routes apps/web/src/features packages/ui/src

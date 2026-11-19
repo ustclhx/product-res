@@ -2,6 +2,7 @@ import { Button, DataTable, Input, Label } from '@product-res/ui'
 import { createFileRoute, notFound, useRouter } from '@tanstack/react-router'
 import { useState } from 'react'
 import { createKey, editKey, listKeys } from '../../../features/api-keys/functions.ts'
+import { dataTableLabels } from '../../../features/i18n/table-labels.ts'
 import { templateConfig } from '../../../server/template-config.ts'
 
 export const Route = createFileRoute('/app/$slug/api-keys')({
@@ -79,6 +80,7 @@ function ApiKeysPage() {
         </Button>
       </form>
       <DataTable
+        labels={dataTableLabels()}
         label="API Keys"
         rows={data.rows}
         getRowId={(row) => row.id}

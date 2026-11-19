@@ -272,6 +272,11 @@ secrets:
         require(not self.desktop, 'VM harness refuses Docker Desktop')
         self.arch = 'arm64' if info['Architecture'] in ['aarch64', 'arm64'] else 'amd64'
         require(info['Architecture'] in ['aarch64', 'arm64', 'x86_64', 'amd64'], 'unsupported VM architecture')
+        # 新发布只含 linux/amd64；arm64 VM 只能验收此前的双架构发布，否则在拉取前明确拒绝。
+        platforms = json.loads((self.bundle / 'image-set.json').read_text()).get('platforms', [])
+        require('linux/' + self.arch in platforms,
+                f'release images do not include linux/{self.arch} (published releases are linux/amd64); '
+                'run VM acceptance on an amd64 VM or with a legacy two-platform release')
         self.save_control()
         self.stage = 'anonymous GHCR image-set pull'
         deadline = time.monotonic() + 900
@@ -487,7 +492,10 @@ def main():
     parser.add_argument('--phase', required=True, choices=['prepare', 'after-reboot', 'ssh', 'gates', 'cleanup'])
     parser.add_argument('--directory', type=Path, default=Path('/opt/selfhost-d-vm-harness'))
     parser.add_argument('--bundle', required=True, type=Path)
-    parser.add_argument('--evidence', type=Path, default=Path('/opt/d-vm-results/runtime.json'))
+    parser.add_argument(
+        '--evidence', type=Path,
+        default=Path(os.environ.get('EVIDENCE_DIR') or 'test-results/evidence') / 'selfhost/runtime.json',
+    )
     args = parser.parse_args()
     os.umask(0o077)
     acceptance = None

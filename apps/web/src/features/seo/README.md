@@ -29,11 +29,28 @@ APP_URL=https://product.ezarouter.cc pnpm --filter @product-res/web build
 草稿与未到发布时间的文章不生成图片，定时文章到期后需要重新部署以更新预渲染列表、分享图与内容。
 本地开发使用同一生成器，仅对清单中的公开页面响应图片。
 
-字体为 Noto Sans SC Regular 的完整简体中文子集 OTF，仅使用一个字重，原始体积 8,331,336 字节。
-完整字形支持后续新增中文文章标题；字体保存在 `apps/web/scripts/seo/`，只供 Node 构建工具读取，
-不会进入 Worker 或客户端静态资源包；WASM 同样仅留在构建阶段。
-源文件：https://github.com/notofonts/noto-cjk/blob/main/Sans/SubsetOTF/SC/NotoSansSC-Regular.otf 。
-再分发许可证见 `apps/web/scripts/seo/FONT-LICENSE`（SIL OFL 1.1）。
+运行时分享卡片（项目注册的结果卡片、通用分享页 `/s/<类型>/<令牌>`、到期、失效与缓存）见
+[分享卡片与分享页](../../../../../docs/share-cards.md)。构建期分享图的版式与运行时分享卡片共用 `features/share-cards/layout.tsx` 的默认版式（设计稿
+`docs/design-system/prototypes/share-cards/Card.dc.html` 的 `default` 变体，浅色主题 token），
+渲染经 `src/node/share-card-renderer.ts`。
+
+字体保存在 `apps/web/public/fonts/share-card/`，作为静态资源发布（`_headers` 长期缓存与 `noindex`）：
+
+- CJK：Noto Sans SC Regular 的完整简体中文子集 OTF，仅一个字重，原始体积 8,331,336 字节。构建期与 Node 从本地文件读取；
+  Workers 只在待渲染文本含 CJK 时经 `ASSETS.fetch` 读取，不进入 Worker 包。
+  源文件：https://github.com/notofonts/noto-cjk/blob/main/Sans/SubsetOTF/SC/NotoSansSC-Regular.otf ，
+  许可证 `NOTO-LICENSE`（SIL OFL 1.1）。
+- 西文：Inter Latin 400/600 woff（`@fontsource/inter@5.2.8`，satori 不支持 woff2），扩展名为 `.woff.bin`，
+  以便 Workers 作为 Data 模块随渲染器打包；许可证 `INTER-LICENSE`（SIL OFL 1.1）。
+
+文字支持范围（分享卡片与构建期分享图共用，`features/share-cards/text.ts`）：
+
+- 文本含 Inter Latin 子集之外的字符时才加载 Noto Sans SC：中日文、基本西里尔与基本希腊字母、拼音声调字母。
+- emoji（含 ZWJ 序列、变体选择符、肤色修饰与旗帜）在渲染前去除，没有 emoji 字体。
+- 两种字体都缺字的带附加符号字母降级为基本字母（如 `Ą`→`A`、`ά`→`α`）。
+- **模板字体不支持**：谚文（韩文）、泰文、老挝文、高棉文、缅甸文，以及 Noto 简体子集之外的扩展西里尔字母（如乌克兰文 `і`、`ї`）。
+  这些字符显示为方框；项目在 `features/share-cards/share-cards.fonts.ts` 登记回退字体后正常显示，构建期分享图同样生效，见 [分享卡片 §7.1](../../../../../docs/share-cards.md#71-项目回退字体)。
+- 副标题为「应用名 · 首页 SEO 标题」（按页面语言），多站点项目可按站点覆盖，见 [分享卡片 §6.1](../../../../../docs/share-cards.md#61-多站点)。
 
 ## 验证
 

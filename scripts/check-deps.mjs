@@ -8,26 +8,14 @@ import { createVirtualFileSystem } from 'typescript/unstable/fs'
 import { API } from 'typescript/unstable/sync'
 
 const ROOT = resolve(import.meta.dirname, '..')
-const SCOPE = '@product-res/'
-const UI_PACKAGE = '@product-res/ui'
 const REACT_PACKAGES = new Set([
   'react',
   'react-dom',
   '@types/react',
   '@types/react-dom',
   'react-email',
-  UI_PACKAGE,
 ])
 const REACT_SCOPES = ['@react-email/']
-const REACT_EXCEPTIONS = {
-  '@product-res/email': (dep) => dep !== UI_PACKAGE,
-}
-const LAYERS = {
-  '@product-res/shared': [],
-  '@product-res/config': ['@product-res/shared'],
-  '@product-res/db': ['@product-res/shared', '@product-res/config'],
-  '@product-res/platform': ['@product-res/shared', '@product-res/config', '@product-res/db'],
-}
 const DEP_FIELDS = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies']
 const BUILD_DIRS = new Set([
   'node_modules',
@@ -114,6 +102,10 @@ function packageNameOf(specifier) {
   return specifier.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0]
 }
 
+function matchesDependency(dep, pattern) {
+  return pattern.endsWith('/*') ? dep.startsWith(pattern.slice(0, -1)) : dep === pattern
+}
+
 // TS 7 使用 native parser API；虚拟项目只解析传入源码，不加载库或解析依赖。
 function parseImports(files) {
   const config = '/check-deps/tsconfig.json'
@@ -157,9 +149,11 @@ export function cloudflareAllowed(file, specifier, rules) {
   return rules.targetFixtures[file]?.includes(specifier) === true
 }
 
-function platformTargetOf(root, file, specifier) {
-  const named = /^@product-res\/platform\/(cloudflare|node)(?:\/|$)/.exec(specifier)
-  if (named) return named[1]
+function platformTargetOf(root, file, specifier, platformPackage) {
+  const named = specifier.startsWith(`${platformPackage}/`)
+    ? specifier.slice(platformPackage.length + 1).split('/')[0]
+    : null
+  if (named === 'cloudflare' || named === 'node') return named
   if (!specifier.startsWith('.') && !specifier.startsWith('/')) return null
   const target = relative(root, resolve(join(file, '..'), specifier))
     .split(sep)
@@ -188,30 +182,77 @@ export function checkWorkspace(
 ) {
   const apps = readWorkspace(root, 'apps')
   const packages = readWorkspace(root, 'packages')
+  const uiManifest = join(root, 'packages/ui/package.json')
+  const uiPackage = JSON.parse(readFileSync(uiManifest, 'utf8')).name
+  const scope = /^(@[^/]+\/)ui$/.exec(uiPackage)?.[1]
+  if (!scope) throw new Error(`${uiManifest}：name 必须为 @scope/ui，无法确定内部包 scope`)
+  const emailPackage = `${scope}email`
+  const platformPackage = `${scope}platform`
+  // 评测工具只供根目录命令行使用，不得进入任何应用或运行时包（含其测试与脚本）。
+  const evalsPackage = `${scope}evals`
+  const layers = {
+    [`${scope}shared`]: [],
+    [`${scope}config`]: [`${scope}shared`],
+    [`${scope}db`]: [`${scope}shared`, `${scope}config`],
+    [platformPackage]: [`${scope}shared`, `${scope}config`, `${scope}db`],
+  }
   const appNames = new Set(apps.map((a) => a.manifest.name))
   const violations = []
+
+  function checkUiDependency(pkgName, dep, where) {
+    if (rules.forbiddenDependencies?.some((pattern) => matchesDependency(dep, pattern))) {
+      violations.push(`${pkgName} → ${dep}（${where}）：禁止拆分 Radix 子包，请改用 radix-ui`)
+    } else if (
+      pkgName !== uiPackage &&
+      rules.uiOnlyDependencies?.some((pattern) => matchesDependency(dep, pattern))
+    ) {
+      violations.push(`${pkgName} → ${dep}（${where}）：UI 底层依赖仅允许 ${uiPackage} 使用`)
+    }
+  }
+
+  function checkEvalsDependency(pkgName, dep, where) {
+    if (dep === evalsPackage && pkgName !== evalsPackage)
+      violations.push(`${pkgName} → ${dep}（${where}）：${evalsPackage} 只允许根目录依赖`)
+  }
 
   function checkDependency(pkgName, dep, where) {
     if (appNames.has(dep)) {
       violations.push(`${pkgName} → ${dep}（${where}）：packages 不得依赖 apps`)
     }
-    const isReact = REACT_PACKAGES.has(dep) || REACT_SCOPES.some((scope) => dep.startsWith(scope))
-    if (isReact && pkgName !== UI_PACKAGE && REACT_EXCEPTIONS[pkgName]?.(dep) !== true) {
+    const isReact =
+      dep === uiPackage ||
+      REACT_PACKAGES.has(dep) ||
+      REACT_SCOPES.some((scope) => dep.startsWith(scope))
+    if (isReact && pkgName !== uiPackage && !(pkgName === emailPackage && dep !== uiPackage)) {
       violations.push(
         `${pkgName} → ${dep}（${where}）：React 仅允许 ui，email 仅允许 React / React Email，不能依赖 ui`,
       )
     }
-    const allowed = LAYERS[pkgName]
-    if (allowed && dep.startsWith(SCOPE) && dep !== pkgName && !allowed.includes(dep)) {
+    const allowed = layers[pkgName]
+    if (allowed && dep.startsWith(scope) && dep !== pkgName && !allowed.includes(dep)) {
       const rule = allowed.length > 0 ? `只允许依赖 ${allowed.join('、')}` : '不得依赖其他内部包'
       violations.push(`${pkgName} → ${dep}（${where}）：${pkgName} ${rule}`)
     }
   }
 
-  for (const { manifest } of packages) {
+  // 根 manifest 同样不能成为 UI 原语的旁路依赖来源。
+  const rootManifest = join(root, 'package.json')
+  if (existsSync(rootManifest)) {
+    const manifest = JSON.parse(readFileSync(rootManifest, 'utf8'))
     for (const field of DEP_FIELDS) {
       for (const dep of Object.keys(manifest[field] ?? {})) {
-        checkDependency(manifest.name, dep, `package.json ${field}`)
+        checkUiDependency(manifest.name, dep, `package.json ${field}`)
+      }
+    }
+  }
+  for (const { path, manifest } of [...packages, ...apps]) {
+    const isPackage = packages.some((pkg) => pkg.path === path)
+    for (const field of DEP_FIELDS) {
+      for (const dep of Object.keys(manifest[field] ?? {})) {
+        const where = `${relative(root, join(path, 'package.json')).split(sep).join('/')} ${field}`
+        checkUiDependency(manifest.name, dep, where)
+        checkEvalsDependency(manifest.name, dep, where)
+        if (isPackage) checkDependency(manifest.name, dep, where)
       }
     }
   }
@@ -227,6 +268,16 @@ export function checkWorkspace(
       const rel = relative(root, file).split(sep).join('/')
       for (const { specifier, line } of parsed.get(file)) {
         const where = `${rel}:${line}`
+        // UI 原语检查覆盖应用和包的所有源码，不能被生产 src 或目标夹具豁免。
+        const dep = packageNameOf(specifier)
+        if (dep) checkUiDependency(manifest.name, dep, where)
+        if (dep) checkEvalsDependency(manifest.name, dep, where)
+        else if (specifier.startsWith('.') && manifest.name !== evalsPackage) {
+          const target = resolve(join(file, '..'), specifier)
+          const evals = packages.find((pkg) => pkg.manifest.name === evalsPackage)
+          if (evals && (target === evals.path || target.startsWith(evals.path + sep)))
+            checkEvalsDependency(manifest.name, evalsPackage, where)
+        }
         if (specifier.startsWith('cloudflare:')) {
           if (cloudflareAllowed(rel, specifier, rules)) continue
           violations.push(
@@ -234,7 +285,7 @@ export function checkWorkspace(
           )
           continue
         }
-        const platformTarget = platformTargetOf(root, file, specifier)
+        const platformTarget = platformTargetOf(root, file, specifier, platformPackage)
         if (platformTarget && !platformTargetAllowed(rel, platformTarget, rules)) {
           violations.push(
             `${where} → ${specifier}：业务仅可依赖 platform 中立入口；${platformTarget} 适配器仅允许对应目标目录、显式 composition entry 与目标测试夹具`,
@@ -258,7 +309,6 @@ export function checkWorkspace(
           }
           continue
         }
-        const dep = packageNameOf(specifier)
         if (dep) checkDependency(manifest.name, dep, where)
       }
     }

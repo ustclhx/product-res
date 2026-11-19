@@ -8,17 +8,32 @@ import type { MatrixRowView, PriceBandView, ReviewView, TrendPointView } from '.
  * 细线 2px、轴线与网格弱化、悬停提示；缺月不补 0，曲线在缺口处断开。
  */
 
-const AXIS = {
-  axisLine: { lineStyle: { color: '#f0f0f0' } },
-  axisTick: { show: false },
-  axisLabel: { color: '#8c8c8c', fontSize: 11 },
-  splitLine: { lineStyle: { color: '#f0f0f0', type: 'dashed' as const } },
+/**
+ * canvas 不认 CSS 变量，配置里的颜色在运行时从 :root 读取设计 token。
+ * 图表只在客户端 effect 中渲染，服务端渲染时读不到 document，返回空串即可（option 不会被使用）。
+ */
+function token(name: string) {
+  if (typeof document === 'undefined') return ''
+  return getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim()
 }
-const TOOLTIP = {
-  backgroundColor: '#fff',
-  borderColor: '#f0f0f0',
-  textStyle: { color: '#262626', fontSize: 12 },
-  extraCssText: 'box-shadow:0 6px 16px rgba(0,0,0,.08);border-radius:8px;',
+
+function axis() {
+  const border = token('border')
+  return {
+    axisLine: { lineStyle: { color: border } },
+    axisTick: { show: false },
+    axisLabel: { color: token('muted-foreground'), fontSize: 11 },
+    splitLine: { lineStyle: { color: border, type: 'dashed' as const } },
+  }
+}
+// 提示框是普通 DOM 元素，extraCssText 与 formatter 生成的 HTML 可以直接用 var()
+function tooltip() {
+  return {
+    backgroundColor: token('card'),
+    borderColor: token('border'),
+    textStyle: { color: token('foreground'), fontSize: 12 },
+    extraCssText: 'box-shadow:var(--shadow-4);border-radius:8px;',
+  }
 }
 
 const monthLabel = (m: string) => `${Number(m.slice(5))}月`
@@ -26,18 +41,21 @@ const monthLabel = (m: string) => `${Number(m.slice(5))}月`
 export function TrendChart({
   points,
   metric,
-  color,
+  tone,
   label,
   nodeLabels = true,
 }: {
   points: readonly TrendPointView[]
   metric: 'searchVolume' | 'salesEstimate'
-  color: string
+  /** 曲线颜色对应的设计 token */
+  tone: 'primary' | 'success'
   label: string
   /** 两张小图上下排列时只在上面一张写节点名，避免重复 */
   nodeLabels?: boolean
 }) {
   const option = useMemo(() => {
+    const color = token(tone)
+    const AXIS = axis()
     const months = points.map((p) => p.month)
     // 同月多个节点合并为一条线，名称用顿号连接
     const nodes = points
@@ -46,15 +64,15 @@ export function TrendChart({
     return {
       grid: { left: 44, right: 16, top: nodes.length && nodeLabels ? 30 : 12, bottom: 24 },
       tooltip: {
-        ...TOOLTIP,
+        ...tooltip(),
         trigger: 'axis',
-        axisPointer: { type: 'line', lineStyle: { color: '#bfbfbf' } },
+        axisPointer: { type: 'line', lineStyle: { color: token('muted-foreground') } },
         formatter: (items: { dataIndex: number; value: number | null }[]) => {
           const p = points[items[0]?.dataIndex ?? 0]
           if (!p) return ''
           const v = items[0]?.value
           const node = p.nodes.length
-            ? `<br/><span style="color:#d48806">节点：${p.nodes.map((n) => n.label).join('、')}</span>`
+            ? `<br/><span style="color:var(--warning-strong)">节点：${p.nodes.map((n) => n.label).join('、')}</span>`
             : ''
           return `${p.month}<br/>${label} ${v == null ? '无数据' : fmtCompact(v)}${node}`
         },
@@ -83,8 +101,10 @@ export function TrendChart({
           symbolSize: 6,
           showSymbol: true,
           lineStyle: { width: 2, color },
-          itemStyle: { color, borderColor: '#fff', borderWidth: 2 },
+          itemStyle: { color, borderColor: token('card'), borderWidth: 2 },
+          // 原为曲线色 20% 透明度渐变到 0；token 可能不是十六进制，改用整体 opacity 表达
           areaStyle: {
+            opacity: 0.2,
             color: {
               type: 'linear',
               x: 0,
@@ -92,8 +112,8 @@ export function TrendChart({
               x2: 0,
               y2: 1,
               colorStops: [
-                { offset: 0, color: `${color}33` },
-                { offset: 1, color: `${color}00` },
+                { offset: 0, color },
+                { offset: 1, color: 'transparent' },
               ],
             },
           },
@@ -101,11 +121,11 @@ export function TrendChart({
             ? {
                 silent: true,
                 symbol: 'none',
-                lineStyle: { color: '#faad14', type: 'dashed', width: 1 },
+                lineStyle: { color: token('warning'), type: 'dashed', width: 1 },
                 label: {
                   show: nodeLabels,
                   position: 'end',
-                  color: '#d48806',
+                  color: token('warning-strong'),
                   fontSize: 10,
                   // 标签横排在线顶端；过长时截断，完整名称见悬停提示
                   formatter: (p: { name: string }) =>
@@ -117,7 +137,7 @@ export function TrendChart({
         },
       ],
     }
-  }, [points, metric, color, label, nodeLabels])
+  }, [points, metric, tone, label, nodeLabels])
   const empty = points.every((p) => p[metric] === null)
   return <Chart option={option} empty={empty} height={170} aria-label={`${label}近 12 个月趋势`} />
 }
@@ -139,12 +159,13 @@ export function PriceBandChart({
     )
     // 有销量估算时柱高表示销量占比（更能说明钱在哪个价位），否则退回商品数
     const byShare = bands.some((b) => b.salesShare !== null)
+    const AXIS = axis()
     return {
       grid: { left: 36, right: 12, top: 16, bottom: 28 },
       tooltip: {
-        ...TOOLTIP,
+        ...tooltip(),
         trigger: 'axis',
-        axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(22,119,255,0.06)' } },
+        axisPointer: { type: 'shadow', shadowStyle: { color: token('primary'), opacity: 0.06 } },
         formatter: (items: { dataIndex: number }[]) => {
           const b = bands[items[0]?.dataIndex ?? 0]
           if (!b) return ''
@@ -175,11 +196,11 @@ export function PriceBandChart({
           type: 'bar',
           barMaxWidth: 32,
           data: bands.map((b) => (byShare ? (b.salesShare ?? 0) : b.productCount)),
-          itemStyle: { color: '#1677ff', borderRadius: [4, 4, 0, 0] },
+          itemStyle: { color: token('primary'), borderRadius: [4, 4, 0, 0] },
           label: {
             show: true,
             position: 'top',
-            color: '#595959',
+            color: token('subtle-foreground'),
             fontSize: 10,
             formatter: (p: { dataIndex: number }) => {
               const b = bands[p.dataIndex]
@@ -208,10 +229,12 @@ export function BubbleChart({
   const option = useMemo(() => {
     const titles = new Map(rows.map((r) => [r.id, r.title ?? r.platformId]))
     const maxSize = Math.max(1, ...bubbles.map((b) => b.size ?? 0))
+    const AXIS = axis()
+    const primary = token('primary')
     return {
       grid: { left: 48, right: 16, top: 16, bottom: 36 },
       tooltip: {
-        ...TOOLTIP,
+        ...tooltip(),
         trigger: 'item',
         formatter: (p: { data: [number, number, number | null, string] }) => {
           const [x, y, size, id] = p.data
@@ -224,7 +247,7 @@ export function BubbleChart({
         name: '价格',
         nameLocation: 'middle',
         nameGap: 24,
-        nameTextStyle: { color: '#8c8c8c', fontSize: 11 },
+        nameTextStyle: { color: AXIS.axisLabel.color, fontSize: 11 },
         scale: true,
         ...AXIS,
         axisLabel: { ...AXIS.axisLabel, formatter: (v: number) => fmtMoney(v, currency) },
@@ -232,7 +255,7 @@ export function BubbleChart({
       yAxis: {
         type: 'value',
         name: '月销量估算',
-        nameTextStyle: { color: '#8c8c8c', fontSize: 11, align: 'left' },
+        nameTextStyle: { color: AXIS.axisLabel.color, fontSize: 11, align: 'left' },
         ...AXIS,
         axisLine: { show: false },
         axisLabel: { ...AXIS.axisLabel, formatter: (v: number) => fmtCompact(v) },
@@ -244,12 +267,15 @@ export function BubbleChart({
           // 面积与评论数成正比；缺评论数时用最小尺寸，不当作 0
           symbolSize: (d: [number, number, number | null]) =>
             d[2] == null ? 10 : 10 + 34 * Math.sqrt(d[2] / maxSize),
+          // 原为主色 55% 透明填充；token 可能不是十六进制，改用 opacity（白边随之半透明）
+          // 深色画布上主色加半透明对比不足，气泡改用文字主色（深色下提亮、浅色下加深）
           itemStyle: {
-            color: 'rgba(22,119,255,0.55)',
-            borderColor: '#fff',
+            color: token('primary-text'),
+            opacity: 0.7,
+            borderColor: token('card'),
             borderWidth: 2,
           },
-          emphasis: { itemStyle: { color: '#1677ff' } },
+          emphasis: { itemStyle: { color: primary, opacity: 1 } },
         },
       ],
     }
@@ -264,7 +290,16 @@ export function BubbleChart({
   )
 }
 
-const CLOUD_COLORS = ['#cf1322', '#ff4d4f', '#d48806', '#fa8c16', '#8c8c8c']
+/** 词频由高到低的颜色；深红 red-7 与橙 orange-6 没有对应 token，保留设计稿色值（已登记例外） */
+function cloudColors() {
+  return [
+    '#cf1322',
+    token('destructive'),
+    token('warning-strong'),
+    '#fa8c16',
+    token('muted-foreground'),
+  ]
+}
 
 export function WordCloud({
   terms,
@@ -275,12 +310,13 @@ export function WordCloud({
 }) {
   const option = useMemo(() => {
     const max = Math.max(1, ...terms.map((t) => t.count))
+    const colors = cloudColors()
     return {
       tooltip: {
-        ...TOOLTIP,
+        ...tooltip(),
         formatter: (p: { name: string; value: number; dataIndex: number }) => {
           const sample = terms[p.dataIndex]?.reviewIds.map((id) => reviews[id]?.body).find(Boolean)
-          return `${p.name} · ${p.value} 条差评${sample ? `<div style="max-width:240px;white-space:normal;color:#8c8c8c">“${sample.slice(0, 80).replace(/</g, '&lt;')}”</div>` : ''}`
+          return `${p.name} · ${p.value} 条差评${sample ? `<div style="max-width:240px;white-space:normal;color:var(--muted-foreground)">“${sample.slice(0, 80).replace(/</g, '&lt;')}”</div>` : ''}`
         },
       },
       series: [
@@ -298,7 +334,7 @@ export function WordCloud({
             fontFamily: "'Inter Variable', 'PingFang SC', 'Microsoft YaHei', sans-serif",
             fontWeight: 600,
             color: (p: { value: number }) =>
-              CLOUD_COLORS[Math.min(4, Math.floor((1 - p.value / max) * 5))] as string,
+              colors[Math.min(4, Math.floor((1 - p.value / max) * 5))] as string,
           },
           data: terms.map((t) => ({ name: t.term, value: t.count })),
         },

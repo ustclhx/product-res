@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { expect, type Route, test } from '@playwright/test'
 import { fixtureDb, register, simulateClientIp, uiText } from './fixtures.ts'
+import { chooseOption } from './select.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 test('model administration is hidden from non-admins', async ({ page }) => {
@@ -26,15 +27,23 @@ test('platform admin can create, edit, disable and enable a model', async ({ pag
     await page.getByRole('button', { name: uiText('admin_new_model'), exact: true }).click()
     const form = page.getByRole('article', { name: uiText('admin_new_model') })
     // template.config.ts 中文本模型默认按 token 计费
-    await expect(form.getByLabel(uiText('admin_pricing_mode'))).toHaveValue('token')
+    const pricingMode = form.getByRole('combobox', {
+      name: uiText('admin_pricing_mode'),
+      exact: true,
+    })
+    await expect(pricingMode).toHaveText(uiText('admin_per_token'))
 
     // 页面水合前的操作不会进入 React 状态：重复切换直到按次字段出现
     await expect
       .poll(async () => {
-        await form.getByLabel(uiText('admin_pricing_mode')).selectOption('per_call')
+        await chooseOption(pricingMode, uiText('admin_per_call'))
         return form.getByLabel(uiText('admin_credits_per_call')).isVisible()
       })
       .toBe(true)
+    // 「默认」用占位值表示，保存时仍省略 chargeOn（见下方 pricing 断言）
+    await expect(
+      form.getByRole('combobox', { name: uiText('admin_charge_on'), exact: true }),
+    ).toHaveText(uiText('admin_default'))
     await form.getByLabel(uiText('admin_key')).fill(key)
     await form.getByLabel(uiText('admin_provider'), { exact: true }).fill('openai')
     await form.getByLabel(uiText('admin_provider_model_id')).fill('gpt-fixture')
@@ -117,6 +126,7 @@ test('platform admin can create, edit, disable and enable a model', async ({ pag
       params_schema: editedSchema,
       pricing: { mode: 'per_call', credits: 3, limits: { maxInputTokens: 8000 } },
     })
+    expect(saved?.pricing).not.toHaveProperty('chargeOn')
 
     await card.getByRole('button', { name: uiText('admin_disable') }).click()
     await expect(card.getByRole('heading')).toContainText(uiText('admin_disabled_suffix').trim())
@@ -181,13 +191,18 @@ test('platform admin can create, edit, disable and enable a model', async ({ pag
     const [sourceAfterCopy] = await sql`select params_schema from ai_model where key=${key}`
     expect(sourceAfterCopy?.params_schema).toEqual(editedSchema)
 
-    await page.getByLabel(uiText('admin_model_type')).selectOption('image')
+    // DataTable 筛选下拉为 @product-res/ui Select（add-ui-design-system 4.2）
+    const modelType = page.getByRole('combobox', { name: uiText('admin_model_type'), exact: true })
+    await chooseOption(modelType, uiText('admin_image'))
     await page.getByRole('button', { name: uiText('admin_apply'), exact: true }).click()
     await expect(card).toHaveCount(0)
     await expect(copy).toHaveCount(0)
     await expect(page).toHaveURL(/kind=image/)
-    await page.getByLabel(uiText('admin_model_type')).selectOption('text')
-    await page.getByLabel(uiText('admin_order_models')).selectOption('key_desc')
+    await chooseOption(modelType, uiText('admin_text'))
+    await chooseOption(
+      page.getByRole('combobox', { name: uiText('admin_order_models'), exact: true }),
+      uiText('admin_key_descending'),
+    )
     await page.getByRole('button', { name: uiText('admin_apply'), exact: true }).click()
     await expect(copy).toBeVisible()
     const keys = await page

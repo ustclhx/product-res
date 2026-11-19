@@ -74,10 +74,13 @@ it('replays a real S3 object after failed business confirmation with stable file
   )
   const copy = createNodeMediaCopier(fixture.config, { fetch: fetcher })
   const copiedKeys: string[] = []
+  let cancelAfterCopy = true
   const copyOutput: typeof copy = async (objectKey, value, copyLimits) => {
     const stored = await copy(objectKey, value, copyLimits)
     copiedKeys.push(objectKey)
     expect(await storage.head(objectKey)).toEqual({ mime: 'image/png', size: 3 })
+    // 复制成功后任务被取消，使最终业务确认失败。
+    if (cancelAfterCopy) await scoped(db, ws).updateById(aiTask, taskId, { status: 'canceled' })
     return stored
   }
   const input = {
@@ -88,7 +91,7 @@ it('replays a real S3 object after failed business confirmation with stable file
     result: { outputs: [output] },
     limits,
   }
-  // 对象已成功，但最终配额检查失败；删除暂时不可用，保留真实对象与 pending 墓碑。
+  // 对象已成功，但最终业务确认失败；删除暂时不可用，保留真实对象与 pending 墓碑。
   await expect(
     persistMediaOutputs({
       ...input,
@@ -97,9 +100,10 @@ it('replays a real S3 object after failed business confirmation with stable file
           throw new Error('fixture delete unavailable')
         }),
       },
-      limits: { ...limits, storageBytes: 2 },
     }),
-  ).rejects.toMatchObject({ code: 'UPGRADE_REQUIRED' })
+  ).rejects.toMatchObject({ code: 'MEDIA_TASK_TERMINAL' })
+  cancelAfterCopy = false
+  await scoped(db, ws).updateById(aiTask, taskId, { status: 'running' })
   const [pending] = await scoped(db, ws).select(file)
   expect(pending).toMatchObject({
     r2Key: key(),

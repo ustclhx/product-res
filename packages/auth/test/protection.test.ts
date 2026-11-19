@@ -1,3 +1,4 @@
+import { betterAuth } from 'better-auth'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TURNSTILE_TOKEN_HEADER } from '../src/index.ts'
 import {
@@ -223,5 +224,83 @@ describe('RL_AUTH 限流', () => {
     expect(statuses).toContain(429)
     expect(statuses.every((status) => status === 200 || status === 429)).toBe(true)
     expect(s.sent).toHaveLength(statuses.filter((status) => status === 200).length)
+  })
+})
+
+describe('OTP 独立校验入口', () => {
+  it('返回 404，既不读写验证码也不触发限流与 siteverify', async () => {
+    const rateLimiter = { limit: vi.fn(async () => ({ success: true })) }
+    const s = setup({ rateLimiter })
+    const address = users.email('disabled-check')
+    await s.auth.api.sendVerificationOTP({ body: { email: address, type: 'email-verification' } })
+    const before = await s.db
+      .$client`select * from verification where identifier like ${`%${address}%`}`
+    const result = await s.post(
+      '/email-otp/check-verification-otp',
+      { email: address, type: 'email-verification', otp: '000000' },
+      noToken,
+    )
+    expect(result.status).toBe(404)
+    expect(
+      await s.db.$client`select * from verification where identifier like ${`%${address}%`}`,
+    ).toEqual(before)
+    expect(rateLimiter.limit).not.toHaveBeenCalled()
+    expect(siteverify).not.toHaveBeenCalled()
+  })
+})
+
+describe('OTP 原子尝试预算（真实 Postgres）', () => {
+  it.each([
+    ['/email-otp/verify-email', 'email-verification'],
+    ['/email-otp/reset-password', 'forget-password'],
+    ['/sign-in/email-otp', 'sign-in'],
+  ] as const)('%s 并发错误猜测累计只验证三次，此后正确验证码也失效', async (path, type) => {
+    const s = setup({ config: { auth: { turnstile: false } }, rateLimiter: undefined })
+    const email = users.email('atomic-budget')
+    expect((await s.post('/sign-up/email', signUpBody(email))).status).toBe(200)
+    const recreated: string[] = []
+    // 不通过 HTTP 限流裁剪并发，用独立实例和真实 adapter 验证消费自身的尝试预算。
+    const options = s.auth.options
+    const makeAuth = () =>
+      betterAuth({
+        ...options,
+        databaseHooks: {
+          ...options.databaseHooks,
+          verification: {
+            create: {
+              after: async (row) => {
+                if (row.identifier.includes(email)) recreated.push(row.value)
+              },
+            },
+          },
+        },
+      })
+    const issue = makeAuth()
+    await issue.api.sendVerificationOTP({ body: { email, type } })
+    const mail = s.sent.find((message) => message.type === 'otp')
+    if (mail?.type !== 'otp') throw new Error('OTP missing')
+    const wrong = mail.otp === '000000' ? '111111' : '000000'
+    recreated.length = 0
+    const post = (otp: string) =>
+      makeAuth().handler(
+        new Request(`http://localhost:3000/api/auth${path}`, {
+          method: 'POST',
+          headers: { origin: 'http://localhost:3000', 'content-type': 'application/json' },
+          body: JSON.stringify({ email, otp, password: PASSWORD }),
+        }),
+      )
+    // 每波在上一波完成后继续，既覆盖竞争又保证尝试预算真正用尽。
+    for (let wave = 0; wave < 4; wave++) {
+      const responses = await Promise.all(Array.from({ length: 12 }, () => post(wrong)))
+      expect(
+        responses.every((response) => response.status === 400 || response.status === 403),
+      ).toBe(true)
+    }
+    expect(recreated.map((value) => Number(value.split(':').at(-1)))).toEqual([1, 2, 3])
+    expect((await post(mail.otp)).status).toBe(400)
+    expect(
+      await s.db.$client`select id from verification where identifier like ${`%${email}%`}`,
+    ).toHaveLength(0)
+    expect(await findUser(s, email)).toMatchObject({ emailVerified: false })
   })
 })

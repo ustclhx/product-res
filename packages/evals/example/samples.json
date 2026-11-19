@@ -1,0 +1,79 @@
+[
+  {
+    "id": "zh-kettle",
+    "input": {
+      "product": "恒温电水壶",
+      "audience": "每天泡茶的上班族",
+      "features": ["五档水温可选", "保温两小时", "一点七升容量"],
+      "lang": "zh-Hans"
+    },
+    "expect": { "script": { "lang": "zh-Hans" } },
+    "tags": ["zh"]
+  },
+  {
+    "id": "zh-bike",
+    "input": {
+      "product": "折叠自行车",
+      "audience": "地铁加骑行的通勤者",
+      "features": ["十秒折叠", "整车十一公斤", "七速变速"],
+      "lang": "zh-Hans"
+    },
+    "expect": { "script": { "lang": "zh-Hans" } },
+    "tags": ["zh"]
+  },
+  {
+    "id": "zh-planner",
+    "input": {
+      "product": "手账本",
+      "audience": "喜欢做计划的学生",
+      "features": ["一百二十克纸不洇墨", "月计划与周计划页", "可平摊的线装"],
+      "lang": "zh-Hans"
+    },
+    "expect": {
+      "script": { "lang": "zh-Hans" },
+      "length": { "max": 120, "severity": "warn" }
+    },
+    "tags": ["zh", "warn-demo"]
+  },
+  {
+    "id": "en-lantern",
+    "input": {
+      "product": "Solar camping lantern",
+      "audience": "Weekend campers",
+      "features": ["Charges in six hours of sunlight", "Three brightness levels", "Folds flat"],
+      "lang": "en"
+    },
+    "expect": { "script": { "lang": "en" } },
+    "tags": ["en"]
+  },
+  {
+    "id": "en-flashcards",
+    "input": {
+      "product": "Vocabulary flashcard deck",
+      "audience": "Adults learning Spanish",
+      "features": [
+        "500 everyday words",
+        "Example sentence on every card",
+        "Spaced review schedule"
+      ],
+      "lang": "en"
+    },
+    "expect": { "script": { "lang": "en" } },
+    "tags": ["en"]
+  },
+  {
+    "id": "en-mug",
+    "input": {
+      "product": "Insulated ceramic mug",
+      "audience": "Remote workers at a desk all day",
+      "features": [
+        "Keeps drinks warm for 90 minutes",
+        "Dishwasher safe",
+        "Fits under most coffee machines"
+      ],
+      "lang": "en"
+    },
+    "expect": { "script": { "lang": "en" } },
+    "tags": ["en"]
+  }
+]

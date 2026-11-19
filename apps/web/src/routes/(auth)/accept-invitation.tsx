@@ -1,7 +1,6 @@
 import { Button } from '@product-res/ui'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
-import { z } from 'zod'
 import { authClient } from '../../features/auth/auth-client.ts'
 import {
   AuthLayout,
@@ -10,6 +9,7 @@ import {
   StatusAlert,
 } from '../../features/auth/auth-layout.tsx'
 import { authErrorMessage } from '../../features/auth/errors.ts'
+import { requiredUuid } from '../../features/routing/search.ts'
 import {
   actionResult,
   activateWorkspace,
@@ -20,7 +20,7 @@ import { getInvitationPage } from '../../features/workspace/workspace.functions.
 import { m } from '../../paraglide/messages.js'
 
 export const Route = createFileRoute('/(auth)/accept-invitation')({
-  validateSearch: z.object({ id: z.uuid() }),
+  validateSearch: (search: Record<string, unknown>) => ({ id: requiredUuid(search.id, 'id') }),
   beforeLoad: async ({ search }) => ({ invitationPage: await getInvitationPage({ data: search }) }),
   loaderDeps: ({ search }) => search,
   loader: ({ context }) => context.invitationPage,

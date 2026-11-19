@@ -1,0 +1,144 @@
+/*
+ * 项目品牌层（openspec add-ui-design-system design D2 / D10）。
+ *
+ * 本文件归衍生项目所有：模板创建后不再修改它（模板发布检查会断言这一点），
+ * 因此项目在这里写的品牌 token 在 template-sync 时不会冲突，也不会被覆盖。
+ *
+ * 优先级：基线（@product-res/ui/globals.css）与主题预设都在 cascade layer `base` 中，本文件不分层，
+ * 未分层的声明总是胜过分层声明，所以用普通的 :root / .dark 选择器即可覆盖，与选了哪个预设无关。
+ * 也正因如此，:root 中覆盖的变量在深色模式下同样生效：覆盖浅色值时，须同时在 .dark 中给出深色值，
+ * 且 .dark 规则写在 :root 之后。
+ *
+ * 只覆盖变量，不写组件样式；可用变量见 packages/ui/src/styles/globals.css。
+ * 改色后请检查对比度：正文 ≥ 4.5:1，焦点环与背景、与主按钮 ≥ 3:1。
+ *
+ * 示例：
+ *
+ * :root {
+ *   --primary: #0f766e;
+ *   --primary-foreground: #ffffff;
+ *   --fluid-accent: #14b8a6;
+ *   --focus-ring: #171717;
+ * }
+ *
+ * .dark {
+ *   --primary: #0f766e;
+ *   --primary-foreground: #ffffff;
+ *   --fluid-accent: #2dd4bf;
+ *   --focus-ring: #99f6e4;
+ * }
+ *
+ * 多站点项目可按 <html data-site="…"> 分别覆盖（同样成对给出浅色与深色）：
+ *
+ * :root[data-site="docs"] {
+ *   --fluid-accent: #6366f1;
+ * }
+ *
+ * :root[data-site="docs"].dark {
+ *   --fluid-accent: #818cf8;
+ * }
+ */
+
+/*
+ * 选品工作台主题（docs/design 设计稿）：Ant Design 风格的色板映射到语义变量。
+ * 模板 0.3.0 起品牌变量不再改 packages/ui 的 globals.css，从原 globals.css 改动迁入此处。
+ * 圆角基准 8px 与基线一致，不再覆盖；正文字体沿用基线的 Inter + 中文系统字体栈（含度量匹配回退字体）。
+ */
+:root {
+  /* 工作台表格与次要文字为 13px（设计稿），caption 角色随之放大；micro 仍为基线 11px */
+  --fs-caption: 13px;
+  --lh-caption: 20px;
+  --background: #ffffff;
+  --foreground: #262626;
+  --card: #ffffff;
+  --card-foreground: #262626;
+  --popover: #ffffff;
+  --popover-foreground: #262626;
+  --primary: #1677ff;
+  --primary-foreground: #ffffff;
+  /* #1677ff 作文字在白底上不足 4.5:1，链接等文字用 Ant blue-7 */
+  --primary-text: #0958d9;
+  --primary-soft: #e6f4ff;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #262626;
+  --muted: #f5f5f5;
+  --muted-foreground: #8c8c8c;
+  --subtle-foreground: #595959;
+  /* 基线 --accent 为较重的灰（#e5e5e5），设计稿沿用浅灰 */
+  --accent: #f5f5f5;
+  --accent-foreground: #262626;
+  --destructive: #ff4d4f;
+  --destructive-soft: #fff2f0;
+  --success: #52c41a;
+  --success-soft: #f6ffed;
+  --success-strong: #389e0d;
+  --warning: #faad14;
+  --warning-soft: #fffbe6;
+  --warning-strong: #d48806;
+  --border: #f0f0f0;
+  --input: #d9d9d9;
+  /* 原 globals.css 的 --input 即输入框边框色，基线改由 --field-border 承载 */
+  --field-border: #d9d9d9;
+  --fluid-accent: #1677ff;
+  /* 原 --ring 取值；基线的 --ring 指向 --focus-ring */
+  --focus-ring: #4096ff;
+  --page: #f0f2f5;
+  --sidebar: #001529;
+  --sidebar-foreground: #ffffff;
+  --sidebar-muted: rgb(255 255 255 / 65%);
+  --app-font-mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", monospace;
+}
+
+/* 设计稿只有浅色：:root 覆盖的通用变量在暗色下恢复基线值，业务变量给出可读的近似值 */
+.dark {
+  --background: var(--surface-1);
+  --foreground: #f5f5f5;
+  --card: var(--surface-3);
+  --card-foreground: #f5f5f5;
+  --popover: var(--surface-3);
+  --popover-foreground: #f5f5f5;
+  /* 深色沿用品牌蓝（Ant 深色主色），侧栏选中项与主按钮为白字；文字用的主色提亮保证对比度 */
+  --primary: #1668dc;
+  --primary-foreground: #ffffff;
+  --primary-text: #69b1ff;
+  --secondary: #252525;
+  --secondary-foreground: #f5f5f5;
+  --muted: #1e1e1e;
+  --muted-foreground: #b0b0b0;
+  --accent: #525252;
+  --accent-foreground: #f5f5f5;
+  --destructive: #fca5a5;
+  --success: oklch(0.723 0.219 149.579);
+  --border: color-mix(in oklab, var(--foreground) 12%, transparent);
+  --input: #404040;
+  --field-border: var(--border);
+  --fluid-accent: #4f86f7;
+  --focus-ring: var(--fluid-accent);
+  --primary-soft: oklch(0.3 0.08 255);
+  --subtle-foreground: oklch(0.8 0 0);
+  --destructive-soft: oklch(0.3 0.08 25);
+  --success-soft: oklch(0.3 0.06 150);
+  --success-strong: oklch(0.8 0.15 150);
+  --warning: oklch(0.8 0.15 80);
+  --warning-soft: oklch(0.32 0.06 80);
+  --warning-strong: oklch(0.85 0.14 80);
+  --page: oklch(0.12 0 0);
+  --sidebar: oklch(0.18 0.03 255);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-muted: oklch(0.985 0 0 / 65%);
+}
+
+@theme inline {
+  --color-success-soft: var(--success-soft);
+  --color-success-strong: var(--success-strong);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-strong: var(--warning-strong);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-primary-soft: var(--primary-soft);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-page: var(--page);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --font-mono: var(--app-font-mono);
+}

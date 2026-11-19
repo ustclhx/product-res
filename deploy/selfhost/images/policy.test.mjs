@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+  architectures,
   assertCompleteCatalog,
   assertEvidence,
   assertFormalTagsAbsent,
@@ -8,6 +9,7 @@ import {
   assertTokenRefusal,
   formalRepository,
   hasTrustedCi,
+  localArchitectures,
   numericImageUid,
   parseNewServices,
   requiredServices,
@@ -18,34 +20,48 @@ import { formalTagState, Registry } from './registry.mjs'
 const sha = 'a'.repeat(40)
 const catalog = { schemaVersion: 1, services: requiredServices.map((name) => ({ name })) }
 
-test('完整镜像集要求备份及每个服务的两架构成功证据', () => {
+test('完整镜像集要求备份及每个服务的发布架构成功证据', () => {
   assert.throws(() => assertCompleteCatalog({ ...catalog, pendingServices: ['backup'] }))
   assert.throws(() =>
     assertCompleteCatalog({ ...catalog, services: catalog.services.slice(0, -1) }),
   )
   assertCompleteCatalog(catalog)
-  const build = { sha, arch: 'arm64', services: catalog.services }
+  const build = { sha, arch: 'amd64', services: catalog.services }
   const smoke = {
     sha,
-    arch: 'arm64',
+    arch: 'amd64',
     passed: true,
     nativeSmoke: true,
     services: catalog.services.map((s) => ({ ...s, passed: true })),
   }
-  assertEvidence(catalog, sha, 'arm64', build, smoke)
-  assert.throws(() => assertEvidence(catalog, sha, 'amd64', build, smoke))
+  assertEvidence(catalog, sha, 'amd64', build, smoke)
+  assert.throws(() => assertEvidence(catalog, sha, 'arm64', build, smoke))
   assert.throws(() =>
-    assertEvidence(catalog, sha, 'arm64', build, {
+    assertEvidence(catalog, sha, 'amd64', build, {
       ...smoke,
       services: smoke.services.slice(0, -1),
     }),
   )
   assert.throws(() =>
-    assertEvidence(catalog, sha, 'arm64', build, { ...smoke, sha: 'b'.repeat(40) }),
+    assertEvidence(catalog, sha, 'amd64', build, { ...smoke, sha: 'b'.repeat(40) }),
   )
-  assert.throws(() =>
-    assertPlatforms({ manifests: [{ platform: { os: 'linux', architecture: 'amd64' } }] }),
-  )
+})
+
+test('正式发布只含 linux/amd64，本机构建另接受 arm64', () => {
+  assert.deepEqual(architectures, ['amd64'])
+  assert.deepEqual(localArchitectures, ['amd64', 'arm64'])
+  const manifest = (architecture) => ({ platform: { os: 'linux', architecture } })
+  assertPlatforms({ manifests: [manifest('amd64')] })
+  for (const manifests of [
+    [],
+    [manifest('arm64')],
+    [manifest('amd64'), manifest('arm64')],
+    [manifest('amd64'), manifest('amd64')],
+    [{ platform: { os: 'windows', architecture: 'amd64' } }],
+  ])
+    assert.throws(() => assertPlatforms({ manifests }))
+  // 单一来源组合出的正式 tag 必须仍是 index；直接指向单个 manifest 时失败关闭。
+  assert.throws(() => assertPlatforms({ config: {}, layers: [] }))
 })
 
 test('正式发布仅接受精确源码 SHA 的同仓 main push 成功 CI', () => {

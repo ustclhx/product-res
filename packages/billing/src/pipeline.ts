@@ -6,7 +6,7 @@ import {
   webhookEvent,
 } from '@product-res/db'
 import { and, eq, sql } from 'drizzle-orm'
-import { billingErrorMessage } from './errors.ts'
+import { billingErrorMessage, isRetryableBillingError } from './errors.ts'
 import type { NormalizedEvent, PaymentProvider, VerifiedWebhook } from './provider.ts'
 
 export type WebhookTransaction = Parameters<Parameters<Database['transaction']>[0]>[0]
@@ -30,7 +30,13 @@ export interface WebhookNotification {
 
 export type WebhookResult =
   | { status: 'duplicate' | 'not_replayable'; delivery: WebhookEvent }
-  | { status: 'failed'; delivery: WebhookEvent; error: string }
+  | {
+      status: 'failed'
+      delivery: WebhookEvent
+      error: string
+      /** false 表示重投无法修复（如币种不符）：应答服务商已接收，由运营告警转人工处理。 */
+      retryable: boolean
+    }
   | {
       status: 'processed' | 'ignored'
       delivery: WebhookEvent
@@ -193,7 +199,7 @@ async function processRegistered<Prepared>(
     const error = billingErrorMessage(cause)
     const failed = await markFailed(options.db, delivery.id, error)
     await options.onFailure?.({ cause, delivery: failed, events: normalized.events, prepared })
-    return { status: 'failed', error, delivery: failed }
+    return { status: 'failed', error, delivery: failed, retryable: isRetryableBillingError(cause) }
   }
   let notification: Extract<WebhookResult, { notification: unknown }>['notification'] = {
     status: 'not_requested',

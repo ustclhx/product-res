@@ -1,4 +1,11 @@
 export {
+  normalizeSiteHost,
+  type PlausibleSite,
+  parsePlausibleSites,
+  plausibleSite,
+  resolvePlausibleSite,
+} from './analytics.ts'
+export {
   EMAIL_TRANSPORTS,
   type EmailTransport,
   type EmailTransportConfig,
@@ -25,6 +32,11 @@ export {
   type AiModality,
   type DefaultLocale,
   defineTemplateConfig,
+  type LocalizedText,
+  type MarketingPerformance,
+  type MarketingProduct,
+  type MarketingStat,
+  type MarketingStep,
   type MediaProviderId,
   type OAuthProvider,
   type PaymentProvider,
@@ -32,4 +44,13 @@ export {
   type TemplateConfig,
   type TemplateConfigInput,
   templateConfigDefaults,
+  type UiAppLayout,
+  type UiDensity,
+  type UiPreset,
+  type UiShape,
+  uiAppLayouts,
+  uiConfigSchema,
+  uiDensities,
+  uiPresets,
+  uiShapes,
 } from './template.ts'

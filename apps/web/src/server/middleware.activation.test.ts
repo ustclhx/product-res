@@ -78,6 +78,7 @@ vi.mock('./workspace-context.ts', () => ({
 vi.mock('./workspace-data.ts', () => ({
   recipientInvitation: vi.fn(),
   resolveWorkspaceMaxSeats: async () => 1,
+  resolveWorkspacePlan: async () => ({ planKey: null, maxSeats: 1 }),
   userWorkspaces: async () => [],
   workspaceInvitations: async () => [],
   workspaceMembers: async () => [],

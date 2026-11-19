@@ -108,11 +108,6 @@ SMTP `none` 仅在本地隔离 fixture；生产 TLS 见上面的真实协议测�
 验证旧密码拒绝、新密码成功、旧会话 token cookie 失效；普通 Cookie 缓存仍遵循
 原五分钟吊销延迟。测试不查询 verification token，也不从 inbox body 取得链接。
 
-成功运行生成脱敏证据
-[`c-3.4-auth-smtp.json`](../../docs/runbooks/evidence/selfhost/c-3.4-auth-smtp.json)，
-包含完整 HEAD、请求/inbox/Message-ID、收件时间、尝试次数、状态和零 Resend 调用。
-SMTP 接受后确认前存在不确定结果，可能重复投递；稳定 Message-ID 只提供身份追踪，
-不能保证接收服务去重，也不承诺 exactly-once。
 
 ## 已装配共享接线（C 3.1–3.3）
 

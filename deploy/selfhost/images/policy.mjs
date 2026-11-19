@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict'
 
-export const architectures = ['amd64', 'arm64']
+// 正式 CI 与发布只交付 linux/amd64（无异构部署需求，2026-11 停止 arm64 发布）。
+export const architectures = ['amd64']
+// build/smoke 另接受 arm64，仅供 Apple Silicon 本机开发验证；其产物不进入发布。
+export const localArchitectures = ['amd64', 'arm64']
 export const requiredServices = [
   'web',
   'jobs',
@@ -75,9 +78,9 @@ export function assertEvidence(catalog, sha, arch, build, smoke) {
 
 export function assertPlatforms(index) {
   assert.equal(
-    index.manifests.length,
-    2,
-    'release index must contain exactly two runtime manifests',
+    index.manifests?.length,
+    architectures.length,
+    'release index must contain exactly the published runtime manifests',
   )
   const platforms = index.manifests
     .filter((item) => item.platform?.os === 'linux')
@@ -86,7 +89,7 @@ export function assertPlatforms(index) {
   assert.deepEqual(
     platforms,
     architectures,
-    'image index must contain exactly both Linux architectures',
+    'image index must contain exactly the published Linux architecture (amd64)',
   )
 }
 

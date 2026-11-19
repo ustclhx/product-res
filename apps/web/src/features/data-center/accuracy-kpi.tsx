@@ -66,7 +66,7 @@ export function AccuracyKpiCard({
           <span className="flex flex-wrap items-center gap-2">
             <span className={cn(danger && 'text-destructive')}>{hint}</span>
             {onOpen ? (
-              <button type="button" className="text-primary underline" onClick={onOpen}>
+              <button type="button" className="text-primary-text underline" onClick={onOpen}>
                 {m.accuracy_kpi_open()}
               </button>
             ) : null}

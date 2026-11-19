@@ -1,4 +1,4 @@
-import { Button, DataTable } from '@product-res/ui'
+import { Button, Checkbox, DataTable, Label } from '@product-res/ui'
 import { createFileRoute, notFound as featureNotFound, useRouter } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import {
@@ -7,12 +7,7 @@ import {
   filtersToSearch,
   offsetOfPage,
 } from '../../../features/admin/list.ts'
-import {
-  AdminPage,
-  adminTableLabels,
-  CheckboxField,
-  panelClass,
-} from '../../../features/admin/ui.tsx'
+import { AdminPage, adminTableLabels, panelClass } from '../../../features/admin/ui.tsx'
 import {
   getAdminPlans,
   saveAdminPlanModels,
@@ -149,19 +144,22 @@ function PlanEditor({ plan, models }: { plan: Data['rows'][number]; models: Data
       <fieldset disabled={busy || !ready} className="grid min-w-0 gap-2 sm:grid-cols-2">
         <legend className="mb-2 font-medium text-sm">{m.admin_allowed_models()}</legend>
         {options.map((option) => (
-          <CheckboxField
+          <Label
             key={option.key}
-            label={option.label}
-            className="break-all"
-            checked={selected.includes(option.key)}
-            onChange={(event) =>
-              setSelected((current) =>
-                event.target.checked
-                  ? [...current, option.key]
-                  : current.filter((key) => key !== option.key),
-              )
-            }
-          />
+            htmlFor={`plan-${plan.id}-model-${option.key}`}
+            className="font-normal text-sm leading-normal break-all"
+          >
+            <Checkbox
+              id={`plan-${plan.id}-model-${option.key}`}
+              checked={selected.includes(option.key)}
+              onCheckedChange={(checked) =>
+                setSelected((current) =>
+                  checked ? [...current, option.key] : current.filter((key) => key !== option.key),
+                )
+              }
+            />
+            {option.label}
+          </Label>
         ))}
       </fieldset>
       <div className="flex flex-wrap items-center gap-3">

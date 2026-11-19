@@ -139,3 +139,10 @@ export const PARAMS_SCHEMA_TEMPLATES: ParamsSchemaTemplate[] = [
     },
   },
 ]
+
+/** 后台模型表单「计费时机」的「默认」选项值：Radix Select 的选项值不能是空字符串，
+ *  页面读写时换回 ''；验收脚本按值选择时也用它 */
+export const DEFAULT_CHARGE_ON = '__default__'
+/** 计费时机与计费单位的可选值；已存数据不在其中时触发器显示占位文字，而不是空白 */
+export const CHARGE_ON_VALUES = ['any_output', 'success'] as const
+export const PRICING_UNITS = ['image', 'second'] as const

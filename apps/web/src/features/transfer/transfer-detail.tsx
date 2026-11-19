@@ -134,7 +134,7 @@ function conflictText(c: TransferDetail['conflicts'][number]): string {
 function List({ title, children }: { title: string; children: ReactNode }) {
   return (
     <Section title={title}>
-      <ul className="grid gap-1 text-[13px]">{children}</ul>
+      <ul className="grid gap-1 text-caption">{children}</ul>
     </Section>
   )
 }
@@ -178,7 +178,7 @@ export function TransferDetailView({
           </span>
         }
       >
-        <p className="text-[13px]">
+        <p className="text-caption">
           {m.transfer_detail_route({
             source: workspaceName(detail.sourceName),
             target: workspaceName(detail.targetName),
@@ -294,7 +294,7 @@ export function TransferDetailView({
         {rows.length ? (
           <div className="min-w-0 max-w-full overflow-x-auto">
             <table
-              className="w-full min-w-[560px] text-left text-[13px]"
+              className="w-full min-w-140 text-left text-caption"
               data-testid="transfer-counts"
             >
               <thead className="bg-muted text-xs text-muted-foreground">

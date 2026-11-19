@@ -1,6 +1,7 @@
 import { grant, reducePaymentCredits, revokePaymentCredits } from '@product-res/credits'
 import { payment, purchase, subscription } from '@product-res/db'
 import { and, eq } from 'drizzle-orm'
+import { nextPastDueSince } from '../past-due.ts'
 import type { WebhookTransaction } from '../pipeline.ts'
 import type { NormalizedEvent } from '../provider.ts'
 import { grantSubscriptionMonth } from './grants.ts'
@@ -112,7 +113,8 @@ export async function applyPaymentSucceeded(
         currentPeriodEnd: p.period.end,
         status: nextStatus,
         lastEventAt: event.occurredAt,
-        pastDueSince: null,
+        // 周期末取消的订阅保持原状态：仍欠费时不清空欠费开始时间
+        pastDueSince: nextPastDueSince(sub.pastDueSince, nextStatus, event.occurredAt),
       })
       .where(and(eq(subscription.id, sub.id), eq(subscription.workspaceId, a.workspaceId)))
   }

@@ -92,14 +92,14 @@ export function SourceList({ view }: { view: MetricSourcesView }) {
             <span className="flex items-center gap-1.5">
               <SourceBadge method={v.method} source={v.label} />
               {v.sourceId === view.primarySourceId ? (
-                <span className="text-[11px] text-primary">主值</span>
+                <span className="text-micro text-primary-text">主值</span>
               ) : null}
             </span>
             <span className="flex items-baseline gap-2">
               <span className="font-mono font-medium text-foreground">
                 {formatMetric(view.metric, v.value, v.currency)}
               </span>
-              <span className="text-[11px] text-muted-foreground">{formatTime(v.fetchedAt)}</span>
+              <span className="text-micro text-muted-foreground">{formatTime(v.fetchedAt)}</span>
             </span>
           </li>
         ))}

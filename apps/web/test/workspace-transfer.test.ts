@@ -36,7 +36,7 @@ import {
 const db = () => createDb(env.HYPERDRIVE)
 const config = {
   tenancy: { multiTenant: true, dataTransfer: true, maxWorkspacesPerUser: 5 },
-  credits: { enabled: true, requireGrantForAccess: true },
+  credits: { enabled: true, requireGrantForAccess: true, dailyEnabled: false },
 } as const
 
 function fakeWorkflow(options: { fail?: boolean; status?: string } = {}) {

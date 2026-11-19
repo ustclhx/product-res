@@ -27,7 +27,14 @@ import { eq } from 'drizzle-orm'
 import templateConfig from '../../../template.config.ts'
 import { actionDb, actor, offlineProviderTransport } from './billing-actions-helper.ts'
 import { register, simulateClientIp, uiText, waitForHydration } from './fixtures.ts'
+import { chooseOption } from './select.ts'
 import { stubTurnstile } from './turnstile.ts'
+
+// offlineProviderTransport 拦截全部 _serverFn：测试结束时仍在途的 GET 会让 route.fetch 抛「Test ended」（2026-11-14 nightly），
+// 结束前撤掉路由并忽略在途请求的错误
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' })
+})
 
 async function catalog(db: ReturnType<typeof actionDb>, subscriptionPlan = false) {
   const planId = randomUUID()
@@ -116,7 +123,9 @@ for (const realSubmission of [true, false])
           await page.goto(`/app/${owner.slug}/billing`)
           await waitForHydration(page)
           const form = page.getByRole('form', { name: 'Request a refund' })
-          await form.getByRole('combobox', { name: 'Payment', exact: true }).selectOption(paymentId)
+          await chooseOption(form.getByRole('combobox', { name: 'Payment', exact: true }), {
+            value: paymentId,
+          })
           await form
             .getByLabel('Reason', { exact: true })
             .fill('Please return part of this payment')
@@ -262,10 +271,11 @@ for (const realSubmission of [true, false])
           (await db.select().from(refundRequest).where(eq(refundRequest.id, request.id)))[0]
             ?.status,
         ).toBe('refunded')
+        // 部分退款按比例回收（refund-requests「退款后收回积分」）：退款 400/1000，
+        // 批次保留 floor(100 × 600 / 1000) = 60，其余收回；回调重放不重复收回。
         expect(
-          (await db.select().from(creditGrant).where(eq(creditGrant.paymentId, paymentId)))[0]
-            ?.remaining,
-        ).toBe(0)
+          (await db.select().from(creditGrant).where(eq(creditGrant.paymentId, paymentId)))[0],
+        ).toMatchObject({ remaining: 60, status: 'active' })
       } finally {
         await db.$client.end()
       }

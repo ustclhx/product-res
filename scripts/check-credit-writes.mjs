@@ -15,6 +15,7 @@ import * as ast from 'typescript/unstable/ast'
 import { API, SymbolFlags } from 'typescript/unstable/async'
 
 const tables = new Map([
+  ['creditDailyClaim', 'credit_daily_claim'],
   ['creditGrant', 'credit_grant'],
   ['creditHold', 'credit_hold'],
   ['creditHoldAllocation', 'credit_hold_allocation'],

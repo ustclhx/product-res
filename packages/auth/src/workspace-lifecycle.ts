@@ -1,9 +1,18 @@
 import { templateConfigDefaults } from '@product-res/config'
 import type { Database } from '@product-res/db'
 import { AppError, newId } from '@product-res/shared'
+import { log } from '@product-res/shared/log'
 import type { BetterAuthPlugin } from 'better-auth'
 import { APIError, createAuthEndpoint } from 'better-auth/api'
 import { z } from 'zod'
+import {
+  AI_PURGE_BATCH_SIZE,
+  AI_PURGE_MAX_BATCHES,
+  addAiPurge,
+  type CleanupWorkspaceShareCards,
+  emptyAiPurge,
+  purgeAiBatch,
+} from './ai-content-cleanup.ts'
 import { type AuthContextSource, requireFreshSession } from './fresh-session.ts'
 
 export const WORKSPACE_RETENTION_DAYS = 30
@@ -86,28 +95,81 @@ export async function restoreWorkspace(options: {
   })
 }
 
-/** P1 content cleanup. Keep organization/user and all audit/finance anchors permanently. */
-export async function cleanupExpiredWorkspaces(db: Database) {
-  const candidates = await db.$client<{ id: string }[]>`select id from organization
-    where deleted_at<=now()-(${WORKSPACE_RETENTION_DAYS} * interval '1 day') order by id`
+/**
+ * 保留期结束后的内容清理。organization/user、财务与审计记录永久保留。
+ * 通知与邀请在首次清理时删除并写入完成标记；AI 内容分批删除，跳过的行（held 预扣）
+ * 留到下一轮，因此仍有 AI 内容的已到期空间每轮都会重新处理。
+ */
+export async function cleanupExpiredWorkspaces(
+  db: Database,
+  {
+    batchSize = AI_PURGE_BATCH_SIZE,
+    maxBatches = AI_PURGE_MAX_BATCHES,
+    cleanupShareCards,
+  }: {
+    batchSize?: number
+    maxBatches?: number
+    cleanupShareCards?: CleanupWorkspaceShareCards
+  } = {},
+) {
+  const candidates = await db.$client<{ id: string }[]>`select o.id from organization o
+    where o.deleted_at<=now()-(${WORKSPACE_RETENTION_DAYS} * interval '1 day')
+      and (not exists(select 1 from audit_log l where l.workspace_id=o.id and l.action='workspace.cleanup.completed')
+        or exists(select 1 from ai_conversation c where c.workspace_id=o.id)
+        or exists(select 1 from ai_task t where t.workspace_id=o.id))
+    order by o.id`
   let cleaned = 0
+  let failed = 0
+  let batches = 0
+  let remaining = false
+  const ai = emptyAiPurge()
   for (const workspace of candidates) {
-    const completed = await db.$client.begin(async (sql) => {
-      await sql`select pg_advisory_xact_lock(hashtextextended(${`ws:${workspace.id}`},0))`
-      const [expired] = await sql`select id from organization where id=${workspace.id}
-        and deleted_at<=now()-(${WORKSPACE_RETENTION_DAYS} * interval '1 day') for update`
-      if (!expired) return false
-      const deletion = await latestDeletion(sql, workspace.id)
-      if (!deletion || (await alreadyCleaned(sql, workspace.id, deletion.id))) return false
-      await sql`delete from notification where workspace_id=${workspace.id}`
-      await sql`delete from invitation where organization_id=${workspace.id}`
-      await sql`insert into audit_log (id,workspace_id,action,target_type,target_id,meta)
+    try {
+      // 存储失效失败时不写 completed；即使没有 AI 内容，下一轮仍会发现该空间。
+      const shareCards = await cleanupShareCards?.(workspace.id)
+      if (shareCards?.complete === false) continue
+      for (;;) {
+        if (batches >= maxBatches) {
+          remaining = true
+          break
+        }
+        batches++
+        // 每批重新加空间锁并确认仍已到期，与 restoreWorkspace 串行。
+        const batch = await db.$client.begin(async (sql) =>
+          (await lockExpired(sql, workspace.id))
+            ? purgeAiBatch(sql, { workspaceId: workspace.id }, batchSize)
+            : emptyAiPurge(),
+        )
+        addAiPurge(ai, batch)
+        if (Math.max(batch.messages, batch.conversations, batch.tasks) < batchSize) break
+      }
+      if (!remaining) {
+        const completed = await db.$client.begin(async (sql) => {
+          if (!(await lockExpired(sql, workspace.id))) return false
+          const deletion = await latestDeletion(sql, workspace.id)
+          if (!deletion || (await alreadyCleaned(sql, workspace.id, deletion.id))) return false
+          await sql`delete from notification where workspace_id=${workspace.id}`
+          await sql`delete from invitation where organization_id=${workspace.id}`
+          await sql`insert into audit_log (id,workspace_id,action,target_type,target_id,meta)
         values (${newId()},${workspace.id},'workspace.cleanup.completed','organization',${workspace.id},${JSON.stringify({ deletionAuditId: deletion.id })}::jsonb)`
-      return true
-    })
-    if (completed) cleaned++
+          return true
+        })
+        if (completed) cleaned++
+      }
+      if (remaining) break
+    } catch {
+      failed++
+      log.error('workspace.cleanup.failed', { workspaceId: workspace.id })
+    }
   }
-  return { cleaned }
+  return { cleaned, failed, ai: { ...ai, remaining } }
+}
+
+async function lockExpired(sql: Transaction, workspaceId: string) {
+  await sql`select pg_advisory_xact_lock(hashtextextended(${`ws:${workspaceId}`},0))`
+  const [expired] = await sql`select id from organization where id=${workspaceId}
+    and deleted_at<=now()-(${WORKSPACE_RETENTION_DAYS} * interval '1 day') for update`
+  return Boolean(expired)
 }
 
 /** Mount separately in createAuth; all authorization comes from the current database session. */

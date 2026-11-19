@@ -1,8 +1,16 @@
-import { FieldErrors, Input, Label } from '@product-res/ui'
+import {
+  FieldErrors,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '@product-res/ui'
 import { useId } from 'react'
 import { m } from '../../paraglide/messages.js'
 import type { MediaFile } from './client.ts'
-import type { MediaParams, MediaSchema } from './schema.ts'
+import { EMPTY_MEDIA_PARAMETER, type MediaParams, type MediaSchema } from './schema.ts'
 
 /** 文件参数仅从服务端返回或刚确认成功的 ready 文件中选择。 */
 export function MediaParameterFields({
@@ -10,6 +18,7 @@ export function MediaParameterFields({
   params,
   files,
   errors = {},
+  disabled = false,
   uploading,
   onChange,
   onUpload,
@@ -18,6 +27,7 @@ export function MediaParameterFields({
   params: MediaParams
   files: readonly MediaFile[]
   errors?: Record<string, string[]>
+  disabled?: boolean
   uploading?: string | undefined
   onChange: (name: string, value: string | number | boolean | undefined) => void
   onUpload: (name: string, file: File) => void
@@ -39,6 +49,29 @@ export function MediaParameterFields({
           .join(' ') || undefined,
     }
     const value = params[name]
+    const fileOptions = [
+      { value: EMPTY_MEDIA_PARAMETER, label: m.media_file() },
+      ...files
+        .filter((file) => file.status === 'ready')
+        .map((file) => ({
+          value: file.id,
+          label: `${file.mime} · ${file.size} B · ${file.id}`,
+        })),
+    ]
+    const selectedFile = fileOptions.find((option) => option.value === value) ?? fileOptions[0]
+    const enumOptions = [
+      ...(!required
+        ? [{ value: EMPTY_MEDIA_PARAMETER, label: m.media_select(), parameter: undefined }]
+        : []),
+      ...(field.enum?.map((option, index) => ({
+        value: String(index),
+        label: String(option),
+        parameter: option,
+      })) ?? []),
+    ]
+    const selectedEnum =
+      enumOptions.find((option) => option.parameter === value) ??
+      enumOptions.find((option) => option.value === EMPTY_MEDIA_PARAMETER)
     return (
       <div key={name} className="grid gap-2">
         <Label htmlFor={id}>
@@ -47,21 +80,31 @@ export function MediaParameterFields({
         </Label>
         {field.format === 'file' ? (
           <>
-            <select
-              {...common}
-              className="rounded-md border p-2"
-              value={typeof value === 'string' ? value : ''}
-              onChange={(event) => onChange(name, event.target.value || undefined)}
+            <Select
+              name={name}
+              required={required}
+              disabled={disabled}
+              value={selectedFile?.value ?? EMPTY_MEDIA_PARAMETER}
+              onValueChange={(fileId) =>
+                onChange(name, fileId === EMPTY_MEDIA_PARAMETER ? undefined : fileId)
+              }
             >
-              <option value="">{m.media_file()}</option>
-              {files
-                .filter((file) => file.status === 'ready')
-                .map((file) => (
-                  <option key={file.id} value={file.id}>
-                    {file.mime} · {file.size} B · {file.id}
-                  </option>
+              <SelectTrigger
+                id={id}
+                aria-invalid={common['aria-invalid']}
+                aria-describedby={common['aria-describedby']}
+                className="w-full"
+                placeholder={m.media_file()}
+                valueLabel={selectedFile?.label}
+              />
+              <SelectContent>
+                {fileOptions.map((option, index) => (
+                  <SelectItem key={option.value} index={index} value={option.value}>
+                    {option.label}
+                  </SelectItem>
                 ))}
-            </select>
+              </SelectContent>
+            </Select>
             <Label htmlFor={`${id}-upload`}>{m.media_upload()}</Label>
             <Input
               id={`${id}-upload`}
@@ -76,22 +119,31 @@ export function MediaParameterFields({
             {uploading === name ? <p role="status">{m.media_uploading()}</p> : null}
           </>
         ) : field.enum ? (
-          <select
-            {...common}
-            className="rounded-md border p-2"
-            value={value === undefined ? '' : String(field.enum.indexOf(value))}
-            onChange={(event) => {
-              const index = event.target.value
-              onChange(name, index === '' ? undefined : field.enum?.[Number(index)])
+          <Select
+            name={name}
+            required={required}
+            disabled={disabled}
+            value={selectedEnum?.value ?? (required ? '' : EMPTY_MEDIA_PARAMETER)}
+            onValueChange={(selected) => {
+              onChange(name, enumOptions.find((option) => option.value === selected)?.parameter)
             }}
           >
-            <option value="">{m.media_select()}</option>
-            {field.enum.map((option, index) => (
-              <option key={String(option)} value={index}>
-                {String(option)}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger
+              id={id}
+              aria-invalid={common['aria-invalid']}
+              aria-describedby={common['aria-describedby']}
+              className="w-full"
+              placeholder={m.media_select()}
+              valueLabel={selectedEnum?.label}
+            />
+            <SelectContent>
+              {enumOptions.map((option, index) => (
+                <SelectItem key={option.value} index={index} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         ) : field.type === 'boolean' ? (
           <Input
             {...common}

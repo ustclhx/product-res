@@ -22,6 +22,8 @@ export interface ChatAttemptResult extends Usage {
   reasoning: string
   absorbed: Usage
   total: Usage
+  /** 最后一次上游尝试的用量；超出免费失败次数的无正文失败按它结算 */
+  lastAttempt: Usage
   usageSource: 'actual' | 'estimated'
   status: 'completed' | 'aborted' | 'failed'
   finishReason: FinishReason
@@ -40,6 +42,13 @@ type Part =
  * 推理模型隐藏思考阶段可能长时间不输出，按此间隔补发心跳，给网络抖动留足余量。
  */
 export const STREAM_HEARTBEAT_MS = 25_000
+
+/** 单次上游尝试连续多久没有任何片段即视为卡住（specs/ai-chat「上游请求超时」） */
+export const UPSTREAM_IDLE_TIMEOUT_MS = 60_000
+
+/** 上游空闲或超过本次回复截止时间：归为可重试的上游错误，复用重试、续写与失败路径。 */
+const upstreamTimeout = (kind: 'idle' | 'deadline') =>
+  new AppError('AI_UPSTREAM_TIMEOUT', `Upstream ${kind} timeout`, { status: 504 })
 
 const emptyReply = () =>
   new AppError('AI_EMPTY_REPLY', 'The model returned no visible reply', { status: 502 })
@@ -61,7 +70,11 @@ export function chatRetryDelay(ms: number, signal: AbortSignal): Promise<void> {
 function retryable(error: unknown): boolean {
   if (APICallError.isInstance(error)) return error.isRetryable
   // 网络断流、超时及 fetch 异常没有 HTTP 状态；确定业务拒绝不能自动重试。
-  return !(error instanceof AppError) || error.code === 'AI_EMPTY_REPLY'
+  return (
+    !(error instanceof AppError) ||
+    error.code === 'AI_EMPTY_REPLY' ||
+    error.code === 'AI_UPSTREAM_TIMEOUT'
+  )
 }
 
 /** 单回复共享预扣、正文与 UI 消息；SDK 的每次调用都禁用内置重试。 */
@@ -83,6 +96,8 @@ export function createChatStream(options: {
   settle: (result: ChatAttemptResult) => Promise<void>
   /** 无输出时的心跳间隔，默认 `STREAM_HEARTBEAT_MS`；测试可调 */
   heartbeatMs?: number
+  /** 单次上游尝试的空闲超时，默认 `UPSTREAM_IDLE_TIMEOUT_MS`；测试可调 */
+  idleTimeoutMs?: number
 }) {
   let sink!: ReadableStreamDefaultController<Part>
   let cancelled = false
@@ -119,6 +134,11 @@ export function createChatStream(options: {
     const signal = options.controller.signal
     const absorbed: Usage = { inputTokens: 0, outputTokens: 0, reasoningTokens: 0 }
     const total: Usage = { inputTokens: 0, outputTokens: 0, reasoningTokens: 0 }
+    let lastAttempt: Usage = {
+      inputTokens: options.inputTokens,
+      outputTokens: 0,
+      reasoningTokens: 0,
+    }
     let text = ''
     let reasoning = ''
     let inputTokens = options.inputTokens
@@ -143,6 +163,11 @@ export function createChatStream(options: {
       let reason: FinishReason = 'error'
       const estimate = () => ({
         inputTokens: estimatedInput,
+        lastAttempt: {
+          inputTokens: estimatedInput,
+          outputTokens: estimateTextTokens(attemptText + attemptReasoning, options.tokensPerChar),
+          reasoningTokens: estimateTextTokens(attemptReasoning, options.tokensPerChar),
+        },
         total: {
           inputTokens: total.inputTokens + estimatedInput,
           outputTokens:
@@ -161,6 +186,35 @@ export function createChatStream(options: {
       })
       const params =
         options.thinking === undefined ? {} : capabilities.applyThinking({}, options.thinking)
+      // 每次尝试独立中止：超时只打断本次上游请求，用户停止经合并信号同样生效。
+      // 心跳不经过这里，不会推迟上游超时。
+      const attemptController = new AbortController()
+      const attemptSignal = AbortSignal.any([signal, attemptController.signal])
+      let timedOut: AppError | undefined
+      const timeout = (kind: 'idle' | 'deadline') => {
+        if (attemptSignal.aborted) return
+        timedOut = upstreamTimeout(kind)
+        attemptController.abort(timedOut)
+      }
+      let idleTimer: ReturnType<typeof setTimeout> | undefined
+      const armIdle = () => {
+        clearTimeout(idleTimer)
+        idleTimer = setTimeout(
+          () => timeout('idle'),
+          options.idleTimeoutMs ?? UPSTREAM_IDLE_TIMEOUT_MS,
+        )
+      }
+      const deadlineTimer = setTimeout(
+        () => timeout('deadline'),
+        Math.max(0, options.deadline - Date.now()),
+      )
+      let onAttemptAbort: () => void = () => {}
+      const attemptAborted = new Promise<'aborted'>((resolve) => {
+        onAttemptAbort = () => resolve('aborted')
+        if (attemptSignal.aborted) resolve('aborted')
+        else attemptSignal.addEventListener('abort', onAttemptAbort, { once: true })
+      })
+      armIdle()
       const response = streamText({
         ...params,
         model: options.model,
@@ -172,7 +226,7 @@ export function createChatStream(options: {
             : options.messages,
         ...(options.temperature === undefined ? {} : { temperature: options.temperature }),
         maxOutputTokens: options.maxOutputTokens,
-        abortSignal: signal,
+        abortSignal: attemptSignal,
         onEnd: (event) => {
           usage = event.totalUsage
           reason = event.finishReason
@@ -181,8 +235,18 @@ export function createChatStream(options: {
           failure = error
         },
       })
+      const reader = response.fullStream.getReader()
       try {
-        for await (const chunk of response.fullStream) {
+        for (;;) {
+          // 服务商不响应中止信号时也不能无限等待：中止后立即放弃本次读取。
+          const next = await Promise.race([reader.read(), attemptAborted])
+          if (next === 'aborted') {
+            reader.cancel().catch(() => {})
+            break
+          }
+          if (next.done) break
+          armIdle()
+          const chunk = next.value
           if (chunk.type === 'error') failure = chunk.error
           if (chunk.type === 'abort' && !signal.aborted)
             failure = new Error('Upstream generation aborted')
@@ -203,7 +267,12 @@ export function createChatStream(options: {
         }
       } catch (error) {
         failure = error
+      } finally {
+        clearTimeout(idleTimer)
+        clearTimeout(deadlineTimer)
+        attemptSignal.removeEventListener('abort', onAttemptAbort)
       }
+      if (timedOut && !signal.aborted) failure = timedOut
       if (options.displayReasoning && attemptReasoning) emit({ type: 'reasoning-end', attempt })
       const measured: Usage = {
         inputTokens: usage?.inputTokens ?? estimatedInput,
@@ -214,6 +283,7 @@ export function createChatStream(options: {
           usage?.outputTokenDetails?.reasoningTokens ??
           estimateTextTokens(attemptReasoning, options.tokensPerChar),
       }
+      lastAttempt = { ...measured }
       total.inputTokens += measured.inputTokens
       total.outputTokens += measured.outputTokens
       total.reasoningTokens += measured.reasoningTokens
@@ -255,6 +325,7 @@ export function createChatStream(options: {
           reasoning,
           absorbed: { ...absorbed },
           total: { ...total },
+          lastAttempt: { ...lastAttempt },
         })
         await options.retryDelay(delay, signal)
       } else {
@@ -278,6 +349,7 @@ export function createChatStream(options: {
       reasoningTokens,
       absorbed,
       total,
+      lastAttempt,
       status,
       finishReason,
       usageSource: actual ? 'actual' : 'estimated',

@@ -1,0 +1,7 @@
+{
+  "daily_credits_granted": "Added {credits} daily credits to your personal workspace. This month: {daysThisMonth}/{maxDaysPerMonth} days.",
+  "daily_credits_expiry": "Expires at {expiresAt}.",
+  "daily_credits_dismiss": "Dismiss",
+  "daily_credits_verify": "Verify your email to receive daily credits",
+  "daily_credits_source": "Daily credits"
+}

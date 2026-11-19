@@ -1,0 +1,15 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "share_page_shared_by": "Shared by a {site} user · {date}",
+  "share_page_cta_primary": "Make your own with {site}",
+  "share_page_cta_secondary": "About {site}",
+  "share_page_note": "This result was shared publicly by a {site} user, who can revoke it at any time.",
+  "share_page_note_expires": "This result was shared publicly by a {site} user, who can revoke it at any time. The link is valid until {date}.",
+  "share_page_not_found_title": "This share doesn't exist or was revoked",
+  "share_page_not_found_body": "The link may be wrong, or the person who shared it has revoked it.",
+  "share_page_expired_title": "This share has expired",
+  "share_page_expired_body": "The share link is past its expiry date. Ask the person who shared it to share it again.",
+  "share_page_rate_limited_title": "Too many requests",
+  "share_page_rate_limited_body": "Please wait a minute and try again.",
+  "share_page_home": "Back to home"
+}

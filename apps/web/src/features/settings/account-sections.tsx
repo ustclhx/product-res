@@ -1,4 +1,13 @@
-import { Button, Input, Label, useAppForm } from '@product-res/ui'
+import {
+  Button,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  useAppForm,
+} from '@product-res/ui'
 import { useRouter } from '@tanstack/react-router'
 import { type ReactNode, useId, useState } from 'react'
 import { baseLocale, isLocale } from '../../paraglide/runtime.js'
@@ -10,6 +19,7 @@ import { ACCOUNT_COPY, errorMessage } from './copy.ts'
 import {
   changePasswordFormSchema,
   emptyToNull,
+  LOCALE_DEFAULT,
   passwordOnlyFormSchema,
   preferencesFormSchema,
   profileFormSchema,
@@ -161,31 +171,48 @@ export function PreferencesSection({
     },
   })
   const copy = ACCOUNT_COPY.preferences
+  const localeOptions = [
+    { value: LOCALE_DEFAULT, label: copy.localeDefault },
+    ...locales.map((locale) => ({ value: locale, label: locale })),
+  ]
   return (
     <Section title={copy.heading}>
       <form onSubmit={submitHandler(form.handleSubmit)} noValidate>
         {templateConfig.i18n.enabled && (
           <form.Field name="locale">
-            {(field) => (
-              <p>
-                <Label htmlFor={field.name}>{copy.locale}</Label>
-                <select
-                  id={field.name}
-                  name={field.name}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                >
-                  <option value="">{copy.localeDefault}</option>
-                  {locales.map((l) => (
-                    <option key={l} value={l}>
-                      {l}
-                    </option>
-                  ))}
-                </select>
-                <FieldErrors id={`${field.name}-errors`} errors={field.state.meta.errors} />
-              </p>
-            )}
+            {(field) => {
+              const locale = locales.includes(field.state.value)
+                ? field.state.value
+                : LOCALE_DEFAULT
+              return (
+                <div className="grid gap-2">
+                  <Label htmlFor={field.name}>{copy.locale}</Label>
+                  <Select
+                    value={locale}
+                    onValueChange={(value) =>
+                      field.handleChange(value === LOCALE_DEFAULT ? '' : value)
+                    }
+                  >
+                    <SelectTrigger
+                      id={field.name}
+                      className="w-full"
+                      onBlur={field.handleBlur}
+                      aria-describedby={`${field.name}-errors`}
+                      placeholder={copy.localeDefault}
+                      valueLabel={localeOptions.find((option) => option.value === locale)?.label}
+                    />
+                    <SelectContent>
+                      {localeOptions.map((option, index) => (
+                        <SelectItem key={option.value} index={index} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FieldErrors id={`${field.name}-errors`} errors={field.state.meta.errors} />
+                </div>
+              )
+            }}
           </form.Field>
         )}
         <form.Field name="timezone">

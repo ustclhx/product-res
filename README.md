@@ -25,7 +25,7 @@ product-res 是跨境电商选品工作台（数据源接入、跟卖选品、�
 | 营销与增长 | 首页、定价、博客、文档、法律页；多语言（en/zh）与 SEO（sitemap、robots、OG 图、预渲染）；候补名单、邮件订阅、站内通知 |
 | 开放 API | API Key 调用 `/api/v1`（文本补全、媒体任务），默认关闭 |
 | 可观测与运维 | 结构化日志与请求 ID、Sentry（含 source map）、`/api/health`（数据库与版本 SHA）、受控故障注入验收套件（仅 staging） |
-| 自托管 | 双架构 GHCR 镜像与同 SHA release bundle；一键初始化空白主机、部署/回滚、Caddy/外部代理/cloudflared 接入；WAL-G 备份、保留策略、指定时间点恢复与第二目标副本 |
+| 自托管 | linux/amd64 GHCR 镜像与同 SHA release bundle；一键初始化空白主机、部署/回滚、Caddy/外部代理/cloudflared 接入；WAL-G 备份、保留策略、指定时间点恢复与第二目标副本 |
 | 项目生成 | `pnpm create-project` 改名生成新项目，按目标与功能开关裁剪；内置 Agent Skills 引导启动与扩展 |
 
 功能开关集中在 [`template.config.ts`](template.config.ts)；可在后台热改的设置存数据库；密钥只放 secrets。三层互不覆盖。
@@ -124,13 +124,15 @@ pnpm dev        # web 默认 http://localhost:3000，jobs 默认 8788
 
 ## Agent Skills
 
-项目内提供 8 个技能，Codex 使用 `.agents/skills/`，Claude 使用 `.claude/skills/`：
+项目内提供 10 个技能，Codex 使用 `.agents/skills/`，Claude 使用 `.claude/skills/`：
 
 - `quick-start`：项目选项、真实生成自检、本地数据库、管理员与首次 AI 调用。
 - `deploy-cloudflare` / `deploy-selfhost`：资源与配置预检、部署、版本健康与恢复入口。
 - `new-page` / `new-module` / `new-static-page`：按模板约定扩展后台、应用、业务与多语言静态内容。
 - `add-ai-model`：后台模型配置与必要的 Provider 扩展。
 - `security-scan`：确定性本地扫描与变更安全审查。
+- `template-sync`：衍生项目按版本采纳模板更新，含升级说明待办、迁移移植与基准推断。
+- `ui-design`：新页面与较大布局改动前的设计稿关卡、衍生项目视觉方向与设计稿副本留存。
 
 在项目根输入 `$quick-start`（Codex）或 `/quick-start`（Claude），或直接要求 agent 阅读技能文件执行。
 [完整清单与示例](docs/create-project.md#agent-skills) 包含所有技能链接及两处目录同步规则。

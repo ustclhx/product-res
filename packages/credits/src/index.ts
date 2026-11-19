@@ -11,6 +11,7 @@ import {
   member,
   payment,
 } from '@product-res/db'
+import { AppError, insufficientCreditsError } from '@product-res/shared'
 import { and, asc, eq, gt, is, isNull, or, sql } from 'drizzle-orm'
 import { PgTransaction } from 'drizzle-orm/pg-core'
 
@@ -26,13 +27,26 @@ export type CreditsErrorCode =
   | 'HOLD_NOT_ACTIVE'
   | 'INVALID_OVERAGE_POLICY'
 
-export class CreditsError extends Error {
-  readonly code: CreditsErrorCode
+export class CreditsError extends AppError {
+  override readonly name = 'CreditsError'
+  override readonly code: CreditsErrorCode
 
-  constructor(code: CreditsErrorCode) {
-    super(code)
+  constructor(
+    code: CreditsErrorCode,
+    details?: { estimatedCredits: number; availableCredits: number },
+  ) {
+    const insufficient =
+      code === 'INSUFFICIENT_CREDITS' && details
+        ? insufficientCreditsError(details.estimatedCredits, details.availableCredits)
+        : undefined
+    super(code, insufficient?.message ?? code, {
+      status: code === 'INSUFFICIENT_CREDITS' || code === 'CREDIT_DEBT' ? 402 : 500,
+      // 内部积分错误不外泄 code，由 toErrorResponse 统一返回 INTERNAL_ERROR。
+      expose: code === 'INSUFFICIENT_CREDITS' || code === 'CREDIT_DEBT',
+      ...(insufficient?.details ? { details: insufficient.details } : {}),
+      ...(insufficient?.publicDetails ? { publicDetails: insufficient.publicDetails } : {}),
+    })
     this.code = code
-    this.name = 'CreditsError'
   }
 }
 
@@ -198,8 +212,12 @@ export async function hold(
       )
       .for('update')
     // Check before any mutation, including when an external caller catches errors.
-    if (batches.reduce((total, batch) => total + batch.remaining, 0) < input.amount) {
-      throw new CreditsError('INSUFFICIENT_CREDITS')
+    const availableCredits = batches.reduce((total, batch) => total + batch.remaining, 0)
+    if (availableCredits < input.amount) {
+      throw new CreditsError('INSUFFICIENT_CREDITS', {
+        estimatedCredits: input.amount,
+        availableCredits,
+      })
     }
     const [created] = await tx.insert(creditHold).values(input).returning()
     if (!created) throw new Error('Credit hold insert returned no row')
@@ -491,5 +509,6 @@ export async function release(
   await withCreditsTransaction(db, tx, (tx) => settle(tx, input, undefined))
 }
 
+export * from './daily.ts'
 export * from './lifecycle.ts'
 export * from './queries.ts'

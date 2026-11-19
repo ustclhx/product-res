@@ -1,19 +1,10 @@
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
-import { readLocalEnv } from './worktree-env.ts'
+import { resolveTestDatabase } from './test-database.ts'
 
-const appUrl = readLocalEnv('CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE')
-const migrationUrl = readLocalEnv('MIGRATION_DATABASE_URL')
+const { appUrl, migratorUrl: migrationUrl } =
+  resolveTestDatabase('@product-res/db node', { required: true }) ?? {}
 if (!appUrl || !migrationUrl) throw new Error('Node DB tests require both database URLs')
-const app = new URL(appUrl)
-const migrator = new URL(migrationUrl)
-if (
-  app.host !== migrator.host ||
-  app.pathname !== migrator.pathname ||
-  (!app.pathname.startsWith('/product_res_wt_') &&
-    !(process.env.CI && app.pathname === '/product_res_ci'))
-)
-  throw new Error('Node DB tests require matching isolated worktree or CI databases')
 process.env.NODE_DB_TEST_URL = appUrl
 process.env.CREDITS_TEST_DATABASE_URL = appUrl
 process.env.MIGRATION_DATABASE_URL = migrationUrl

@@ -1,31 +1,10 @@
 # 07 · 基础设施、环境与部署
 
-## 0. 部署阶段
+## 0. 部署准备
 
-模板按两个阶段推进基础设施，避免在原型尚未成形时就投入生产服务器的运维：
+Cloudflare 项目创建自身的 Postgres、Hyperdrive、KV、Queues、R2 与域名资源；自托管项目从同 SHA 镜像与 release bundle 初始化空白主机。开发使用隔离本地数据库，上线前完成权限、备份恢复、健康与支付配置验收，资源和凭据以本项目 `PROJECT_SETUP.md` 为准。
 
-| 阶段 | 时间 | 数据库 | 连接方式 | Worker 部署 | 域名 | 备份 |
-|---|---|---|---|---|---|---|
-| **阶段一：开发与云端 staging 测试** | 从 Phase 0 到完成最小原型 | 本地开发：Docker PG（`infra/local`）；线上 staging：Neon `product_res_staging` | 本地开发直连；staging：Hyperdrive → Neon 非 pooled TLS 直连（§2） | staging 部署到 `*.workers.dev` | 不需要 | 不做 |
-| **阶段二：生产上线**（派生项目参考） | 完成最小原型之后 | production：Neon Launch 的独立项目；staging 为同组织另一项目（2026-10-15 随组织升级为 Launch 计费） | Hyperdrive → Neon 非 pooled TLS 直连（与 staging 相同） | staging / production，绑定自定义域名 | 需要（可先用已有 Zone 的子域名） | 必须：Neon PITR + 独立逻辑备份与恢复演练 |
-
-**2026-10-15 用户决定**：Cloudflare 形态的生产数据库使用 Neon 付费档，不自建 PG，不建设 Tunnel / Workers VPC，计划与任务见 `docs/08-roadmap.md`「Cloudflare 生产上线」。§1 的自建 PG、§2 的 Workers VPC / Access 方案保留为历史与后路，不再是阶段二默认。自托管形态（Node + Compose）使用 Compose 内的 PG，见 `docs/node-jobs-extension.md` 与 `docs/runbooks/selfhost-*.md`。
-
-**最小原型**指 Phase 0–3 完成：可以注册登录、开通套餐或购买积分、进行一次计费正确的 AI 对话（见 `docs/08-roadmap.md`）。
-
-**当前状态（2026-10-18）**：按用户确认，模板演示的 Cloudflare 生产实例与自托管测试实例已拆除。生产 Workers、KV、Queues、Hyperdrive、Turnstile 与 Neon 项目已删除；GitHub `production` environment（含 secrets）与 `PRODUCTION_BACKUP_SCHEDULE` 已删除。自托管 `product-res-selfhost` 栈、项目卷、本机项目镜像与 `/opt/product-res-selfhost` 已清理，80/443 已释放。四个非空 R2 桶已解除锁并设为所有对象 1 天后过期，待 2026-10-19 核空后删桶；`selfhost.ezarouter.cc` DNS 与 Sentry Uptime 监控因 API 权限不足待用户手动删除。生产自定义域名已解绑，公共 DNS 的 A/AAAA/CNAME 均为 NXDOMAIN。详见[拆除记录](./runbooks/evidence/teardown-2026-10-18.md)。
-
-拆除前 Cloudflare 生产 **v0.1.3** 的完整 SHA 为 `54c537542ad0f2033628c136a7057a705c6d0218`；[发布 run 38910072786](https://github.com/ustclhx/product-res/actions/runs/38910072786)、每日加密逻辑备份、两路恢复演练及 Sentry 可读堆栈与健康监控均已验证，见 [production runbook](./runbooks/production-neon.md) 与[历史发布恢复证据](./runbooks/evidence/production/release-2026-10-16.md)。配置、workflow、部署材料与 runbook 保留供派生项目使用，原生产资源 ID 已失效，重新上线须创建项目自身资源和凭据。staging 继续由 main 自动发布到 Neon（同组织 Launch），`add-cloud-staging-neon` 已于 2026-10-11 完成 29/29 并归档。
-
-Cloudflare 生产 change 的模板范围已结项，合并后由协调者归档；自托管四个 change 已于 2026-10-17 全部同步并归档（#239）。`add-cloud-acceptance-followups` 的 staging 支付验收由另一 worker 处理中，未合并结果不计入当前 main 进度。2026-10-18 用户决定：正式收款主体（Q9）、生产 live 支付（原 6.1）与生产延迟放置对比（原 5.1）不在模板内验收，移交派生项目上线清单，方法见 `docs/05-billing.md` §8、本文件 §8 与 production runbook。派生项目开放注册前还需恢复默认 Cron 并复核费用。
-
-Phase 0 本机链路的历史实测条件与当前观察范围：
-
-- 切换前 staging 访问旧数据库要求开发者本机与 `cloudflared` 在线；当前线上 Neon 链路已解除此依赖，旧 Tunnel / VPC 资源已删除。
-- Phase 0 请求绕回本机，其延迟基线只验证原链路可用，不能代表 Neon 或生产环境。
-- 本机 PG 不做备份；Neon staging 为可重建测试数据，24 小时观察显示 compute 常驻约 165 CU-hrs/月，超出 Free 100 CU-hrs；2026-10-10 曾决定测试阶段保持 Free，2026-10-15 已随组织升级为 Launch（见 runbook staging-neon §6 与 production-neon §4），staging 不替代生产备份方案。阶段一的旧 Hyperdrive、Tunnel 与 Workers VPC 资源已于 2026-10-10 删除。
-
-## 1. 自建 Postgres（Cloudflare 形态后路；2026-10-15 起阶段二改用 Neon 付费档，见 §0）
+## 1. 自建 Postgres（Cloudflare 形态的可选后端，见 §0）
 
 ### 部署形态
 一台 VPS（地区按具体应用的主要用户选择，模板不限定），Docker Compose 运行：
@@ -48,7 +27,7 @@ Phase 0 本机链路的历史实测条件与当前观察范围：
 
 ### 备份与恢复（阶段二必须；阶段一不做）
 
-> 状态：推迟到阶段二实施。R2 主备份与异地第二副本均为待办（`docs/08-roadmap.md`「生产迁移」）。
+
 
 - 每日基础备份 + 持续 WAL 归档到独立的 R2 桶（开启 Bucket Lock 保留规则，防误删）。
 - **异地第二副本**：每日基础备份与 `pg_dump` 再同步一份到**非 Cloudflare 账号**下的对象存储（如 Backblaze B2，使用独立凭证）。业务和主备份都在同一个 Cloudflare 账号下，账号被盗、被封或误操作时会一起丢失。
@@ -75,22 +54,11 @@ Phase 0 本机链路的历史实测条件与当前观察范围：
 
 ## 2. Hyperdrive 与数据库连接
 
-### 阶段一线上 staging：Neon（main 自动发布已验收）
-
-Neon 项目 `product-res-staging`（2026-10-15 前为 Free，现随组织为 Launch 计费，计算 0.25–2 CU），Postgres 17、`aws-us-west-2`，数据库 `product_res_staging`；Hyperdrive 使用 app 的非 pooled 直连与 `sslmode=require`。migrator 为数据库/public owner，仅用于迁移，readonly 用于排查。Console 创建角色默认加入 `neon_superuser`；受限角色通过 SQL 创建，再由默认 owner 授权，原 `02-db-grants.sql` 不变。2026-10-08 已验证三角色均无高权限 flags/该成员身份，app DDL 与审计 UPDATE、readonly DELETE 均被拒绝。
-
-| 绑定 | 新资源 | ID | 状态 |
-|---|---|---|---|
-| `HYPERDRIVE` | `product-res-staging-neon` | `b3a797e705e849a196a4f7fcaf887293` | web/jobs staging 已部署使用，缓存关闭 |
-| `HYPERDRIVE_CACHED` | `product-res-staging-neon-cached` | `ad4f2267382b427fbdd2ffe60d3a64de` | web/jobs staging 已部署使用，缓存开启，创建参数 max_age 60 |
-
-缓存 API 省略默认字段，官方默认 max_age 为 60 秒，详见 [操作记录](./runbooks/staging-neon.md#3-hyperdrive-与切换)。计费、会话及权限读写使用不缓存的 `HYPERDRIVE`。新关缓存 Hyperdrive 经 remote preview 的 Neon 锁探针七场景/49 断言已通过，证据见下文；§8 保留本机链路历史延迟，不能作为 Neon 业务 Worker 延迟基线。
-
 ### Workers VPC（切换前 staging 与阶段二自建 PG）
 
 Hyperdrive 通过 Workers VPC 服务经 Tunnel 访问私有数据库，**不需要公网主机名、DNS 记录、Access 应用或 Service Token**。链路：Worker → Hyperdrive → Workers VPC 服务（TCP）→ Tunnel → `cloudflared` → Postgres。
 
-步骤（在 `docs/runbooks/hyperdrive-tunnel.md` 中细化）：
+步骤（在 `项目维护约定` 中细化）：
 1. 创建一个专用 Tunnel，在数据库所在机器上运行 `cloudflared`（阶段一为 `infra/local` 中的可选 `cloudflared` 服务，阶段二为 `infra/postgres`）。
 2. Postgres 必须启用 TLS（Workers VPC 的要求）；阶段一使用自签证书，VPC 服务设置为不校验证书。
 3. `wrangler vpc service create <name> --type tcp --tcp-port 5432 --app-protocol postgresql --tunnel-id <tunnel-id> --hostname <cloudflared 可达的数据库主机名>`（或 `--ipv4`）；阶段一的自签证书加 `--cert-verification-mode disabled`。
@@ -121,106 +89,6 @@ export function createDb(hd: Hyperdrive) {
 }
 // 每个请求调用一次 createDb(env.HYPERDRIVE)，不要缓存到模块作用域
 ```
-
-### 事务与锁（7.1 本机链路历史实测，2026-10-03）
-
-**结论：可用。** 经 Hyperdrive（关缓存）时，显式事务内的 `SELECT ... FOR UPDATE` 与 `pg_advisory_xact_lock` 都能让并发请求串行执行；事务提交、回滚，以及 Worker 中途结束导致事务被丢弃，三种情况下锁都会释放，连接池中不残留锁或未结束的事务。`docs/04`、`docs/06` 中「先取空间级 `pg_advisory_xact_lock` 再检查并写入」的写法保持不变，不需要改用 design.md 风险条目中「锁 workspace 行」的替代写法。
-
-**测试方法**（`scripts/probes/71-locks/`，可重复执行）：
-- 临时 Worker `probe-71-locks` 绑定 `product-res-staging`（关缓存），连接参数与 `createDb()` 相同（postgres.js 3.4.9，`max: 5`、`prepare: true`、`fetch_types: false`），用 `sql.begin()` 开显式事务。
-- 请求 A 取锁后读计数器、`pg_sleep(3s)`、写回 +1；800 ms 后请求 B 争同一把锁（持锁 0.5 s 后提交）。行锁为 `setting` 表中 `probe.7.1.row` 一行的 `FOR UPDATE`，advisory lock 为 `pg_advisory_xact_lock(710001)`（与 `hashtextextended(...)` 生成的 bigint 键同一函数）。A 分别以提交、回滚（回调中抛错）、丢弃（拿到锁后立即返回响应，事务不结束）三种方式结束；另有不加锁的对照组。
-- 时间点都取数据库时钟 `clock_timestamp()`，A、B 可直接比较。每个场景后在新事务中串行 5 次 `pg_try_advisory_xact_lock` + `FOR UPDATE NOWAIT`，并查 `pg_locks` 与 `pg_stat_activity`。
-- 共 3 轮 × 7 个场景，全部判定通过。
-
-**关键数据**（第 1 轮原始时间，相对 A 开始事务，单位 ms）：
-
-| 场景 | A 拿到锁 | B 开始事务 | A 持锁结束 | B 拿到锁 | 说明 |
-|---|---|---|---|---|---|
-| 行锁 / A 提交 | 630 | 1304 | 5358（发出 COMMIT 前） | 5673 | B 读到 A 提交后的计数器（1 → 2） |
-| advisory / A 被丢弃 | 640 | 788 | 1450（A 已返回响应） | 1613 | B 读到原值，A 的事务被回滚 |
-| 对照组（不加锁） | 324 | 964 | 4938 | 1446 | B 不等待、读到旧值，两次 +1 后计数器只 +1（丢失更新） |
-
-3 轮汇总（ms）：
-
-| 场景 | A 持锁时长 | B 等待时长 | B 在 A 释放后多久拿到锁 |
-|---|---|---|---|
-| 行锁 / 提交 | 4141–4984 | 3359–4694 | 164–360 |
-| 行锁 / 回滚 | 4118–4730 | 3783–4883 | 160–332 |
-| 行锁 / 丢弃 | 649–790 | 630–762 | 160–443 |
-| advisory / 提交 | 4734–4871 | 4835–5086 | 312–371 |
-| advisory / 回滚 | 4732–4910 | 4877–5188 | 313–336 |
-| advisory / 丢弃 | 631–810 | 640–825 | 163–192 |
-| 对照组（不加锁） | 4581–4617 | 470–489 | 不等待（B 在 A 释放前 3.5–3.8 s 已拿到） |
-
-- 「B 在 A 释放后多久拿到锁」约为一次 Worker ↔ 本机数据库的往返（A 的 `COMMIT` / `ROLLBACK` 送达数据库所需时间）；阶段一每条语句往返约 160–500 ms，持锁时长因此比 `pg_sleep` 多出 1–2 s，不代表生产延迟（§0）。
-- A 被丢弃时，Hyperdrive 在客户端断开后回滚该事务，约一次往返内释放锁；该后端连接（如 pid 8725）随后被其他请求复用，未被关闭。
-- 全部场景结束后，在本机以超级用户查看 `product_res_staging`：`pg_locks` 中没有 advisory lock，`pg_stat_activity` 中所有 `app` 连接都是 `idle`（无 `idle in transaction`）。
-
-**Neon 直连复核（2026-10-08，通过）：** 使用新关缓存 Hyperdrive，经 `wrangler dev --remote` 临时 preview，未新增常驻 Worker。首次原探针 abandon 立即返回、B 在响应后才开始，因 PID 复用断言失败。
-
-2026-10-08 13:57–13:59 UTC，用户批准仅增加 abandon 拿锁后的 hold 等待，保留驱动与全部原断言，通过同一新关缓存 Hyperdrive 一轮七场景退出 0：49 PASS、0 FAIL。六个锁场景 A/B 均不同 PID 与 xid，B 在 A 持锁期间开始事务；提交场景读到增加后的值，回滚/abandon 场景读到原值。B 等待 2558–2749ms；commit/rollback 距事务内 releaseAt 43–50ms 取得锁，abandon 距响应生成时间戳 38–39ms 取得锁。这些时间戳不等于 Hyperdrive 内部实际释放时刻。
-
-八轮释放检查（每轮五次 try-lock/NOWAIT 与五次只读查询）通过，无其他 advisory holder，idle-in-transaction 列表为空。cleanup 返回 200；13:59:36 UTC app 直连终检确认 product_res_staging、探针行数 0、该 advisory key 无持有者、app 超两秒空闲未结束事务为空。临时 preview 已停止、随机 token 文件已删除。五次 `/check` 往返 752/623/743/567/518ms（中位 623ms），包含本机 loopback 代理与 remote preview，不能作为纯数据库或业务 Worker 时延。
-
-[Hyperdrive 会复用源连接](https://developers.cloudflare.com/hyperdrive/concepts/connection-lifecycle/)；两次实测详见 [操作记录](./runbooks/staging-neon.md#3-hyperdrive-与切换)。
-
-**对设计的影响 / 使用约束**（建议，供 `docs/04`、`docs/06` 后续实现遵守）：
-- 只用事务级的 `pg_advisory_xact_lock`，且必须放在显式事务（`db.transaction()`）中；不在事务中的单条 `SELECT pg_advisory_xact_lock(...)` 在语句结束时即释放，起不到互斥作用。
-- 不使用会话级的 `pg_advisory_lock` / `pg_advisory_unlock`：Hyperdrive 以事务为单位复用连接，会话级锁会留在被其他请求复用的连接上（本次未实测，属于事务模式连接池的已知限制）。
-- 在取锁的事务中 `SET LOCAL lock_timeout`（如 5s），避免排队过久超出 Worker 请求时长；超时报 `55P03`，按「稍后重试」处理。
-- 持锁期间只做数据库操作，不调用外部 API（AI 供应商、支付等）；等待中的请求也各占一条 Hyperdrive 连接。
-
-### cloudflared 副本切换（7.5 实测，2026-10-03）
-
-**结论：两个副本能让链路在单副本故障后自动恢复，但切换不是无感的。** 停掉（`docker stop`）或 kill 其中一个副本后，经 Hyperdrive 的数据库访问会卡住约 5–10 s：期间发起的 `/api/health` 中有 4–14 个（约每 300 ms 一个请求时）超过 Worker 端 5 s 的探测超时返回 503，其余的等到 Hyperdrive 经另一个副本重新连上后一起返回（耗时 3–5.7 s）。优雅停止与 kill 的表现没有明显差别。副本重新启动不会引起任何失败。两个副本全停时，`/api/health` 一直返回 503（前约 5 s 的请求挂到超时，之后约 180 ms 快速失败）；启动后 1.2–1.5 s 恢复。
-
-**测试方法**（`scripts/probes/75-tunnel-failover/`，可重复执行，原始数据在其 `results/` 下）：
-- 环境：本机 Docker Desktop（macOS），compose 项目 `product-res` 中的 `product-res-pg` 与两个 `cloudflared` 副本（2026.9.3，QUIC，每个副本 2 条连接，边缘位置均为 `lax*`）。请求的是已部署的 `web-staging`，链路 Worker → Hyperdrive（`product-res-staging`，关缓存）→ Workers VPC → Tunnel → cloudflared → PG。
-- 本机每 300 ms 发起一个 `GET /api/health`，不等待上一个返回（单次约 0.65–1.2 s）；`200` 且 `db.status = up` 记为成功。`/api/health` 的数据库探测超过 5 s 即返回 503（`apps/web/src/server/health.ts`），所以「失败」实际是「数据库访问超过 5 s 或报错」。
-- 场景依次为：S0 基线 30 s；S1 `docker stop` 副本 1，保持 60 s 后 `docker start`，观察 45 s；S2 对副本 2 同样操作；S3 `docker kill` 副本 1，保持 60 s 后启动；S4 两个副本同时 `docker stop`，保持 30 s 后同时启动，观察 60 s。每次启动后从 `docker logs -t` 中取 2 条 `Registered tunnel connection` 的时刻。
-- 共运行 3 轮（每轮约 7.5 分钟、约 1500 个请求）。以下时间都相对该场景的 `docker stop` / `docker kill` 或 `docker start`，单位 s。
-
-**单副本停止 / kill**（S1–S3，统计操作后 20 s 内发起的请求，每个场景约 73 个）：
-
-| 轮 | 场景 | 失败（503） | 成功但 > 3 s | 失败请求的发起时刻 | 受影响请求全部返回 | 启动后失败 | 重新注册（距 `docker start`） |
-|---|---|---|---|---|---|---|---|
-| 1 | S1 stop 副本 1 | 5 | 1 | 0.6 – 6.3 | 11.4 | 0 | 1.4 / 2.1 |
-| 1 | S2 stop 副本 2 | 7 | 7 | 0.7 – 4.3 | 10.0 | 0 | 0.9 / 1.6 |
-| 1 | S3 kill 副本 1 | 8 | 8 | −0.2 – 2.8 | 9.4 | 0 | 0.9 / 1.6 |
-| 2 | S1 | 5 | 1 | 0.9 – 2.1 | 7.8 | 0 | 0.9 / 1.6 |
-| 2 | S2 | 14 | 10 | 0.7 – 14.2 | 19.4 | 0 | 1.2 / 2.2 |
-| 2 | S3 | 9 | 7 | −0.2 – 3.1 | 9.4 | 0 | 0.9 / 1.6 |
-| 3 | S1 | 4 | 1 | 1.2 – 5.4 | 8.6 | 0 | 0.9 / 1.8 |
-| 3 | S2 | 10 | 7 | 0.6 – 7.2 | 14.2 | 0 | 0.9 / 1.6 |
-| 3 | S3 | 6 | 9 | −0.2 – 1.3 | 7.2 | 0 | 0.8 / 1.5 |
-
-- 失败几乎都是 5.2–6.0 s 后的 503（Worker 端探测超时），只有 1 个在 1 s 内返回 503（第 3 轮 S1，连接报错）。成功但变慢的请求与失败请求在同一时刻（操作后约 6–10 s）一起返回，说明这段时间所有新请求都在等 Hyperdrive 重建经由另一副本的连接。
-- 第 2 轮 S2 在主中断（0.7–4.0 s 发起的请求）之后，7.3 s、13.3 s、14.2 s 发起的请求又各有 1 个超时，其余请求正常，属于切换后的零星长尾。
-- `docker stop` 约 1.1 s 完成：cloudflared 收到 SIGTERM 后注销连接（`Unregistered tunnel connection`），日志随即出现 `no more connections active and exiting`，没有等待默认 30 s 的 grace period 去排空 Hyperdrive 的长连接。因此「优雅停止」对 Hyperdrive 并不优雅，与 kill 一样会切断经由该副本的数据库连接。kill 时在途的请求（操作前 0.2 s 发起）也失败。
-- 副本重新启动：约 0.8–1.4 s 注册第 1 条连接、1.5–2.2 s 注册第 2 条；启动前后都没有失败，成功请求延迟不变（启动后首个请求 30–300 ms 内发起即成功）。
-- 基线（S0）：0 失败，p50 约 650 ms，p95 0.67–1.9 s。
-
-**两个副本全停**（S4，保持 30 s）：
-
-| 轮 | 失败 / 请求 | 全停期间的表现 | 启动后首个成功请求 | 启动后失败 | 重新注册（距 `docker start`，副本 1 / 副本 2） | 中断时长（首个失败发起 → 首个成功发起） |
-|---|---|---|---|---|---|---|
-| 1 | 106 / 313 | 操作后 0.9 s 起全部失败；5.1 s 前发起的挂到 5 s 超时，之后约 180 ms 返回 503 | +1.52 | 5（发起于启动后 0–1.2 s） | 0.95, 1.7 / 0.9, 1.7 | 31.8 |
-| 2 | 107 / 313 | 0.6 s 起全部失败；4.8 s 后快速失败 | +1.54 | 5（0–1.2 s） | 0.9, 1.6 / 0.9, 1.7 | 32.1 |
-| 3 | 105 / 312 | 0.8 s 起全部失败；4.1 s 后快速失败 | +1.16 | 3（0.3–0.9 s） | 1.1, 1.8 / 0.9, 1.6 | 31.5 |
-
-- 全停期间没有任何请求成功；中断时长 ≈ 停止时长 + 1.2–1.5 s。
-- 恢复所需时间：首条连接注册后 0.3–0.6 s 即有请求成功，不需要等两个副本的全部连接注册完。第 1 轮有 1 个在启动后 1.2 s 发起的请求仍挂到 5 s 超时，其余启动后的失败都是快速 503。
-- 全停期间 Worker 端仍按 5 s 超时或快速失败返回 503，没有挂起超过 6 s 的请求；客户端没有出现超时或网络错误。
-
-**测试条件的局限**：两个副本与 PG 在同一台机器、同一个 Docker 网络中，出口经过本机代理（cloudflared 日志中边缘 IP 为 `198.18.0.x`），只测了 `/api/health` 一种请求；数据不代表阶段二的生产环境（§0）。没有测量进行中的写事务被切断时的表现。
-
-**对阶段二的建议**：
-- 继续运行至少两个 `cloudflared` 副本，并放到不同的故障域（不同主机或至少不同的进程管理单元）；阶段一两个副本在同一台机器上，本机故障就是 S4。
-- 单副本故障按「数据库访问中断 5–10 s」处理，而不是无感：
-  - 健康检查告警不要以单次 503 触发，至少连续失败 30 s（或连续 3 次以上检查）再告警；另外单独监控 Tunnel 的连接数（少于 4 条即降级），用于发现单副本故障。
-  - 读请求可以在连接错误或超时后重试一次；写请求（尤其计费、积分扣减）必须能安全重试（幂等键），且事务被切断时以回滚为准（7.1 已验证连接断开时事务被回滚、锁被释放）。
-- 计划内的 cloudflared 升级或重启要逐个副本进行，两次之间至少间隔 30 s（确认新副本注册了 2 条连接、`/api/health` 恢复正常后再动下一个），并避开流量高峰：每停一个副本都会有一次 5–10 s 的数据库访问卡顿，`--grace-period` 不能避免（cloudflared 不排空 Hyperdrive 的长连接）。
-- 阶段二在生产服务器上用同一脚本重测（`HEALTH_URL`、`REPLICA_1`、`REPLICA_2` 可配置），并补测「写事务进行中切断副本」的场景。
 
 ## 3. 环境
 
@@ -322,10 +190,10 @@ PR:    install → biome check → typecheck → unit test (vitest-plugin) → b
        并行 e2e-smoke：临时 PG → migrate → 本地 vite dev → Chromium 冒烟
        → （可选，且 PR 不含新迁移时）部署预览版本
 main:  以上 + 数据库迁移(staging) → 部署 staging → e2e (Playwright) 
-tag:   数据库迁移(production) → wrangler deploy (jobs 先于 web) → 冒烟测试
+tag:   发布门禁 → production 审批 → 构建 jobs/web → 数据库迁移 → 部署 jobs/web → 冒烟测试
 ```
 
-**staging 自动发布**：`.github/workflows/deploy-staging.yml` 跟随 main 上成功的 `CI`，检出该次 CI 的提交；也可在 main 上手动触发 `workflow_dispatch`。发布使用 GitHub `staging` environment，`staging-deploy` concurrency 串行执行且不取消进行中的运行。PR 的 `ci.yml` 不引用 staging secrets，只操作临时 CI 数据库。
+**staging 自动发布**：`.github/workflows/deploy-staging.yml` 跟随 main 上成功的 `CI`，检出该次 CI 的提交；也可在 main 上手动触发 `workflow_dispatch`。手动发布复用生产 CI 门禁：目标 SHA 必须有本仓库 main 上成功的 `CI` push 运行。仓库变量 `RELEASE_PHASE` 仅接受 `testing|live`，未设置按 `live`；`testing` 可绕过 CI，上线后仅手动选择 `bypass=hotfix` 并填写非空 `reason` 才能绕过。每次绕过都会输出 warning 与 Job Summary，记录类型、原因和触发人。发布使用 GitHub `staging` environment，`staging-deploy` concurrency 串行执行且不取消进行中的运行。PR 的 `ci.yml` 不引用 staging secrets，只操作临时 CI 数据库。
 
 发布顺序为 install → Neon 迁移 → 构建 jobs 与 web → Sentry release / source map 上传 → 部署 jobs → 部署 web → 健康检查 → Playwright `staging` 项目 → finalize release。release 与两个 Worker 的 `APP_VERSION` 均为所检出提交的完整 SHA（`workflow_run.head_sha`，手动运行时为 `github.sha`），与 `/api/health.version` 一致。迁移通过 environment 的 `STAGING_MIGRATION_DATABASE_URL` 直连 Neon，以 `migrator` 执行；Cloudflare 认证使用 `CLOUDFLARE_API_TOKEN` 与 `CLOUDFLARE_ACCOUNT_ID`。健康检查每 5 秒轮询、最多 3 分钟，要求 200、`db.status=up`、`version` 等于目标 SHA；之后用 Chromium 检查首页、定价与一次随机邮箱注册。任一步失败即停止发布。
 
@@ -333,7 +201,6 @@ jobs 用 `wrangler deploy --env staging --dry-run --outdir dist --var APP_VERSIO
 
 部署直接使用注入后的产物：jobs 指定 `dist/index.js --no-bundle` 并再次传入版本 var；web 指定 Vite 生成的 `dist/server/wrangler.json --no-bundle`（包含 staging 绑定与 client assets 路径）。CI 不调用会重新构建的 `deploy:staging` 脚本。Sentry 认证只在上传与 finalize 步骤从 environment secrets 读取，PR CI 不上传。验收与失败排查见 [Sentry runbook](./runbooks/sentry.md)。
 
-GitHub `staging` environment 三项 secrets（`CLOUDFLARE_ACCOUNT_ID`、`STAGING_MIGRATION_DATABASE_URL`、`CLOUDFLARE_API_TOKEN`）已配置，CI token 已验证 active 与当前 account。PR #62 合并为 `ad1b5da` 后的首次自动发布在 web 预渲染阶段失败：本地 Hyperdrive 缺少模拟连接串，迁移与 jobs 已成功。PR #64 合并为 `ce623ca`，在 Deploy web 的环境变量中为两个 Hyperdrive 绑定设置不可达的本地占位连接；仅使预渲染 preview 能启动，快照按既有设计降级为示例数据，绝不连接真实库。其触发的 [Deploy staging run 37894416572](https://github.com/ustclhx/product-res/actions/runs/37894416572) 于 `2026-10-09T06:36:31Z–06:38:28Z` 全部成功：Neon 迁移 → jobs → web → 版本健康检查 → staging 冒烟（`3 passed (10.0s)`）。健康检查匹配完整 `ce623cab63a99d6eee8c8ba67eeb09e564f97779` 且 `db.status=up`，任务 7.4 已验收；本机原三项冒烟（6.2）亦已通过，断言与超时未改。PR3 仅补齐文档与任务记录，9.2 24 小时观察保留未完成。操作与回滚见 [Neon staging runbook](./runbooks/staging-neon.md)。
 
 ### 本地冒烟 e2e
 
@@ -351,11 +218,25 @@ pnpm --filter @product-res/web test:e2e:smoke
 
 失败时 CI 只上传 `apps/web/playwright-report/` HTML 报告，保留 7 天；此配置始终禁用 trace、video、截图，不上传 `test-results` 或服务端日志。其余离线 e2e 仍用 `pnpm --filter @product-res/web test:e2e`。
 
+### 夜间全量测试
+
+`.github/workflows/nightly.yml`（Actions 中的 **Nightly**）每日 UTC 19:00（北京时间次日 03:00）定时运行，也支持 `workflow_dispatch` 手动触发；两种入口都仅运行 `main`。三个 job 独立执行，互不阻塞：
+
+- `e2e-full`：使用临时 Postgres 17，运行 `pnpm --filter @product-res/web test:e2e`，采用默认 `playwright.config.ts` 的离线测试范围，不需要外部服务密钥；不包含 Stripe 专用测试、staging / production 项目及 `ai-chat-disconnect`。
+- `e2e-multi-tenant`：在 runner 的检出副本中用 `sed` 把 `template.config.ts` 改为 `multiTenant: true`，运行 `e2e/workspace.spec.ts` 与 `e2e/app-shell.spec.ts`，覆盖团队空间创建、邀请、成员管理与侧边栏工作区菜单（默认配置只覆盖单空间分支）；使用独立的 `product_res_wt_multi_tenant` 库。
+- `create-project-verify`：运行 `pnpm test:create-project:verify`，验证生成项目的真实副本；衍生项目不包含该模板维护脚本，自动省略此步骤。
+
+失败时上传 Playwright report 与 trace，保留 14 天。失败通知自动创建带 `nightly-failure` 标签的 issue；如果已有未关闭且带同标签的 issue，则追加评论。通知包含运行日期、失败 job 和 Actions run 链接。
+
+在仓库 **Actions → Nightly** 查看运行结果，先按失败 job 下载报告与 trace，再判断是界面或行为变化造成的过时断言，还是真实功能缺陷；修正断言或业务实现，不删除有效用例或增加 retry 掩盖失败。衍生项目同步模板后会继承此 workflow，可按需删除文件或调整 `schedule`。
+
 **阶段二私有 PG 迁移**：CI 可运行 `cloudflared access tcp`（需要 §2 的公网主机名 + Access 备选方式）在本地开转发端口，再执行迁移；或通过 SSH 在生产服务器上执行迁移。
 
-**迁移原则**：只做向后兼容的变更（先加字段/表 → 部署代码 → 再删旧字段），保证 web/jobs 滚动发布期间新旧代码都能运行。
+**迁移原则**：只做向后兼容的变更（先加字段/表 → 部署代码 → 再删旧字段），保证 web/jobs 滚动发布期间新旧代码都能运行。staging 与 production 共用 `node scripts/production/migrate.mjs`，强制 `lock_timeout=5s`、`statement_timeout=15min`；锁超时后停止部署。CI 用固定版本 `squawk-cli` 检查相对 base 新增的 SQL；例外必须用 squawk ignore 注释并在同一行说明原因，不修改历史 SQL 来隐藏风险。
 
-**部署顺序**：迁移 → `apps/jobs` → `apps/web`（web 依赖 jobs 中定义的 Workflow / Queue 消费者）。
+Cloudflare 回滚先读取生产 `/api/health.version`，逐条检查当前版本相对目标 tag 新增的迁移。只有每条都声明 `-- rollback-safe: <旧代码仍兼容的具体原因>` 才允许回滚，否则向前修复。该声明只说明 Worker 回退兼容性，不表示 SQL 可以反向执行。新迁移由协调者合并后统一生成并判断；worker 不生成迁移。
+
+**生产部署顺序**：门禁 → production environment 审批 → 构建 `apps/jobs` 与 `apps/web` → source map 上传 → 迁移 → jobs → web。构建失败不执行迁移。生产仍要求 main 历史、staging 发布成功与审批，CI 绕过不影响这些要求。`RELEASE_PHASE=live` 必须配置 Sentry DSN 与上传配置，`testing` 缺失仅在 warning 与摘要中提示。详见 [生产发布 runbook](./runbooks/production-neon.md#7-发布与回滚)。
 
 ## 6. 安全清单
 
@@ -368,13 +249,27 @@ pnpm --filter @product-res/web test:e2e:smoke
 - 数据库最小权限账号；自建 PG 只经 Tunnel（Workers VPC 或 Access）访问，不开放公网端口；Neon staging 通过非 pooled TLS 直连，不使用默认 owner 作为 Worker 连接账号。
 - 依赖更新：Renovate / Dependabot。
 
+### 安全响应头与 CSP 上线
+
+`apps/web/src/security-headers.ts` 是 Cloudflare / Node 共用的响应头策略。页面、API、Server Function、重定向与错误响应都补齐 `X-Frame-Options: DENY`、`X-Content-Type-Options: nosniff`、`Referrer-Policy: strict-origin-when-cross-origin`；只有 HTTPS 响应补 `Strict-Transport-Security: max-age=31536000; includeSubDomains`。已有同名头原样保留，错误响应也携带请求 ID。
+
+完整 CSP 只发送 `Content-Security-Policy-Report-Only`，其中 `frame-ancestors 'none'` 与 X-Frame-Options 一致；当前实际防嵌入由 X-Frame-Options 执行。脚本来源含同源与 Turnstile，表单允许 Stripe Checkout / Portal 跳转，R2 使用 `R2_ACCOUNT_ID` 拼接的精确下载 origin，Node 对象存储使用 `S3_ENDPOINT` 的 origin；Sentry 使用配置 DSN 的 ingest origin（目前 SDK 仅在服务端运行）。不使用全局 `*`。样式允许组件库实际使用的内联 style 属性。
+
+浏览器端提前设置 Zod `jitless`，避免运行时编译与 Function 探测产生 CSP 违规。动态 SSR 为每个请求产生独立 nonce，路由器统一给主题和水合脚本加 nonce，SSR / 对话 API 流继续透传。预渲染静态 HTML 则对构建产物中的内联脚本计算 SHA-256 内容哈希，哈希按 HTML parser 的换行与 NUL 规范化规则计算，原始字节、缓存头及 ETag 保持不变；304 不替换缓存文档已有的哈希策略。Cloudflare 配置 `assets.run_worker_first: ["/*", "!/assets/*", "!/og/*", "!/fonts/share-card/*"]` 与 `ASSETS` 绑定：HTML / 动态路由先返回已有预渲染内容，未命中再走 SSR，因此首页无需访问数据库也能携带安全头。`/assets/*` 的哈希 JS / CSS / 字体等直接由静态服务返回，省去 Worker 调用；`/og/*` 的构建 PNG 同样直出，使用 `_headers` 保留一天缓存、noindex 与 nosniff；`/fonts/share-card/*` 的分享卡片字体直出，长期缓存并带 noindex。其他路径继续经过 Worker；新增静态目录时应核对构建输出后显式添加排除规则。Node 在 Nitro HTTP 外层对静态响应使用同一策略。
+
+上线步骤：
+
+1. 本地 `pnpm build` 后，用浏览器检查预渲染首页、登录与已登录对话页的主题、水合、导航和 CSP 违规事件；保留结果到私有证据库，并在 PR 中引用。
+2. 在 staging 检查真实 Turnstile、Stripe 结账跳转、对话流、R2 媒体预览及 Sentry 错误上报；按浏览器 `securitypolicyviolation` 事件 / 控制台定位策略外来源。当前未设置自动报告接收端，需主动收集浏览器事件。
+3. 新增集成时只添加实际 origin，复测对应流程。Report-Only 无违规和功能验收通过后，再单独决定是否切换为强制 CSP；本次不切换。
+
 ## 7. 可观测性
 
 | 维度 | 工具 |
 |---|---|
 | 错误 | Sentry（web + jobs，带 release 与 source map） |
 | 日志 | Workers Logs（结构化 JSON，含 requestId、workspaceId、userId） |
-| 流量 | Cloudflare Web Analytics；产品分析可选 PostHog / Umami |
+| 流量 | Cloudflare Web Analytics；产品漏斗默认自建 Plausible，可选 PostHog，见 [埋点](analytics.md) |
 | AI | AI Gateway 仪表盘 |
 | 业务指标 | 管理后台：注册、付费转化、MRR、积分消耗、任务成功率 |
 | 数据库 | pg_stat_statements、导出器指标、备份状态 |
@@ -382,62 +277,15 @@ pnpm --filter @product-res/web test:e2e:smoke
 Sentry 只在服务端启用，接入 web fetch 与 jobs fetch / Queue / Cron / Workflow；事件经统一
 `beforeSend` 脱敏过滤器处理，不采集邮箱、Authorization、Cookie、支付凭据或 AI 对话内容。
 事件 release 为完整部署 SHA，dist 为 `web` 或 `jobs`，request ID 标签用于关联 Workers Logs。
+生产 web/jobs 在 Wrangler 的 `env.production.observability` 开启日志并设 `head_sampling_rate: 1`。
+
+events 消费失败达到 6 次或出现不可重试错误时进入 `events-dlq`（线上分别为
+`events-dlq-staging`、`events-dlq-production`）。jobs 通过 producer 绑定直接转投不可重试消息，
+确认发送成功后才 ack；死信消费者复用 `job_engine.message` 与 `job_engine.dead_letter`，
+持久化原消息 ID、原队列、尝试次数、失败原因与时间，再直接发送运营告警，避免告警再次进入失败队列。
+邮件队列继续沿用现有丢弃策略。队列创建、数据库最小授权和上线清单见
+[生产 runbook §7a](./runbooks/production-neon.md#7a-events-死信队列与上线清单)。
 管理员测试异常入口需新鲜的实时平台管理员会话、同源 POST 与后台审计；没有公开测试入口。
 本地真实事件与合并后 staging 可读堆栈的验收记录见 [Sentry runbook](./runbooks/sentry.md)，
 staging 尚未通过前不勾选 OpenSpec 1.2。
 
-## 8. 延迟基线（Phase 0 实测 7.4，2026-10-03）
-
-### 生产初测（2026-10-16，v0.1.0）
-
-`https://app.ezarouter.cc/api/health` 顺序请求 40 次（间隔 1 秒），记录 Worker 内 `db.latencyMs`（Hyperdrive → Neon `aws-us-west-2`，非缓存连接）与 `cf-ray` 入口机房。全部入口为 LAX（开发机经美国西部出口）：
-
-| n | min | p50 | p90 | p95 | max |
-|---|---|---|---|---|---|
-| 40 | 40 ms | 45 ms | 90 ms | 116 ms | 171 ms |
-
-这是单一入口、默认放置下的健康探测往返，只作上线基线；Smart Placement 与显式放置对比需按下文 `scripts/probes/latency/` 部署临时探针 Worker（绑定生产 Hyperdrive、只读 `setting`），2026-10-18 用户决定移交派生项目按真实用户地域执行（原 `add-cloud-production-neon` 5.1，不属于模板验收）。
-
-> **2026-10-03 实测时 staging 数据库在开发者本机，以下历史数据只证明「Worker → Hyperdrive → Workers VPC → Tunnel → 本机 PG」链路可用，不代表当前 Neon 或生产延迟。** 派生项目上线时按实际 Neon 区域与用户地域重新测量放置对比。
-
-### 测试方法
-
-可重复执行的探针在 `scripts/probes/latency/`（部署、运行、清理步骤见其 README）：
-
-- 临时 Worker `probe-74-latency-{off,smart,eu,ap}`，代码相同，只有放置方式不同：关闭放置、Smart Placement、显式放置 `aws:eu-central-1`（实际执行于 FRA）、显式放置 `aws:ap-northeast-1`（实际执行于 NRT）。都绑定 `product-res-staging`（关缓存）。
-- 每个 HTTP 请求新建一个 postgres.js 客户端（选项同 `createDb`：`max: 5`、`fetch_types: false`、`prepare: true`），对 `setting` 表顺序执行同一查询 `select value from setting where key = $1` 共 6 次，在 Worker 内计时：第 1 次为**首次建连**（新连接 + prepare），后 5 次为**复用连接**。
-- 记录 `request.cf.colo`（入口机房）、Worker 内请求 `cloudflare.com/cdn-cgi/trace` 得到的 `colo`（实际执行机房）、响应头 `cf-placement`。
-- **两个以上地区**：本机（经代理出口在美国西部）直接请求时入口固定为 LAX；另用两种方式让 Worker 在其他地区执行：① 显式放置（targeted placement）；② 由显式放置在 FRA / NRT 的探针 Worker 经 `/relay` 转发请求，使 off / smart 两个 Worker 的入口机房分别为 FRA、NRT。
-- 每组 60 个请求（60 个首次建连样本、300 个复用连接样本），顺序执行。原始数据在 `scripts/probes/latency/results/`。
-
-本机环境：两个 `cloudflared` 副本的 Tunnel 连接都注册在 LAX（`lax01/08/10/13`），即从 Cloudflare 看，数据库「位于」LAX；每次数据库往返都包含 LAX ↔ 开发者本机（经本机代理）这一段。
-
-### 结果（Worker 内测得的数据库往返，单位 ms，p50 / p95）
-
-| 入口机房 | 执行机房 | 放置 | `cf-placement` | 首次建连 | 复用连接 |
-|---|---|---|---|---|---|
-| LAX | LAX | 关 | — | 320 / 1576（第 1 轮）；482 / 501（第 2 轮） | 159 / 166；161 / 167 |
-| LAX | LAX | Smart | `local-LAX` | 479 / 501 | 162 / 166 |
-| LAX | FRA | 显式 `aws:eu-central-1` | `remote-FRA` | 704 / 911 | 312 / 398 |
-| LAX | NRT | 显式 `aws:ap-northeast-1` | `remote-NRT` | 670 / 705 | 262 / 272 |
-| FRA（经 relay） | FRA | 关 | — | 782 / 889 | 312 / 458 |
-| FRA（经 relay） | FRA | Smart | `local-FRA` | 786 / 938 | 314 / 323 |
-| NRT（经 relay） | NRT | 关 | — | 695 / 851 | 264 / 281 |
-| NRT（经 relay） | NRT | Smart | `local-NRT` | 694 / 726 | 264 / 277 |
-
-对照组（`prepare: false`）：LAX 执行时首次 323 / 377、复用 319 / 347；FRA 执行时首次 630 / 727、复用 621 / 719。
-
-所有测量与预热（Smart Placement 预热约 3,500 个请求）中没有失败请求。
-
-### 结论
-
-1. **链路可用**：LAX、FRA、NRT 三个执行位置经 Hyperdrive（关缓存）查询本机 `product_res_staging` 均成功。
-2. **单次往返由「执行机房 → Tunnel 接入点（LAX）→ 本机」决定**：LAX 执行约 160 ms（几乎全部是 LAX ↔ 本机），FRA 约 310 ms，NRT 约 265 ms；不同执行位置之间的差值（约 +150 / +105 ms）就是执行机房到 LAX 的距离。
-3. **Smart Placement 在本场景下没有效果**：入口为 LAX 时决定为 `local-LAX`（本来就在 Tunnel 接入点，合理）；入口为 FRA / NRT 时，在约 70 分钟、约 3,000 个请求后仍为 `local-FRA` / `local-NRT`，没有把 Worker 移到 LAX，延迟与关闭时相同。原因未查实，可能是：Smart Placement 主要依据 `fetch` 子请求的耗时，而 Hyperdrive 走的是 TCP socket；探针每个请求还有一次发往本地机房的 `fetch`（trace），可能把判断拉向「留在本地」；流量规模较小。
-4. **首次建连的额外开销来自 prepare，而不是与 Hyperdrive 建连**：`prepare: true` 时首次查询约 2–3 次往返、之后每次 1 次往返；`prepare: false` 时每次查询都是约 2 次往返。首次查询是 2 次还是 3 次往返在两轮测量之间不同（LAX 第 1 轮 320、第 2 轮 482），原因未查实（可能与 Hyperdrive 到源站的连接池状态有关）。
-
-### 对设计的影响（建议）
-
-- 保持 `createDb` 的 `prepare: true`（§2）：同一请求内的重复查询只需 1 次往返；改为 `false` 会让每次查询多一次往返。
-- 请求内顺序执行的查询次数直接放大延迟（阶段一每次约 160–310 ms）。后续 change 应尽量合并查询（CTE、`returning`、一个事务内少次往返），避免在一个请求中串行多次读库；这一点在阶段二数据库离用户较远时同样适用。
-- 不依赖 Smart Placement 把访问数据库的 Worker 移到数据库附近。阶段二若用户与数据库不在同一地区，建议对以数据库为主的 Worker 评估显式放置（`placement.mode = "targeted"`，`region` 或 `host` 指向数据库所在地区），并在阶段二重新测量本基线后再决定。

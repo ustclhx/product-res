@@ -1,14 +1,21 @@
 import { randomUUID } from 'node:crypto'
 import { expect, type Page, test } from '@playwright/test'
 import { register } from '../e2e/fixtures.ts'
+import { chooseOption } from '../e2e/select.ts'
 import { billingEvidence, expectReconciled, saveBillingEvidence } from './acceptance-evidence.ts'
 import { liveDb } from './live-env.ts'
-import { expectBillingReturn, payOnStripeCheckout, startStripeCheckout } from './stripe-checkout.ts'
+import {
+  buyPackOnStripe,
+  expectBillingReturn,
+  payOnStripeCheckout,
+  startStripeCheckout,
+} from './stripe-checkout.ts'
 
 const PRO_MONTHLY = /^Pro\b.* · \$19\.00 \/ month$/
 const PRO_YEARLY = /^Pro\b.* · \$190\.00 \/ year$/
 const TEAM_MONTHLY = /^Team\b.* · \$49\.00 \/ month$/
-const CREDIT_PACK = /^Credit pack\b.* · \$10\.00$/
+// 积分包按钮的无障碍名称为「Buy {套餐名}」
+const CREDIT_PACK = /^Buy Credit pack\b/
 const WEBHOOK_WAIT = { timeout: 90_000, intervals: [2000] }
 
 // 托管页面含联系方式及带 token 的 URL，验收仅保存白名单账务证据。
@@ -23,7 +30,8 @@ async function newOwner(page: Page) {
 }
 
 async function pay(page: Page, owner: { email: string; slug: string }, price: RegExp) {
-  await startStripeCheckout(page, owner.slug, price)
+  if (price === CREDIT_PACK) await buyPackOnStripe(page, owner.slug, price)
+  else await startStripeCheckout(page, owner.slug, price)
   await payOnStripeCheckout(page, owner.email)
   await expectBillingReturn(page, owner.slug)
 }
@@ -102,14 +110,17 @@ test('Stripe 积分包入账与用户退款申请仅进入 pending', async ({ pa
     // 退款输入在 SSR 已可操作；先等父页面的 ready 控件启用，避免水合覆盖输入。
     await expect(page.getByRole('combobox', { name: 'Payment method', exact: true })).toBeEnabled()
     const form = page.getByRole('form', { name: 'Request a refund' })
-    await form
-      .getByRole('combobox', { name: 'Payment', exact: true })
-      .selectOption(String(paid.payments[0]?.id))
+    await chooseOption(form.getByRole('combobox', { name: 'Payment', exact: true }), {
+      value: String(paid.payments[0]?.id),
+    })
     await form.getByLabel('Reason').fill('Stripe staging acceptance refund request')
     await form.getByLabel('Contact email').fill(owner.email)
     await expect(form.getByRole('button', { name: 'Submit refund request' })).toBeEnabled()
     await form.getByRole('button', { name: 'Submit refund request' }).click()
-    await expect(page.getByRole('status')).toHaveText(/Refund request submitted/)
+    // 页面可能同时有每日领取等其他状态区域，按文字筛选
+    await expect(
+      page.getByRole('status').filter({ hasText: /Refund request submitted/ }),
+    ).toBeVisible()
     await expect
       .poll(async () => {
         const evidence = await billingEvidence(sql, owner.slug)
@@ -245,7 +256,7 @@ test('Stripe Pro 取消后购买 Team：重叠周期各自发积分且只有 Tea
     expect(evidence.balance.available - before.balance.available).toBe(6000)
     expectReconciled(evidence)
     await page.goto(`/app/${owner.slug}/billing`)
-    await expect(page.getByText('Current plan: team', { exact: true })).toBeVisible()
+    await expect(page.getByText(/^Current plan: Team\b/)).toBeVisible()
     await expect(page.getByText(/Paid subscription periods overlap/)).toBeVisible()
     await saveBillingEvidence('pro-team-overlap', evidence)
   } finally {

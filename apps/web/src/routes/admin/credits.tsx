@@ -1,5 +1,19 @@
 import { newId } from '@product-res/shared'
-import { Button, DataTable, Input } from '@product-res/ui'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  DataTable,
+  type DataTableColumn,
+  Input,
+  Textarea,
+} from '@product-res/ui'
 import { createFileRoute, notFound as featureNotFound, useRouter } from '@tanstack/react-router'
 import { useState } from 'react'
 import { adjustCredits, getAdminCredits } from '../../features/admin/credits.functions.ts'
@@ -15,7 +29,6 @@ import {
   Field,
   formatDateTime,
   Panel,
-  Textarea,
 } from '../../features/admin/ui.tsx'
 import { m } from '../../paraglide/messages.js'
 import { templateConfig } from '../../server/template-config.ts'
@@ -29,6 +42,8 @@ export const Route = createFileRoute('/admin/credits')({
   loader: ({ deps }) => getAdminCredits({ data: deps }),
   component: Credits,
 })
+type CreditBatch = Awaited<ReturnType<typeof getAdminCredits>>['rows'][number]
+
 function Credits() {
   const data = Route.useLoaderData()
   const search = Route.useSearch()
@@ -41,6 +56,9 @@ function Credits() {
   const [pending, setPending] = useState<Parameters<typeof adjustCredits>[0]['data'] | null>(null)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
+  // 确认框：open 与目标分开保存，关闭后目标保留到退场动画结束，说明文字不会在淡出时变空
+  const [revokeOpen, setRevokeOpen] = useState(false)
+  const [revokeTarget, setRevokeTarget] = useState<CreditBatch | null>(null)
   async function submit(input: Parameters<typeof adjustCredits>[0]['data']) {
     setPending(input)
     setBusy(true)
@@ -65,6 +83,52 @@ function Credits() {
       setBusy(false)
     }
   }
+  async function confirmRevoke() {
+    if (!revokeTarget || busy) return
+    // 请求期间保持打开并显示加载态；无论成功失败，结果都写在页面状态行，完成后再关闭
+    await submit({
+      kind: 'revoke',
+      adjustmentId,
+      workspaceId: revokeTarget.workspaceId,
+      grantId: revokeTarget.id,
+      reason,
+    })
+    setRevokeOpen(false)
+  }
+  // DataTable 按函数调用渲染单元格（tasks 4.2），每次渲染新建列不会重新挂载行内按钮，确认框关闭后焦点回到按钮
+  const columns: DataTableColumn<CreditBatch>[] = [
+    { id: 'id', header: m.admin_batch(), cell: (row) => row.id },
+    { id: 'source', header: m.admin_source(), cell: (row) => row.source },
+    {
+      id: 'amount',
+      header: m.admin_amount_remaining(),
+      cell: (row) => `${row.amount} / ${row.remaining}`,
+    },
+    {
+      id: 'expiration',
+      header: m.admin_expiration(),
+      cell: (row) => (row.expiresAt ? formatDateTime(row.expiresAt) : m.admin_never()),
+    },
+    { id: 'status', header: m.admin_status(), cell: (row) => row.status },
+    {
+      id: 'revoke',
+      header: m.admin_revoke_remaining(),
+      cell: (row) => (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={busy || Boolean(pending) || !reason.trim() || row.status !== 'active'}
+          onClick={() => {
+            setRevokeTarget(row)
+            setRevokeOpen(true)
+          }}
+        >
+          {m.admin_revoke_batch()}
+        </Button>
+      ),
+    },
+  ]
   return (
     <AdminPage
       title={m.admin_credit_adjustments()}
@@ -171,47 +235,7 @@ function Credits() {
         label={m.admin_credit_batches()}
         rows={data.rows}
         getRowId={(row) => row.id}
-        columns={[
-          { id: 'id', header: m.admin_batch(), cell: (row) => row.id },
-          { id: 'source', header: m.admin_source(), cell: (row) => row.source },
-          {
-            id: 'amount',
-            header: m.admin_amount_remaining(),
-            cell: (row) => `${row.amount} / ${row.remaining}`,
-          },
-          {
-            id: 'expiration',
-            header: m.admin_expiration(),
-            cell: (row) => (row.expiresAt ? formatDateTime(row.expiresAt) : m.admin_never()),
-          },
-          { id: 'status', header: m.admin_status(), cell: (row) => row.status },
-          {
-            id: 'revoke',
-            header: m.admin_revoke_remaining(),
-            cell: (row) => (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={busy || Boolean(pending) || !reason.trim() || row.status !== 'active'}
-                onClick={() => {
-                  if (
-                    window.confirm(m.admin_revoke_remaining_credits_in_batch({ batchId: row.id }))
-                  )
-                    void submit({
-                      kind: 'revoke',
-                      adjustmentId,
-                      workspaceId: row.workspaceId,
-                      grantId: row.id,
-                      reason,
-                    })
-                }}
-              >
-                {m.admin_revoke_batch()}
-              </Button>
-            ),
-          },
-        ]}
+        columns={columns}
         page={adminListPage(search.offset, data)}
         filters={[{ id: 'workspaceId', label: m.admin_workspace_id() }]}
         filterValues={{ workspaceId: search.workspaceId }}
@@ -222,6 +246,36 @@ function Credits() {
           void navigate({ search: filtersToSearch(['workspaceId'], values) })
         }
       />
+      <AlertDialog
+        open={revokeOpen}
+        onOpenChange={(open) => {
+          // 请求进行中忽略 Escape，避免关闭后结果无处展示
+          if (!busy) setRevokeOpen(open)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{m.admin_revoke_batch_confirm_title()}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {m.admin_revoke_batch_confirm_description({ batchId: revokeTarget?.id ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>{m.common_cancel()}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              loading={busy}
+              onClick={(event) => {
+                // 阻止 Radix 立即关闭，等请求完成后由 confirmRevoke 关闭
+                event.preventDefault()
+                void confirmRevoke()
+              }}
+            >
+              {m.admin_revoke_batch()}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminPage>
   )
 }

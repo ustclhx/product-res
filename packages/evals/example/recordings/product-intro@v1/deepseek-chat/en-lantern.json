@@ -1,0 +1,18 @@
+{
+  "kind": "generation",
+  "promptVersion": "product-intro@v1",
+  "renderedHash": "sha256:290f076ce66c8290ce807f7ae7d2f17b2fa6e645912c69658c776e80866bd7b5",
+  "model": {
+    "key": "deepseek-chat",
+    "provider": "deepseek",
+    "providerModelId": "deepseek-chat"
+  },
+  "output": "## Overview\nThe Solar Camping Lantern is a practical lighting solution for weekend campers who want reliable illumination without relying on batteries or power outlets. Simply leave it in the sun for six hours to charge, and it's ready for your evening at the campsite.\n\n## Highlights\n- **Solar-powered charging** – Fully charges in just six hours of sunlight, so you can leave the batteries at home\n- **Three brightness levels** – Adjust the light to match your needs, from a soft glow for the tent to bright light for cooking or gathering\n- **Folds flat** – Collapses into a compact shape that packs easily into your gear and saves space on the go",
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 81,
+    "outputTokens": 137
+  },
+  "recordedAt": "2026-11-14T07:11:58.297Z",
+  "source": "recorded"
+}

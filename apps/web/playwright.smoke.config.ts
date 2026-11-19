@@ -20,6 +20,8 @@ export default defineConfig({
     env: {
       ...(Array.isArray(base.webServer) ? base.webServer[0]?.env : base.webServer?.env),
       WRANGLER_SEND_METRICS: 'false',
+      // 与 production 一致：不开启组件预览页，smoke.spec 断言 /dev/ui 返回 404
+      UI_PREVIEW: 'false',
     },
     reuseExistingServer: false,
   },

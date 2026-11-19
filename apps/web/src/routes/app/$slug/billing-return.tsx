@@ -1,21 +1,22 @@
 import { Button } from '@product-res/ui'
 import { createFileRoute, notFound as featureNotFound, Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { z } from 'zod'
 import { confirmCustomerCheckout } from '../../../features/billing/customer.functions.ts'
+import { compactSearch, optionalEnum, optionalString } from '../../../features/routing/search.ts'
 import { templateConfig } from '../../../server/template-config.ts'
 
 export const Route = createFileRoute('/app/$slug/billing-return')({
   beforeLoad: () => {
     if (!templateConfig.billing.enabled) throw featureNotFound()
   },
-  validateSearch: z.object({
-    provider: z.enum(['stripe', 'paypal', 'creem', 'paddle', 'polar']).optional(),
-    token: z.string().max(255).optional(),
-    subscription_id: z.string().max(255).optional(),
-    providerRef: z.string().max(255).optional(),
-    canceled: z.union([z.string(), z.boolean()]).transform(String).optional(),
-  }),
+  validateSearch: (search: Record<string, unknown>) =>
+    compactSearch({
+      provider: optionalEnum(search.provider, ['stripe', 'paypal', 'creem', 'paddle', 'polar']),
+      token: optionalString(search.token, 255),
+      subscription_id: optionalString(search.subscription_id, 255),
+      providerRef: optionalString(search.providerRef, 255),
+      canceled: optionalString(search.canceled),
+    }),
   component: BillingReturnPage,
 })
 function BillingReturnPage() {

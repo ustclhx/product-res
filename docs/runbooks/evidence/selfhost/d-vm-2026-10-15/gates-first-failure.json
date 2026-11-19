@@ -1,7 +1,0 @@
-{
-  "phase": "gates",
-  "passed": false,
-  "reason": "unknown HTTPS CA was not rejected",
-  "fixtureProblem": true,
-  "retainedForAudit": true
-}

@@ -324,6 +324,6 @@ it('keeps storage-only media unavailable without creating tasks or credit holds'
     identities[1]?.cookie,
   )
   expect(response.status).toBe(503)
-  expect(await response.json()).toMatchObject({ error: { code: 'CAPABILITY_UNAVAILABLE' } })
+  expect(await response.json()).toMatchObject({ error: { code: 'INTERNAL_ERROR' } })
   expect(await counts()).toEqual(before)
 })

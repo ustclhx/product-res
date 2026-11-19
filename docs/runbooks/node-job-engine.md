@@ -129,26 +129,6 @@ handler 的 Promise 必须涵盖整批全部在途工作；并行消费使用 al
 
 所有 jobs 必须注册相同 `applicationVersion` 的完整 handler 集与队列策略。DBOS 恢复会进入全局内部队列，不能让缺少对应 handler 或无法读取同一 ownership 目录的实例接走恢复任务；不同注册集的测试运行使用不同逻辑数据库，不并发复用同一 DBOS 应用版本。
 
-## 本批验证记录（2026-10-12）
-
-本地 Node 23.11.0（满足仓库 >=22）与独立 Postgres 17 容器，app/migrator/readonly 分权；没有请求外部业务 API 或 staging。
-
-- 业务迁移本地生成并在全新隔离库应用：`pnpm --filter @product-res/db exec drizzle-kit generate --name node_job_engine` → 5 张 `job_engine` 表；`db:migrate` → `pnpm --filter @product-res/platform dbos:migrate`，重复执行成功。生成的 SQL/meta 不提交，由协调者在 main 重生成。
-- 5.1.10 CLI 初始化旧 native schema；5.2.11 app probe 返回 `JOB_ENGINE_DATABASE_NOT_READY`；公共 migrate 升级及重复执行后 probe 返回 started。app CREATE/ALTER 和 readonly 正文读取/写入均拒绝，readonly 摘要查询通过。
-- caller Drizzle 的未提交/回滚/提交、10 条真实批次、发布前/接受后未标记/副作用后确认前 SIGKILL、双 jobs 消息级并发 2 与滑动 10 秒最多 3 次、独立队列及不可重试 DLQ 均有真实 PG 用例。
-- 六次真实生产退避测试耗时 956.43 秒，9 条成功成员各 1 次，失败成员 6 次后 DLQ，机器日志不含正文。5 次等待没有达到 900 秒封顶，不宣称实测了 900 秒等待。
-
-| 尝试 | UTC 时间 | 距前一次 |
-|---|---|---|
-| 1 | 11:42:04.863 | — |
-| 2 | 11:42:39.900 | 35.037 秒 |
-| 3 | 11:43:45.002 | 65.102 秒 |
-| 4 | 11:45:50.040 | 125.038 秒 |
-| 5 | 11:49:55.152 | 245.112 秒 |
-| 6 | 11:58:00.196 | 485.044 秒 |
-
-间隔为 30/60/120/240/480 秒退避加真实 5 秒聚合窗；该长跑之后的 ownership 修复由独立取消等待批次/同 ID 重启回归验证。清理时钟边界、active 数据与未消费 native 事件保护、30 天 DLQ 保留、close 后活进程拒绝同 ID、已退出 owner 的失败批次恢复和执行权丢失均由独立 PG 测试覆盖。模拟清理时钟不替代后续工作流的真实 60+ 分钟等待验收。
-
 ## 工作流装配、恢复与停机（B 3.1–3.4）
 
 在 `createNodeJobEngine` 的 `register(engine)` 内调用
@@ -223,49 +203,6 @@ ORDER BY created_at DESC LIMIT 100;
 注册集不同的 DBOS suite，长跑与快验使用独立数据库。长跑使用真实时钟，不用 fake timers
 或把数据库时间改老来冒充 60+ 分钟事件/1–2 小时流水线验收。
 
-### 本批工作流验证记录（2026-10-12）
-
-独立 worktree 命名的 Postgres 17.11 容器，Node 23.11.0、DBOS 固定 5.2.11；
-不同注册集使用不同隔离逻辑库，没有请求外部业务 API 或 staging。
-工作流快验 10 项通过（113.17 秒）；媒体 submit/persist 使用真实 10 秒 delay，
-persist 三次重试依次等待 10/20/30 秒，首次不计入 limit。
-消费事务提交后/native checkpoint 前 SIGKILL 验证结果仍可读取且事件不再次消费；
-另有副作用后/checkpoint 前 SIGKILL 验证幂等结果只产生一次。
-SIGTERM 定向回归 7.35 秒：受控排空后未完成 sleep 仍为 PENDING，同 ID 退出后
-重启使用原唤醒时刻与成功 step 结果，不用 terminate 冒充停机。
-
-单独升级库通过 5.1.10 CLI 初始化与重复初始化；5.2.11 app probe 明确返回
-`JOB_ENGINE_DATABASE_NOT_READY`。执行当前公共 migrate 两次后 app probe 返回 started，
-再运行 FIFO、原 wait deadline/晚到事件、原子消费恢复和 readonly 权限 4 项回归，
-14.40 秒全部通过。固定版 native 状态的读取/行锁路径在升级后实际运行；未来版本
-升级仍须重跑上述场景，不能从本次推导任意未来版本兼容。
-
-新增事件表及权限后，既有 `test:job-engine` 回归 2 个文件、13 项全部通过，
-耗时 1124.61 秒；覆盖真实六次生产退避/DLQ、caller tx、双 jobs 消息级限额、
-发布/确认窗口、ownership 与队列域清理。事件/wait 域的清理仍独立于队列入口。
-
-初版真实长跑在中段 resume 的 JSON `null` 载荷触发 SQL NOT NULL 约束而失败，
-该轮不作为通过证据。Drizzle 会跳过 JS null 的 JSON codec；适配器已在事件写入边界
-显式编码 JSON 并转换 jsonb，使 JSON null 与 SQL NULL 区分。
-补强原子消费测试使用 null 载荷，4.26 秒通过；修复后的完整工作流快验 10 项
-再次通过（112.22 秒），根目录检查/类型/测试/构建也再次通过。
-真实长跑把短 sleep/wait/中间成功步骤的三次退出注入前置，再使用 3661 秒的
-第二段真实 sleep 等待早到事件；仍验证原唤醒时间、同业务身份、1–2h 总时长
-与超过 60 分钟的原始事件时间，不修改数据库时钟或回填事件时间。
-
-最终真实长跑通过：测试耗时 **3668.08 秒**（约 61.1 分钟），同业务身份的 native
-运行记录为 **2026-10-12 13:07:17.213 UTC → 14:08:24.594 UTC**，
-`application_version = workflow-integration-v1`、状态 SUCCESS、recovery_attempts=4
-（首次执行加三次同版本重启）。列表、五次事务配额、十个详情、归并、汇总共
-**18 个 callback 全部各 1 次**，配额/详情 **15 个幂等副作用**完整。
-
-早到事件接收于 **13:07:17.227521 UTC**，在 **14:08:24.536766 UTC** 原子消费，
-真实保留 **3667.309 秒**，超过 60 分钟；API Date 还原后的 ISO 时间仍等于原发送时间。
-resume 等待的原 deadline 为 **13:08:21.247422 UTC**，重启后不改变；七个 native
-sleep 日志的原唤醒结果与重启前快照完全一致。两个等待结果均 completed，事件只消费一次。
-以上为正式 Node adapter 的隔离 PG 验收，失败旧轮不计入通过时长，也不替代服务器
-部署、跨代码版本热重放或整机资源验收。
-
 ## Node apps 装配与探活
 
 生产入口为 `apps/jobs/src/index.node.ts`，资源与生命周期在
@@ -293,33 +230,3 @@ Node 文件能力尚未装配时跳过文件清理分支，媒体 Workflow 继�
 关闭计费、积分与 AI 的域处理器仍保留 jobs、email/operations 和成功 heartbeat，
 具体开关组合与验证命令见扩展指南。
 
-### 本批装配验证（A 9.1、B 5.1/5.2/5.5，2026-10-13）
-
-使用本任务独立 Docker PG17/Valkey 与不同逻辑库；业务迁移和 DBOS 公共迁移
-先以 migrator 执行。app 的 CREATE 与历史 audit UPDATE、readonly 的写入和
-payload 读取实际被拒绝，未扩展运行时权限。开始时 #128 未合入，调度迁移仅在
-本地生成和应用，产物已恢复；交付前 rebase 已合入的 #128。
-
-- `pnpm check`、`check:deps`（7 项）、`check:singletons`、`dedupe --check` 通过。
-- `pnpm typecheck` 14/14、`pnpm test` 26/26、`pnpm build` 2/2 通过。
-  CF 原有队列/账本/hold、文件/空间清理和指标用例保持；初次内容编译因并发负载
-  超过原五秒时限，定向及全量重跑通过，没有放宽时限或断言。
-- `pnpm --filter @product-res/web test:node`：12 项目、687 项通过；
-  jobs `test:node`：11 文件、44 项通过。
-- jobs `test:node:integration`：2 项通过，60.53 秒。真实十条混合邮件：九条各
-  一次，暂时失败条按原 30 秒退避后成功；有效永久失败、已达到第六次的失败和
-  关闭计费后的有效事件均由真实 sink 写入持久 DLQ。第六次边界从持久第五次状态
-  构造，不把此用例称为完整六次生产时间轴；完整时钟证据见前述 B 2.x 记录。
-- 全关闭 billing/credits/AI 的注册在真实 jobs 中启动，实际等待下一五分钟 UTC
-  slot；schedule_run 成功与 heartbeat 均可查，随后 readiness 200，停止 scheduler
-  或消费者后 503。没有回填心跳、改变数据库时钟或用进程存活冒充成功。
-- `pnpm build:node` 2/2、18 个无生产凭据预渲染页面通过；jobs 外置依赖均在
-  manifest 声明且可解析，无 Workers/CF Sentry 依赖。
-- web `test:node:production`：6 项通过，真实 jobs HTTP 探测和完整 SHA/no-store；
-  jobs 退出后 web 健康 503，媒体提交 503 且 hold 数不变；原 HTTP 断连及 SIGTERM
-  用量结算回归通过。jobs 半开 socket 的生产停机也退出 0。
-- 探测 DB/cache 与任务状态分别受五秒上限约束；未完成引擎排空时不提前关闭业务池。
-  引擎实现保持原样，媒体 Workflow 和对象存储接线仍归后续 B 5.3/5.4 与 C。
-
-上述不是 Compose 认证邮件 e2e、镜像依赖闭包、服务器、整机预算或 main 自动
-staging 发布验收；不勾这些未分配项，不手工部署分支、不归档 change。

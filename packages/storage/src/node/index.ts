@@ -13,6 +13,7 @@ import {
   storageError,
   validateKey,
 } from './client.ts'
+import { createNodeShareCardObjects } from './share-cards.ts'
 
 export type { S3StorageConfig } from './client.ts'
 export { createNodeMediaCopier } from './media.ts'
@@ -36,6 +37,7 @@ export function createNodeStorage(config: S3StorageConfig): Storage {
   }
 
   return {
+    shareCards: createNodeShareCardObjects(config),
     head: (key) =>
       operation(key, 'STORAGE_HEAD_FAILED', async (client) => {
         try {

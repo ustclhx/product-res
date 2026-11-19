@@ -14,14 +14,24 @@ const publicPaths = [
   '/api/waitlist/',
   '/sitemap.xml',
   '/robots.txt',
+  '/llms.txt',
+  '/indexnow.txt',
+  '/guides/',
+  '/guides/$slug',
 ]
 
 vi.mock('../../server/template-config.ts', async (original) => {
   const actual = await original<typeof import('../../server/template-config.ts')>()
+  // 只切换 enabled，其余营销配置（区块内容、悬浮入口）沿用实际值；保持同一对象以便用例修改 enabled
+  Object.assign(marketing, { ...actual.templateConfig.marketing, enabled: marketing.enabled })
   return { ...actual, templateConfig: { ...actual.templateConfig, marketing } }
 })
 
 // 使用真实 Router 验证注册结果，隔离生成树中与入口裁剪无关的数据库和页面依赖。
+// 404 页经营销页头页脚引入整个 UI 组件库与语言偏好 Server Function，冷启动转换可达十余秒，
+// 与入口裁剪无关，一并替换为空组件。
+vi.mock('./not-found.tsx', () => ({ NotFoundPage: () => null }))
+
 function mockRouteTree() {
   vi.doMock('../../routeTree.gen', async () => {
     const { createRootRoute, createRoute } = await import('@tanstack/react-router')
@@ -45,6 +55,10 @@ function mockRouteTree() {
       '/api/waitlist/',
       '/sitemap.xml',
       '/robots.txt',
+      '/llms.txt',
+      '/indexnow.txt',
+      '/guides/',
+      '/guides/$slug',
     ]
     return {
       routeTree: root.addChildren(

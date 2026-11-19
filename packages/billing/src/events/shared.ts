@@ -15,6 +15,7 @@ import {
   subscription,
   user,
 } from '@product-res/db'
+import { AppError } from '@product-res/shared'
 import { and, eq, inArray, isNull, ne, sql } from 'drizzle-orm'
 import type { WebhookTransaction } from '../pipeline.ts'
 import type {
@@ -65,12 +66,17 @@ export const paymentScope = (provider: PaymentProviderId, id: string) =>
   and(eq(payment.provider, provider), eq(payment.providerPaymentId, id))
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 export function money(amount: number, currency: string) {
-  if (
-    !Number.isSafeInteger(amount) ||
-    amount < 0 ||
-    amount > 2_147_483_647 ||
-    currency.toUpperCase() !== 'USD'
-  )
+  // 平台只以 USD 定价与发放积分；其他币种说明结账配置异常，重投无法修复，需要人工处理。
+  if (typeof currency !== 'string' || currency.toUpperCase() !== 'USD')
+    throw new AppError(
+      'BILLING_CURRENCY_MISMATCH',
+      `BILLING_CURRENCY_MISMATCH: expected USD, received ${String(currency)
+        .replace(/[^A-Za-z]/g, '')
+        .slice(0, 8)
+        .toUpperCase()}`,
+      { status: 422 },
+    )
+  if (!Number.isSafeInteger(amount) || amount < 0 || amount > 2_147_483_647)
     throw new Error('Invalid billing amount or currency')
 }
 export async function priceFor(

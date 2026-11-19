@@ -14,6 +14,7 @@ import {
 import { AppError } from '@product-res/shared'
 import { and, eq, inArray, isNull, or } from 'drizzle-orm'
 import { type BillingProviders, lockWorkspaceBilling } from './events.ts'
+import { nextPastDueSince } from './past-due.ts'
 import type { WebhookTransaction } from './pipeline.ts'
 import type { SubscriptionSnapshot } from './provider.ts'
 import { auditSubscriptionChange } from './subscription-audit.ts'
@@ -168,6 +169,7 @@ async function persistSnapshot(
         ),
       )
     if (!mapping) fail('BILLING_SNAPSHOT_MISMATCH', 'Provider returned an unknown price')
+    const now = new Date()
     await tx
       .update(subscription)
       .set({
@@ -177,9 +179,13 @@ async function persistSnapshot(
         cancelAtPeriodEnd: snapshot.cancelAtPeriodEnd,
         canceledAt: snapshot.canceledAt,
         trialEnd: snapshot.trialEnd,
-        pastDueSince: snapshot.pastDueSince,
+        pastDueSince: nextPastDueSince(
+          sub.pastDueSince,
+          snapshot.status,
+          snapshot.pastDueSince ?? now,
+        ),
         raw: snapshot.raw,
-        lastEventAt: new Date(),
+        lastEventAt: now,
         ...(snapshot.currentPeriodEnd &&
         (!sub.currentPeriodEnd || snapshot.currentPeriodEnd >= sub.currentPeriodEnd)
           ? {
@@ -356,10 +362,9 @@ export async function changePlan(
       fail('BILLING_SUBSCRIPTION_CHANGED', 'Change the current renewing subscription')
   })
   if (price.id === sub.planPriceId) return { status: 'unchanged' as const }
-  // Rank determines tier changes. Within a tier, annual commitment upgrades monthly.
-  const atPeriodEnd =
-    target.sort < old.plan.sort ||
-    (target.sort === old.plan.sort && old.price.interval === 'year' && price.interval === 'month')
+  // 月付与年付互换一律在当前周期结束时生效：立即切换会按新周期开出调整账单，
+  // 年付款无法按续费入账。同周期内按档位排序：升级立即生效，降级周期末生效。
+  const atPeriodEnd = price.interval !== old.price.interval || target.sort < old.plan.sort
   await provider.changePlan(sub.providerSubscriptionId, price, { atPeriodEnd })
   if (!atPeriodEnd)
     await persistSnapshot(

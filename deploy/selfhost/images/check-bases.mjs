@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { assertPlatforms } from './policy.mjs'
+import { architectures, assertPlatforms } from './policy.mjs'
 
 const root = resolve(import.meta.dirname, '../../..')
 const catalog = JSON.parse(readFileSync(resolve(import.meta.dirname, 'catalog.json'), 'utf8'))
@@ -26,18 +26,19 @@ for (const reference of references) {
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   const index = JSON.parse(raw)
-  // 官方基础镜像可额外支持其他架构或携带 attestation；至少覆盖两个目标。
+  const linux = index.manifests.filter((item) => item.platform?.os === 'linux')
+  // 官方基础镜像可额外支持其他架构或携带 attestation；发布只要求含 amd64。
   assertPlatforms({
-    manifests: index.manifests.filter(
-      (item) =>
-        item.platform?.os === 'linux' && ['amd64', 'arm64'].includes(item.platform.architecture),
-    ),
+    manifests: linux.filter((item) => architectures.includes(item.platform.architecture)),
   })
+  // arm64 只影响 Apple Silicon 本机开发构建，缺失时提示而不阻断发布。
+  const localArm64 = linux.some((item) => item.platform.architecture === 'arm64')
   console.info(
     JSON.stringify({
-      event: 'selfhost.base.multiarch',
+      event: 'selfhost.base.platforms',
       reference,
-      platforms: ['linux/amd64', 'linux/arm64'],
+      platforms: architectures.map((arch) => `linux/${arch}`),
+      localArm64,
     }),
   )
 }

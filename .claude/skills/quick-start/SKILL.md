@@ -54,6 +54,8 @@ selfhost 团队工具可使用同一入口，设 `--target selfhost --image-name
 若明确使用 `--skip-check`，随后按 `scripts/create-project.mjs` 的 `verifyProject()` 方式补做以上三项。
 
 阅读生成的 `PROJECT_SETUP.md` 与 `.dev.vars.example`；资源 ID 是占位值，账号标识已清空。
+副本根的 `.template-base.json` 记录模板提交、版本与生成参数，随首个提交一起提交；
+之后采纳模板更新使用 `template-sync` 技能，缺少该文件时同步只能先做基准推断。
 生成器已把 `@product-res/*` 改为 `@<项目名>/*`。后续 filter 从副本 manifest 读取，避免使用模板 scope：
 
 ```sh
@@ -62,8 +64,7 @@ DB_PACKAGE=$(node -p "JSON.parse(require('fs').readFileSync('packages/db/package
 ```
 
 完成条件：三个自检步骤均退出 0；检查品牌/开关/包名符合选择。失败保留副本定位首个错误，
-报告该命令与退出码，不把「已生成」当作「自检通过」。需完整矩阵时才运行 `pnpm test:create-project:verify`，
-其真实副本、CI 环境与清理模式见 `scripts/create-project.verify.test.mjs`。
+报告该命令与退出码，不把「已生成」当作「自检通过」。新增组合通过临时副本的安装、类型检查和单元测试核验。
 
 ## 3. 本地 PG、迁移与配置
 

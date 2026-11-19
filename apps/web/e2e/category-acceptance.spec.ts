@@ -2,6 +2,7 @@ import { mkdirSync } from 'node:fs'
 import { expect, type Page, test } from '@playwright/test'
 import { categoryFixture } from '../test/fixtures/category-insight-data.ts'
 import { fixtureDb, register, simulateClientIp, waitForHydration } from './fixtures.ts'
+import { chooseOption } from './select.ts'
 import { stubTurnstile } from './turnstile.ts'
 
 // add-category-insight 4.1 验收：夹具市场数据 → 新建品类研究 → 报告 → 竞品矩阵转线索
@@ -70,7 +71,7 @@ test('品类洞察验收：新建研究 → 报告 → 转线索 → 候选可�
   await page.getByRole('button', { name: '新建研究' }).click()
   const form = page.getByRole('form', { name: '品类研究' })
   await form.getByLabel('研究名称').fill('宠物慢食碗验收')
-  await form.getByLabel('平台站点').selectOption('amazon-us')
+  await chooseOption(form.getByRole('combobox', { name: '平台站点' }), { value: 'amazon-us' })
   await form.getByLabel('类目 ID').fill(fx.categoryId)
   await form.getByLabel('关键词').fill(fx.keyword)
   await form.getByLabel('头部 N').fill('10')

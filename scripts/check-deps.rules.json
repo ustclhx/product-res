@@ -1,5 +1,14 @@
 {
   "description": "Cloudflare 边界：入口/目标夹具逐文件登记，业务没有过渡豁免。",
+  "uiOnlyDependencies": [
+    "radix-ui",
+    "@base-ui/*",
+    "motion",
+    "framer-motion",
+    "lucide-react",
+    "class-variance-authority"
+  ],
+  "forbiddenDependencies": ["@radix-ui/*"],
   "compositionEntries": [
     "apps/jobs/src/index.ts",
     "apps/web/src/server.ts",
@@ -18,6 +27,7 @@
     "apps/jobs/test/media-workflow.test.ts": ["cloudflare:workers"],
     "apps/jobs/test/metrics-daily.test.ts": ["cloudflare:test", "cloudflare:workers"],
     "apps/jobs/test/selection-review.test.ts": ["cloudflare:workers"],
+    "apps/jobs/test/server-analytics.test.ts": ["cloudflare:workers"],
     "apps/jobs/test/transfer-copy-review.test.ts": ["cloudflare:workers"],
     "apps/jobs/test/sentry.test.ts": ["cloudflare:test", "cloudflare:workers"],
     "apps/jobs/test/workspace-cleanup.test.ts": ["cloudflare:test", "cloudflare:workers"],
@@ -67,6 +77,7 @@
     "packages/db/test/setting.test.ts": ["cloudflare:workers"],
     "packages/storage/test/media.integration.test.ts": ["cloudflare:workers"],
     "packages/storage/test/storage.integration.test.ts": ["cloudflare:workers"],
+    "packages/storage/test/share-cards.integration.test.ts": ["cloudflare:workers"],
     "packages/platform/test/cloudflare.test.ts": [
       "cloudflare:test",
       "cloudflare:workers",

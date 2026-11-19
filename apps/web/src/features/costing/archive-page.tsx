@@ -10,7 +10,7 @@ import {
   TransferBar,
   useTransferSelection,
 } from '../transfer/transfer-actions.tsx'
-import { controlClass, EmptyState, ErrorText, Field, useAction } from '../workbench/fields.tsx'
+import { EmptyState, ErrorText, Field, useAction } from '../workbench/fields.tsx'
 import type { ArchiveRow } from './archive.server.ts'
 import {
   type ArchiveSearch,
@@ -21,6 +21,7 @@ import {
 import { formatMoney, formatRate, moneyInput, parseMoney } from './format.ts'
 import { ScoreCell } from './home-page.tsx'
 import { DROP_REASON_LABELS, FOLLOW_MODE_LABELS, PLATFORM_LABELS } from './labels.ts'
+import { ChoiceSelect } from './quote-editor.tsx'
 
 export type ArchiveData = Awaited<ReturnType<typeof getArchivePage>>
 type Detail = Awaited<ReturnType<typeof getDecisionDetail>>
@@ -42,7 +43,7 @@ export function ArchivePage({
     <div className="grid gap-4">
       <div className="grid gap-1">
         <h1 className="text-lg font-semibold">选品档案库</h1>
-        <p className="text-[13px] text-muted-foreground">
+        <p className="text-caption text-muted-foreground">
           这里显示决定当时保存的分数、置信度、权重版本与所选组合，不随线索重算变化。跟卖决定在计划上架日
           30 天后提醒回看。
         </p>
@@ -119,6 +120,7 @@ export function ArchivePage({
                     <Button
                       size="sm"
                       variant="ghost"
+                      className="text-foreground"
                       onClick={() => setOpenId(openId === r.id ? null : r.id)}
                     >
                       {openId === r.id ? '收起' : '查看快照'}
@@ -155,7 +157,7 @@ export function ArchivePage({
                   <Link
                     to="/app/$slug/category/$studyId"
                     params={{ slug, studyId: study.id }}
-                    className="text-primary hover:underline"
+                    className="text-primary-text hover:underline"
                   >
                     查看报告
                   </Link>
@@ -226,49 +228,46 @@ function Filters({
     <div className="flex flex-wrap items-end gap-3 rounded-xl border bg-card p-3">
       <Field label="平台" className="w-32">
         {(id) => (
-          <select
+          <ChoiceSelect
             id={id}
-            className={controlClass}
+            placeholder="全部"
             value={search.platform ?? ''}
-            onChange={(e) =>
-              set({ platform: (e.target.value || undefined) as ArchiveSearch['platform'] })
-            }
-          >
-            <option value="">全部</option>
-            <option value="amazon">{PLATFORM_LABELS.amazon}</option>
-            <option value="ebay">{PLATFORM_LABELS.ebay}</option>
-          </select>
+            options={[
+              { value: '', label: '全部' },
+              { value: 'amazon', label: PLATFORM_LABELS.amazon },
+              { value: 'ebay', label: PLATFORM_LABELS.ebay },
+            ]}
+            onChange={(platform) => set({ platform: platform || undefined })}
+          />
         )}
       </Field>
       <Field label="方向" className="w-44">
         {(id) => (
-          <select
+          <ChoiceSelect
             id={id}
-            className={controlClass}
+            placeholder="全部"
             value={search.directionId ?? ''}
-            onChange={(e) => set({ directionId: e.target.value || undefined })}
-          >
-            <option value="">全部</option>
-            {directions.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
+            options={[
+              { value: '', label: '全部' },
+              ...directions.map((d) => ({ value: d.id, label: d.name })),
+            ]}
+            onChange={(directionId) => set({ directionId: directionId || undefined })}
+          />
         )}
       </Field>
       <Field label="决定" className="w-28">
         {(id) => (
-          <select
+          <ChoiceSelect
             id={id}
-            className={controlClass}
+            placeholder="全部"
             value={search.kind ?? ''}
-            onChange={(e) => set({ kind: (e.target.value || undefined) as ArchiveSearch['kind'] })}
-          >
-            <option value="">全部</option>
-            <option value="follow">跟卖</option>
-            <option value="drop">放弃</option>
-          </select>
+            options={[
+              { value: '', label: '全部' },
+              { value: 'follow', label: '跟卖' },
+              { value: 'drop', label: '放弃' },
+            ]}
+            onChange={(kind) => set({ kind: kind || undefined })}
+          />
         )}
       </Field>
       <Field label="决定日期从" className="w-40">
@@ -276,7 +275,7 @@ function Filters({
           <Input
             id={id}
             type="date"
-            className="h-8 text-[13px]"
+            className="h-8 text-caption"
             value={search.from ?? ''}
             onChange={(e) => set({ from: e.target.value || undefined })}
           />
@@ -287,7 +286,7 @@ function Filters({
           <Input
             id={id}
             type="date"
-            className="h-8 text-[13px]"
+            className="h-8 text-caption"
             value={search.to ?? ''}
             onChange={(e) => set({ to: e.target.value || undefined })}
           />
@@ -315,7 +314,7 @@ function DetailPanel({ slug, id, canWrite }: { slug: string; id: string; canWrit
   const snap = detail.snapshot
   const sc = detail.scenario
   return (
-    <div className="grid gap-3 text-[13px]" data-testid="decision-snapshot">
+    <div className="grid gap-3 text-caption" data-testid="decision-snapshot">
       <div className="grid gap-2 md:grid-cols-4">
         <Fact label="综合分">{snap.lead.score == null ? '—' : snap.lead.score}</Fact>
         <Fact label="置信度">{formatRate(snap.lead.confidence, 0)}</Fact>
@@ -453,7 +452,7 @@ function OutcomeBlock({
                 id={id}
                 type="number"
                 min={0}
-                className="h-8 text-[13px]"
+                className="h-8 text-caption"
                 value={units}
                 onChange={(e) => setUnits(e.target.value)}
               />
@@ -464,7 +463,7 @@ function OutcomeBlock({
               <Input
                 id={id}
                 inputMode="decimal"
-                className="h-8 text-[13px]"
+                className="h-8 text-caption"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
               />
@@ -474,7 +473,7 @@ function OutcomeBlock({
             {(id) => (
               <Input
                 id={id}
-                className="h-8 text-[13px]"
+                className="h-8 text-caption"
                 value={note}
                 maxLength={500}
                 onChange={(e) => setNote(e.target.value)}

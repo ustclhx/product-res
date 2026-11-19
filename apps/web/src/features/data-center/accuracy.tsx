@@ -1,7 +1,18 @@
 import { parseBoughtText } from '@product-res/datasources'
-import { Button, DataTable, type DataTableColumn, Input, Tag } from '@product-res/ui'
+import {
+  Button,
+  DataTable,
+  type DataTableColumn,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  Tag,
+} from '@product-res/ui'
 import { useCallback, useEffect, useState } from 'react'
 import { m } from '../../paraglide/messages.js'
+import { dataTableLabels } from '../i18n/table-labels.ts'
 import {
   generateAccuracyAudit,
   getAccuracy,
@@ -11,6 +22,9 @@ import {
 import { type AccuracyKpis, fieldLabel, percent } from './accuracy-kpi.tsx'
 import { intervalText, TierTag } from './observation-cells.tsx'
 import { errorText, formatNumber, formatTime, Section } from './shared.tsx'
+
+/** 「可售」未填写的占位值：Select 的选项值不能为空串，读写时换回 '' */
+const AVAILABLE_UNSET = '__unset__'
 
 type AccuracyData = Awaited<ReturnType<typeof getAccuracy>>
 type AuditItem = AccuracyData['items'][number]
@@ -38,6 +52,7 @@ interface Collected {
 }
 
 const tableLabels = () => ({
+  ...dataTableLabels(),
   previous: m.accuracy_previous(),
   next: m.accuracy_next(),
   page: (page: number, count: number | null) =>
@@ -156,7 +171,7 @@ export function AuditItemForm({
       {sources.length === 0 ? (
         <p className="text-xs text-muted-foreground">{m.accuracy_no_collected()}</p>
       ) : null}
-      <table className="w-full min-w-[560px] text-xs">
+      <table className="w-full min-w-140 text-xs">
         <thead className="text-muted-foreground">
           <tr>
             <th className="py-1 pr-2 text-left font-medium">{m.accuracy_field()}</th>
@@ -198,17 +213,30 @@ export function AuditItemForm({
               </td>
               <td className="py-1 pr-2">
                 {field === 'available_quantity' ? (
-                  <select
-                    aria-label={fieldLabel(field)}
-                    className="h-8 rounded-md border bg-background px-2"
+                  <Select
                     disabled={readOnly}
-                    value={draft[field]}
-                    onChange={(e) => setDraft({ ...draft, [field]: e.target.value })}
+                    value={draft[field] || AVAILABLE_UNSET}
+                    onValueChange={(v) =>
+                      setDraft({ ...draft, [field]: v === AVAILABLE_UNSET ? '' : v })
+                    }
                   >
-                    <option value="">{m.accuracy_available_unset()}</option>
-                    <option value="yes">{m.accuracy_available_yes()}</option>
-                    <option value="no">{m.accuracy_available_no()}</option>
-                  </select>
+                    <SelectTrigger
+                      aria-label={fieldLabel(field)}
+                      className="h-8"
+                      placeholder={m.accuracy_available_unset()}
+                    />
+                    <SelectContent>
+                      <SelectItem index={0} value={AVAILABLE_UNSET}>
+                        {m.accuracy_available_unset()}
+                      </SelectItem>
+                      <SelectItem index={1} value="yes">
+                        {m.accuracy_available_yes()}
+                      </SelectItem>
+                      <SelectItem index={2} value="no">
+                        {m.accuracy_available_no()}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 ) : (
                   <Input
                     aria-label={fieldLabel(field)}
@@ -366,7 +394,7 @@ export function AccuracyAudit({
               href={item.link}
               target="_blank"
               rel="noreferrer noopener"
-              className="text-xs text-primary underline"
+              className="text-xs text-primary-text underline"
             >
               {m.accuracy_open_page()}
             </a>

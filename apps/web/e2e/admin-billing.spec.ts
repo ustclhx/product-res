@@ -19,6 +19,8 @@ test('fresh platform admin can list and reject without payment credentials', asy
   const sql = fixtureDb()
   const email = `admin-billing-${randomUUID()}@example.com`
   const id = randomUUID()
+  const plan = randomUUID()
+  const price = randomUUID()
   try {
     await simulateClientIp(page)
     await stubTurnstile(page)
@@ -30,8 +32,6 @@ test('fresh platform admin can list and reject without payment credentials', asy
       await sql`select organization_id as id from member where user_id=${account?.id} and role='owner' limit 1`
     if (!account || !workspace) throw new Error('Missing account fixture')
     await sql`update "user" set role='admin' where id=${account.id}`
-    const plan = randomUUID()
-    const price = randomUUID()
     const purchase = randomUUID()
     const payment = randomUUID()
     await sql`insert into plan(id,key,name,type,credits,features) values(${plan},${plan},'Admin fixture','credit_pack',100,'{"models":[],"maxConcurrentTasks":1,"maxSeats":1,"storageGb":1,"publicApi":false,"priorityQueue":false,"watermark":true}'::jsonb)`
@@ -106,6 +106,9 @@ test('fresh platform admin can list and reject without payment credentials', asy
       page.getByRole('heading', { name: uiText('admin_billing_administration') }),
     ).toHaveCount(0)
   } finally {
+    // 夹具套餐与价格默认 active，购买与退款记录仍引用它们不能删除；停用后不再进入公开价格目录。
+    await sql`update plan_price set active=false where id=${price}`
+    await sql`update plan set active=false where id=${plan}`
     await sql.end()
   }
 })

@@ -50,7 +50,7 @@ const subscription = {
     data: [
       {
         id: 'si_test',
-        price: { id: 'price_current' },
+        price: { id: 'price_current', recurring: { interval: 'month' } },
         quantity: 2,
         current_period_start: 1800000000,
         current_period_end: 1802592000,
@@ -163,6 +163,7 @@ describe('Stripe checkout and transport', () => {
       expect(request?.headers.get('idempotency-key')).toBe(input.idempotencyKey)
       expect(request?.body.get('mode')).toBe(mode === 'one_time' ? 'payment' : mode)
       expect(request?.body.get('managed_payments[enabled]')).toBe('false')
+      expect(request?.body.get('adaptive_pricing[enabled]')).toBe('false')
       const dataKey = mode === 'subscription' ? 'subscription_data' : 'payment_intent_data'
       for (const [key, value] of Object.entries(metadata)) {
         expect(request?.body.get(`metadata[${key}]`)).toBe(value)
@@ -227,7 +228,7 @@ describe('Stripe subscription management', () => {
     mock.complete()
   })
 
-  it('defers downgrade to the item period end and releases after one new interval', async () => {
+  it('defers an interval change to the item period end and restarts the anchor there', async () => {
     const mock = mockStripe([
       { method: 'GET', path: '/v1/subscriptions/sub_test', body: subscription },
       { method: 'POST', path: '/v1/subscription_schedules', body: schedule },
@@ -257,6 +258,24 @@ describe('Stripe subscription management', () => {
     expect(body?.get('proration_behavior')).toBe('none')
     expect(body?.get('phases[1][proration_behavior]')).toBe('none')
     expect(body?.get('end_behavior')).toBe('release')
+    // 周期变更必须从新阶段起点重置锚点，否则 Stripe 把当前周期延长为新周期且不开票
+    expect(body?.get('phases[1][billing_cycle_anchor]')).toBe('phase_start')
+    expect(body?.get('phases[0][billing_cycle_anchor]')).toBeNull()
+    mock.complete()
+  })
+
+  it('keeps the original anchor for a same-interval downgrade', async () => {
+    const mock = mockStripe([
+      { method: 'GET', path: '/v1/subscriptions/sub_test', body: subscription },
+      { method: 'POST', path: '/v1/subscription_schedules', body: schedule },
+      { method: 'POST', path: '/v1/subscription_schedules/sub_sched_test', body: schedule },
+    ])
+    await mock.operations.changePlan('sub_test', targetPrice, { atPeriodEnd: true })
+    const body = mock.requests[2]?.body
+    expect(body?.get('phases[1][duration][interval]')).toBe('month')
+    expect(body?.get('phases[1][items][0][price]')).toBe('price_next')
+    expect(body?.get('phases[0][billing_cycle_anchor]')).toBeNull()
+    expect(body?.get('phases[1][billing_cycle_anchor]')).toBeNull()
     mock.complete()
   })
 
@@ -326,6 +345,11 @@ describe('Stripe subscription management', () => {
 
   it('resumes renewal and opens the portal with the supplied return URL', async () => {
     const mock = mockStripe([
+      {
+        method: 'GET',
+        path: '/v1/subscriptions/sub_test',
+        body: { ...subscription, cancel_at_period_end: true, cancel_at: 1802592000 },
+      },
       { method: 'POST', path: '/v1/subscriptions/sub_test', body: subscription },
       {
         method: 'POST',
@@ -334,12 +358,54 @@ describe('Stripe subscription management', () => {
       },
     ])
     await mock.operations.resumeSubscription('sub_test')
-    expect(mock.requests[0]?.body.get('cancel_at_period_end')).toBe('false')
+    expect(mock.requests[1]?.body.get('cancel_at_period_end')).toBe('false')
+    expect(mock.requests[1]?.body.has('cancel_at')).toBe(false)
     expect(await mock.operations.getPortalUrl('cus_test', 'https://app.example/billing')).toBe(
       'https://billing.stripe.com/offline',
     )
-    expect(mock.requests[1]?.body.get('customer')).toBe('cus_test')
-    expect(mock.requests[1]?.body.get('return_url')).toBe('https://app.example/billing')
+    expect(mock.requests[2]?.body.get('customer')).toBe('cus_test')
+    expect(mock.requests[2]?.body.get('return_url')).toBe('https://app.example/billing')
+  })
+
+  // Customer Portal 的周期末取消：cancel_at=周期末、cancel_at_period_end 仍为 false（xuanxue 实测）
+  const portalCanceled = { ...subscription, cancel_at: 1802592000, canceled_at: 1801000000 }
+
+  it('resumes a portal-style cancellation by clearing cancel_at', async () => {
+    const mock = mockStripe([
+      { method: 'GET', path: '/v1/subscriptions/sub_test', body: portalCanceled },
+      { method: 'POST', path: '/v1/subscriptions/sub_test', body: subscription },
+    ])
+    await mock.operations.resumeSubscription('sub_test')
+    expect(mock.requests[1]?.body.get('cancel_at')).toBe('')
+    expect(mock.requests[1]?.body.has('cancel_at_period_end')).toBe(false)
+    mock.complete()
+  })
+
+  it.each([true, false])(
+    'rejects plan changes (atPeriodEnd=%s) while a portal cancellation is pending',
+    async (atPeriodEnd) => {
+      const mock = mockStripe([
+        { method: 'GET', path: '/v1/subscriptions/sub_test', body: portalCanceled },
+      ])
+      await expect(
+        mock.operations.changePlan('sub_test', targetPrice, { atPeriodEnd }),
+      ).rejects.toThrow('Resume the subscription')
+      mock.complete()
+    },
+  )
+
+  it('does not treat a far-future cancel_at as a period-end cancellation', async () => {
+    const mock = mockStripe([
+      {
+        method: 'GET',
+        path: '/v1/subscriptions/sub_test',
+        body: { ...subscription, cancel_at: 1802592000 + 86400 * 60 },
+      },
+      { method: 'POST', path: '/v1/subscriptions/sub_test', body: subscription },
+    ])
+    await mock.operations.changePlan('sub_test', targetPrice, { atPeriodEnd: false })
+    expect(mock.requests[1]?.body.get('items[0][price]')).toBe('price_next')
+    mock.complete()
   })
 
   it('rejects multi-item subscriptions before a destructive plan update', async () => {

@@ -1,17 +1,15 @@
 import { cloudflareTest } from '@cloudflare/vitest-plugin'
 import { isPostgresSocketRejection } from '@product-res/db/test/postgres-socket-rejection'
-import { readLocalEnv } from '@product-res/db/worktree-env'
+import { resolveTestDatabase } from '@product-res/db/test-database'
 import { defineConfig } from 'vitest/config'
 
-// 集成测试连接的本地库：环境变量 → .env.worktree → 主 checkout 的 product_res_dev。
+// 集成测试连接的本地库：环境变量 → .env.worktree，且必须是隔离库（@product-res/db/test-database）。
+// 本地未配置时立即失败，不回退到主 checkout 的开发库；ALLOW_TEST_ON_DEV_DATABASE=1 时才使用它。
 // CI 中未显式提供连接串时跳过集成测试（与 @product-res/db 一致）。
 const HYPERDRIVE_ENV = 'CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE'
-const fallback = (url: string) => (process.env.CI ? undefined : url)
-const appUrl =
-  readLocalEnv(HYPERDRIVE_ENV) ?? fallback('postgres://app:app@localhost:5432/product_res_dev')
-const migratorUrl =
-  readLocalEnv('MIGRATION_DATABASE_URL') ??
-  fallback('postgres://migrator:migrator@localhost:5432/product_res_dev')
+const database = resolveTestDatabase('@product-res/jobs', { devFallback: true })
+const appUrl = database?.appUrl
+const migratorUrl = database?.migratorUrl
 
 const integration = appUrl && migratorUrl
 if (integration) {
@@ -28,7 +26,8 @@ export default defineConfig({
     // postgres.js 在 workerd 中连接失败 / 断开时内部未处理的 rejection，见该函数注释
     onUnhandledError: (error) => !isPostgresSocketRejection(error),
     projects: [
-      { test: { name: 'unit', include: ['test/**/*.unit.test.ts'] } },
+      // src 内的单元测试（如 notifications/analytics.test.ts）此前未被任何 project 收录，一并运行。
+      { test: { name: 'unit', include: ['test/**/*.unit.test.ts', 'src/**/*.test.ts'] } },
       ...(integration
         ? [
             {

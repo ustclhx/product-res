@@ -41,7 +41,7 @@ export interface KeyValueStore {
   delete(key: string): Promise<void>
 }
 
-export type RateLimitPolicy = 'auth' | 'ai' | 'api'
+export type RateLimitPolicy = 'auth' | 'ai' | 'api' | 'shareCard'
 export interface RateLimiter {
   limit(policy: RateLimitPolicy, key: string): Promise<{ success: boolean }>
 }

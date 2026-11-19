@@ -1,0 +1,54 @@
+{
+  "product-intro@v1": {
+    "zh-kettle": {
+      "input": "sha256:3e20b89ac6b3201600d68070cf5021a58edd5208fba032f0cc747eba613af011",
+      "rendered": "sha256:a74ef5b40e0643fbb7a958023d09719b5eb51885cefcc2bdb0dc25175a9419b8"
+    },
+    "zh-bike": {
+      "input": "sha256:83f6f714d265d52237aadd85e75e871b7d666a7b9357d50f24feaf9276f86bb7",
+      "rendered": "sha256:cc4bc4ece1f4008f9a8f30904dd60bb0d52c0dd406881b8bfad98bc64de462d7"
+    },
+    "zh-planner": {
+      "input": "sha256:cad29b8aafdb3493c8dda604f1cf26b396a3d0851277ecb2f561f40a3b845937",
+      "rendered": "sha256:efe1445419b17a48f3b4fad37a66b225569a40385b4b8acb936567dec3d41bc0"
+    },
+    "en-lantern": {
+      "input": "sha256:6fcd25115ac6baad0e4400bc66dbe04dde8ebe761be7dfc74b6ac3a9b2dd70f7",
+      "rendered": "sha256:290f076ce66c8290ce807f7ae7d2f17b2fa6e645912c69658c776e80866bd7b5"
+    },
+    "en-flashcards": {
+      "input": "sha256:a1fcb0263d7763e150aa41e78b49141e62b6efe631b46d7c23e4c385bf9d1d01",
+      "rendered": "sha256:287cdf2992b839e0d1359e7f55d024763ad18c09f8de091e3157a34d3f06b034"
+    },
+    "en-mug": {
+      "input": "sha256:c48e63e4845f6ce371f5ab15c4cbf4a22c876ddc47fd2b7173b56545aef12f94",
+      "rendered": "sha256:3e3ba3e032a4baa3e34d812c44c14876a25284948dbae433dd3065f6707ba40f"
+    }
+  },
+  "product-intro@v2": {
+    "zh-kettle": {
+      "input": "sha256:3e20b89ac6b3201600d68070cf5021a58edd5208fba032f0cc747eba613af011",
+      "rendered": "sha256:1f34f0b5cad6a9571e880d006c1703215fd9ef1f234f2ad4d81d2e6887ddb75d"
+    },
+    "zh-bike": {
+      "input": "sha256:83f6f714d265d52237aadd85e75e871b7d666a7b9357d50f24feaf9276f86bb7",
+      "rendered": "sha256:d1a2e715a34cf49000bcad2ad7507ce022830a15551e496555577ba643ef7a3b"
+    },
+    "zh-planner": {
+      "input": "sha256:cad29b8aafdb3493c8dda604f1cf26b396a3d0851277ecb2f561f40a3b845937",
+      "rendered": "sha256:9744ac92366281cde24c1a77346c46dabbee85a0a4d61f46c14df7e1afab35ae"
+    },
+    "en-lantern": {
+      "input": "sha256:6fcd25115ac6baad0e4400bc66dbe04dde8ebe761be7dfc74b6ac3a9b2dd70f7",
+      "rendered": "sha256:3859fd16f3a85ea3a3417e02155776e2e87ab74a619279b4acec1684a4838a63"
+    },
+    "en-flashcards": {
+      "input": "sha256:a1fcb0263d7763e150aa41e78b49141e62b6efe631b46d7c23e4c385bf9d1d01",
+      "rendered": "sha256:a7718ea0ff68af15aa9d32bf608ad3d2da62d415e4fbd81a5b0eb2a896c2cf32"
+    },
+    "en-mug": {
+      "input": "sha256:c48e63e4845f6ce371f5ab15c4cbf4a22c876ddc47fd2b7173b56545aef12f94",
+      "rendered": "sha256:ee1da1c6595f025aecdbe2afb8f8f70813500f657137681e50eea8728b9f321d"
+    }
+  }
+}

@@ -10,6 +10,7 @@
   "account_profile_submit": "Save profile",
   "account_profile_saved": "Profile saved.",
   "account_preferences_heading": "Language and time zone",
+  "account_preferences_timezoneheading": "Time zone",
   "account_preferences_locale": "Language",
   "account_preferences_localedefault": "Default",
   "account_preferences_timezone": "Time zone",

@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { m } from '../../paraglide/messages.js'
 import { baseLocale, locales, overwriteGetLocale } from '../../paraglide/runtime.js'
 import {
-  CHAT_ERROR_FALLBACK,
   type ChatUIMessage,
   chatErrorCode,
   chatErrorMessage,
   chatRequestBody,
+  mergeStoredReply,
   messageDisplayParts,
   messageReasoning,
   messageRetrying,
@@ -16,7 +17,7 @@ import {
 } from './conversation.ts'
 
 const locale = locales.find((locale) => String(locale) === 'en') ?? baseLocale
-const fallback = String(locale) === 'zh' ? '操作失败，请重试。' : CHAT_ERROR_FALLBACK
+const fallback = () => m.chat_error_unknown()
 beforeEach(() => overwriteGetLocale(() => locale))
 afterEach(() => overwriteGetLocale(() => baseLocale))
 
@@ -164,13 +165,13 @@ describe('chat errors', () => {
       'UPGRADE_REQUIRED',
       'MODEL_UNAVAILABLE',
     ])
-      expect(chatErrorMessage(code)).not.toBe(fallback)
+      expect(chatErrorMessage(code)).not.toBe(fallback())
   })
 
   it('无法识别的错误使用通用提示', () => {
     expect(chatErrorCode(new Error('Failed to fetch'))).toBeUndefined()
-    expect(chatErrorMessage(undefined)).toBe(fallback)
-    expect(chatErrorMessage('SOMETHING_NEW')).toBe(fallback)
+    expect(chatErrorMessage(undefined)).toBe(fallback())
+    expect(chatErrorMessage('SOMETHING_NEW')).toBe(fallback())
   })
 })
 
@@ -189,4 +190,53 @@ it('历史读取开启时保留 reasoning，关闭时连已保存的 reasoning �
   ]
   expect(messageDisplayParts(parts, true)).toEqual(parts.slice(0, 2))
   expect(messageDisplayParts(parts, false)).toEqual([{ type: 'text', text: 'answer' }])
+})
+
+describe('mergeStoredReply', () => {
+  it('只改 part 内容不增删：正文与最后一次尝试的 reasoning 换成保存的版本，带上状态与积分', () => {
+    const local: ChatUIMessage = {
+      id: 'r1',
+      role: 'assistant',
+      metadata: { conversationId: 'c', messageId: 'r1' },
+      parts: [
+        { type: 'step-start' },
+        { type: 'reasoning', text: 'old attempt', state: 'done' },
+        { type: 'data-retry', data: { n: 1 } },
+        { type: 'reasoning', text: 'Thinking', state: 'streaming' },
+        { type: 'text', text: 'Partial', state: 'streaming' },
+        { type: 'text', text: ' more', state: 'streaming' },
+      ],
+    }
+    const merged = mergeStoredReply(local, {
+      id: 'r1',
+      role: 'assistant',
+      parts: [
+        { type: 'reasoning', text: 'Thinking longer' },
+        { type: 'text', text: 'Partial more and the saved tail' },
+      ],
+      status: 'aborted',
+      credits: 2,
+      modelKey: 'deepseek',
+    })
+    expect(merged.parts.map((part) => part.type)).toEqual(local.parts.map((part) => part.type))
+    expect(messageText(merged)).toBe('Partial more and the saved tail')
+    expect(messageReasoning(merged)).toBe('Thinking longer')
+    expect(merged.parts[1]).toMatchObject({ text: 'old attempt' })
+    expect(merged.metadata).toEqual({
+      conversationId: 'c',
+      messageId: 'r1',
+      status: 'aborted',
+      credits: 2,
+      modelKey: 'deepseek',
+    })
+  })
+
+  it('本地还没有正文时追加保存的正文', () => {
+    const merged = mergeStoredReply(
+      { id: 'r1', role: 'assistant', parts: [{ type: 'step-start' }] },
+      { id: 'r1', role: 'assistant', parts: [{ type: 'text', text: 'Saved' }], status: 'failed' },
+    )
+    expect(messageText(merged)).toBe('Saved')
+    expect(merged.metadata?.status).toBe('failed')
+  })
 })

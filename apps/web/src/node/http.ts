@@ -1,9 +1,12 @@
+import { plausibleSite } from '@product-res/config'
 import type { NodeEnv } from '@product-res/config/node'
 import { createNodeRequestMetadata, withNodeRequestContext } from '@product-res/platform/node'
 import { log } from '@product-res/shared/log'
 import { useNitroApp as getNitroApp, useNitroHooks as getNitroHooks } from 'nitro/app'
 import type { ServerRequest } from 'srvx'
 import { serve } from 'srvx/node'
+import { withSecurityHeaders, withStaticSecurityHeaders } from '../security-headers.ts'
+import { templateConfig } from '../server/template-config.ts'
 import { captureNodeError, type NodeWebObserver } from './observer-context.ts'
 import { attachWebRuntime } from './request-runtime.ts'
 import { createNodeWebProcess, prerenderRuntime } from './runtime.ts'
@@ -16,14 +19,35 @@ let observer: NodeWebObserver | undefined
 
 /** Nitro preview 导入同一 fetch，但不会执行下面的生产 listen 分支。 */
 export async function fetch(request: ServerRequest): Promise<Response> {
-  if (stopping) return new Response('Service Unavailable', { status: 503 })
-  // server map 始终保存在 server 输出，静态路由也明确拒绝所有 map 请求。
-  if (new URL(request.url).pathname.endsWith('.map'))
-    return new Response('Not Found', { status: 404 })
+  const security = {
+    https: new URL(request.url).protocol === 'https:',
+    sentryDsn: process.env.SENTRY_DSN,
+    analyticsOrigin: (
+      plausibleSite(templateConfig.features.analytics, process.env) ??
+      plausibleSite(templateConfig.features.analytics, {
+        PLAUSIBLE_DOMAIN: templateConfig.analytics.plausibleDomain,
+        PLAUSIBLE_HOST: templateConfig.analytics.plausibleHost,
+        PLAUSIBLE_SITES: templateConfig.analytics.plausibleSites,
+      })
+    )?.origin,
+    clarity: Boolean(templateConfig.analytics.clarityProjectId.trim()),
+    storageOrigin: process.env.S3_ENDPOINT,
+  }
   const meta = (resources?.metadata ?? previewMetadata)(
     request,
     request.runtime?.node?.req.socket.remoteAddress,
   )
+  if (stopping)
+    return new Response('Service Unavailable', {
+      status: 503,
+      headers: withSecurityHeaders({ 'x-request-id': meta.requestId }, security),
+    })
+  // server map 始终保存在 server 输出，静态路由也明确拒绝所有 map 请求。
+  if (new URL(request.url).pathname.endsWith('.map'))
+    return new Response('Not Found', {
+      status: 404,
+      headers: withSecurityHeaders({ 'x-request-id': meta.requestId }, security),
+    })
   const release = resources?.background.beginRequest()
   let handlerDone = false
   let outputDone = !request.runtime?.node?.res
@@ -39,7 +63,7 @@ export async function fetch(request: ServerRequest): Promise<Response> {
         if (new URL(request.url).pathname === '/internal/live')
           return Response.json(
             { status: 'ok', version: __APP_VERSION__ },
-            { headers: { 'cache-control': 'no-store' } },
+            { headers: withSecurityHeaders({ 'cache-control': 'no-store' }, security) },
           )
         // srvx 的惰性 Request 继承原生 prototype，却没有 Undici 的内部槽。
         // SSR bundle 中的 new Request(input) 会把它误认作原生实例；在跨 bundle
@@ -54,10 +78,22 @@ export async function fetch(request: ServerRequest): Promise<Response> {
         const nativeRequest = new Request(request.url, init)
         attachWebRuntime(nativeRequest, resources?.requestRuntime(meta) ?? prerenderRuntime(meta))
         try {
-          return await nitroApp.fetch(nativeRequest)
+          const response = await nitroApp.fetch(nativeRequest)
+          // SSR 已授权本请求的 nonce；Nitro 静态资源（含预渲染首页）在这里补头与内容哈希。
+          if (response.headers.has('Content-Security-Policy-Report-Only')) return response
+          const secured = await withStaticSecurityHeaders(response, security)
+          // 分享卡片字体与 Workers 的 _headers 一致：长期缓存且不被索引
+          if (new URL(request.url).pathname.startsWith('/fonts/share-card/') && secured.ok) {
+            secured.headers.set('Cache-Control', 'public, max-age=31536000, immutable')
+            secured.headers.set('X-Robots-Tag', 'noindex')
+          }
+          return secured
         } catch (error) {
           if (observer) captureNodeError(observer, error, { requestId: meta.requestId })
-          throw error
+          return new Response('Internal Server Error', {
+            status: 500,
+            headers: withSecurityHeaders({}, security),
+          })
         }
       }),
     )

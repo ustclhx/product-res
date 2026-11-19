@@ -1,4 +1,4 @@
-import { Button, cn, Tag } from '@product-res/ui'
+import { Button, cn, Select, SelectContent, SelectItem, SelectTrigger, Tag } from '@product-res/ui'
 import { Link, useNavigate, useRouter } from '@tanstack/react-router'
 import { type ReactNode, useEffect, useState } from 'react'
 import { marketplaceLabel } from '../follow/marketplaces.ts'
@@ -69,7 +69,7 @@ export function CategoryReportPage({ slug, data }: { slug: string; data: ReportD
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="grid gap-1">
           <nav className="text-xs text-muted-foreground">
-            <Link to="/app/$slug/category" params={{ slug }} className="hover:text-primary">
+            <Link to="/app/$slug/category" params={{ slug }} className="hover:text-primary-text">
               品牌选品
             </Link>
             <span className="px-1">/</span>
@@ -84,28 +84,33 @@ export function CategoryReportPage({ slug, data }: { slug: string; data: ReportD
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {snapshots.length > 0 ? (
-            <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              快照
-              <select
-                aria-label="快照"
-                className={cn(controlClass, 'w-auto min-w-[180px]')}
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span aria-hidden>快照</span>
+              <Select
                 value={snapshot?.id ?? ''}
-                onChange={(e) =>
+                onValueChange={(v) =>
                   navigate({
                     to: '/app/$slug/category/$studyId',
                     params: { slug, studyId: study.id },
-                    search: e.target.value === latestId ? {} : { snapshot: e.target.value },
+                    search: v === latestId ? {} : { snapshot: v },
                   })
                 }
               >
-                {snapshots.map((s, i) => (
-                  <option key={s.id} value={s.id}>
-                    {fmtDateTime(s.generatedAt)}
-                    {i === 0 ? '（最新）' : ''}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <SelectTrigger
+                  aria-label="快照"
+                  className="h-8 w-auto min-w-45 text-caption text-foreground"
+                  placeholder="快照"
+                />
+                <SelectContent>
+                  {snapshots.map((s, i) => (
+                    <SelectItem key={s.id} index={i} value={s.id}>
+                      {fmtDateTime(s.generatedAt)}
+                      {i === 0 ? '（最新）' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           ) : null}
           {data.canWrite ? (
             <>
@@ -208,7 +213,7 @@ function Report({
         <Link
           to="/app/$slug/data"
           params={{ slug }}
-          className="mx-0.5 text-primary hover:underline"
+          className="mx-0.5 text-primary-text hover:underline"
         >
           数据中心
         </Link>
@@ -303,24 +308,24 @@ function Report({
             <div className="grid gap-1">
               <SeriesHead
                 label="月搜索量"
-                dot="#1677ff"
+                dot="bg-primary"
                 source={<SummarySources sources={modules.trend.searchSources} />}
               />
               <TrendChart
                 points={modules.trend.points}
                 metric="searchVolume"
-                color="#1677ff"
+                tone="primary"
                 label="月搜索量"
               />
               <SeriesHead
                 label="月销量估算（匹配商品合计）"
-                dot="#52c41a"
+                dot="bg-success"
                 source={<SummarySources sources={modules.trend.salesSources} />}
               />
               <TrendChart
                 points={modules.trend.points}
                 metric="salesEstimate"
-                color="#52c41a"
+                tone="success"
                 label="月销量估算"
                 nodeLabels={false}
               />
@@ -438,11 +443,20 @@ function Panel({
   )
 }
 
-function SeriesHead({ label, dot, source }: { label: string; dot: string; source: ReactNode }) {
+function SeriesHead({
+  label,
+  dot,
+  source,
+}: {
+  label: string
+  /** 圆点背景色工具类，与曲线 token 一致 */
+  dot: 'bg-primary' | 'bg-success'
+  source: ReactNode
+}) {
   return (
     <div className="flex items-center justify-between text-xs text-muted-foreground">
       <span className="inline-flex items-center gap-1.5">
-        <span className="size-2 rounded-full" style={{ background: dot }} />
+        <span className={cn('size-2 rounded-full', dot)} />
         {label}
       </span>
       {source}
@@ -457,10 +471,10 @@ function NoSource({ reason, compact = false }: { reason: string; compact?: boole
       data-testid="no-source"
       className={cn(
         'grid place-content-center justify-items-center gap-1 rounded-lg border border-dashed bg-muted/40 px-4 text-center',
-        compact ? 'py-2' : 'min-h-[140px] py-6',
+        compact ? 'py-2' : 'min-h-35 py-6',
       )}
     >
-      <span className="text-[13px] font-medium text-muted-foreground">{NO_SOURCE}</span>
+      <span className="text-caption font-medium text-muted-foreground">{NO_SOURCE}</span>
       {reason ? <span className="text-xs text-subtle-foreground">{reason}</span> : null}
     </div>
   )
@@ -536,7 +550,7 @@ function PainPanel({ modules }: { modules: SnapshotModules }) {
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium">痛点主题占比</span>
               {themes.status === 'ok' ? (
-                <span className="text-[11px] text-subtle-foreground">
+                <span className="text-micro text-subtle-foreground">
                   AI 归纳 {themes.analyzed} 条差评 · {themes.ai.modelKey}
                   {themes.ai.reusedFrom ? ' · 沿用上一份结果' : ''}
                 </span>
@@ -581,7 +595,7 @@ function AiRunning({ reason }: { reason: string }) {
     <p
       data-testid="ai-running"
       role="status"
-      className="flex items-center gap-2 rounded-md bg-primary-soft px-3 py-2 text-xs text-primary"
+      className="flex items-center gap-2 rounded-md bg-primary-soft px-3 py-2 text-xs text-primary-text"
     >
       <span className="size-2 shrink-0 animate-pulse rounded-full bg-current" aria-hidden />
       <span>
@@ -620,7 +634,7 @@ function AiReason({
 function ReviewQuote({ review }: { review: ReviewView }) {
   return (
     <blockquote className="grid gap-0.5 border-l-2 border-destructive/40 pl-2">
-      <span className="text-[11px] text-muted-foreground">
+      <span className="text-micro text-muted-foreground">
         {'★'.repeat(review.rating)}
         {'☆'.repeat(Math.max(0, 5 - review.rating))} · {review.sourceId}
       </span>
@@ -669,7 +683,7 @@ function MatrixPanel({
         <NoSource reason={c.reason} />
       ) : (
         <div className="-mx-4 -my-4 overflow-x-auto">
-          <table className="w-full min-w-[820px] text-left text-[13px]">
+          <table className="w-full min-w-205 text-left text-caption">
             <thead className="bg-muted/60 text-xs text-muted-foreground">
               <tr>
                 <th className="px-4 py-2 font-medium">#</th>
@@ -685,7 +699,7 @@ function MatrixPanel({
               {c.rows.map((r, i) => (
                 <tr key={r.id} className="border-t align-top hover:bg-muted/30">
                   <td className="px-4 py-2.5 font-mono text-xs text-subtle-foreground">{i + 1}</td>
-                  <td className="max-w-[380px] px-2 py-2.5">
+                  <td className="max-w-95 px-2 py-2.5">
                     <div className="line-clamp-2 font-medium leading-snug">
                       {r.title ?? '（无标题）'}
                     </div>
@@ -696,7 +710,7 @@ function MatrixPanel({
                           href={r.url}
                           target="_blank"
                           rel="noreferrer noopener"
-                          className="font-mono hover:text-primary"
+                          className="font-mono hover:text-primary-text"
                         >
                           {r.platformId}
                         </a>
@@ -819,9 +833,9 @@ function ConvertDialog({
             {row.title ?? row.platformId}
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-md bg-primary-soft px-3 py-2 text-xs text-primary">
+        <div className="flex items-center gap-2 rounded-md bg-primary-soft px-3 py-2 text-xs text-primary-text">
           跟卖方式：<strong>同款微改良</strong>
-          <span className="text-primary/70">改良点写入线索备注并带入核算</span>
+          <span className="text-primary-text/70">改良点写入线索备注并带入核算</span>
         </div>
         {noDirection ? (
           <p className="rounded-md bg-warning-soft px-3 py-2 text-xs text-warning-strong">
@@ -838,18 +852,19 @@ function ConvertDialog({
         ) : (
           <Field label="归入方向" hint="线索在该方向的跟卖候选中出现">
             {(id) => (
-              <select
-                id={id}
-                className={controlClass}
-                value={directionId}
-                onChange={(e) => setDirectionId(e.target.value)}
+              <Select
+                value={data.directions.some((d) => d.id === directionId) ? directionId : ''}
+                onValueChange={setDirectionId}
               >
-                {data.directions.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id={id} className="h-8 w-full text-caption" placeholder="归入方向" />
+                <SelectContent>
+                  {data.directions.map((d, index) => (
+                    <SelectItem key={d.id} index={index} value={d.id}>
+                      {d.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           </Field>
         )}
@@ -892,7 +907,7 @@ function SuggestionsPanel({
       title="差异化建议"
       extra={
         s.status === 'ok' ? (
-          <span className="text-[11px] text-subtle-foreground">
+          <span className="text-micro text-subtle-foreground">
             AI 生成 · {s.ai.modelKey}
             {s.dropped ? ` · 已丢弃 ${s.dropped} 条无依据建议` : ''}
           </span>
@@ -941,18 +956,18 @@ function SuggestionCard({
   return (
     <li className="grid content-start gap-2 rounded-lg border border-success/30 bg-success-soft/40 p-3">
       <div className="flex items-start gap-2">
-        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-success text-[11px] font-semibold text-white">
+        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-success text-micro font-semibold text-white">
           {index}
         </span>
         <div className="grid gap-0.5">
-          <span className="text-[13px] font-semibold text-success-strong">{item.title}</span>
+          <span className="text-caption font-semibold text-success-strong">{item.title}</span>
           {item.detail ? (
             <span className="text-xs leading-relaxed text-muted-foreground">{item.detail}</span>
           ) : null}
         </div>
       </div>
       <details className="group text-xs">
-        <summary className="cursor-pointer list-none text-primary [&::-webkit-details-marker]:hidden">
+        <summary className="cursor-pointer list-none text-primary-text [&::-webkit-details-marker]:hidden">
           依据：{reviewRefs.length ? `${reviewRefs.length} 条差评` : ''}
           {reviewRefs.length && productRefs.length ? ' · ' : ''}
           {productRefs.length ? `${productRefs.length} 个竞品` : ''}

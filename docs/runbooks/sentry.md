@@ -76,16 +76,8 @@ SDK envelope，并确认 Sentry 接收端 HTTP 状态；应用使用 SDK 的默�
 显式命令（凭据值不出现在参数中）：
 
 ```sh
-node --env-file=/Users/hxlee/workspace/product-res/.env.local scripts/sentry-probe.mjs
+node --env-file=.env.local scripts/sentry-probe.mjs
 ```
-
-2026-10-11T18:26:46.456Z 实测：Sentry 接收端 200；发送前 SDK envelope 不含测试
-Authorization/查询串令牌或对话内容。release=`f01d3377b549c2e08748b524ac9119a27311ac99`，
-requestId=`03630046-7fe8-45af-bd88-5077170ad292`，
-eventId=`a9a002c620074b97a8f328a04a1e5a43`。
-当前本地上传 token 查询事件返回 403，因此这次只确认接收，不能宣称事件已经出现在 Issues。
-协调者可按上述 event ID 在指定项目核对，或为本地 token 提供事件读取权限后再次显式运行。
-探针不创建 release、不上传 source map；staging 的可读堆栈仍待合并后验证。
 
 ## 5. 排查
 
@@ -95,16 +87,11 @@ eventId=`a9a002c620074b97a8f328a04a1e5a43`。
 - Workflow 引擎帧：`ContextImpl.wrapper` 等 Cloudflare Workflows 引擎代码不属于仓库源码，无法用项目 source map 映射属于预期。引擎脚本也可能叫 `index.js`，误关联我方 debug ID/map 时会出现 `js_invalid_sourcemap_location`；不能仅凭该引擎帧判定 bundle 注入、上传或部署损坏。若 step 回调已抛错，应检查 SDK step 事件或 run 级补报事件中的原始错误及项目 TypeScript 帧，并按同一 request ID、release 与步骤确认仅有一次上报；未执行回调的引擎错误才保留包装错误。当前保留 jobs 的 `dist/index.js`：去重与原始错误补报对应已核实的捕获问题，改名会扩大构建/注入/部署链路修改且不能提供引擎源码；若后续仍有独立的同名误关联，再单独评估改名。
 - 上传失败：检查 GitHub staging secrets 与 token 的项目上传权限；保持失败阻止部署，不增加忽略错误或本地上传绕过。
 
-## 6. 验收记录
-
-| 环境 | 状态 | 证据 |
-|---|---|---|
-| 本地真实事件 | 接收端 200；入库确认待协调者（查询 403） | `a9a002c620074b97a8f328a04a1e5a43`，详见 §4 |
-| main staging 可读堆栈 | 2026-10-14 协调者已核验 web 与 jobs SDK step 的 TypeScript 帧及脱敏；另发现 jobs 重复上报 | [事件与源码映射证据](./evidence/staging-acceptance/2026-10-13/acceptance-2026-10-13j-sentry-verification.json) |
 
 OpenSpec 1.2 已由协调者在 main 勾选；此修复不更改任务勾选、不手动部署 staging。
 本次 Workflow 原始错误补报的 staging 复核待 main 合并自动发布后进行，历史事件不代表修复已上线。
 
+<!-- template-only:end -->
 ## 7. Node 本地真实项目触发（C 2.5）
 
 本次经协调者确认复用现有 `environment=smoke` 与纯完整 HEAD SHA release，
@@ -116,8 +103,8 @@ dist 为 `web-node` / `jobs-node`；smoke 在这里表示本地 Node 验收。
 
 ```sh
 pnpm build:node
-node --env-file=/Users/hxlee/workspace/product-res/.env.local apps/web/test/sentry-local/upload.mjs
-node --env-file=/Users/hxlee/workspace/product-res/.env.local apps/web/test/sentry-local/run.mjs
+node --env-file=.env.local apps/web/test/sentry-local/upload.mjs
+node --env-file=.env.local apps/web/test/sentry-local/run.mjs
 ```
 
 upload 包装器复用既有 release → inject → 两个 Node dist upload → finalize 流程，
@@ -134,10 +121,6 @@ bootstrap 提升，生产 HTTP 入口仍执行同源、实时管理员与先审�
 到 jobs，由既有 SMTP fixture 的永久 550 路径失败一次并进入持久终态。
 未增加公开 jobs 故障接口，也未更改业务实现；公开 `.map` 请求核对为 404。
 
-2026-10-14 本地触发记录见
-[`c-2.5-sentry-node-trigger.json`](./evidence/selfhost/c-2.5-sentry-node-trigger.json)。
-upload 与生产触发通过，只证明准备与触发完成；事件入库、可读 TypeScript 帧、
-脱敏和重复事件仍需协调者在指定 Sentry 测试项目核验，2.5 保持未勾选。
 
 协调者分别查询证据中的 release 与 requestId：
 
@@ -152,7 +135,3 @@ Artifact Bundles 的两个 Node dist、debug ID 与源码帧对应；预期我�
 保存实际 event ID/链接、源文件/行号与源码上下文，并检查 JSON 无认证头、Cookie、
 邮箱、OTP/邮件正文、DSN 或其他凭据，同一触发没有重复上报。全部通过后再勾选 2.5。
 
-2026-10-14 首次核验中 web-node 事件未映射到 `sentry-test.ts`（`js_invalid_sourcemap_location`、
-`js_missing_sources_content`）：Nitro 二次打包的 `_ssr/ssr.mjs.map` mappings 为空且只指向中间产物，
-`application.mjs.map` 缺 sourcesContent。修复见 [selfhost-c-wire Source maps](./selfhost-c-wire.md#source-maps)；
-需用新完整 SHA 重新构建、上传、触发后复核，旧 release 的事件不会因修复而改变。

@@ -1,14 +1,17 @@
+import { aiMessageOrder } from '@product-res/ai'
 import { aiConversation, aiMessage, type Database, scoped } from '@product-res/db'
 import { AppError } from '@product-res/shared'
 import { log } from '@product-res/shared/log'
 import { notFound } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
-import { and, asc, desc, eq, inArray, type SQL } from 'drizzle-orm'
+import { and, desc, eq, inArray, type SQL } from 'drizzle-orm'
 import { z } from 'zod'
+import { getLocale } from '../../paraglide/runtime.js'
 import { withBilling } from '../../server/feature-gates.ts'
 import { withWorkspace } from '../../server/middleware.ts'
 import { templateConfig } from '../../server/template-config.ts'
 import { conversationTitleSchema, messageDisplayParts } from './conversation.ts'
+import { feedbackForMessages } from './feedback.server.ts'
 
 // 对话列表与对话页的数据（tasks.md 3.1，specs/ai-chat「会话管理」）。
 // 对话只对创建者可见：所有读写都在 scoped(ws) 之上再按 user_id 过滤，
@@ -39,7 +42,8 @@ async function mutation<T>(
       })
     return { ok: true, result: await action() }
   } catch (error) {
-    if (!(error instanceof AppError)) log.error('ai.conversation.failed', { error })
+    if (!(error instanceof AppError) || error.status >= 500)
+      log.error('ai.conversation.failed', { error })
     return { ok: false, error: error instanceof AppError ? error.code : 'CONVERSATION_FAILED' }
   }
 }
@@ -68,6 +72,7 @@ export const listConversations = createServerFn({ method: 'GET' })
       title: aiConversation.title,
       archived: aiConversation.archived,
       updatedAt: aiConversation.updatedAt,
+      subjectType: aiConversation.subjectType,
     }
     const list = (archived: boolean) =>
       s
@@ -80,8 +85,17 @@ export const listConversations = createServerFn({ method: 'GET' })
         })
         .orderBy(desc(aiConversation.id))
         .limit(LIST_LIMIT)
-    const [active, archived] = await Promise.all([list(false), list(true)])
-    return { active, archived, readOnly: context.workspaceTeamReadOnly }
+    const [[active, archived], { subjectLabels }] = await Promise.all([
+      Promise.all([list(false), list(true)]),
+      import('./subject-chat.server.ts'),
+    ])
+    // 来源标签按当前语言由已注册的 provider 给出，不查对象本身
+    const labelled = subjectLabels(getLocale())
+    return {
+      active: active.map(labelled),
+      archived: archived.map(labelled),
+      readOnly: context.workspaceTeamReadOnly,
+    }
   })
 
 export const getConversation = createServerFn({ method: 'GET' })
@@ -107,15 +121,22 @@ export const getConversation = createServerFn({ method: 'GET' })
           role: aiMessage.role,
           parts: aiMessage.parts,
           status: aiMessage.status,
+          credits: aiMessage.credits,
+          modelKey: aiMessage.modelKey,
         },
         where: and(
           eq(aiMessage.conversationId, conversation.id),
           inArray(aiMessage.role, ['user', 'assistant']),
         ) as SQL,
       })
-      .orderBy(asc(aiMessage.id))
+      .orderBy(...aiMessageOrder())
+    const feedback = await feedbackForMessages(
+      { db: context.db, workspaceId: context.workspace.id, userId: context.user.id },
+      messages.filter((message) => message.role === 'assistant').map((message) => message.id),
+    )
     return {
       conversation,
+      feedback,
       messages: messages.map((message) => ({
         ...message,
         parts: messageDisplayParts(
@@ -124,6 +145,45 @@ export const getConversation = createServerFn({ method: 'GET' })
         ),
       })),
       readOnly: context.workspaceTeamReadOnly,
+    }
+  })
+
+/**
+ * 单条回复的保存结果（正文、状态、结算积分与模型）：回复结束（完成、停止、出错、断开）后对话页据此
+ * 把本地消息换成已保存、已计费的版本（停止后服务端可能比客户端多生成一段）。他人或不存在的消息返回 null。
+ */
+export const getChatMessage = createServerFn({ method: 'GET' })
+  .middleware([withBilling, withWorkspace])
+  .inputValidator(workspace.extend({ messageId: z.uuid() }))
+  .handler(async ({ context, data }) => {
+    const s = scoped(context.db, context.workspace.id)
+    const [message] = await s
+      .select(aiMessage, {
+        fields: {
+          id: aiMessage.id,
+          role: aiMessage.role,
+          parts: aiMessage.parts,
+          status: aiMessage.status,
+          credits: aiMessage.credits,
+          modelKey: aiMessage.modelKey,
+        },
+        where: and(
+          eq(aiMessage.id, data.messageId),
+          eq(aiMessage.role, 'assistant'),
+          inArray(
+            aiMessage.conversationId,
+            s.select(aiConversation, {
+              where: ownConversation(context.user.id),
+              fields: { id: aiConversation.id },
+            }),
+          ),
+        ) as SQL,
+      })
+      .limit(1)
+    if (!message) return null
+    return {
+      ...message,
+      parts: messageDisplayParts(message.parts, templateConfig.ai.text.reasoning.display),
     }
   })
 

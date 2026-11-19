@@ -1,5 +1,10 @@
-import { type CreditsTransaction, capture, release } from '@product-res/credits'
-import { type AiUsageCheckpoint, type Database, scoped } from '@product-res/db'
+import {
+  type CreditsTransaction,
+  capture,
+  lockWorkspaceCredits,
+  release,
+} from '@product-res/credits'
+import { type AiUsageCheckpoint, type Database, getSetting, scoped } from '@product-res/db'
 import { PgDialect } from 'drizzle-orm/pg-core'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Pricing } from '../pricing.ts'
@@ -10,16 +15,19 @@ import {
   settleChatMessage,
   settleFromCheckpoint,
   settleInterruptedChatMessage,
+  uuidv7Floor,
 } from './settle.ts'
 
 vi.mock('@product-res/credits', async (original) => ({
   ...(await original<typeof import('@product-res/credits')>()),
   capture: vi.fn(),
   release: vi.fn(),
+  lockWorkspaceCredits: vi.fn(),
 }))
 vi.mock('@product-res/db', async (original) => ({
   ...(await original<typeof import('@product-res/db')>()),
   scoped: vi.fn(),
+  getSetting: vi.fn(),
 }))
 
 describe('checkpointSchedule（tasks 2.5）', () => {
@@ -92,6 +100,42 @@ describe('interruptedCredits（tasks 2.4、2.6）', () => {
     expect(interruptedCredits(perCall, { ...usage, hasOutput: false })).toBeUndefined()
   })
 
+  it('failed 无正文：免费次数内释放，用完后按最后一次尝试结算', () => {
+    const usage = {
+      inputTokens: 1000,
+      outputTokens: 0,
+      hasOutput: false,
+      status: 'failed' as const,
+      lastAttempt: { inputTokens: 1000, outputTokens: 1000 },
+    }
+    expect(interruptedCredits(token, usage)).toBeUndefined()
+    expect(interruptedCredits(perCall, usage)).toBeUndefined()
+    expect(interruptedCredits(token, { ...usage, freeFailuresExhausted: true })).toBe(11)
+    // 拿不到最后一次尝试的用量时按 minCharge
+    expect(
+      interruptedCredits(token, { ...usage, lastAttempt: undefined, freeFailuresExhausted: true }),
+    ).toBe(2)
+    // 按次固定价，与 chargeOn 无关
+    expect(
+      interruptedCredits(
+        { ...perCall, chargeOn: 'success' },
+        { ...usage, freeFailuresExhausted: true },
+      ),
+    ).toBe(3)
+    // 失败全退开关优先
+    expect(
+      interruptedCredits(token, {
+        ...usage,
+        freeFailuresExhausted: true,
+        failedReplyRefund: 'all',
+      }),
+    ).toBeUndefined()
+  })
+
+  it('uuidv7Floor 是该毫秒内最小的 UUID', () => {
+    expect(uuidv7Floor(0x0192_3456_789a)).toBe('01923456-789a-0000-0000-000000000000')
+  })
+
   it('按次 chargeOn success：未完成一律释放', () => {
     expect(
       interruptedCredits(
@@ -137,10 +181,15 @@ describe('reasoning 失败结算与回收', () => {
     overage: { maxRatio: 0, maxCredits: 0, dailyBudgetPerWorkspace: 0 },
   }
 
+  const used = vi.fn(async () => 0)
+
   beforeEach(() => {
     vi.clearAllMocks()
+    used.mockResolvedValue(0)
+    vi.mocked(getSetting).mockResolvedValue({ count: 3, windowSeconds: 3600 } as never)
     vi.mocked(scoped).mockReturnValue({
       select: () => ({ limit: async () => [{ amount: 5 }] }),
+      count: used,
       updateById: update,
     } as unknown as ReturnType<typeof scoped>)
     vi.mocked(capture).mockImplementation(async (_db, input) => ({
@@ -246,6 +295,55 @@ describe('reasoning 失败结算与回收', () => {
     )
     expect(capture).not.toHaveBeenCalled()
     expect(release).toHaveBeenCalledOnce()
+  })
+
+  it('第 4 次无正文失败：锁内计数后按最后一次尝试结算并封顶预扣', async () => {
+    used.mockResolvedValue(3)
+    const settlement = await settleInterruptedChatMessage(db, {
+      ...base,
+      pricing: token,
+      status: 'failed',
+      hasOutput: false,
+      text: '',
+      outputTokens: 0,
+      lastAttempt: { inputTokens: 100, outputTokens: 200, reasoningTokens: 200 },
+    })
+    // (100 × 1 + 200 × 10) / 1000 = 2.1 → 3，不超过预扣 5
+    expect(lockWorkspaceCredits).toHaveBeenCalledWith(tx, 'ws')
+    expect(settlement?.captured).toBe(3)
+    expect(update).toHaveBeenCalledWith(
+      expect.anything(),
+      'msg',
+      expect.objectContaining({ credits: 3, inputTokens: 100, outputTokens: 200 }),
+    )
+    used.mockResolvedValue(2)
+    vi.mocked(capture).mockClear()
+    await settleInterruptedChatMessage(db, {
+      ...base,
+      pricing: token,
+      status: 'failed',
+      hasOutput: false,
+      text: '',
+    })
+    expect(capture).not.toHaveBeenCalled()
+  })
+
+  it('兜底超出免费次数且没有最后一次尝试的用量：按 minCharge 结算', async () => {
+    used.mockResolvedValue(3)
+    await settleFromCheckpoint(
+      db,
+      {
+        id: 'msg',
+        workspaceId: 'ws',
+        holdId: 'hold',
+        pricing: token,
+        inputTokens: 1000,
+        parts: [],
+        usageCheckpoint: null,
+      },
+      { status: 'failed', overage: base.overage },
+    )
+    expect(capture).toHaveBeenCalledWith(tx, expect.objectContaining({ actualAmount: 2 }), tx)
   })
 
   it('主动停止即使拿到完整 usage 也不超出原预扣', async () => {

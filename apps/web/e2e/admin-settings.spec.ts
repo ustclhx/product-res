@@ -28,7 +28,9 @@ test('admin saves runtime settings, audits changes and displays a plain text ann
     ).toBeVisible()
     const form = page.getByRole('form', { name: uiText('admin_runtime_settings') })
     original = {
-      signup: await form.getByLabel(uiText('admin_registration_enabled')).isChecked(),
+      signup: await form
+        .getByRole('checkbox', { name: uiText('admin_registration_enabled'), exact: true })
+        .isChecked(),
       announcement: await form.getByLabel(uiText('admin_site_announcement')).inputValue(),
       blacklist: await form.getByLabel(uiText('admin_disposable_email_domains')).inputValue(),
     }
@@ -36,7 +38,9 @@ test('admin saves runtime settings, audits changes and displays a plain text ann
     await form
       .getByLabel(uiText('admin_disposable_email_domains'))
       .fill('Mailinator.com\ntemp-mail.test')
-    await form.getByLabel(uiText('admin_registration_enabled')).uncheck()
+    await form
+      .getByRole('checkbox', { name: uiText('admin_registration_enabled'), exact: true })
+      .uncheck()
     await form.getByRole('button', { name: uiText('admin_save_settings') }).click()
     await expect(
       page
@@ -63,7 +67,9 @@ test('admin saves runtime settings, audits changes and displays a plain text ann
     if (original) {
       await page.goto('/admin/settings')
       const form = page.getByRole('form', { name: uiText('admin_runtime_settings') })
-      await form.getByLabel(uiText('admin_registration_enabled')).setChecked(original.signup)
+      await form
+        .getByRole('checkbox', { name: uiText('admin_registration_enabled'), exact: true })
+        .setChecked(original.signup)
       await form.getByLabel(uiText('admin_site_announcement')).fill(original.announcement)
       await form.getByLabel(uiText('admin_disposable_email_domains')).fill(original.blacklist)
       await form.getByRole('button', { name: uiText('admin_save_settings') }).click()

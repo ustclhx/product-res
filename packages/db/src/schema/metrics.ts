@@ -1,4 +1,4 @@
-import { date, integer, jsonb, pgTable, timestamp } from 'drizzle-orm/pg-core'
+import { bigint, date, integer, jsonb, pgTable, timestamp } from 'drizzle-orm/pg-core'
 
 /** UTC 日级指标；金额单位为 cents，按币种保留，避免隐式汇率换算。 */
 export const metricsDaily = pgTable('metrics_daily', {
@@ -9,6 +9,8 @@ export const metricsDaily = pgTable('metrics_daily', {
   paidWorkspaces: integer('paid_workspaces').notNull(),
   mrrByCurrency: jsonb('mrr_by_currency').$type<Record<string, number>>().notNull(),
   creditsConsumed: integer('credits_consumed').notNull(),
+  dailyGrantCount: integer('daily_grant_count').notNull().default(0),
+  dailyGrantCredits: bigint('daily_grant_credits', { mode: 'number' }).notNull().default(0),
   overageAbsorbed: integer('overage_absorbed').notNull(),
   overageByModel: jsonb('overage_by_model').$type<Record<string, number>>().notNull(),
   textCompleted: integer('text_completed').notNull(),

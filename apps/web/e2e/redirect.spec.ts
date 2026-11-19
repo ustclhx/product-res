@@ -10,7 +10,7 @@ for (const redirect of [
   `${invitation}&next=https://evil.example`,
 ]) {
   test(`OAuth initiation validates callback destination: ${redirect}`, async ({ page }) => {
-    test.skip(!templateConfig.auth.oauth.includes('google'))
+    test.skip(!templateConfig.auth.oauth.includes('google'), 'auth.oauth 未包含 google')
     await stubTurnstile(page)
     // Only the external provider exchange is mocked; no claim of provider verification.
     let callback = ''
@@ -26,7 +26,7 @@ for (const redirect of [
 }
 
 test('magic-link initiation resumes the validated invitation', async ({ page }) => {
-  test.skip(!templateConfig.auth.magicLink)
+  test.skip(!templateConfig.auth.magicLink, 'auth.magicLink 已关闭')
   await stubTurnstile(page)
   let callback = ''
   await page.route('**/api/auth/sign-in/magic-link', async (route) => {

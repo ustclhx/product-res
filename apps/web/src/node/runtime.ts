@@ -18,11 +18,12 @@ import {
 } from '@product-res/platform/node'
 import { AppError } from '@product-res/shared'
 import { log } from '@product-res/shared/log'
-import { getFileDownload } from '@product-res/storage'
+import { createShareCardInvalidator, getFileDownload } from '@product-res/storage'
 import { createNodeStorage } from '@product-res/storage/node'
 import { APIError } from 'better-auth/api'
 import { z } from 'zod'
 import { handleAuthRequest } from '../features/admin/impersonation-http.ts'
+import { createSignUpRecorder } from '../features/analytics/server.ts'
 import { createBillingDeletionSteps } from '../features/billing/deletion.server.ts'
 import { assertSignupAdmission } from '../features/growth/service.ts'
 import { createWebAuth } from '../server/auth.ts'
@@ -42,6 +43,9 @@ export function prerenderRuntime(requestMeta: RequestMetadata): WebRuntime {
   return {
     config: {
       APP_URL: templateConfig.app.url,
+      PLAUSIBLE_DOMAIN: templateConfig.analytics.plausibleDomain,
+      PLAUSIBLE_HOST: templateConfig.analytics.plausibleHost,
+      PLAUSIBLE_SITES: templateConfig.analytics.plausibleSites,
       BETTER_AUTH_SECRET: '',
       GOOGLE_CLIENT_ID: undefined,
       GOOGLE_CLIENT_SECRET: undefined,
@@ -55,6 +59,8 @@ export function prerenderRuntime(requestMeta: RequestMetadata): WebRuntime {
     emailQueue: { available: false },
     eventsQueue: { available: false },
     files: { available: false },
+    shareCardRenderer: { available: false },
+    shareCardCache: { available: false },
     ai: { available: false },
     get db() {
       return unavailable()
@@ -144,9 +150,14 @@ export async function createNodeWebProcess(
   const config = {
     ...parseAuthEnv(env, templateConfig),
     TURNSTILE_SITE_KEY: env.TURNSTILE_SITE_KEY,
+    PLAUSIBLE_DOMAIN: env.PLAUSIBLE_DOMAIN,
+    PLAUSIBLE_HOST: env.PLAUSIBLE_HOST,
+    PLAUSIBLE_SITES: env.PLAUSIBLE_SITES,
+    INDEXNOW_KEY: env.INDEXNOW_KEY,
     PAYMENT_MODE: env.PAYMENT_MODE,
     SENTRY_ENVIRONMENT: env.SENTRY_ENVIRONMENT,
     AI_FAULT_INJECTION: env.AI_FAULT_INJECTION,
+    UI_PREVIEW: env.UI_PREVIEW,
     ...(env.STRIPE_SECRET_KEY === undefined ? {} : { STRIPE_SECRET_KEY: env.STRIPE_SECRET_KEY }),
     ...(env.STRIPE_WEBHOOK_SECRET === undefined
       ? {}
@@ -170,7 +181,16 @@ export async function createNodeWebProcess(
           appUrl: config.APP_URL,
           resolveLocale: userLocaleByEmail(database),
         }),
+        ...(storage?.shareCards && {
+          cleanupShareCards: createShareCardInvalidator(storage.shareCards, cache.kv('settings'))
+            .cleanupWorkspaceShareCards,
+        }),
         deletionSteps: createBillingDeletionSteps(config, database, authCache),
+        onUserSignedUp: createSignUpRecorder({
+          db: database,
+          queue: eventsQueue,
+          clientIp: requestMeta.clientIp,
+        }),
         beforeUserCreate: async (user, headers) => {
           try {
             await assertSignupAdmission(
@@ -207,6 +227,15 @@ export async function createNodeWebProcess(
         }),
       },
       files: storage ? { available: true, value: storage } : { available: false },
+      shareCardRenderer: {
+        available: true,
+        value: () =>
+          import('./share-card-renderer.ts').then((module) =>
+            module.createNodeShareCardRenderer(module.nodeShareCardFontDir()),
+          ),
+      },
+      // 自托管没有 Cache API：卡片由对象存储与 HTTP 缓存头承担，前置 CDN 按响应头缓存。
+      shareCardCache: { available: false },
       ai: {
         available: true,
         value: {

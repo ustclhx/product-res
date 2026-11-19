@@ -1,4 +1,14 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-  "common_site_tagline": "Build and launch your AI app faster."
+  "common_site_tagline": "Build and launch your AI app faster.",
+  "common_cancel": "Cancel",
+  "common_table_previous": "Previous",
+  "common_table_next": "Next",
+  "common_table_page": "Page {page}",
+  "common_table_page_of": "Page {page} of {pageCount}",
+  "common_table_empty": "No records found.",
+  "common_table_apply": "Apply",
+  "common_table_reset": "Reset",
+  "common_table_filters": "Filters",
+  "common_table_pagination": "Pagination"
 }

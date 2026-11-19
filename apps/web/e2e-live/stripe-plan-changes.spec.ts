@@ -1,9 +1,14 @@
 import { randomUUID } from 'node:crypto'
-import { expect, type Page, test } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { register } from '../e2e/fixtures.ts'
 import { billingEvidence, expectReconciled, saveBillingEvidence } from './acceptance-evidence.ts'
 import { liveDb } from './live-env.ts'
-import { expectBillingReturn, payOnStripeCheckout, startStripeCheckout } from './stripe-checkout.ts'
+import {
+  chooseChange,
+  expectBillingReturn,
+  payOnStripeCheckout,
+  startStripeCheckout,
+} from './stripe-checkout.ts'
 
 const PRO_MONTHLY = /^Pro\b.* · \$19\.00 \/ month$/
 const TEAM_MONTHLY = /^Team\b.* · \$49\.00 \/ month$/
@@ -99,21 +104,6 @@ async function providerSubscription(id: string) {
   }
 }
 
-async function chooseChange(page: Page, price: RegExp) {
-  // SSR 已显示选项；ready 控件启用后才写入选择，防止水合覆盖。
-  await expect(page.getByRole('combobox', { name: 'Payment method', exact: true })).toBeEnabled()
-  await page.getByRole('combobox', { name: 'Payment method', exact: true }).selectOption('stripe')
-  const plan = page.getByRole('combobox', { name: 'Plan', exact: true })
-  const option = plan.locator('option', { hasText: price })
-  await expect(option).toHaveCount(1)
-  const planPriceId = await option.getAttribute('value')
-  if (!planPriceId) throw new Error('Plan-change acceptance target price is missing')
-  await plan.selectOption(planPriceId)
-  await expect(page.getByRole('button', { name: 'Change plan', exact: true })).toBeEnabled()
-  await page.getByRole('button', { name: 'Change plan', exact: true }).click()
-  return planPriceId
-}
-
 test('Stripe Pro 月付立即升级 Team 不追加积分，降级 Pro 只预约周期末生效', async ({ page }) => {
   test.setTimeout(300_000)
   const email = `stripe-plan-change-${randomUUID()}@example.com`
@@ -161,11 +151,14 @@ test('Stripe Pro 月付立即升级 Team 不追加积分，降级 Pro 只预约�
     await saveBillingEvidence('plan-change-pro-initial', pro)
 
     await page.goto(`/app/${slug}/billing`)
-    await expect(page.getByText('Current plan: pro', { exact: true })).toBeVisible()
+    await expect(page.getByText(/^Current plan: Pro\b/)).toBeVisible()
     const teamPriceId = await chooseChange(page, TEAM_MONTHLY)
-    await expect(page.getByRole('status')).toHaveText('Subscription updated.')
+    // 页面可能同时有每日领取等其他状态区域，按文字筛选
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Subscription updated.' }),
+    ).toBeVisible()
     // 权益必须由正常操作更新；不得刷新页面掩盖失效的 loader invalidation。
-    await expect(page.getByText('Current plan: team', { exact: true })).toBeVisible()
+    await expect(page.getByText(/^Current plan: Team\b/)).toBeVisible()
     await expect
       .poll(async () => {
         const evidence = await billingEvidence(sql, slug)
@@ -244,10 +237,12 @@ test('Stripe Pro 月付立即升级 Team 不追加积分，降级 Pro 只预约�
 
     const proPriceId = await chooseChange(page, PRO_MONTHLY)
     expect(proPriceId).toBe(initialPayment.plan_price_id)
-    await expect(page.getByRole('status')).toHaveText(
-      'Plan change scheduled for the end of your paid period.',
-    )
-    await expect(page.getByText('Current plan: team', { exact: true })).toBeVisible()
+    await expect(
+      page
+        .getByRole('status')
+        .filter({ hasText: 'Plan change scheduled for the end of your current billing period.' }),
+    ).toBeVisible()
+    await expect(page.getByText(/^Current plan: Team\b/)).toBeVisible()
     const scheduledProvider = await providerSubscription(
       String(subscription.provider_subscription_id),
     )

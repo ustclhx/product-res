@@ -8,6 +8,7 @@ import {
 import type { Database, PaymentProviderId } from '@product-res/db'
 import type { QueueProducer } from '@product-res/platform'
 import { log, withRequestId } from '@product-res/shared/log'
+import { enqueueServerAnalytics } from '../analytics/server.ts'
 import { enqueueOperations } from '../notifications/operations.ts'
 
 export async function handleBillingWebhook(
@@ -65,14 +66,25 @@ export async function handleBillingWebhook(
         // 运营通知单独成消息：投递或推送失败只记日志 / 按自身重试，不影响计费后处理与回调结果。
         for (const operation of operations)
           await enqueueOperations({ send: (message) => options.queue.send(message) }, operation)
+        // 只有验签并提交后的服务商事件才产生 payment_success；消费者按支付单去重。
+        for (const event of events ?? [])
+          if (event.type === 'payment.succeeded' && event.payment.status === 'succeeded')
+            await enqueueServerAnalytics(options.queue, {
+              event: 'payment_success',
+              provider: event.provider,
+              providerPaymentId: event.payment.providerPaymentId,
+            })
       },
     })
     // DB failure must trigger platform retry. Queue failure is recovered from the durable row by Jobs.
+    // 不可重试的失败（如币种不符）已记录为 failed 行并告警，应答 200 以免服务商无限重投。
     if (result.status === 'failed') {
+      const retryable = result.retryable !== false
       log.error('billing.webhook_failed', {
         provider: providerId,
         deliveryId: result.delivery?.id,
         error: result.error,
+        retryable,
       })
       if (result.delivery)
         await enqueueOperations(
@@ -82,6 +94,7 @@ export async function handleBillingWebhook(
             sourceId: `${result.delivery.id}:${result.delivery.attempts}`,
           },
         )
+      if (!retryable) return Response.json({ received: true })
       return new Response('Processing failed', { status: 500 })
     }
     log.info('billing.webhook_processed', {

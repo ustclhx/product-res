@@ -1,0 +1,15 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    // Postgres 集成测试：strict env 模式下未声明的连接串会被过滤，集成项目随之静默跳过
+    "test": {
+      "cache": false,
+      "passThroughEnv": [
+        "CI",
+        "CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE",
+        "MIGRATION_DATABASE_URL"
+      ]
+    }
+  }
+}

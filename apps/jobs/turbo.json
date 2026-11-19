@@ -2,6 +2,29 @@
   "$schema": "https://turborepo.com/schema.json",
   "extends": ["//"],
   "tasks": {
+    // 测试导入 apps/web/src；web 源码又可能导入 @product-res/ui，二者都不在 jobs 的依赖闭包内
+    "typecheck": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/web/**",
+        "$TURBO_ROOT$/packages/ui/**",
+        // 显式 glob 不读 .gitignore：排除依赖、构建产物与由已跟踪文件生成的目录
+        "!$TURBO_ROOT$/apps/web/node_modules",
+        "!$TURBO_ROOT$/apps/web/dist",
+        "!$TURBO_ROOT$/apps/web/.output",
+        "!$TURBO_ROOT$/apps/web/.wrangler",
+        "!$TURBO_ROOT$/apps/web/.turbo",
+        "!$TURBO_ROOT$/apps/web/.content-collections",
+        "!$TURBO_ROOT$/apps/web/.dev.vars",
+        "!$TURBO_ROOT$/apps/web/playwright-report",
+        "!$TURBO_ROOT$/apps/web/test-results",
+        "!$TURBO_ROOT$/apps/web/project.inlang",
+        "!$TURBO_ROOT$/apps/web/src/paraglide",
+        "!$TURBO_ROOT$/apps/web/src/routeTree.gen.ts",
+        "!$TURBO_ROOT$/packages/ui/node_modules",
+        "!$TURBO_ROOT$/packages/ui/.turbo"
+      ]
+    },
     "test": {
       "cache": false,
       "passThroughEnv": [

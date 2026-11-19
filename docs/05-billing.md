@@ -6,6 +6,8 @@
 - **积分包**（`plan.type='credit_pack'`）：一次性购买，发放一批有效期较长的积分，不改变权益（或只附加少量权益）。
 - **免费档**：`plan.key='free'`，无需支付记录；注册赠送积分 `signupBonusCredits`（用户领取时触发邮箱验证，验证完成后才发放，见 §4「注册赠送防刷」）。
 - 币种：模板默认单币种（`billing.currency`），多币种作为后续扩展（`plan_price` 已按 currency 建模）。
+  Stripe Checkout 显式传 `adaptive_pricing: { enabled: false }`，买家所在地不会改变扣款币种；
+  回调中出现非 USD 金额时 `money()` 抛出 `BILLING_CURRENCY_MISMATCH`，见 §3「不可重试的失败」。
 
 ## 2. 支付 Provider 抽象
 
@@ -72,7 +74,7 @@ type NormalizedEvent =
 | subscription.activated | `customer.subscription.created`（status=active/trialing） | `BILLING.SUBSCRIPTION.ACTIVATED` |
 | subscription.updated | `customer.subscription.updated` | `BILLING.SUBSCRIPTION.UPDATED` |
 | payment.succeeded(initial) | `invoice.paid`（billing_reason=`subscription_create`） | 订阅的首笔 `PAYMENT.SALE.COMPLETED` |
-| subscription.renewed / payment.succeeded(renewal) | `invoice.paid`（billing_reason=`subscription_cycle`） | 后续 `PAYMENT.SALE.COMPLETED`（带 billing_agreement_id） |
+| subscription.renewed / payment.succeeded(renewal) | `invoice.paid`（billing_reason=`subscription_cycle`；月付↔年付周期末切换的新周期首期为 `subscription_update`，见下文） | 后续 `PAYMENT.SALE.COMPLETED`（带 billing_agreement_id） |
 | subscription.past_due | `invoice.payment_failed` | `BILLING.SUBSCRIPTION.PAYMENT.FAILED` / `SUSPENDED` |
 | subscription.canceled | `customer.subscription.deleted` | `BILLING.SUBSCRIPTION.CANCELLED` / `EXPIRED` |
 | payment.succeeded(one_time) | `checkout.session.completed`（mode=payment, paid） | `PAYMENT.CAPTURE.COMPLETED` |
@@ -81,7 +83,7 @@ type NormalizedEvent =
 
 > Stripe 的真实录制见 `packages/billing/src/stripe/fixtures/recorded`。PayPal 已提交此前 8 条及 2026-10-18 新增 4 条真实 Sandbox 回调（Sale 月付/年付首付、部分/全额退款）；自然续费、争议和其他终态事件尚无真实录制，不能视为这些场景已通过。
 
-**订阅积分只由「付款成功」事件发放**：首付与续费都走 `payment.succeeded(initial|renewal)`，`checkout.session.completed` 只负责关联 workspace 与平台客户/订阅，从而避免首付被发两次积分。Stripe 中 `billing_reason=subscription_update`（升级按比例补差价）记为 `payment.kind='adjustment'`，关联原订阅并保留实际付款和退款记录，不发积分；只有 `initial` / `renewal` 付款发放订阅积分，见 §6。
+**订阅积分只由「付款成功」事件发放**：首付与续费都走 `payment.succeeded(initial|renewal)`，`checkout.session.completed` 只负责关联 workspace 与平台客户/订阅，从而避免首付被发两次积分。Stripe 中 `billing_reason=subscription_update`（升级按比例补差价）记为 `payment.kind='adjustment'`，关联原订阅并保留实际付款和退款记录，不发积分；只有 `initial` / `renewal` 付款发放订阅积分，见 §6。例外是月付↔年付在周期末以 `billing_cycle_anchor=phase_start` 切换时开出的新周期首期：Stripe 同样标为 `subscription_update`，但发票的订阅行只有一条非按比例的整周期行、没有任何按比例行，`classifyStripeBillingReason` 据此归为 `renewal`，按发票行的周期入账并按新价格所属套餐发放该周期首月积分（真实录制 `interval-change-renewal-*`）。含按比例行的 `subscription_update` 仍是 adjustment。
 
 **`payment.provider_payment_id` 的取值**（退款/争议事件靠它找回原付款）：
 
@@ -97,10 +99,14 @@ type NormalizedEvent =
 - SDK 初始化使用 `httpClient: Stripe.createFetchHttpClient()`；验签使用 `constructEventAsync`（Web Crypto）。
 - Checkout Session 的 `metadata` / `subscription_data.metadata` 写入 `workspaceId`、`planPriceId`。
 - 自助管理直接用 Customer Portal（`getPortalUrl`）。
+- **周期末取消的两种形态**：应用经 API 取消时 Stripe 置 `cancel_at_period_end=true`；Customer Portal 的「周期末取消」
+  （API `2026-09-30.endive` 实测）改为设置 `cancel_at`=当前周期末，`cancel_at_period_end` 仍为 false、`canceled_at` 已有值。
+  `stripeCancelsAtPeriodEnd`（`packages/billing/src/stripe/snapshots.ts`）把 `cancel_at_period_end || cancel_at <= 订阅项 current_period_end`
+  都映射为本地 `cancel_at_period_end=true`，换套餐的「先恢复」检查用同一判断。`cancel_at` 晚于当前周期末（远期定时取消，模板不会设置）
+  时下一周期仍会续费，不视为周期末取消。恢复时先读取订阅：Portal 形态以 `cancel_at: ''` 清除，API 形态以 `cancel_at_period_end: false` 撤销。
 - 税务：暂不启用 Stripe Tax；接入 MoR 时由 MoR 处理。
 - **限制**：正式收款需要 Stripe 支持地区的主体；无主体阶段仅用测试模式开发与联调。
 
-2026-10-18（Asia/Taipei）补充：按协调者指示，使用已登录 Sandbox CLI 的 Test Clocks，复用已有应用 Checkout 的月付/年付独立订阅，在 staging `a2381f875fbd8b1009e48f7024addcb25285aca9` 各推进一个平台账期。两笔 `invoice.paid` 在 endpoint 中实际为 `2026-09-30.endive`、`livemode=false`，分别入账 renewal / 1900 与 19000（USD 最小单位），各只新增首月 1000 积分；各两次重投的 staging HTTP 200、duplicate 事件 ID 与前后账务快照一致，两个空间同快照对账差额均为 0。证据见 [W3 沙箱验收](runbooks/evidence/staging-acceptance/2026-10-17/README.md)。平台时钟推进不代表应用时间、年付后续月份 Cron 或自然到期已发生；真实主体与 live 收款验收移交派生项目，沿用 §8 清单。
 
 ### PayPal 实现要点
 - 直接使用 REST（`fetch`），自封装：OAuth token（缓存到 KV，按 `expires_in` 过期）、Orders v2、Subscriptions v1、Webhook 验签。
@@ -110,37 +116,6 @@ type NormalizedEvent =
 - 2026-10-11 沙箱首付发现账期推算偏差：订阅开始 `07:17:44 UTC`，实际下次扣款为次月 `10:00 UTC`；旧算法让月度积分宽限少 `2h42m16s`。修复不重写已有付款或积分记录；新收据按实际周期计算完整宽限。离线 API 夹具与隔离 PostgreSQL 联合回归覆盖首付、续费、重放及实际账期末加 24 小时，不能替代自然续费的沙箱验收。
 - 验签：调用 `POST /v1/notifications/verify-webhook-signature`（需 `webhook_id`），失败即拒绝。
 - 无客户门户：账单页周期末取消调用 `suspend`，恢复调用 `activate`；立即取消调用 `cancel`。Subscriptions v1 没有本实现使用的远端周期末取消字段，因此本地保留已付权益至周期末，SUSPENDED 回调不能覆盖本地取消意图；终止后的订阅不能恢复。首版 `capabilities.changePlan=false`，换套餐使用「取消后重新订阅」，重叠处理见 §6。
-
-### PayPal Sandbox 实测与录制（2026-10-15，Asia/Taipei）
-
-复用当前 Sandbox App 的 2026-10-11 真实交易，在 2026-10-14 UTC 将既有 webhook URL 临时改为自建本地接收器的 Cloudflare quick tunnel，并通过 Webhooks Management API 重投 6 条既有事件。随后按协调者指示，使用 [PayPal 官方 Sandbox 测试卡](https://developer.paypal.com/sandbox-testing/card-testing) 与 Orders v2 `payment_source.card` 创建独立 USD 0.01 订单，创建接口直接返回 COMPLETED 与 Capture；全额退款也为 COMPLETED，再录制这笔交易的两条回调。既有 staging Capture / Sale 和待审退款均未改动。8 条回调全部收到原始 body 与 transmission headers，回传 `/v1/notifications/verify-webhook-signature` 得到 `SUCCESS`，接收器返回 200。两轮录制后均已恢复原 staging URL 与原 12 项事件订阅，并停止接收器和 quick tunnel；未修改命名 tunnel、staging secrets 或部署。本次接收器只录制和验签，不写应用账务，不能代替 staging 11.1。
-
-脱敏夹具与逐项原文 SHA-256、接收时间、API GET 记录见 [`provenance.json`](../packages/billing/src/paypal/fixtures/recorded/provenance.json)。原始字节与签名仅保留在受限本地目录，提交夹具删除个人资料和签名，统一替换 payer / checkout UUID；脱敏正文只验证映射，不能重新验证原签名。
-
-| 实际事件 | 录制结论 |
-|---|---|
-| `CHECKOUT.ORDER.APPROVED` | 订单批准只关联空间，不确认付款或发积分；Orders capture 仍由返回页的服务端动作执行。 |
-| `PAYMENT.CAPTURE.COMPLETED`（两条） | 既有 USD 10.00 付款的 Capture / Order GET 关联一致；独立 USD 0.01 订单快速退款后，完成事件的正文已为 REFUNDED。Mapper 接受完成后的已退款状态，并以 GET 快照保留 refunded / 实际退款金额，不把迟到完成事件当作重新付款。 |
-| `PAYMENT.CAPTURE.REFUNDED` | 独立 USD 0.01 全额退款；`resource.id` 是 Refund ID，唯一 `rel=up` 指向原 Capture，GET Refund 的累计退款为 USD 0.01；真实字段符合现有退款映射。 |
-| `BILLING.SUBSCRIPTION.ACTIVATED`（首付、恢复各一条） | 两次均发出同名 ACTIVATED；只关联并更新订阅，不把恢复视为新付款。 |
-| `PAYMENT.SALE.COMPLETED` | Subscriptions v1 首付实际使用 Sale（不是 Capture），USD 19.00，`billing_agreement_id` 关联订阅；Sale GET 和交易历史均可读。交易金额使用 `total/currency`，Capture 使用 `value/currency_code`。 |
-| `BILLING.SUBSCRIPTION.SUSPENDED` | 周期末取消实际发出 SUSPENDED（不是 CANCELLED）；Provider 映射 paused，业务层根据本地 `cancel_at_period_end=true` 保留 canceled 与已付权益。 |
-
-首笔 Sale 的真实付款时间为 `2026-10-11T07:20:36Z`，订阅 `start_time=2026-10-11T07:17:44Z`，实际下一扣款为 `2026-11-11T10:00:00Z`；付款周期取 `start_time → next_billing_time`，不按付款时刻加一个月推算。历史 Sale 重放复用已保存的不可变账期，新续费必须有前笔收据与真实扣款证据。独立测试卡探针不关联应用空间，不用于 staging 账务验收；取消/恢复的操作证据来自 [此前沙箱实测](./runbooks/p2-payment-integration.md#10-paypal-月付首付与取消恢复2026-10-11)。
-
-### PayPal 补充实测（2026-10-18，Asia/Taipei）
-
-通过应用 Checkout 新建 Pro 月付 USD 19.00（`I-PE4VWXLXB1XP`）和 Team 年付 USD 490.00（`I-TKG3FMFU9BEN`）。两笔首付均为 `PAYMENT.SALE.COMPLETED`，各关联唯一付款与首月积分批次（1000 / 5000），年付未一次发放全年积分。首付周期分别为 `2026-10-18T06:06:16Z → 2026-11-18T10:00:00Z` 与 `2026-10-18T06:09:14Z → 2027-10-18T10:00:00Z`，仍以真实 `start_time / next_billing_time` 为边界，不能从扣款时间推算。
-
-月付经应用取消后远端 SUSPENDED、本地 canceled / cancel_at_period_end=true，已付权益保留；恢复后远端 ACTIVE，账务未变。应用换套餐流程先取消旧月付续费，再由买家批准年付，重叠期有效权益为 Team，只有年付继续续费。随后也取消新年付续费，两笔均为 SUSPENDED，避免后续测试扣款。
-
-仅退款本轮新建付款：月付 Sale `71D187337X5761003` 部分退款 USD 4.00，Refund `95R03124HK508535V`；年付 Sale `5ST08785RL1551152` 全额退款 USD 490.00，Refund `6JW466111B6808810`。两次 POST Refund 返回 201/completed，GET Refund 返回 200/completed。真实 `PAYMENT.SALE.REFUNDED` 的 `resource.id` 是 Refund ID，`sale_id` 才是原 Sale；金额为 `amount.total/currency`，状态小写 `completed`。本次 v1 响应另有顶层 `total_refunded_amount.value/currency`，不能套用 v2 的 `seller_payable_breakdown` 累计 Capture 语义；现有映射保留 `refundedAmount=null`，由账务按唯一退款 ID 累加。
-
-月付退款后按比例保留 `floor(1000 × 1500 / 1900)=789` 积分，回收 211；年付全额退款回收其 5000。余额从原 90 经首付变为 6090，再为 5879、879；各阶段无负批次、重复付款或重复积分来源，对账差额为 0。既有验收付款、订阅与待审退款未变。
-
-四条新增录制及十份 GET 快照位于 `packages/billing/src/paypal/fixtures/recorded/w3-*.json`；原始回调先在线验签 SUCCESS，再脱敏，离线 recorded 测试验证月付/年付历史分类、不可变账期和部分/全额退款关联。使用额外临时 webhook 经自建接收器 + Docker quick tunnel 录制，原 staging webhook 未改动；清理与重复回调结果见 [W3 补充验收证据](runbooks/evidence/staging-acceptance/2026-10-18/README.md)。
-
-**移交派生项目**：按 2026-10-18 用户决定，PayPal 自然月/年续费（含恢复后续费）、取消到期终止及年付第 2–12 月真实 Cron 观察按实际账期执行。既有订阅下一扣款为 `2026-11-11T10:00:00Z`；不能用模拟器、DAY Plan、欠款 capture 或隔离库时间夹具替代。Capture 部分退款、争议及其他未录制终态不在本次四项任务已通过证据内。OAuth KV 缓存仍有离线测试，本次不证明线上 KV 命中。
 
 ### 未来 MoR
 Creem / Paddle / Polar 各实现一个 Provider，`capabilities.merchantOfRecord=true`；结账、Webhook、门户均映射到同一套内部事件，业务层无需改动。
@@ -167,10 +142,15 @@ Creem / Paddle / Polar 各实现一个 Provider，`capabilities.merchantOfRecord
 6. 事务 B 异常：ROLLBACK 后另起事务
      UPDATE webhook_event SET status='failed', error=?, attempts=attempts+1
    返回 500，让平台重试（重试时从第 4 步继续）
+   不可重试的错误码（当前为 BILLING_CURRENCY_MISMATCH）：同样记 failed 并发运营告警，但返回 200
 ```
 
 - 失败记录必须在**独立事务**中写入：事务 B 回滚会撤销其内部的所有写入，若登记与处理放在同一事务里，`failed` 状态和错误信息永远写不进去。
 - 管理后台的「重放」= 对 `failed` 的记录用保存的 `payload` 重新执行第 4 步。
+- **不可重试的失败**：重投无法修复的错误（`NON_RETRYABLE_BILLING_ERRORS`，当前只有币种不符
+  `BILLING_CURRENCY_MISMATCH`）在 `webhook_event.error` 中以错误码开头记录，整笔回滚、不入账也不发积分；
+  `processWebhook` 返回 `retryable: false`，HTTP 入口经运营通知队列发 `webhook.failed` 告警后返回 200，
+  平台不再重投。运营人工核实（如退款或修正配置）后，可在后台重放。
 
 **乱序处理**：订阅状态更新以 `occurredAt` / 平台对象的最新状态为准；收到较旧事件时不覆盖较新状态。必要时通过 API 拉取最新对象（`reconcile`）。
 
@@ -317,6 +297,9 @@ INSERT INTO credit_hold (...), credit_hold_allocation (...);
 - 「生效中」在**读取时计算**，不依赖定时任务改状态：
   - `trialing` / `active`：生效。
   - `past_due`：在 `past_due_since + billing.pastDueGraceDays` 之前生效，之后视为 free。
+    `past_due_since` 由 `nextPastDueSince()` 统一计算：取本次进入欠费（`past_due`，含 PayPal 挂起的
+    `paused`）的首个时间点；保持欠费期间的订阅更新、每日对账与扣款重试失败都不清空或推后它
+    （Stripe 订阅快照不带欠费时间，不能直接覆盖）；离开欠费状态时清空，再次欠费时重新记录。
   - `canceled` / `expired`：`now() < current_period_end` 时生效（周期内取消保留权益）。
   - `paused`：不生效。
 
@@ -324,10 +307,10 @@ INSERT INTO credit_hold (...), credit_hold_allocation (...);
 
 | 场景 | 行为 |
 |---|---|
-| 升级（Stripe） | 立即生效，平台按比例计费；权益立即切换；积分在下一次 `invoice.paid` 按新套餐发放，当前实现不提供立即补发差额开关（Q5） |
-| 降级（Stripe） | 周期结束时生效（schedule） |
+| 升级（Stripe，同一计费周期） | 立即生效，平台按比例计费；权益立即切换；积分在下一次 `invoice.paid` 按新套餐发放，当前实现不提供立即补发差额开关（Q5） |
+| 降级（Stripe，同一计费周期） | 周期结束时生效（schedule） |
+| 月付 ↔ 年付（Stripe） | 无论档位升降，一律在当前周期结束时生效（复用降级的 schedule，第二段设 `billing_cycle_anchor=phase_start`）：当前周期照常到期，周期末重置锚点并开出新价格的整周期发票，该笔付款按续费入账并发放积分（年付仍按月发放）。未重置锚点时 Stripe 在 `proration_behavior=none` 下会把当前周期直接延长为新周期且不开票（2026-10-24 测试时钟实测）；同周期降级保持原锚点。立即切换会产生按比例的调整账单，年付款无法按续费入账。账单页在确认前提示该生效时间 |
 | PayPal | 首版不支持订阅内升降级：取消当前（周期末生效）+ 新订阅，重叠期见下 |
-| 月付 ↔ 年付 | 同升降级 |
 
 ### 「一个空间一个订阅」约束与重叠期
 
@@ -353,20 +336,16 @@ INSERT INTO credit_hold (...), credit_hold_allocation (...);
 - `/app/$slug/usage`：积分流水、按模型/成员的用量统计。
 - `/admin/billing`：付款、订阅、Webhook 事件（可重放）；手动调积分和完整管理能力在 P5。
 
-## P2 离线开发与联通边界（2026-10-04）
+### 当地货币参考价（`@product-res/shared/fx`）
 
-当前离线开发不需要支付密钥。缺失凭据或未同步价格时，定价和账单页面显示支付不可用，不能伪装支付成功。Stripe 使用 SDK 23.0.0 与固定 API 版本 `2026-09-30.endive`；支付工厂按 `PAYMENT_MODE` 选择 test/live，本地与 staging 保持 test（PayPal Sandbox），token 缓存到 CACHE KV 并按环境隔离。Stripe 3.2 已有真实 Test 录制；PayPal 的 12 条真实 Sandbox 回调录制及补充矩阵见 §2。自然时间和真实收款主体验收移交派生项目。
+页面需要显示「约 NT$620」这类当地货币估价时，服务端调用 `loadUsdRates({ store, fallback })` 取 USD 基准汇率：
+默认数据源为 Exchange Rate API 免费端点，结果按 `store`（KV、Cache API 或内存）缓存 12 小时；拉取失败、超时或响应无效时
+返回调用方提供的参考值并标记 `source: 'fallback'`，回退结果不缓存。估价只用于展示，不参与扣款，实际金额以支付服务商显示为准。
+该子路径依赖服务端日志，不能进入浏览器包。
 
-- 公开入口：`POST /api/billing/webhooks/{stripe|paypal}` 保留原始请求体验签；无效签名返回 400，业务或远端暂时失败返回 500，已提交的付款在队列投递失败时仍返回 200，由 Jobs 扫描持久化记录恢复通知。错误诊断会去除凭据、URL 与控制字符。
-- 后台：`/admin/billing` 列表与 failed 回调重放，`/admin/billing/refunds` 全额/部分审核、驳回与独立邮件重试。所有 server function 均重新验证平台 admin。审批或平台 API 响应不等于退款最终入账，只有匹配的已验证退款 ID 才完成申请和积分回收。
-- 并发订阅：事务回滚后持久化 `billing_compensation`，取消后到订阅并退款，租约/稳定幂等键允许重试。删除后的迟到订阅回调写入取消任务，保留真实付款凭据、禁止积分和权益恢复，并且不自动退款。
-- 删除：认证每次请求注入 billing 删除步骤；取消已知订阅在数据库事务外执行，剩余积分收回与账号/空间匿名化共享原事务。退款使用申请时保存的联系邮箱，删号后仍可审核和通知；驳回或已确认退款 30 天后清理，pending/approved 不清理。
-- Jobs：每小时过期和年付发放，每 10 分钟预扣回收框架、回调通知恢复、订阅补偿及退款邮件恢复，每日订阅/积分对账与联系邮箱清理。未注册的 AI 预扣处理器明确告警并保留预扣，P3/P4 注册相应处理器。
-- 队列：web 为 EVENTS_QUEUE producer，jobs 消费 events（staging 为 events-staging），仅发送持久化回调 UUID，不传原始载荷或支付密钥。失败重试和 Cron 从库恢复不重新入账。
-
-`pnpm billing:seed` 只写当前数据库的示例套餐，未同步价格保持 inactive。示例金额与积分量并非最终商业定价；AI 模型价格仍由 P3 定义。`pnpm billing:sync` 要求显式 `BILLING_SYNC_MODE=test`、Stripe 测试凭据与 PayPal 沙箱凭据，仅在下一联通阶段执行。Web/Jobs 与同步脚本共用根目录 `.env.local` 的五项支付变量名，参照已提交的 `.env.example`；`seed` / `sync` 自动读取该文件，进程环境优先、未指定数据库时回退到 `.env.worktree`。本地 dev 入口生成 app `.dev.vars` 支付管理区块，线上仍使用 Cloudflare secrets。离线 Playwright 会清空五项支付绑定并启动独立服务，不使用真实支付凭据。密钥不进入模板配置、Git 或日志；完整配置与联通步骤见 [支付联通 runbook](./runbooks/p2-payment-integration.md)。
-
-已完成两平台价格同步与幂等复验（1.3）、Stripe 真实录制与 Provider 验收（3.2）、规定页面验收（10.1–10.3）。本文与路线图的策略及实测证据更新归 10.4；后续 change `add-cloud-acceptance-followups` 承接 PayPal Sale 录制和 staging 沙箱矩阵，并单列自然时间与真实主体移交，范围及逐项证据以其 tasks 为准。
+**署名要求**：免费端点要求在使用其汇率的页面链接到其站点。凡展示由它得到的估价的页面，须渲染
+`FX_ATTRIBUTION`（文字 `Rates By Exchange Rate API`，链接 `https://www.exchangerate-api.com`），例如放在估价下方的一行小字。
+上线前由项目确认该链接可见；改用其他数据源（传入 `url`）时按该数据源的条款处理署名。模板自身页面不使用该模块。
 
 ## 8. 支付模式与生产切换清单
 
@@ -381,7 +360,7 @@ INSERT INTO credit_hold (...), credit_hold_allocation (...);
 
 生产切换前逐项完成以下清单；本 change 只交付代码与离线验证，未配置 live 凭据或执行真实收款：
 
-- [ ] 解决 [路线图 Q9](./08-roadmap.md#待决事项)：确认 Stripe 正式收款主体及支持地区、账户归属；若选择仅 PayPal 或 MoR，按最终方案配置启用的 provider。代码支持 live 不代表主体已获批准。
+- [ ] 解决 路线图 Q9（模板维护资料；请为本项目建立相应记录）：确认 Stripe 正式收款主体及支持地区、账户归属；若选择仅 PayPal 或 MoR，按最终方案配置启用的 provider。代码支持 live 不代表主体已获批准。
 - [ ] 为生产配置独立数据库、KV、队列、域名与价格对象。不要复用测试数据库的 customer、subscription、payment、price ID；现有 `billing:sync` 仍要求 `BILLING_SYNC_MODE=test`，不能用它创建 live 价格。
 - [ ] 在生产 web **和** jobs 配置 `SENTRY_ENVIRONMENT=production`、`PAYMENT_MODE=live`；staging 继续 `PAYMENT_MODE=test`，不修改 staging secrets。生产配置由上线任务单独建立。
 - [ ] 分别为两个 Worker 配置生产 `STRIPE_SECRET_KEY`（优先有足够业务权限的 `rk_live_`）与 `STRIPE_WEBHOOK_SECRET`。密钥通过 Wrangler secrets 安全写入，不写模板、Git、PR 或日志。

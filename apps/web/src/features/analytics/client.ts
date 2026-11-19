@@ -24,7 +24,7 @@ interface PostHog {
 type PostHogWindow = Window & { posthog?: PostHog }
 let initializedSdk: PostHog | undefined
 
-function mayCapture(config: TemplateConfig): boolean {
+export function mayCapture(config: TemplateConfig): boolean {
   const pathname = window.location.pathname
   if (
     config.features.analytics !== 'posthog' ||

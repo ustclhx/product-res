@@ -12,12 +12,18 @@ declare global {
         StorageEnv,
         SentryEnv {
       AI_FAULT_INJECTION?: string
+      APP_URL?: string
+      PLAUSIBLE_DOMAIN?: string
+      PLAUSIBLE_HOST?: string
+      PLAUSIBLE_SITES?: string
       CRON_PROFILE?: string
       FILES: R2Bucket
       EVENTS_QUEUE: Queue<
         | import('@product-res/billing').BillingQueueMessage
         | import('./notifications/operations.ts').OperationsQueueMessage
+        | import('@product-res/shared/analytics').ServerAnalyticsMessage
       >
+      EVENTS_DLQ: Queue<import('./queues/events-dead-letter.ts').EventsDeadLetter>
       EMAIL_QUEUE: Queue<import('@product-res/email/queue').EmailQueueMessage>
       /** 不带查询缓存（app-db）：Cron 写库 */
       HYPERDRIVE: Hyperdrive

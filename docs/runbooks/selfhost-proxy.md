@@ -239,21 +239,3 @@ node test-proxy.mjs --external-config final.preview.json
 运行后仍 inspect 实际网络/端口/UID，公开HTTPS请求须正常校验证书，发伪造XFF再核对
 防刷身份；最后检查 `/api/health` 完整SHA与jobs readiness。不要用config通过冒充实机验收。
 
-## 本地证据
-
-从仓库根运行
-`SELFHOST_PROXY_CADDY_IMAGE=<release-caddy-image> node deploy/selfhost/test-proxy.mjs`。
-必须使用已构建的非root Caddy wrapper（生产Dockerfile已移除低端口file capability），
-不使用带file capability的上游镜像代替。脚本生成随机隔离project，执行plain、
-external及误启全部profiles的真实Compose渲染，并证明宽泛trusted CIDR和PG宿主端口
-会被检查门拒绝。夹具无宿主ports：Caddy2.11.2在8443终止临时证书TLS、Node22.23.3
-回显上游请求，恶意XFF被实际client peer覆盖，CF/Forwarded被删除；未知CA失败。
-运行UID为web/probe1000、proxy10001，proxy/probe不接data。finally仅清理自己的资源。
-这是已有代理模式机制验证，不是Dokploy/Traefik或真实Tunnel认证链验收。
-
-真实应用的请求metadata边界复用
-`pnpm --filter @product-res/platform exec vitest run test/node/request.test.ts`，覆盖未可信peer、
-右侧链、mapped IPv6和非法XFF。全栈实际TLS/UID已有
-[A最终Compose证据](selfhost-a-final.md#最终-compose-证据2026-10-13-本地--2026-10-12-utc)：
-SHA `0c11b8787b211323a309c377d50e4fdbafc90816`，PG/Valkey999，web/jobs1000，Caddy10001，
-verify-full与HTTPS通过；本轮引用该明确历史证据，不重新宣称整栈运行或新的SHA验收。

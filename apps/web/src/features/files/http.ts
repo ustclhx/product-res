@@ -33,7 +33,8 @@ async function fileResponse(action: () => Promise<Response>): Promise<Response> 
     response.headers.set('cache-control', 'no-store')
     return response
   } catch (error) {
-    if (!(error instanceof AppError)) log.error('storage.request.failed', { error })
+    if (!(error instanceof AppError) || error.status >= 500)
+      log.error('storage.request.failed', { error })
     const { status, body } = toErrorResponse(error)
     return Response.json(body, { status, headers: { 'cache-control': 'no-store' } })
   }

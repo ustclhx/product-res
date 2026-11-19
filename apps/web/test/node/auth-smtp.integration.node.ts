@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:https'
 import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { nodeEnvSchema } from '@product-res/config/node'
 import { createDb, jobDeadLetter, jobMessage } from '@product-res/db'
@@ -266,8 +266,10 @@ it('completes registration and password reset over HTTP with durable SMTP retrie
       warning:
         'SMTP permits duplicate delivery; stable Message-ID is identity, not idempotence or exactly-once',
     }
-    const evidencePath = fileURLToPath(
-      new URL('../../../../docs/runbooks/evidence/selfhost/c-3.4-auth-smtp.json', import.meta.url),
+    const evidencePath = resolve(
+      process.env.EVIDENCE_DIR ||
+        fileURLToPath(new URL('../../../../test-results/evidence/', import.meta.url)),
+      'selfhost/c-3.4-auth-smtp.json',
     )
     await mkdir(dirname(evidencePath), { recursive: true })
     await writeFile(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`)

@@ -1,0 +1,19 @@
+{
+  "kind": "judge",
+  "promptVersion": "product-intro@v2",
+  "rubricVersion": "r1",
+  "outputHash": "sha256:549c5419d3b1141eb07f111b077b2340be7e3fea0a4852f187c2824abb5f89bb",
+  "model": {
+    "key": "deepseek-chat",
+    "provider": "deepseek",
+    "providerModelId": "deepseek-chat"
+  },
+  "output": "{\"criteria\":{\"accuracy\":{\"score\":5,\"reason\":\"All claims map directly to the three listed features; no invented specs or capabilities.\"},\"clarity\":{\"score\":5,\"reason\":\"Concise, well-structured with required sections and scannable bullet points.\"},\"audience-fit\":{\"score\":5,\"reason\":\"Explicitly addresses daily tea-drinking office workers and their needs (temperature control, fewer reboils).\"}},\"summary\":\"Accurate, clear, and well-targeted output that stays strictly within the provided features and speaks directly to the stated audience.\"}",
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 604,
+    "outputTokens": 119
+  },
+  "recordedAt": "2026-11-14T07:12:20.840Z",
+  "source": "recorded"
+}
